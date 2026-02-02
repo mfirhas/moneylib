@@ -1,0 +1,10 @@
+[package]
+name = "moneylib"
+version = "0.0.0"
+edition = "2024"
+authors = ["Muhammad Fathir Irhas <fathir.irhas@gmail.com>"]
+description = "Library to deal with money in Rust."
+license = "MIT"
+repository = "https://github.com/mfirhas/moneylib"
+
+[dependencies]
