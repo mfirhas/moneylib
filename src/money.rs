@@ -1,38 +1,31 @@
 use std::str::FromStr;
 
-use crate::{BaseMoney, Currency, MoneyError, base::COMMA_SEPARATOR};
-use rust_decimal::Decimal;
+use crate::{
+    BaseMoney, Currency, Decimal, MoneyError,
+    base::{COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, DOT_THOUSANDS_SEPARATOR_REGEX},
+};
 
 #[derive(Debug, Clone)]
 pub struct Money {
     currency: Currency,
-    symbol: String,
     amount: Decimal,
-    minor_unit: u16,
 }
 
 impl Money {
     pub fn new(currency: Currency, amount: Decimal) -> Self {
-        Money {
-            currency,
-            symbol: currency.symbol().symbol,
-            amount,
-            minor_unit: currency.exponent().unwrap_or_default(),
-        }
+        Money { currency, amount }
     }
 }
 
 impl PartialEq for Money {
     fn eq(&self, other: &Self) -> bool {
-        self.currency == other.currency
-            && self.amount == other.amount
-            && self.symbol == other.symbol
+        self.currency == other.currency && self.amount == other.amount
     }
 }
 
 impl PartialOrd for Money {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.currency == other.currency && self.symbol == other.symbol {
+        if self.currency == other.currency {
             self.amount.partial_cmp(&other.amount)
         } else {
             None
@@ -44,26 +37,27 @@ impl FromStr for Money {
     type Err = MoneyError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.trim();
         let money_parts: Vec<&str> = s.split_whitespace().collect();
         if money_parts.len() != 2 {
             return Err(MoneyError::ParseStr);
         }
 
-        // 3. parse currency code
         let currency = money_parts[0]
             .parse::<Currency>()
             .map_err(|_| MoneyError::InvalidCurrency)?;
 
-        let symbol = currency.symbol().symbol;
-
-        let minor_unit = currency.exponent().unwrap_or_default();
-
-        let amount_str = if <Money as BaseMoney>::thousand_separator() == COMMA_SEPARATOR {
+        let amount_str = if currency.thousand_separator == COMMA_SEPARATOR
+            && COMMA_THOUSANDS_SEPARATOR_REGEX.is_match(money_parts[1])
+        {
             let comma = ',';
             // remove commas
             let amount_str: String = money_parts[1].chars().filter(|&c| c != comma).collect();
             amount_str
         } else {
+            if !DOT_THOUSANDS_SEPARATOR_REGEX.is_match(money_parts[1]) {
+                return Err(MoneyError::ParseStr);
+            }
             let dot = '.';
             // remove dots
             let amount_str: String = money_parts[1].chars().filter(|&c| c != dot).collect();
@@ -72,14 +66,9 @@ impl FromStr for Money {
             amount_str
         };
 
-        let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::InvalidAmount)?;
+        let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
 
-        Ok(Self {
-            currency,
-            symbol,
-            minor_unit,
-            amount,
-        })
+        Ok(Self { currency, amount })
     }
 }
 
@@ -87,16 +76,6 @@ impl BaseMoney for Money {
     /// Get currency of money
     fn currency(&self) -> Currency {
         self.currency
-    }
-
-    /// Get currency name
-    fn name(&self) -> &str {
-        self.currency.name()
-    }
-
-    /// Get money symbol
-    fn symbol(&self) -> &str {
-        &self.symbol
     }
 
     /// Get amount of money
@@ -108,9 +87,7 @@ impl BaseMoney for Money {
     fn round(self) -> Self {
         Self {
             currency: self.currency,
-            symbol: self.symbol,
-            minor_unit: self.minor_unit,
-            amount: self.amount.round_dp(self.minor_unit as u32),
+            amount: self.amount.round_dp(self.currency.minor_unit as u32),
         }
     }
 }

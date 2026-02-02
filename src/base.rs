@@ -1,7 +1,8 @@
+use crate::Decimal;
 use crate::{Country, Currency, MoneyError};
 use accounting::Accounting;
 use regex::Regex;
-use rust_decimal::{Decimal, MathematicalOps, prelude::ToPrimitive};
+use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 use rust_decimal_macros::dec;
 use std::{fmt::Debug, str::FromStr, sync::LazyLock};
 
@@ -9,14 +10,14 @@ pub(crate) const COMMA_SEPARATOR: &'static str = ",";
 
 pub(crate) const DOT_SEPARATOR: &'static str = ".";
 
-static COMMA_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+pub static COMMA_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     regex::Regex::new(r"^([A-Z]{3})\s+((?:\d{1,3}(?:,\d{3})*|\d+)(?:\.\d+)?)$")
         .expect("failed compiling money format regex: comma thousands separator")
 });
 
-static DOT_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+pub static DOT_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     regex::Regex::new(r"^([A-Z]{3})\s+((?:\d{1,3}(?:.\d{3})*|\d+)(?:\,\d+)?)$")
-        .expect("failed compiling money format regex: comma thousands separator")
+        .expect("failed compiling money format regex: dot thousands separator")
 });
 
 pub type MoneyResult<T> = Result<T, MoneyError>;
@@ -28,12 +29,6 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
     /// Get currency of money
     fn currency(&self) -> Currency;
 
-    /// Get currency name
-    fn name(&self) -> &str;
-
-    /// Get money symbol
-    fn symbol(&self) -> &str;
-
     /// Get amount of money
     fn amount(&self) -> Decimal;
 
@@ -42,47 +37,32 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
 
     // PROVIDED
 
-    /// Parse money from str
-    /// Format: <CODE> <AMOUNT>
-    /// CODE: USD, IDR, etc
-    /// AMOUNT: 1,000 ; 1,000.00, 1000, 1000.032
-    /// Will be rounded using Banker's Rounding rule.
-    fn parse(input: &str) -> MoneyResult<Self> {
-        let v = input.trim();
-        if v.is_empty() {
-            return Err(MoneyError::ParseStr);
-        }
-        if Self::thousand_separator() == COMMA_SEPARATOR {
-            if !COMMA_THOUSANDS_SEPARATOR_REGEX.is_match(v) {
-                return Err(MoneyError::ParseStr);
-            }
-        } else {
-            if !DOT_THOUSANDS_SEPARATOR_REGEX.is_match(v) {
-                return Err(MoneyError::ParseStr);
-            }
-        }
-        let ret = Self::from_str(v.trim())
-            .map_err(|_| MoneyError::ParseStr)?
-            .round();
-        Ok(ret)
+    /// Get currency name
+    fn name(&self) -> &str {
+        self.currency().name
+    }
+
+    /// Get money symbol
+    fn symbol(&self) -> &str {
+        self.currency().symbol
     }
 
     /// Get money ISO 4217 code
     #[inline]
     fn code(&self) -> &str {
-        &self.currency().code()
+        self.currency().code
     }
 
     /// Get currency ISO 4217 numeric code
     #[inline]
-    fn numeric_code(&self) -> u16 {
-        self.currency().numeric()
+    fn numeric_code(&self) -> i32 {
+        self.currency().numeric_code
     }
 
     /// Get money minor unit
     #[inline]
     fn minor_unit(&self) -> u16 {
-        self.currency().exponent().unwrap_or_default()
+        self.currency().minor_unit
     }
 
     /// Get money amount in its smallest unit
@@ -101,8 +81,9 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
 
     /// Get money thousands separator
     #[inline]
-    fn thousand_separator() -> &'static str {
-        COMMA_SEPARATOR
+    fn thousand_separator(&self) -> &'static str {
+        // COMMA_SEPARATOR
+        self.currency().thousand_separator
     }
 
     /// Get money decimal separator
@@ -117,7 +98,7 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
         let mut fmt = Accounting::new_from_seperator(
             self.code(),
             self.minor_unit() as usize,
-            Self::thousand_separator(),
+            self.thousand_separator(),
             Self::decimal_separator(),
         );
         fmt.set_format("{s} {v}");
@@ -130,7 +111,7 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
         let mut fmt = Accounting::new_from_seperator(
             self.symbol(),
             self.minor_unit() as usize,
-            Self::thousand_separator(),
+            self.thousand_separator(),
             Self::decimal_separator(),
         );
         fmt.set_format("{s}{v}");
@@ -139,6 +120,6 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
 
     /// Get countries using this currency
     fn countries(&self) -> Vec<Country> {
-        self.currency().used_by()
+        self.currency().countries()
     }
 }

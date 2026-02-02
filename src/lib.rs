@@ -1,5 +1,5 @@
 pub use iso_currency::Country;
-pub use iso_currency::Currency;
+pub use rust_decimal::Decimal;
 
 mod base;
 pub use base::{BaseMoney, MoneyResult};
@@ -9,11 +9,16 @@ pub use error::MoneyError;
 
 mod money;
 
+mod currency;
+pub use currency::Currency;
+
 #[test]
 fn asd() {
+    use iso_currency::Currency;
     println!("{:?}", Currency::USD.symbol().subunit_symbol);
     println!("{:?}", Currency::IDR.symbol().subunit_symbol);
-    println!("{:?}", Currency::DZD.numeric());
+    println!("{:?}", Currency::USD.name());
 
+    // let a = Country::
     // let a = Currency::
 }

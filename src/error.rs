@@ -4,8 +4,8 @@ const ERROR_PREFIX: &'static str = "[MONEYLIB_ERROR]";
 
 #[derive(Debug, Error)]
 pub enum MoneyError {
-    #[error("{ERROR_PREFIX} generic error: {0}")]
-    Error(String),
+    #[error("{ERROR_PREFIX} error: {0}")]
+    Error(#[from] anyhow::Error),
 
     #[error(
         "{ERROR_PREFIX} failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator."
@@ -14,9 +14,6 @@ pub enum MoneyError {
 
     #[error("{ERROR_PREFIX} invalid currency, please use currencies supported by ISO 4217")]
     InvalidCurrency,
-
-    #[error("{ERROR_PREFIX} invalid amount, please use comma and dot separator accordingly")]
-    InvalidAmount,
 
     //--- arithmetic errors
     #[error("{ERROR_PREFIX} cannot divide by zero")]
