@@ -4,6 +4,7 @@ use accounting::Accounting;
 use regex::Regex;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 use rust_decimal_macros::dec;
+use std::fmt::Display;
 use std::{fmt::Debug, str::FromStr, sync::LazyLock};
 
 pub(crate) const COMMA_SEPARATOR: &'static str = ",";
@@ -21,7 +22,7 @@ pub static DOT_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// BaseMoney is the base trait for dealing with money type.
-pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
+pub trait BaseMoney: Debug + Display + Clone + PartialOrd + PartialEq + FromStr {
     // REQUIRED
 
     /// Get currency of money
@@ -113,6 +114,45 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
         );
         fmt.set_format("{s}{v}");
         fmt.format_money(self.amount())
+    }
+
+    /// Format money with code in the smallest unit along with thousands separators.
+    /// Example USD 1,234.45 --> USD 123,445 ¢
+    /// If the currency has no minor unit symbol, it defaults to "minor".
+    /// You can set the minor unit symbol in `Currency` type's setter.
+    fn format_code_minor(&self) -> MoneyResult<String> {
+        let minor_amount = self.minor_amount()?;
+        let mut fmt = Accounting::new_from_seperator(
+            self.code(),
+            0,
+            self.thousand_separator(),
+            self.decimal_separator(),
+        );
+        let f = format!("{{s}} {{v}} {}", self.currency().minor_symbol);
+        fmt.set_format(&f);
+        Ok(fmt.format_money(minor_amount))
+    }
+
+    /// Format money with code in the smallest unit along with thousands separators.
+    /// Example $1,234.45 --> $123,445 ¢
+    /// If the currency has no minor unit symbol, it defaults to "minor".
+    /// You can set the minor unit symbol in `Currency` type's setter.
+    fn format_symbol_minor(&self) -> MoneyResult<String> {
+        let minor_amount = self.minor_amount()?;
+        let mut fmt = Accounting::new_from_seperator(
+            self.symbol(),
+            0,
+            self.thousand_separator(),
+            self.decimal_separator(),
+        );
+        let f = format!("{{s}}{{v}} {}", self.currency().minor_symbol);
+        fmt.set_format(&f);
+        Ok(fmt.format_money(minor_amount))
+    }
+
+    /// Default display of money
+    fn display(&self) -> String {
+        self.format_code()
     }
 
     /// Get countries using this currency

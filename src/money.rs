@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 use crate::{
     BaseMoney, Currency, Decimal, MoneyError,
@@ -70,6 +70,12 @@ impl FromStr for Money {
         let amount = amount.round_dp(currency.minor_unit as u32);
 
         Ok(Self { currency, amount })
+    }
+}
+
+impl Display for Money {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.display())
     }
 }
 

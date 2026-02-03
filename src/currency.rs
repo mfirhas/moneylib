@@ -7,6 +7,8 @@ use crate::{
     base::{COMMA_SEPARATOR, DOT_SEPARATOR},
 };
 
+const DEFAULT_MINOR_UNIT_SYMBOL: &'static str = "minor";
+
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Currency {
     pub code: &'static str,
@@ -16,8 +18,8 @@ pub struct Currency {
     pub numeric_code: i32,
     pub thousand_separator: &'static str,
     pub decimal_separator: &'static str,
+    pub minor_symbol: &'static str,
 
-    pub minor_symbol: Option<&'static str>,
     pub countries: Option<&'static [Country]>,
 }
 
@@ -48,8 +50,11 @@ impl Currency {
             numeric_code: ret.numeric() as i32,
             thousand_separator: COMMA_SEPARATOR,
             decimal_separator: DOT_SEPARATOR,
+            minor_symbol: ret
+                .symbol()
+                .subunit_symbol
+                .unwrap_or(DEFAULT_MINOR_UNIT_SYMBOL),
 
-            minor_symbol: ret.symbol().subunit_symbol,
             countries: None,
         };
 
@@ -73,6 +78,7 @@ impl Currency {
             minor_unit,
             thousand_separator: COMMA_SEPARATOR,
             decimal_separator: DOT_SEPARATOR,
+            minor_symbol: DEFAULT_MINOR_UNIT_SYMBOL,
             ..Default::default()
         })
     }
@@ -86,7 +92,7 @@ impl Currency {
     }
 
     pub fn set_minor_symbol(&mut self, minor_symbol: &'static str) {
-        self.minor_symbol = Some(minor_symbol);
+        self.minor_symbol = minor_symbol;
     }
 
     pub fn set_numeric_code(&mut self, numeric_code: i32) {
