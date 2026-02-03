@@ -1,8 +1,10 @@
 use std::{fmt::Display, str::FromStr};
 
 use crate::{
-    BaseMoney, Currency, Decimal, MoneyError,
-    base::{COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, DOT_THOUSANDS_SEPARATOR_REGEX},
+    BaseMoney, Currency, Decimal, MoneyError, MoneyResult,
+    base::{
+        BaseOps, COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, DOT_THOUSANDS_SEPARATOR_REGEX,
+    },
 };
 
 #[derive(Debug, Clone, Copy, Eq)]
@@ -96,5 +98,80 @@ impl BaseMoney for Money {
             currency: self.currency,
             amount: self.amount.round_dp(self.currency().minor_unit as u32),
         }
+    }
+}
+
+impl BaseOps for Money {
+    fn abs(&self) -> Self {
+        Self {
+            currency: self.currency,
+            amount: self.amount.abs(),
+        }
+    }
+
+    fn min(&self, rhs: Self) -> Self {
+        Self {
+            currency: self.currency,
+            amount: self.amount.min(rhs.amount),
+        }
+    }
+
+    fn max(&self, rhs: Self) -> Self {
+        Self {
+            currency: self.currency,
+            amount: self.amount.max(rhs.amount),
+        }
+    }
+
+    /// clamp the money amount between `from` and `to` inclusively.
+    fn clamp(&self, from: Decimal, to: Decimal) -> Self {
+        Self {
+            currency: self.currency,
+            amount: self.amount.clamp(from, to),
+        }
+    }
+
+    fn add(&self, rhs: Decimal) -> MoneyResult<Self> {
+        Ok(Self {
+            currency: self.currency,
+            amount: self
+                .amount
+                .checked_add(rhs)
+                .ok_or(MoneyError::ArithmeticOverflow)?,
+        }
+        .round())
+    }
+
+    fn sub(&self, rhs: Decimal) -> MoneyResult<Self> {
+        Ok(Self {
+            currency: self.currency,
+            amount: self
+                .amount
+                .checked_sub(rhs)
+                .ok_or(MoneyError::ArithmeticOverflow)?,
+        }
+        .round())
+    }
+
+    fn mul(&self, rhs: Decimal) -> MoneyResult<Self> {
+        Ok(Self {
+            currency: self.currency,
+            amount: self
+                .amount
+                .checked_mul(rhs)
+                .ok_or(MoneyError::ArithmeticOverflow)?,
+        }
+        .round())
+    }
+
+    fn div(&self, rhs: Decimal) -> MoneyResult<Self> {
+        Ok(Self {
+            currency: self.currency,
+            amount: self
+                .amount
+                .checked_div(rhs)
+                .ok_or(MoneyError::ArithmeticOverflow)?,
+        }
+        .round())
     }
 }
