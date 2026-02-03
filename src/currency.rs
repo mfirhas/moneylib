@@ -37,7 +37,9 @@ impl FromStr for Currency {
 
 impl Currency {
     pub fn from_iso(iso_code: &str) -> MoneyResult<Currency> {
-        let ret = iso_currency::Currency::from_code(iso_code).ok_or(MoneyError::InvalidCurrency)?;
+        let iso_code = iso_code.to_ascii_uppercase();
+        let ret =
+            iso_currency::Currency::from_code(&iso_code).ok_or(MoneyError::InvalidCurrency)?;
         let currency = Currency {
             code: ret.code(),
             symbol: ret.symbol().symbol,
