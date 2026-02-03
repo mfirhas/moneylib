@@ -66,6 +66,10 @@ impl Currency {
         self.minor_symbol = Some(minor_symbol);
     }
 
+    pub fn set_numeric_code(&mut self, numeric_code: i32) {
+        self.numeric_code = numeric_code;
+    }
+
     pub fn set_countries(&mut self, countries: &'static [Country]) {
         self.countries = Some(countries);
     }
