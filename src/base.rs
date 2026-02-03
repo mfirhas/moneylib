@@ -99,8 +99,14 @@ pub trait BaseMoney: Debug + Display + Clone + PartialOrd + PartialEq + FromStr 
             self.thousand_separator(),
             self.decimal_separator(),
         );
-        fmt.set_format("{s} {v}");
-        fmt.format_money(self.amount())
+        if self.amount().is_sign_negative() {
+            let abs = self.amount().abs();
+            fmt.set_format("{s} -{v}");
+            fmt.format_money(abs)
+        } else {
+            fmt.set_format("{s} {v}");
+            fmt.format_money(self.amount())
+        }
     }
 
     /// Format money with symbol along with thousands and decimal separators.
@@ -128,9 +134,16 @@ pub trait BaseMoney: Debug + Display + Clone + PartialOrd + PartialEq + FromStr 
             self.thousand_separator(),
             self.decimal_separator(),
         );
-        let f = format!("{{s}} {{v}} {}", self.currency().minor_symbol);
-        fmt.set_format(&f);
-        Ok(fmt.format_money(minor_amount))
+        if minor_amount.is_negative() {
+            let abs = minor_amount.abs();
+            let f = format!("{{s}} -{{v}} {}", self.currency().minor_symbol);
+            fmt.set_format(&f);
+            Ok(fmt.format_money(abs))
+        } else {
+            let f = format!("{{s}} {{v}} {}", self.currency().minor_symbol);
+            fmt.set_format(&f);
+            Ok(fmt.format_money(minor_amount))
+        }
     }
 
     /// Format money with code in the smallest unit along with thousands separators.
