@@ -88,7 +88,7 @@ impl BaseMoney for Money {
     fn round(self) -> Self {
         Self {
             currency: self.currency,
-            amount: self.amount.round_dp(self.currency.minor_unit as u32),
+            amount: self.amount.round_dp(self.currency().minor_unit as u32),
         }
     }
 }
