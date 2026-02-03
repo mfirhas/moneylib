@@ -10,7 +10,7 @@ use std::hash::{Hash, Hasher};
 
 const DEFAULT_MINOR_UNIT_SYMBOL: &'static str = "minor";
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, Eq)]
 pub struct Currency {
     pub code: &'static str,
     pub symbol: &'static str,
@@ -22,6 +22,12 @@ pub struct Currency {
     pub minor_symbol: &'static str,
 
     pub countries: Option<&'static [Country]>,
+}
+
+impl PartialEq for Currency {
+    fn eq(&self, other: &Self) -> bool {
+        self.code == other.code
+    }
 }
 
 impl PartialOrd for Currency {
