@@ -7,7 +7,7 @@ use crate::{
     base::{COMMA_SEPARATOR, DOT_SEPARATOR},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Currency {
     pub code: &'static str,
     pub symbol: &'static str,
@@ -54,6 +54,27 @@ impl Currency {
         };
 
         Ok(currency)
+    }
+
+    pub fn new(
+        code: &'static str,
+        symbol: &'static str,
+        name: &'static str,
+        minor_unit: u16,
+    ) -> MoneyResult<Currency> {
+        if code.is_empty() || symbol.is_empty() || name.is_empty() {
+            return Err(MoneyError::NewCurrency);
+        }
+
+        Ok(Currency {
+            code,
+            symbol,
+            name,
+            minor_unit,
+            thousand_separator: COMMA_SEPARATOR,
+            decimal_separator: DOT_SEPARATOR,
+            ..Default::default()
+        })
     }
 
     pub fn set_thousand_separator(&mut self, separator: &'static str) {

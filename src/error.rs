@@ -7,6 +7,9 @@ pub enum MoneyError {
     #[error("{ERROR_PREFIX} error: {0}")]
     Error(#[from] anyhow::Error),
 
+    #[error("{ERROR_PREFIX} new currency must have code, symbol, name, and minor unit")]
+    NewCurrency,
+
     #[error(
         "{ERROR_PREFIX} failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator."
     )]
