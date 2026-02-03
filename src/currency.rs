@@ -6,6 +6,7 @@ use crate::{
     MoneyError, MoneyResult,
     base::{COMMA_SEPARATOR, DOT_SEPARATOR},
 };
+use std::hash::{Hash, Hasher};
 
 const DEFAULT_MINOR_UNIT_SYMBOL: &'static str = "minor";
 
@@ -34,6 +35,12 @@ impl FromStr for Currency {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_iso(s)
+    }
+}
+
+impl Hash for Currency {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.code.hash(state);
     }
 }
 
