@@ -5,6 +5,7 @@ use regex::Regex;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 use rust_decimal_macros::dec;
 use std::fmt::Display;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::{fmt::Debug, str::FromStr, sync::LazyLock};
 
 pub(crate) const COMMA_SEPARATOR: &'static str = ",";
@@ -22,7 +23,7 @@ pub static DOT_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// BaseMoney is the base trait for dealing with money type.
-pub trait BaseMoney: Debug + Display + Clone + PartialOrd + PartialEq + FromStr {
+pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + FromStr {
     // REQUIRED
 
     /// Get currency of money
@@ -33,6 +34,9 @@ pub trait BaseMoney: Debug + Display + Clone + PartialOrd + PartialEq + FromStr 
 
     /// Round money using Banker's Rounding rule to the scale of currency's minor unit
     fn round(self) -> Self;
+
+    /// make money positive
+    fn abs(&self) -> Self;
 
     // PROVIDED
 
@@ -88,6 +92,24 @@ pub trait BaseMoney: Debug + Display + Clone + PartialOrd + PartialEq + FromStr 
     #[inline]
     fn decimal_separator(&self) -> &'static str {
         self.currency().decimal_separator
+    }
+
+    /// Check if amount is 0
+    #[inline]
+    fn is_zero(&self) -> bool {
+        self.amount().is_zero()
+    }
+
+    /// Check if sign is +
+    #[inline]
+    fn is_positive(&self) -> bool {
+        self.amount().is_sign_positive()
+    }
+
+    /// Check if sign is -
+    #[inline]
+    fn is_negative(&self) -> bool {
+        self.amount().is_sign_negative()
     }
 
     /// Format money with code along with thousands and decimal separators.
@@ -172,4 +194,26 @@ pub trait BaseMoney: Debug + Display + Clone + PartialOrd + PartialEq + FromStr 
     fn countries(&self) -> Vec<Country> {
         self.currency().countries()
     }
+}
+
+pub trait BaseOps:
+    Sized
+    + BaseMoney
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + Mul<Output = Self>
+    + Div<Output = Self>
+    + AddAssign
+    + SubAssign
+    + MulAssign
+    + DivAssign
+    + Neg<Output = Self>
+{
+    fn add(&self, rhs: Decimal) -> MoneyResult<Self>;
+
+    fn sub(&self, rhs: Decimal) -> MoneyResult<Self>;
+
+    fn mul(&self, rhs: Decimal) -> MoneyResult<Self>;
+
+    fn div(&self, rhs: Decimal) -> MoneyResult<Self>;
 }
