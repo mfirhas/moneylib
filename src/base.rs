@@ -82,14 +82,13 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
     /// Get money thousands separator
     #[inline]
     fn thousand_separator(&self) -> &'static str {
-        // COMMA_SEPARATOR
         self.currency().thousand_separator
     }
 
     /// Get money decimal separator
     #[inline]
-    fn decimal_separator() -> &'static str {
-        DOT_SEPARATOR
+    fn decimal_separator(&self) -> &'static str {
+        self.currency().decimal_separator
     }
 
     /// Format money with code along with thousands and decimal separators.
@@ -99,7 +98,7 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
             self.code(),
             self.minor_unit() as usize,
             self.thousand_separator(),
-            Self::decimal_separator(),
+            self.decimal_separator(),
         );
         fmt.set_format("{s} {v}");
         fmt.format_money(self.amount())
@@ -112,7 +111,7 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
             self.symbol(),
             self.minor_unit() as usize,
             self.thousand_separator(),
-            Self::decimal_separator(),
+            self.decimal_separator(),
         );
         fmt.set_format("{s}{v}");
         fmt.format_money(self.amount())
