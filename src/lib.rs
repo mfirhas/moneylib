@@ -4,12 +4,16 @@ pub use iso_currency::Country;
 pub use rust_decimal::Decimal;
 
 mod base;
-pub use base::{BaseMoney, MoneyResult};
+pub use base::BaseMoney;
 
 mod error;
 pub use error::MoneyError;
 
+/// Money result type
+pub type MoneyResult<T> = Result<T, MoneyError>;
+
 mod money;
+pub use money::Money;
 
 mod currency;
 pub use currency::Currency;

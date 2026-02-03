@@ -1,5 +1,5 @@
-use crate::Decimal;
 use crate::{Country, Currency, MoneyError};
+use crate::{Decimal, MoneyResult};
 use accounting::Accounting;
 use regex::Regex;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
@@ -20,8 +20,6 @@ pub static DOT_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
         .expect("failed compiling money format regex: dot thousands separator")
 });
 
-pub type MoneyResult<T> = Result<T, MoneyError>;
-
 /// BaseMoney is the base trait for dealing with money type.
 pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
     // REQUIRED
@@ -38,11 +36,13 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
     // PROVIDED
 
     /// Get currency name
+    #[inline]
     fn name(&self) -> &str {
         self.currency().name
     }
 
     /// Get money symbol
+    #[inline]
     fn symbol(&self) -> &str {
         self.currency().symbol
     }
@@ -68,15 +68,13 @@ pub trait BaseMoney: Debug + Clone + PartialOrd + PartialEq + FromStr {
     /// Get money amount in its smallest unit
     #[inline]
     fn minor_amount(&self) -> MoneyResult<i128> {
-        let minor_amount_dec = self
+        Ok(self
             .amount()
             .round_dp(self.minor_unit() as u32)
             .checked_mul(dec!(10).powu(self.minor_unit() as u64))
-            .ok_or(MoneyError::ArithmeticOverflow)?;
-        let minor_amount_int = minor_amount_dec
+            .ok_or(MoneyError::ArithmeticOverflow)?
             .to_i128()
-            .ok_or(MoneyError::DecimalToInteger)?;
-        Ok(minor_amount_int)
+            .ok_or(MoneyError::DecimalToInteger)?)
     }
 
     /// Get money thousands separator
