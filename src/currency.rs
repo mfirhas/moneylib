@@ -26,7 +26,7 @@ pub struct Currency {
 
 impl PartialOrd for Currency {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.code.cmp(other.code))
+        self.code.partial_cmp(other.code)
     }
 }
 
