@@ -1,10 +1,8 @@
-use std::{fmt::Display, ops::Add, str::FromStr};
+use std::{fmt::Display, str::FromStr};
 
 use crate::{
     BaseMoney, Currency, Decimal, MoneyError,
-    base::{
-        BaseOps, COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, DOT_THOUSANDS_SEPARATOR_REGEX,
-    },
+    base::{COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, DOT_THOUSANDS_SEPARATOR_REGEX},
 };
 
 #[derive(Debug, Clone, Copy, Eq)]
@@ -97,13 +95,6 @@ impl BaseMoney for Money {
         Self {
             currency: self.currency,
             amount: self.amount.round_dp(self.currency().minor_unit as u32),
-        }
-    }
-
-    fn abs(&self) -> Self {
-        Self {
-            currency: self.currency,
-            amount: self.amount.abs(),
         }
     }
 }

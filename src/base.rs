@@ -35,9 +35,6 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     /// Round money using Banker's Rounding rule to the scale of currency's minor unit
     fn round(self) -> Self;
 
-    /// make money positive
-    fn abs(&self) -> Self;
-
     // PROVIDED
 
     /// Get currency name
@@ -209,6 +206,18 @@ pub trait BaseOps:
     + DivAssign
     + Neg<Output = Self>
 {
+    // REQUIRED
+
+    /// make money positive
+    fn abs(&self) -> Self;
+
+    fn min(&self, rhs: Self) -> Self;
+
+    fn max(&self, rhs: Self) -> Self;
+
+    /// clamp the money amount between `from` and `to` inclusively.
+    fn clamp(&self, from: Decimal, to: Decimal) -> Self;
+
     fn add(&self, rhs: Decimal) -> MoneyResult<Self>;
 
     fn sub(&self, rhs: Decimal) -> MoneyResult<Self>;
