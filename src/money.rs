@@ -5,7 +5,7 @@ use crate::{
     base::{COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, DOT_THOUSANDS_SEPARATOR_REGEX},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Money {
     currency: Currency,
     amount: Decimal,
