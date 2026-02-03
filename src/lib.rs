@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 pub use iso_currency::Country;
 pub use rust_decimal::Decimal;
 
