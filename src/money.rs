@@ -67,6 +67,7 @@ impl FromStr for Money {
         };
 
         let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
+        let amount = amount.round_dp(currency.minor_unit as u32);
 
         Ok(Self { currency, amount })
     }
