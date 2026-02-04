@@ -1,4 +1,4 @@
-use crate::{Currency, Country, MoneyError};
+use crate::{Country, Currency, MoneyError};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
@@ -380,7 +380,7 @@ fn test_case_insensitive_iso_code() {
     let upper = Currency::from_iso("USD").unwrap();
     let lower = Currency::from_iso("usd").unwrap();
     let mixed = Currency::from_iso("UsD").unwrap();
-    
+
     assert_eq!(upper, lower);
     assert_eq!(upper, mixed);
     assert_eq!(lower, mixed);
@@ -391,10 +391,10 @@ fn test_case_insensitive_iso_code() {
 fn test_equality_ignores_separators() {
     let mut currency1 = Currency::from_iso("USD").unwrap();
     let mut currency2 = Currency::from_iso("USD").unwrap();
-    
+
     currency1.set_thousand_separator(" ");
     currency2.set_thousand_separator(".");
-    
+
     // Should still be equal as equality is based on code only
     assert_eq!(currency1, currency2);
 }
@@ -404,10 +404,10 @@ fn test_equality_ignores_separators() {
 fn test_ordering_ignores_modifications() {
     let mut currency1 = Currency::from_iso("EUR").unwrap();
     let currency2 = Currency::from_iso("USD").unwrap();
-    
+
     currency1.set_thousand_separator(" ");
     currency1.set_minor_symbol("euro cents");
-    
+
     // Ordering should still be based on code
     assert!(currency1 < currency2);
 }
@@ -420,7 +420,7 @@ fn test_custom_currency_with_all_setters() {
     currency.set_decimal_separator(",");
     currency.set_minor_symbol("parts");
     currency.set_numeric_code(999);
-    
+
     assert_eq!(currency.code(), "XXX");
     assert_eq!(currency.symbol(), "X");
     assert_eq!(currency.name(), "Custom");

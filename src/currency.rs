@@ -158,6 +158,8 @@ impl Currency {
     }
 
     pub fn countries(&self) -> Option<Vec<Country>> {
-        self.countries.map(|c| c.into()).or_else(|| iso_currency::Currency::from_code(self.code()).map(|curr| curr.used_by()))
+        self.countries
+            .map(|c| c.into())
+            .or_else(|| iso_currency::Currency::from_code(self.code()).map(|curr| curr.used_by()))
     }
 }
