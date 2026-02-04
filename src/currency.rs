@@ -39,6 +39,12 @@ impl PartialOrd for Currency {
 impl FromStr for Currency {
     type Err = MoneyError;
 
+    /// Parse ISO 4217 currencies alphabetical code from string.
+    ///
+    /// Case insensitive.
+    /// E.g. "USD", or "usd" or "uSd"
+    ///
+    /// Calls `Currency::from_iso` inside.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::from_iso(s)
     }
@@ -51,6 +57,10 @@ impl Hash for Currency {
 }
 
 impl Currency {
+    /// Parse ISO 4217 currencies alphabetical code from string.
+    ///
+    /// Case insensitive.
+    /// E.g. "USD", or "usd" or "uSd"
     pub fn from_iso(iso_code: &str) -> MoneyResult<Currency> {
         let iso_code = iso_code.to_ascii_uppercase();
         let ret =
