@@ -74,6 +74,11 @@ impl Currency {
         Ok(currency)
     }
 
+    /// Create new currency.
+    ///
+    /// It fails if the currency is already existed in ISO 4217 list.
+    ///
+    /// Use `Currency::from_iso` instead to create ISO 4217 currency.
     pub fn new(
         code: &'static str,
         symbol: &'static str,
