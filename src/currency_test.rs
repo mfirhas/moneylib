@@ -298,17 +298,6 @@ fn test_countries_custom() {
     assert_eq!(countries.len(), 2);
 }
 
-// Test Default trait
-#[test]
-fn test_default() {
-    let currency = Currency::default();
-    assert_eq!(currency.code(), "");
-    assert_eq!(currency.symbol(), "");
-    assert_eq!(currency.name(), "");
-    assert_eq!(currency.minor_unit(), 0);
-    assert_eq!(currency.numeric_code(), 0);
-}
-
 // Test Clone trait
 #[test]
 fn test_clone() {

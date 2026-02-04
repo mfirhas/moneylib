@@ -10,7 +10,7 @@ use std::hash::{Hash, Hasher};
 
 const DEFAULT_MINOR_UNIT_SYMBOL: &'static str = "minor";
 
-#[derive(Debug, Default, Clone, Copy, Eq)]
+#[derive(Debug, Clone, Copy, Eq)]
 pub struct Currency {
     code: &'static str,
     symbol: &'static str,
@@ -92,7 +92,8 @@ impl Currency {
             thousand_separator: COMMA_SEPARATOR,
             decimal_separator: DOT_SEPARATOR,
             minor_symbol: DEFAULT_MINOR_UNIT_SYMBOL,
-            ..Default::default()
+            numeric_code: 0,
+            countries: None,
         })
     }
 
