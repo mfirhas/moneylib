@@ -49,7 +49,7 @@ impl FromStr for Money {
             .parse::<Currency>()
             .map_err(|_| MoneyError::InvalidCurrency)?;
 
-        let amount_str = if currency.thousand_separator == COMMA_SEPARATOR
+        let amount_str = if currency.thousand_separator() == COMMA_SEPARATOR
             && COMMA_THOUSANDS_SEPARATOR_REGEX.is_match(money_parts[1])
         {
             let comma = ',';
@@ -69,7 +69,7 @@ impl FromStr for Money {
         };
 
         let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
-        let amount = amount.round_dp(currency.minor_unit as u32);
+        let amount = amount.round_dp(currency.minor_unit() as u32);
 
         Ok(Self { currency, amount })
     }
@@ -96,7 +96,7 @@ impl BaseMoney for Money {
     fn round(self) -> Self {
         Self {
             currency: self.currency,
-            amount: self.amount.round_dp(self.currency().minor_unit as u32),
+            amount: self.amount.round_dp(self.currency().minor_unit() as u32),
         }
     }
 }

@@ -12,27 +12,27 @@ const DEFAULT_MINOR_UNIT_SYMBOL: &'static str = "minor";
 
 #[derive(Debug, Default, Clone, Copy, Eq)]
 pub struct Currency {
-    pub code: &'static str,
-    pub symbol: &'static str,
-    pub name: &'static str,
-    pub minor_unit: u16,
-    pub numeric_code: i32,
-    pub thousand_separator: &'static str,
-    pub decimal_separator: &'static str,
-    pub minor_symbol: &'static str,
+    code: &'static str,
+    symbol: &'static str,
+    name: &'static str,
+    minor_unit: u16,
+    numeric_code: i32,
+    thousand_separator: &'static str,
+    decimal_separator: &'static str,
+    minor_symbol: &'static str,
 
-    pub countries: Option<&'static [Country]>,
+    countries: Option<&'static [Country]>,
 }
 
 impl PartialEq for Currency {
     fn eq(&self, other: &Self) -> bool {
-        self.code == other.code
+        self.code() == other.code()
     }
 }
 
 impl PartialOrd for Currency {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.code.partial_cmp(other.code)
+        self.code().partial_cmp(other.code())
     }
 }
 
@@ -46,7 +46,7 @@ impl FromStr for Currency {
 
 impl Hash for Currency {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.code.hash(state);
+        self.code().hash(state);
     }
 }
 
@@ -116,11 +116,51 @@ impl Currency {
         self.countries = Some(countries);
     }
 
+    #[inline]
+    pub fn code(&self) -> &'static str {
+        self.code
+    }
+
+    #[inline]
+    pub fn symbol(&self) -> &'static str {
+        self.symbol
+    }
+
+    #[inline]
+    pub fn name(&self) -> &'static str {
+        self.name
+    }
+
+    #[inline]
+    pub fn minor_unit(&self) -> u16 {
+        self.minor_unit
+    }
+
+    #[inline]
+    pub fn numeric_code(&self) -> i32 {
+        self.numeric_code
+    }
+
+    #[inline]
+    pub fn thousand_separator(&self) -> &'static str {
+        self.thousand_separator
+    }
+
+    #[inline]
+    pub fn decimal_separator(&self) -> &'static str {
+        self.decimal_separator
+    }
+
+    #[inline]
+    pub fn minor_symbol(&self) -> &'static str {
+        self.minor_symbol
+    }
+
     pub fn countries(&self) -> Vec<Country> {
         if let Some(countries) = self.countries {
             countries.into()
         } else {
-            let ret = iso_currency::Currency::from_code(self.code);
+            let ret = iso_currency::Currency::from_code(self.code());
             if let Some(curr) = ret {
                 curr.used_by()
             } else {

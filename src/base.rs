@@ -40,31 +40,31 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     /// Get currency name
     #[inline]
     fn name(&self) -> &str {
-        self.currency().name
+        self.currency().name()
     }
 
     /// Get money symbol
     #[inline]
     fn symbol(&self) -> &str {
-        self.currency().symbol
+        self.currency().symbol()
     }
 
     /// Get money ISO 4217 code
     #[inline]
     fn code(&self) -> &str {
-        self.currency().code
+        self.currency().code()
     }
 
     /// Get currency ISO 4217 numeric code
     #[inline]
     fn numeric_code(&self) -> i32 {
-        self.currency().numeric_code
+        self.currency().numeric_code()
     }
 
     /// Get money minor unit
     #[inline]
     fn minor_unit(&self) -> u16 {
-        self.currency().minor_unit
+        self.currency().minor_unit()
     }
 
     /// Get money amount in its smallest unit
@@ -82,13 +82,13 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     /// Get money thousands separator
     #[inline]
     fn thousand_separator(&self) -> &'static str {
-        self.currency().thousand_separator
+        self.currency().thousand_separator()
     }
 
     /// Get money decimal separator
     #[inline]
     fn decimal_separator(&self) -> &'static str {
-        self.currency().decimal_separator
+        self.currency().decimal_separator()
     }
 
     /// Check if amount is 0
@@ -155,11 +155,11 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
         );
         if minor_amount.is_negative() {
             let abs = minor_amount.abs();
-            let f = format!("{{s}} -{{v}} {}", self.currency().minor_symbol);
+            let f = format!("{{s}} -{{v}} {}", self.currency().minor_symbol());
             fmt.set_format(&f);
             Ok(fmt.format_money(abs))
         } else {
-            let f = format!("{{s}} {{v}} {}", self.currency().minor_symbol);
+            let f = format!("{{s}} {{v}} {}", self.currency().minor_symbol());
             fmt.set_format(&f);
             Ok(fmt.format_money(minor_amount))
         }
@@ -177,7 +177,7 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
             self.thousand_separator(),
             self.decimal_separator(),
         );
-        let f = format!("{{s}}{{v}} {}", self.currency().minor_symbol);
+        let f = format!("{{s}}{{v}} {}", self.currency().minor_symbol());
         fmt.set_format(&f);
         Ok(fmt.format_money(minor_amount))
     }
