@@ -172,7 +172,7 @@ fn test_set_countries() {
     let mut currency = Currency::new("TST", "$", "Test", 2).unwrap();
     let countries = &[Country::US, Country::GB];
     currency.set_countries(countries);
-    let result_countries = currency.countries();
+    let result_countries = currency.countries().unwrap();
     assert_eq!(result_countries.len(), 2);
     assert!(result_countries.contains(&Country::US));
     assert!(result_countries.contains(&Country::GB));
@@ -284,7 +284,7 @@ fn test_hash_different_currency() {
 #[test]
 fn test_countries_for_usd() {
     let currency = Currency::from_iso("USD").unwrap();
-    let countries = currency.countries();
+    let countries = currency.countries().unwrap();
     assert!(!countries.is_empty());
     assert!(countries.contains(&Country::US));
 }
@@ -294,7 +294,7 @@ fn test_countries_custom() {
     let mut currency = Currency::new("TST", "$", "Test", 2).unwrap();
     let custom_countries = &[Country::US, Country::CA];
     currency.set_countries(custom_countries);
-    let countries = currency.countries();
+    let countries = currency.countries().unwrap();
     assert_eq!(countries.len(), 2);
 }
 
