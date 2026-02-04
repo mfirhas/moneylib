@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use super::super::Currency;
-    use crate::{Country, MoneyError};
+    use crate::{Currency, Country, MoneyError};
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     use std::str::FromStr;
