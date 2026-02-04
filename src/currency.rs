@@ -62,7 +62,7 @@ impl Currency {
     /// Case insensitive.
     /// E.g. "USD", or "usd" or "uSd"
     pub fn from_iso(iso_code: &str) -> MoneyResult<Currency> {
-        let iso_code = iso_code.to_ascii_uppercase();
+        let iso_code = iso_code.trim().to_ascii_uppercase();
         let ret =
             iso_currency::Currency::from_code(&iso_code).ok_or(MoneyError::InvalidCurrency)?;
         let currency = Currency {
@@ -95,6 +95,7 @@ impl Currency {
         name: &'static str,
         minor_unit: u16,
     ) -> MoneyResult<Currency> {
+        let code = code.trim();
         if !code.is_empty() {
             let uppercase_code = code.to_ascii_uppercase();
             if iso_currency::Currency::from_code(&uppercase_code).is_some() {
