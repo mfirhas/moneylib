@@ -169,3 +169,7 @@ impl Currency {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "currency_test.rs"]
+mod currency_test;
