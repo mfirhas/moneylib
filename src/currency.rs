@@ -80,6 +80,12 @@ impl Currency {
         name: &'static str,
         minor_unit: u16,
     ) -> MoneyResult<Currency> {
+        if !code.is_empty() {
+            let uppercase_code = code.to_ascii_uppercase();
+            if iso_currency::Currency::from_code(&uppercase_code).is_some() {
+                return Err(MoneyError::ExistsInISO);
+            }
+        }
         if code.is_empty() || symbol.is_empty() || name.is_empty() {
             return Err(MoneyError::NewCurrency);
         }

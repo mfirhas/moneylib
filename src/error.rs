@@ -11,6 +11,11 @@ pub enum MoneyError {
     NewCurrency,
 
     #[error(
+        "{ERROR_PREFIX} this currency is already existed in ISO 4217 list, use Currency::from_iso to create ISO 4217 currency"
+    )]
+    ExistsInISO,
+
+    #[error(
         "{ERROR_PREFIX} failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator."
     )]
     ParseStr,
