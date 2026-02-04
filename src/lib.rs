@@ -21,6 +21,9 @@ mod ops;
 mod currency;
 pub use currency::Currency;
 
+#[cfg(test)]
+mod currency_test;
+
 #[test]
 fn asd() {
     use iso_currency::Currency;

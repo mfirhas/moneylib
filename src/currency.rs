@@ -10,7 +10,7 @@ use std::hash::{Hash, Hasher};
 
 const DEFAULT_MINOR_UNIT_SYMBOL: &'static str = "minor";
 
-#[derive(Debug, Default, Clone, Copy, Eq)]
+#[derive(Debug, Clone, Copy, Eq)]
 pub struct Currency {
     code: &'static str,
     symbol: &'static str,
@@ -92,7 +92,8 @@ impl Currency {
             thousand_separator: COMMA_SEPARATOR,
             decimal_separator: DOT_SEPARATOR,
             minor_symbol: DEFAULT_MINOR_UNIT_SYMBOL,
-            ..Default::default()
+            numeric_code: 0,
+            countries: None,
         })
     }
 
@@ -156,16 +157,9 @@ impl Currency {
         self.minor_symbol
     }
 
-    pub fn countries(&self) -> Vec<Country> {
-        if let Some(countries) = self.countries {
-            countries.into()
-        } else {
-            let ret = iso_currency::Currency::from_code(self.code());
-            if let Some(curr) = ret {
-                curr.used_by()
-            } else {
-                vec![]
-            }
-        }
+    pub fn countries(&self) -> Option<Vec<Country>> {
+        self.countries
+            .map(|c| c.into())
+            .or_else(|| iso_currency::Currency::from_code(self.code()).map(|curr| curr.used_by()))
     }
 }

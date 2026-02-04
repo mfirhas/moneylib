@@ -188,7 +188,7 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     }
 
     /// Get countries using this currency
-    fn countries(&self) -> Vec<Country> {
+    fn countries(&self) -> Option<Vec<Country>> {
         self.currency().countries()
     }
 }
