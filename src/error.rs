@@ -7,7 +7,9 @@ pub enum MoneyError {
     #[error("{ERROR_PREFIX} error: {0}")]
     Error(#[from] anyhow::Error),
 
-    #[error("{ERROR_PREFIX} new currency must have code, symbol, name, and minor unit")]
+    #[error(
+        "{ERROR_PREFIX} new currency must have code, symbol, name, and minor unit atleast, and not already existed in ISO 4217"
+    )]
     NewCurrency,
 
     #[error(

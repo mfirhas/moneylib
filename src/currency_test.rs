@@ -135,6 +135,20 @@ fn test_new_all_empty() {
     assert!(matches!(result.unwrap_err(), MoneyError::NewCurrency));
 }
 
+#[test]
+fn test_new_existing_iso() {
+    let result = Currency::new("USD", "$", "United States Dollar", 2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::ExistsInISO));
+}
+
+#[test]
+fn test_new_existing_iso_case_insensitive() {
+    let result = Currency::new("uSD", "$", "United States Dollar", 2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::ExistsInISO));
+}
+
 // Test setter methods
 #[test]
 fn test_set_thousand_separator() {
@@ -415,16 +429,16 @@ fn test_ordering_ignores_modifications() {
 // Test that custom currency can have custom settings
 #[test]
 fn test_custom_currency_with_all_setters() {
-    let mut currency = Currency::new("XXX", "X", "Custom", 4).unwrap();
+    let mut currency = Currency::new("abc", "X", "The ABC", 6).unwrap();
     currency.set_thousand_separator(" ");
     currency.set_decimal_separator(",");
     currency.set_minor_symbol("parts");
     currency.set_numeric_code(999);
 
-    assert_eq!(currency.code(), "XXX");
+    assert_eq!(currency.code(), "abc");
     assert_eq!(currency.symbol(), "X");
-    assert_eq!(currency.name(), "Custom");
-    assert_eq!(currency.minor_unit(), 4);
+    assert_eq!(currency.name(), "The ABC");
+    assert_eq!(currency.minor_unit(), 6);
     assert_eq!(currency.thousand_separator(), " ");
     assert_eq!(currency.decimal_separator(), ",");
     assert_eq!(currency.minor_symbol(), "parts");
