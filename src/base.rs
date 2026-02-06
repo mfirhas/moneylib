@@ -13,12 +13,12 @@ pub(crate) const COMMA_SEPARATOR: &'static str = ",";
 pub(crate) const DOT_SEPARATOR: &'static str = ".";
 
 pub static COMMA_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    regex::Regex::new(r"^([A-Z]{3})\s+((?:\d{1,3}(?:,\d{3})*|\d+)(?:\.\d+)?)$")
+    regex::Regex::new(r"^([A-Za-z]{3})\s+((?:\d{1,3}(?:,\d{3})*|\d+)(?:\.\d+)?)$")
         .expect("failed compiling money format regex: comma thousands separator")
 });
 
 pub static DOT_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    regex::Regex::new(r"^([A-Z]{3})\s+((?:\d{1,3}(?:.\d{3})*|\d+)(?:\,\d+)?)$")
+    regex::Regex::new(r"^([A-Za-z]{3})\s+((?:\d{1,3}(?:.\d{3})*|\d+)(?:\,\d+)?)$")
         .expect("failed compiling money format regex: dot thousands separator")
 });
 
@@ -191,14 +191,6 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     fn countries(&self) -> Option<Vec<Country>> {
         self.currency().countries()
     }
-
-    fn set_thousand_separator(&mut self, separator: &'static str) {
-        self.currency().set_thousand_separator(separator);
-    }
-
-    fn set_decimal_separator(&mut self, separator: &'static str) {
-        self.currency().set_decimal_separator(separator);
-    }
 }
 
 pub trait BaseOps:
@@ -233,4 +225,10 @@ pub trait BaseOps:
     fn mul(&self, rhs: Decimal) -> MoneyResult<Self>;
 
     fn div(&self, rhs: Decimal) -> MoneyResult<Self>;
+}
+
+pub trait CustomMoney: Sized + BaseMoney {
+    fn set_thousand_separator(&mut self, separator: &'static str);
+
+    fn set_decimal_separator(&mut self, separator: &'static str);
 }

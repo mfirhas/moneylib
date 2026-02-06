@@ -4,7 +4,7 @@ pub use iso_currency::Country;
 pub use rust_decimal::Decimal;
 
 mod base;
-pub use base::{BaseMoney, BaseOps};
+pub use base::{BaseMoney, BaseOps, CustomMoney};
 
 mod error;
 pub use error::MoneyError;

@@ -3,7 +3,7 @@ use std::{fmt::Display, str::FromStr};
 use crate::{
     BaseMoney, Currency, Decimal, MoneyError, MoneyResult,
     base::{
-        BaseOps, COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, DOT_SEPARATOR,
+        BaseOps, COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, CustomMoney, DOT_SEPARATOR,
         DOT_THOUSANDS_SEPARATOR_REGEX,
     },
 };
@@ -50,7 +50,7 @@ impl FromStr for Money {
             .parse::<Currency>()
             .map_err(|_| MoneyError::InvalidCurrency)?;
 
-        let amount_str = if COMMA_THOUSANDS_SEPARATOR_REGEX.is_match(money_parts[1]) {
+        let amount_str = if COMMA_THOUSANDS_SEPARATOR_REGEX.is_match(s) {
             currency.set_thousand_separator(COMMA_SEPARATOR);
             currency.set_decimal_separator(DOT_SEPARATOR);
 
@@ -58,7 +58,7 @@ impl FromStr for Money {
             // remove commas
             let amount_str: String = money_parts[1].chars().filter(|&c| c != comma).collect();
             amount_str
-        } else if DOT_THOUSANDS_SEPARATOR_REGEX.is_match(money_parts[1]) {
+        } else if DOT_THOUSANDS_SEPARATOR_REGEX.is_match(s) {
             currency.set_thousand_separator(DOT_SEPARATOR);
             currency.set_decimal_separator(COMMA_SEPARATOR);
 
@@ -177,5 +177,15 @@ impl BaseOps for Money {
                 .ok_or(MoneyError::ArithmeticOverflow)?,
         }
         .round())
+    }
+}
+
+impl CustomMoney for Money {
+    fn set_thousand_separator(&mut self, separator: &'static str) {
+        self.currency.set_thousand_separator(separator);
+    }
+
+    fn set_decimal_separator(&mut self, separator: &'static str) {
+        self.currency.set_decimal_separator(separator);
     }
 }
