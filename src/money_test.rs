@@ -116,6 +116,20 @@ fn test_partial_ord_different_currency_returns_none() {
 }
 
 #[test]
+fn test_partial_ord_different_currency_operators_return_false() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let eur = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(usd, dec!(100.00));
+    let money2 = Money::new(eur, dec!(100.00));
+    
+    // When partial_cmp returns None, all comparison operators return false
+    assert_eq!(money1 < money2, false);
+    assert_eq!(money1 > money2, false);
+    assert_eq!(money1 <= money2, false);
+    assert_eq!(money1 >= money2, false);
+}
+
+#[test]
 fn test_partial_ord_negative_amounts() {
     let currency = Currency::from_iso("USD").unwrap();
     let money1 = Money::new(currency, dec!(-200.00));
@@ -446,6 +460,13 @@ fn test_base_money_format_symbol() {
 }
 
 #[test]
+fn test_base_money_format_symbol_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(-1234.56));
+    assert_eq!(money.format_symbol(), "-$1,234.56");
+}
+
+#[test]
 fn test_base_money_format_code_minor() {
     let currency = Currency::from_iso("USD").unwrap();
     let money = Money::new(currency, dec!(1234.56));
@@ -461,6 +482,8 @@ fn test_base_money_format_code_minor_negative() {
     let formatted = money.format_code_minor().unwrap();
     assert!(formatted.contains("USD"));
     assert!(formatted.contains("-123,456"));
+    // Assert full display string
+    assert_eq!(formatted, "USD -123,456 ¢");
 }
 
 #[test]
@@ -470,6 +493,8 @@ fn test_base_money_format_symbol_minor() {
     let formatted = money.format_symbol_minor().unwrap();
     assert!(formatted.contains("$"));
     assert!(formatted.contains("123,456"));
+    // Assert full display string
+    assert_eq!(formatted, "$123,456 ¢");
 }
 
 #[test]
