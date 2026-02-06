@@ -188,4 +188,13 @@ impl CustomMoney for Money {
     fn set_decimal_separator(&mut self, separator: &'static str) {
         self.currency.set_decimal_separator(separator);
     }
+
+    fn round_with(self, decimal_points: u32, strategy: crate::base::RoundingStrategy) -> Self {
+        Self {
+            currency: self.currency,
+            amount: self
+                .amount
+                .round_dp_with_strategy(decimal_points, strategy.into()),
+        }
+    }
 }

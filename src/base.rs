@@ -2,6 +2,7 @@ use crate::{Country, Currency, MoneyError};
 use crate::{Decimal, MoneyResult};
 use accounting::Accounting;
 use regex::Regex;
+use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 use rust_decimal_macros::dec;
 use std::fmt::Display;
@@ -227,8 +228,34 @@ pub trait BaseOps:
     fn div(&self, rhs: Decimal) -> MoneyResult<Self>;
 }
 
+pub enum RoundingStrategy {
+    BankersRounding,
+
+    HalfUp,
+
+    HalfDown,
+
+    Ceil,
+
+    Floor,
+}
+
+impl From<RoundingStrategy> for DecimalRoundingStrategy {
+    fn from(value: RoundingStrategy) -> Self {
+        match value {
+            RoundingStrategy::BankersRounding => DecimalRoundingStrategy::MidpointNearestEven,
+            RoundingStrategy::HalfUp => DecimalRoundingStrategy::MidpointAwayFromZero,
+            RoundingStrategy::HalfDown => DecimalRoundingStrategy::MidpointTowardZero,
+            RoundingStrategy::Ceil => DecimalRoundingStrategy::AwayFromZero,
+            RoundingStrategy::Floor => DecimalRoundingStrategy::ToZero,
+        }
+    }
+}
+
 pub trait CustomMoney: Sized + BaseMoney {
     fn set_thousand_separator(&mut self, separator: &'static str);
 
     fn set_decimal_separator(&mut self, separator: &'static str);
+
+    fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self;
 }
