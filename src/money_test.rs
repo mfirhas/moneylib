@@ -165,12 +165,6 @@ fn test_from_str_zero_amount() {
 }
 
 #[test]
-fn test_from_str_zero_amount_with_dec_0() {
-    let money = Money::from_str("USD 0.00").unwrap();
-    assert_eq!(money.amount(), dec!(0));
-}
-
-#[test]
 fn test_from_str_zero_amount_variations() {
     // Test 0.00 money compared with dec!(0)
     let money1 = Money::from_str("USD 0.00").unwrap();
