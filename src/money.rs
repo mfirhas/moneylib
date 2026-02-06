@@ -3,7 +3,8 @@ use std::{fmt::Display, str::FromStr};
 use crate::{
     BaseMoney, Currency, Decimal, MoneyError, MoneyResult,
     base::{
-        BaseOps, COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, DOT_THOUSANDS_SEPARATOR_REGEX,
+        BaseOps, COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, DOT_SEPARATOR,
+        DOT_THOUSANDS_SEPARATOR_REGEX,
     },
 };
 
@@ -45,27 +46,30 @@ impl FromStr for Money {
             return Err(MoneyError::ParseStr);
         }
 
-        let currency = money_parts[0]
+        let mut currency = money_parts[0]
             .parse::<Currency>()
             .map_err(|_| MoneyError::InvalidCurrency)?;
 
-        let amount_str = if currency.thousand_separator() == COMMA_SEPARATOR
-            && COMMA_THOUSANDS_SEPARATOR_REGEX.is_match(money_parts[1])
-        {
+        let amount_str = if COMMA_THOUSANDS_SEPARATOR_REGEX.is_match(money_parts[1]) {
+            currency.set_thousand_separator(COMMA_SEPARATOR);
+            currency.set_decimal_separator(DOT_SEPARATOR);
+
             let comma = ',';
             // remove commas
             let amount_str: String = money_parts[1].chars().filter(|&c| c != comma).collect();
             amount_str
-        } else {
-            if !DOT_THOUSANDS_SEPARATOR_REGEX.is_match(money_parts[1]) {
-                return Err(MoneyError::ParseStr);
-            }
+        } else if DOT_THOUSANDS_SEPARATOR_REGEX.is_match(money_parts[1]) {
+            currency.set_thousand_separator(DOT_SEPARATOR);
+            currency.set_decimal_separator(COMMA_SEPARATOR);
+
             let dot = '.';
             // remove dots
             let amount_str: String = money_parts[1].chars().filter(|&c| c != dot).collect();
             // convert comma to dot
             let amount_str: String = amount_str.replace(',', ".");
             amount_str
+        } else {
+            return Err(MoneyError::ParseStr);
         };
 
         let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;

@@ -18,7 +18,7 @@ pub enum MoneyError {
     ExistsInISO,
 
     #[error(
-        "{ERROR_PREFIX} failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator."
+        "{ERROR_PREFIX} failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator of `,` or `.`."
     )]
     ParseStr,
 
