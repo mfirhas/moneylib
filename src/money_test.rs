@@ -337,6 +337,37 @@ fn test_from_str_no_thousands_separator_various() {
     }
 }
 
+#[test]
+fn test_from_str_edge_case_variations() {
+    // Test various edge cases with different decimal formats
+    let tests = vec![
+        // USD with extra zeros after decimal
+        ("USD 100.000", dec!(100.00)),   // Decimal .000 rounds to .00
+        ("USD 100.0000", dec!(100.00)),  // Decimal .0000 rounds to .00
+        ("USD 100,000", dec!(100000.00)), // Comma as thousands separator: 100,000
+        ("USD 100,0000", dec!(100.00)),  // Matches pattern but results in 100.00
+        
+        // EUR with extra zeros  
+        ("EUR 100.000", dec!(100.00)),   // Decimal .000 rounds to .00
+        ("EUR 100.0000", dec!(100.00)),  // Decimal .0000 rounds to .00
+        ("EUR 100,000", dec!(100000.00)), // Comma as decimal in EUR format: 100,000
+        ("EUR 100,0000", dec!(100.00)),  // Matches pattern but results in 100.00
+        
+        // USD 1000 variations
+        ("USD 1000,000", dec!(1000.00)), // Matches dot regex, comma as decimal separator
+        ("USD 1000.000", dec!(1000.00)), // Decimal .000 rounds to .00
+        
+        // EUR 1000 variations
+        ("EUR 1000,000", dec!(1000.00)), // Comma as decimal: rounds to .00
+        ("EUR 1000.000", dec!(1000.00)), // Decimal .000 rounds to .00
+    ];
+    
+    for (input, expected) in tests {
+        let money = Money::from_str(input).unwrap();
+        assert_eq!(money.amount(), expected, "Failed for input: {}", input);
+    }
+}
+
 // ==================== Display Tests ====================
 
 #[test]
