@@ -165,6 +165,40 @@ fn test_from_str_zero_amount() {
 }
 
 #[test]
+fn test_from_str_zero_amount_with_dec_0() {
+    let money = Money::from_str("USD 0.00").unwrap();
+    assert_eq!(money.amount(), dec!(0));
+}
+
+#[test]
+fn test_from_str_zero_amount_variations() {
+    // Test 0.00 money compared with dec!(0)
+    let money1 = Money::from_str("USD 0.00").unwrap();
+    assert_eq!(money1.amount(), dec!(0));
+    
+    // Test dec!(0) compared with 0.00
+    let currency = Currency::from_iso("USD").unwrap();
+    let money2 = Money::new(currency, dec!(0));
+    assert_eq!(money2.amount(), dec!(0.00));
+    
+    // Test with more zeros after decimal point
+    let money3 = Money::from_str("USD 0.000").unwrap();
+    assert_eq!(money3.amount(), dec!(0.000));
+    
+    let money4 = Money::from_str("USD 0.0000").unwrap();
+    assert_eq!(money4.amount(), dec!(0.0000));
+    
+    let money5 = Money::from_str("USD 0.00000").unwrap();
+    assert_eq!(money5.amount(), dec!(0.00000));
+    
+    // All should be equal
+    assert_eq!(money1.amount(), money2.amount());
+    assert_eq!(money2.amount(), money3.amount());
+    assert_eq!(money3.amount(), money4.amount());
+    assert_eq!(money4.amount(), money5.amount());
+}
+
+#[test]
 fn test_from_str_with_whitespace() {
     let money = Money::from_str("  USD 100.50  ").unwrap();
     assert_eq!(money.amount(), dec!(100.50));
