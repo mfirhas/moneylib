@@ -191,6 +191,14 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     fn countries(&self) -> Option<Vec<Country>> {
         self.currency().countries()
     }
+
+    fn set_thousand_separator(&mut self, separator: &'static str) {
+        self.currency().set_thousand_separator(separator);
+    }
+
+    fn set_decimal_separator(&mut self, separator: &'static str) {
+        self.currency().set_decimal_separator(separator);
+    }
 }
 
 pub trait BaseOps:
