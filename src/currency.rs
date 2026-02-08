@@ -68,9 +68,9 @@ impl Currency {
         let ret =
             iso_currency::Currency::from_code(&iso_code).ok_or(MoneyError::InvalidCurrency)?;
         let currency = Currency {
-            code: ret.code(),
-            symbol: ret.symbol().symbol,
-            name: ret.name(),
+            code: Box::leak(ret.code().to_string().into_boxed_str()),
+            symbol: Box::leak(ret.symbol().symbol.into_boxed_str()),
+            name: Box::leak(ret.name().to_string().into_boxed_str()),
             minor_unit: ret.exponent().unwrap_or_default(),
             numeric_code: ret.numeric() as i32,
             thousand_separator: COMMA_SEPARATOR,
@@ -78,6 +78,7 @@ impl Currency {
             minor_symbol: ret
                 .symbol()
                 .subunit_symbol
+                .map(|s| Box::leak(s.into_boxed_str()) as &'static str)
                 .unwrap_or(DEFAULT_MINOR_UNIT_SYMBOL),
 
             rounding_strategy: Default::default(),
