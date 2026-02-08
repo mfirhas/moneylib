@@ -1604,8 +1604,8 @@ fn test_round_with_ceil_strategy() {
     let mut currency = Currency::from_iso("USD").unwrap();
     currency.set_rounding_strategy(RoundingStrategy::Ceil);
 
-    // Ceil always rounds away from zero
-    // Test 0.121 -> 0.13
+    // Ceil strategy (AwayFromZero) rounds away from zero in both directions
+    // Test 0.121 -> 0.13 (rounds up, away from zero)
     let money1 = Money::new(currency, dec!(0.121));
     assert_eq!(money1.amount(), dec!(0.13));
 
@@ -1623,8 +1623,9 @@ fn test_round_with_ceil_strategy_negative() {
     let mut currency = Currency::from_iso("USD").unwrap();
     currency.set_rounding_strategy(RoundingStrategy::Ceil);
 
-    // For negative numbers, ceil rounds toward zero
-    // Test -0.121 -> -0.13 (away from zero)
+    // Ceil strategy (AwayFromZero) rounds away from zero
+    // For negative numbers, this means rounding down (more negative)
+    // Test -0.121 -> -0.13 (rounds down, away from zero)
     let money1 = Money::new(currency, dec!(-0.121));
     assert_eq!(money1.amount(), dec!(-0.13));
 
@@ -1638,8 +1639,9 @@ fn test_round_with_floor_strategy() {
     let mut currency = Currency::from_iso("USD").unwrap();
     currency.set_rounding_strategy(RoundingStrategy::Floor);
 
-    // Floor always rounds toward zero
-    // Test 0.129 -> 0.12
+    // Floor strategy (ToZero) rounds toward zero in both directions
+    // For positive numbers, this means rounding down
+    // Test 0.129 -> 0.12 (rounds down, toward zero)
     let money1 = Money::new(currency, dec!(0.129));
     assert_eq!(money1.amount(), dec!(0.12));
 
@@ -1657,8 +1659,9 @@ fn test_round_with_floor_strategy_negative() {
     let mut currency = Currency::from_iso("USD").unwrap();
     currency.set_rounding_strategy(RoundingStrategy::Floor);
 
-    // For negative numbers, floor rounds toward zero
-    // Test -0.129 -> -0.12
+    // Floor strategy (ToZero) rounds toward zero
+    // For negative numbers, this means rounding up (less negative)
+    // Test -0.129 -> -0.12 (rounds up, toward zero)
     let money1 = Money::new(currency, dec!(-0.129));
     assert_eq!(money1.amount(), dec!(-0.12));
 
