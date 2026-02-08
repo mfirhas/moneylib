@@ -29,14 +29,3 @@ mod currency_test;
 
 #[cfg(test)]
 mod money_test;
-
-#[test]
-fn asd() {
-    use iso_currency::Currency;
-    println!("{:?}", Currency::USD.symbol().subunit_symbol);
-    println!("{:?}", Currency::IDR.symbol().subunit_symbol);
-    println!("{:?}", Currency::USD.name());
-
-    // let a = Country::
-    // let a = Currency::
-}
