@@ -22,7 +22,7 @@ impl Add for Money {
             .checked_add(rhs.amount())
             .expect("addition operation overflow");
 
-        let ret = Self::new(self.currency(), ret).round();
+        let ret = Self::new(self.currency(), ret);
 
         ret
     }
@@ -46,7 +46,7 @@ impl Sub for Money {
             .checked_sub(rhs.amount())
             .expect("substraction operation overflow");
 
-        let ret = Self::new(self.currency(), ret).round();
+        let ret = Self::new(self.currency(), ret);
 
         ret
     }
@@ -70,7 +70,7 @@ impl Mul for Money {
             .checked_mul(rhs.amount())
             .expect("multiplication operation overflow");
 
-        let ret = Self::new(self.currency(), ret).round();
+        let ret = Self::new(self.currency(), ret);
 
         ret
     }
@@ -96,7 +96,7 @@ impl Div for Money {
             .checked_div(rhs.amount())
             .expect("division operation overflow");
 
-        let ret = Self::new(self.currency(), ret).round();
+        let ret = Self::new(self.currency(), ret);
 
         ret
     }
@@ -117,7 +117,7 @@ impl AddAssign for Money {
             .checked_add(other.amount())
             .expect("addition operation overflow");
 
-        let ret = Money::new(self.currency(), ret).round();
+        let ret = Money::new(self.currency(), ret);
 
         *self = ret
     }
@@ -138,7 +138,7 @@ impl SubAssign for Money {
             .checked_sub(other.amount())
             .expect("subtraction operation overflow");
 
-        let ret = Money::new(self.currency(), ret).round();
+        let ret = Money::new(self.currency(), ret);
 
         *self = ret
     }
@@ -159,7 +159,7 @@ impl MulAssign for Money {
             .checked_mul(other.amount())
             .expect("multiplication operation overflow");
 
-        let ret = Money::new(self.currency(), ret).round();
+        let ret = Money::new(self.currency(), ret);
 
         *self = ret
     }
@@ -183,7 +183,7 @@ impl DivAssign for Money {
             .checked_div(other.amount())
             .expect("division operation failed");
 
-        let ret = Money::new(self.currency(), ret).round();
+        let ret = Money::new(self.currency(), ret);
 
         *self = ret
     }
