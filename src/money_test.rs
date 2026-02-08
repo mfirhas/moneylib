@@ -1516,11 +1516,11 @@ fn test_round_with_bankers_rounding_half_to_even() {
 fn test_round_with_bankers_rounding_negative() {
     let currency = Currency::from_iso("USD").unwrap();
 
-    // Test -0.125 -> -0.12 (away from zero to even)
+    // Test -0.125 -> -0.12 (rounds to even: 2 is even)
     let money1 = Money::new(currency, dec!(-0.125));
     assert_eq!(money1.amount(), dec!(-0.12));
 
-    // Test -0.135 -> -0.14 (toward zero to even)
+    // Test -0.135 -> -0.14 (rounds to even: 4 is even)
     let money2 = Money::new(currency, dec!(-0.135));
     assert_eq!(money2.amount(), dec!(-0.14));
 }
@@ -1693,15 +1693,15 @@ fn test_round_with_bhd_three_decimal_places() {
     // BHD (Bahraini Dinar) has 3 decimal places
     let currency = Currency::from_iso("BHD").unwrap();
 
-    // Test 1.2345 -> 1.234 (banker's rounding: 4 is even, round down)
+    // Test 1.2345 -> 1.234 (banker's rounding: rounds to even, digit at position is 4 which is even)
     let money1 = Money::new(currency, dec!(1.2345));
     assert_eq!(money1.amount(), dec!(1.234));
 
-    // Test 1.2355 -> 1.236 (banker's rounding: 5 is odd, round up)
+    // Test 1.2355 -> 1.236 (banker's rounding: rounds to even, digit at position is 5 which is odd, so round up to 6)
     let money2 = Money::new(currency, dec!(1.2355));
     assert_eq!(money2.amount(), dec!(1.236));
 
-    // Test 1.2365 -> 1.236 (banker's rounding: 6 is even, round down)
+    // Test 1.2365 -> 1.236 (banker's rounding: rounds to even, digit at position is 6 which is even)
     let money3 = Money::new(currency, dec!(1.2365));
     assert_eq!(money3.amount(), dec!(1.236));
 }
