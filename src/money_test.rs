@@ -1400,3 +1400,70 @@ fn test_is_positive_zero() {
     assert!(money.is_positive());
     assert!(!money.is_negative());
 }
+
+// ==================== Rounding Tests for abs, min, max, clamp ====================
+
+#[test]
+fn test_abs_applies_rounding() {
+    // Test that abs() applies banker's rounding
+    // Create a money with more precision than currency supports
+    let currency = Currency::from_iso("USD").unwrap(); // USD has 2 decimal places
+    
+    // Manually create money with unrounded amount using abs operation
+    // This test will fail before the fix and pass after
+    let money = Money::new(currency, dec!(-100.125));
+    // Money::new already rounds to -100.12, so amount is -100.12
+    // abs() should maintain rounding: 100.12
+    let abs_money = money.abs();
+    assert_eq!(abs_money.amount(), dec!(100.12), "abs() should maintain proper rounding");
+}
+
+#[test]
+fn test_min_applies_rounding() {
+    // Test that min() applies banker's rounding
+    let currency = Currency::from_iso("USD").unwrap(); // USD has 2 decimal places
+    
+    let money1 = Money::new(currency, dec!(100.125)); // rounds to 100.12
+    let money2 = Money::new(currency, dec!(100.135)); // rounds to 100.14
+    
+    let min_money = money1.min(money2);
+    // min should return money1 (100.12) which is already rounded
+    assert_eq!(min_money.amount(), dec!(100.12), "min() should maintain proper rounding");
+}
+
+#[test]
+fn test_max_applies_rounding() {
+    // Test that max() applies banker's rounding
+    let currency = Currency::from_iso("USD").unwrap(); // USD has 2 decimal places
+    
+    let money1 = Money::new(currency, dec!(100.125)); // rounds to 100.12
+    let money2 = Money::new(currency, dec!(100.135)); // rounds to 100.14
+    
+    let max_money = money1.max(money2);
+    // max should return money2 (100.14) which is already rounded
+    assert_eq!(max_money.amount(), dec!(100.14), "max() should maintain proper rounding");
+}
+
+#[test]
+fn test_clamp_applies_rounding() {
+    // Test that clamp() applies banker's rounding when clamping to bounds
+    let currency = Currency::from_iso("USD").unwrap(); // USD has 2 decimal places
+    
+    let money = Money::new(currency, dec!(50.00));
+    // Clamp to a range where the bound has more precision than currency supports
+    let clamped = money.clamp(dec!(100.125), dec!(200.135));
+    // Should clamp to 100.125, but Money should round it to 100.12
+    assert_eq!(clamped.amount(), dec!(100.12), "clamp() should apply banker's rounding to result");
+}
+
+#[test]
+fn test_clamp_applies_rounding_upper_bound() {
+    // Test that clamp() applies banker's rounding when clamping to upper bound
+    let currency = Currency::from_iso("USD").unwrap(); // USD has 2 decimal places
+    
+    let money = Money::new(currency, dec!(300.00));
+    // Clamp to a range where the upper bound has more precision
+    let clamped = money.clamp(dec!(100.00), dec!(200.135));
+    // Should clamp to 200.135, but Money should round it to 200.14
+    assert_eq!(clamped.amount(), dec!(200.14), "clamp() should apply banker's rounding to upper bound");
+}

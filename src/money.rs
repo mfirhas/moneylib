@@ -114,6 +114,7 @@ impl BaseOps for Money {
             currency: self.currency,
             amount: self.amount.abs(),
         }
+        .round()
     }
 
     fn min(&self, rhs: Self) -> Self {
@@ -121,6 +122,7 @@ impl BaseOps for Money {
             currency: self.currency,
             amount: self.amount.min(rhs.amount),
         }
+        .round()
     }
 
     fn max(&self, rhs: Self) -> Self {
@@ -128,6 +130,7 @@ impl BaseOps for Money {
             currency: self.currency,
             amount: self.amount.max(rhs.amount),
         }
+        .round()
     }
 
     /// clamp the money amount between `from` and `to` inclusively.
@@ -136,6 +139,7 @@ impl BaseOps for Money {
             currency: self.currency,
             amount: self.amount.clamp(from, to),
         }
+        .round()
     }
 
     fn add(&self, rhs: Decimal) -> MoneyResult<Self> {
