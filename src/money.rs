@@ -99,7 +99,7 @@ impl BaseMoney for Money {
         self.amount
     }
 
-    /// Round money using Banker's Rounding rule to the scale of currency's minor unit
+    /// Round money using `Currency`'s rounding strategy to the scale of currency's minor unit
     fn round(self) -> Self {
         Self {
             currency: self.currency,

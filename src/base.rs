@@ -33,7 +33,7 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     /// Get amount of money
     fn amount(&self) -> Decimal;
 
-    /// Round money using Banker's Rounding rule to the scale of currency's minor unit
+    /// Round money using `Currency`'s rounding strategy to the scale of currency's minor unit
     fn round(self) -> Self;
 
     // PROVIDED
