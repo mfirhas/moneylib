@@ -18,8 +18,9 @@ impl Money {
     pub fn new(currency: Currency, amount: Decimal) -> Self {
         Money {
             currency,
-            amount: amount.round_dp(currency.minor_unit() as u32),
+            amount: amount,
         }
+        .round()
     }
 }
 
@@ -76,9 +77,8 @@ impl FromStr for Money {
         };
 
         let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
-        let amount = amount.round_dp(currency.minor_unit() as u32);
 
-        Ok(Self { currency, amount })
+        Ok(Self { currency, amount }.round())
     }
 }
 
@@ -103,7 +103,10 @@ impl BaseMoney for Money {
     fn round(self) -> Self {
         Self {
             currency: self.currency,
-            amount: self.amount.round_dp(self.currency().minor_unit() as u32),
+            amount: self.amount.round_dp_with_strategy(
+                self.currency().minor_unit() as u32,
+                self.currency.rounding_strategy().into(),
+            ),
         }
     }
 }

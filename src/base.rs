@@ -73,7 +73,6 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     fn minor_amount(&self) -> MoneyResult<i128> {
         Ok(self
             .amount()
-            .round_dp(self.minor_unit() as u32)
             .checked_mul(dec!(10).powu(self.minor_unit() as u64))
             .ok_or(MoneyError::ArithmeticOverflow)?
             .to_i128()
@@ -228,6 +227,7 @@ pub trait BaseOps:
     fn div(&self, rhs: Decimal) -> MoneyResult<Self>;
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RoundingStrategy {
     BankersRounding,
 
@@ -238,6 +238,12 @@ pub enum RoundingStrategy {
     Ceil,
 
     Floor,
+}
+
+impl Default for RoundingStrategy {
+    fn default() -> Self {
+        Self::BankersRounding
+    }
 }
 
 impl From<RoundingStrategy> for DecimalRoundingStrategy {

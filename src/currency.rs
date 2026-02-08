@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::Country;
+use crate::{Country, RoundingStrategy};
 
 use crate::{
     MoneyError, MoneyResult,
@@ -20,6 +20,8 @@ pub struct Currency {
     thousand_separator: &'static str,
     decimal_separator: &'static str,
     minor_symbol: &'static str,
+
+    rounding_strategy: RoundingStrategy,
 
     countries: Option<&'static [Country]>,
 }
@@ -78,6 +80,8 @@ impl Currency {
                 .subunit_symbol
                 .unwrap_or(DEFAULT_MINOR_UNIT_SYMBOL),
 
+            rounding_strategy: Default::default(),
+
             countries: None,
         };
 
@@ -115,6 +119,9 @@ impl Currency {
             decimal_separator: DOT_SEPARATOR,
             minor_symbol: DEFAULT_MINOR_UNIT_SYMBOL,
             numeric_code: 0,
+
+            rounding_strategy: Default::default(),
+
             countries: None,
         })
     }
@@ -133,6 +140,10 @@ impl Currency {
 
     pub fn set_numeric_code(&mut self, numeric_code: i32) {
         self.numeric_code = numeric_code;
+    }
+
+    pub fn set_rounding_strategy(&mut self, strategy: RoundingStrategy) {
+        self.rounding_strategy = strategy
     }
 
     pub fn set_countries(&mut self, countries: &'static [Country]) {
@@ -177,6 +188,11 @@ impl Currency {
     #[inline]
     pub fn minor_symbol(&self) -> &'static str {
         self.minor_symbol
+    }
+
+    #[inline]
+    pub fn rounding_strategy(&self) -> RoundingStrategy {
+        self.rounding_strategy
     }
 
     pub fn countries(&self) -> Option<Vec<Country>> {
