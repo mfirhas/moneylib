@@ -16,7 +16,10 @@ pub struct Money {
 
 impl Money {
     pub fn new(currency: Currency, amount: Decimal) -> Self {
-        Money { currency, amount }
+        Money {
+            currency,
+            amount: amount.round_dp(currency.minor_unit() as u32),
+        }
     }
 }
 
