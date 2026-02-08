@@ -1693,15 +1693,15 @@ fn test_round_with_bhd_three_decimal_places() {
     // BHD (Bahraini Dinar) has 3 decimal places
     let currency = Currency::from_iso("BHD").unwrap();
 
-    // Test 1.2345 -> 1.234 (banker's rounding: rounds to even, digit at position is 4 which is even)
+    // Test 1.2345 -> 1.234 (at midpoint, round to keep last digit 4 even)
     let money1 = Money::new(currency, dec!(1.2345));
     assert_eq!(money1.amount(), dec!(1.234));
 
-    // Test 1.2355 -> 1.236 (banker's rounding: rounds to even, digit at position is 5 which is odd, so round up to 6)
+    // Test 1.2355 -> 1.236 (at midpoint, round up to make last digit even: 6)
     let money2 = Money::new(currency, dec!(1.2355));
     assert_eq!(money2.amount(), dec!(1.236));
 
-    // Test 1.2365 -> 1.236 (banker's rounding: rounds to even, digit at position is 6 which is even)
+    // Test 1.2365 -> 1.236 (at midpoint, last digit 6 is already even, round down)
     let money3 = Money::new(currency, dec!(1.2365));
     assert_eq!(money3.amount(), dec!(1.236));
 }
