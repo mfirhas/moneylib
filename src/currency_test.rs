@@ -444,3 +444,97 @@ fn test_custom_currency_with_all_setters() {
     assert_eq!(currency.minor_symbol(), "parts");
     assert_eq!(currency.numeric_code(), 999);
 }
+
+// ==================== RoundingStrategy Tests ====================
+
+use crate::RoundingStrategy;
+
+#[test]
+fn test_default_rounding_strategy() {
+    let currency = Currency::from_iso("USD").unwrap();
+    assert_eq!(
+        currency.rounding_strategy(),
+        RoundingStrategy::BankersRounding
+    );
+}
+
+#[test]
+fn test_custom_currency_default_rounding_strategy() {
+    let currency = Currency::new("TST", "$", "Test Currency", 2).unwrap();
+    assert_eq!(
+        currency.rounding_strategy(),
+        RoundingStrategy::BankersRounding
+    );
+}
+
+#[test]
+fn test_set_rounding_strategy_half_up() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::HalfUp);
+    assert_eq!(currency.rounding_strategy(), RoundingStrategy::HalfUp);
+}
+
+#[test]
+fn test_set_rounding_strategy_half_down() {
+    let mut currency = Currency::from_iso("EUR").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::HalfDown);
+    assert_eq!(currency.rounding_strategy(), RoundingStrategy::HalfDown);
+}
+
+#[test]
+fn test_set_rounding_strategy_ceil() {
+    let mut currency = Currency::from_iso("GBP").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::Ceil);
+    assert_eq!(currency.rounding_strategy(), RoundingStrategy::Ceil);
+}
+
+#[test]
+fn test_set_rounding_strategy_floor() {
+    let mut currency = Currency::from_iso("JPY").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::Floor);
+    assert_eq!(currency.rounding_strategy(), RoundingStrategy::Floor);
+}
+
+#[test]
+fn test_set_rounding_strategy_bankers() {
+    let mut currency = Currency::from_iso("CHF").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::BankersRounding);
+    assert_eq!(
+        currency.rounding_strategy(),
+        RoundingStrategy::BankersRounding
+    );
+}
+
+#[test]
+fn test_rounding_strategy_immutable_from_iso() {
+    let currency1 = Currency::from_iso("USD").unwrap();
+    let currency2 = Currency::from_iso("USD").unwrap();
+    // Both should have the default strategy
+    assert_eq!(currency1.rounding_strategy(), currency2.rounding_strategy());
+}
+
+#[test]
+fn test_rounding_strategy_multiple_changes() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+
+    currency.set_rounding_strategy(RoundingStrategy::HalfUp);
+    assert_eq!(currency.rounding_strategy(), RoundingStrategy::HalfUp);
+
+    currency.set_rounding_strategy(RoundingStrategy::Ceil);
+    assert_eq!(currency.rounding_strategy(), RoundingStrategy::Ceil);
+
+    currency.set_rounding_strategy(RoundingStrategy::Floor);
+    assert_eq!(currency.rounding_strategy(), RoundingStrategy::Floor);
+}
+
+#[test]
+fn test_equality_ignores_rounding_strategy() {
+    let mut currency1 = Currency::from_iso("USD").unwrap();
+    let mut currency2 = Currency::from_iso("USD").unwrap();
+
+    currency1.set_rounding_strategy(RoundingStrategy::HalfUp);
+    currency2.set_rounding_strategy(RoundingStrategy::Floor);
+
+    // Currencies should still be equal based on code
+    assert_eq!(currency1, currency2);
+}

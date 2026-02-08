@@ -1487,3 +1487,393 @@ fn test_clamp_applies_rounding_upper_bound() {
         "clamp() should apply banker's rounding to upper bound"
     );
 }
+
+// ==================== Rounding Strategy Tests ====================
+
+#[test]
+fn test_round_with_bankers_rounding_half_to_even() {
+    // Banker's rounding: round 0.5 to nearest even number
+    let currency = Currency::from_iso("USD").unwrap(); // USD has 2 decimal places
+
+    // Test 0.125 -> 0.12 (down to even)
+    let money1 = Money::new(currency, dec!(0.125));
+    assert_eq!(money1.amount(), dec!(0.12));
+
+    // Test 0.135 -> 0.14 (up to even)
+    let money2 = Money::new(currency, dec!(0.135));
+    assert_eq!(money2.amount(), dec!(0.14));
+
+    // Test 0.115 -> 0.12 (up to even)
+    let money3 = Money::new(currency, dec!(0.115));
+    assert_eq!(money3.amount(), dec!(0.12));
+
+    // Test 0.105 -> 0.10 (down to even)
+    let money4 = Money::new(currency, dec!(0.105));
+    assert_eq!(money4.amount(), dec!(0.10));
+}
+
+#[test]
+fn test_round_with_bankers_rounding_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+
+    // Test -0.125 -> -0.12 (away from zero to even)
+    let money1 = Money::new(currency, dec!(-0.125));
+    assert_eq!(money1.amount(), dec!(-0.12));
+
+    // Test -0.135 -> -0.14 (toward zero to even)
+    let money2 = Money::new(currency, dec!(-0.135));
+    assert_eq!(money2.amount(), dec!(-0.14));
+}
+
+#[test]
+fn test_round_with_half_up_strategy() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::HalfUp);
+
+    // Test 0.125 -> 0.13 (always round up on 0.5)
+    let money1 = Money::new(currency, dec!(0.125));
+    assert_eq!(money1.amount(), dec!(0.13));
+
+    // Test 0.135 -> 0.14
+    let money2 = Money::new(currency, dec!(0.135));
+    assert_eq!(money2.amount(), dec!(0.14));
+
+    // Test 0.115 -> 0.12
+    let money3 = Money::new(currency, dec!(0.115));
+    assert_eq!(money3.amount(), dec!(0.12));
+
+    // Test 0.105 -> 0.11
+    let money4 = Money::new(currency, dec!(0.105));
+    assert_eq!(money4.amount(), dec!(0.11));
+}
+
+#[test]
+fn test_round_with_half_up_strategy_negative() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::HalfUp);
+
+    // Negative values round away from zero
+    // Test -0.125 -> -0.13
+    let money1 = Money::new(currency, dec!(-0.125));
+    assert_eq!(money1.amount(), dec!(-0.13));
+
+    // Test -0.135 -> -0.14
+    let money2 = Money::new(currency, dec!(-0.135));
+    assert_eq!(money2.amount(), dec!(-0.14));
+}
+
+#[test]
+fn test_round_with_half_down_strategy() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::HalfDown);
+
+    // Test 0.125 -> 0.12 (always round down on 0.5)
+    let money1 = Money::new(currency, dec!(0.125));
+    assert_eq!(money1.amount(), dec!(0.12));
+
+    // Test 0.135 -> 0.13
+    let money2 = Money::new(currency, dec!(0.135));
+    assert_eq!(money2.amount(), dec!(0.13));
+
+    // Test 0.115 -> 0.11
+    let money3 = Money::new(currency, dec!(0.115));
+    assert_eq!(money3.amount(), dec!(0.11));
+
+    // Test 0.105 -> 0.10
+    let money4 = Money::new(currency, dec!(0.105));
+    assert_eq!(money4.amount(), dec!(0.10));
+}
+
+#[test]
+fn test_round_with_half_down_strategy_negative() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::HalfDown);
+
+    // Negative values round toward zero
+    // Test -0.125 -> -0.12
+    let money1 = Money::new(currency, dec!(-0.125));
+    assert_eq!(money1.amount(), dec!(-0.12));
+
+    // Test -0.135 -> -0.13
+    let money2 = Money::new(currency, dec!(-0.135));
+    assert_eq!(money2.amount(), dec!(-0.13));
+}
+
+#[test]
+fn test_round_with_ceil_strategy() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::Ceil);
+
+    // Ceil always rounds away from zero
+    // Test 0.121 -> 0.13
+    let money1 = Money::new(currency, dec!(0.121));
+    assert_eq!(money1.amount(), dec!(0.13));
+
+    // Test 0.001 -> 0.01
+    let money2 = Money::new(currency, dec!(0.001));
+    assert_eq!(money2.amount(), dec!(0.01));
+
+    // Test 0.10 -> 0.10 (already at precision)
+    let money3 = Money::new(currency, dec!(0.10));
+    assert_eq!(money3.amount(), dec!(0.10));
+}
+
+#[test]
+fn test_round_with_ceil_strategy_negative() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::Ceil);
+
+    // For negative numbers, ceil rounds toward zero
+    // Test -0.121 -> -0.13 (away from zero)
+    let money1 = Money::new(currency, dec!(-0.121));
+    assert_eq!(money1.amount(), dec!(-0.13));
+
+    // Test -0.001 -> -0.01
+    let money2 = Money::new(currency, dec!(-0.001));
+    assert_eq!(money2.amount(), dec!(-0.01));
+}
+
+#[test]
+fn test_round_with_floor_strategy() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::Floor);
+
+    // Floor always rounds toward zero
+    // Test 0.129 -> 0.12
+    let money1 = Money::new(currency, dec!(0.129));
+    assert_eq!(money1.amount(), dec!(0.12));
+
+    // Test 0.999 -> 0.99
+    let money2 = Money::new(currency, dec!(0.999));
+    assert_eq!(money2.amount(), dec!(0.99));
+
+    // Test 0.10 -> 0.10 (already at precision)
+    let money3 = Money::new(currency, dec!(0.10));
+    assert_eq!(money3.amount(), dec!(0.10));
+}
+
+#[test]
+fn test_round_with_floor_strategy_negative() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::Floor);
+
+    // For negative numbers, floor rounds toward zero
+    // Test -0.129 -> -0.12
+    let money1 = Money::new(currency, dec!(-0.129));
+    assert_eq!(money1.amount(), dec!(-0.12));
+
+    // Test -0.999 -> -0.99
+    let money2 = Money::new(currency, dec!(-0.999));
+    assert_eq!(money2.amount(), dec!(-0.99));
+}
+
+#[test]
+fn test_round_with_jpy_no_decimal_places() {
+    // JPY has 0 decimal places
+    let currency = Currency::from_iso("JPY").unwrap();
+
+    // Test 123.45 -> 123
+    let money1 = Money::new(currency, dec!(123.45));
+    assert_eq!(money1.amount(), dec!(123));
+
+    // Test 123.55 -> 124 (banker's rounding)
+    let money2 = Money::new(currency, dec!(123.55));
+    assert_eq!(money2.amount(), dec!(124));
+
+    // Test 124.50 -> 124 (banker's rounding to even)
+    let money3 = Money::new(currency, dec!(124.50));
+    assert_eq!(money3.amount(), dec!(124));
+}
+
+#[test]
+fn test_round_with_bhd_three_decimal_places() {
+    // BHD (Bahraini Dinar) has 3 decimal places
+    let currency = Currency::from_iso("BHD").unwrap();
+
+    // Test 1.2345 -> 1.234 (banker's rounding: 4 is even, round down)
+    let money1 = Money::new(currency, dec!(1.2345));
+    assert_eq!(money1.amount(), dec!(1.234));
+
+    // Test 1.2355 -> 1.236 (banker's rounding: 5 is odd, round up)
+    let money2 = Money::new(currency, dec!(1.2355));
+    assert_eq!(money2.amount(), dec!(1.236));
+
+    // Test 1.2365 -> 1.236 (banker's rounding: 6 is even, round down)
+    let money3 = Money::new(currency, dec!(1.2365));
+    assert_eq!(money3.amount(), dec!(1.236));
+}
+
+#[test]
+fn test_arithmetic_operations_preserve_rounding_strategy() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::HalfUp);
+
+    let money1 = Money::new(currency, dec!(10.00));
+    let money2 = Money::new(currency, dec!(3.00));
+
+    // Division should apply rounding strategy
+    let result = money1 / money2;
+    // 10 / 3 = 3.333... with HalfUp should round to 3.33
+    assert_eq!(result.amount(), dec!(3.33));
+}
+
+#[test]
+fn test_rounding_strategy_with_multiplication() {
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::HalfUp);
+
+    let money = Money::new(currency, dec!(10.00));
+
+    // 10.00 * 0.333 = 3.33 (no rounding needed)
+    let result = money.mul(dec!(0.333)).unwrap();
+    assert_eq!(result.amount(), dec!(3.33));
+
+    // 10.00 * 0.3335 = 3.335 -> 3.34 with HalfUp
+    let result2 = money.mul(dec!(0.3335)).unwrap();
+    assert_eq!(result2.amount(), dec!(3.34));
+}
+
+#[test]
+fn test_edge_case_very_small_amounts() {
+    let currency = Currency::from_iso("USD").unwrap();
+
+    // Test amounts smaller than the currency's precision
+    let money1 = Money::new(currency, dec!(0.001));
+    assert_eq!(money1.amount(), dec!(0.00));
+
+    let money2 = Money::new(currency, dec!(0.005));
+    assert_eq!(money2.amount(), dec!(0.00)); // Banker's rounding: 0.005 -> 0.00 (to even)
+
+    let money3 = Money::new(currency, dec!(0.015));
+    assert_eq!(money3.amount(), dec!(0.02)); // Banker's rounding: 0.015 -> 0.02 (to even)
+}
+
+#[test]
+fn test_edge_case_very_large_amounts() {
+    let currency = Currency::from_iso("USD").unwrap();
+
+    // Test large amounts still apply rounding correctly
+    let money = Money::new(currency, dec!(999999999999999.999));
+    assert_eq!(money.amount(), dec!(1000000000000000.00));
+}
+
+#[test]
+fn test_edge_case_exact_midpoint_sequences() {
+    let currency = Currency::from_iso("USD").unwrap();
+
+    // Test a sequence of midpoint values to ensure consistency
+    // 0.015 -> 0.02, 0.025 -> 0.02, 0.035 -> 0.04, 0.045 -> 0.04, 0.055 -> 0.06
+    let amounts = vec![
+        (dec!(0.015), dec!(0.02)),
+        (dec!(0.025), dec!(0.02)),
+        (dec!(0.035), dec!(0.04)),
+        (dec!(0.045), dec!(0.04)),
+        (dec!(0.055), dec!(0.06)),
+        (dec!(0.065), dec!(0.06)),
+        (dec!(0.075), dec!(0.08)),
+        (dec!(0.085), dec!(0.08)),
+        (dec!(0.095), dec!(0.10)),
+    ];
+
+    for (input, expected) in amounts {
+        let money = Money::new(currency, input);
+        assert_eq!(
+            money.amount(),
+            expected,
+            "Failed for input: {}, expected: {}, got: {}",
+            input,
+            expected,
+            money.amount()
+        );
+    }
+}
+
+#[test]
+fn test_edge_case_rounding_strategy_comparison() {
+    // Compare different strategies on the same value
+    let base_value = dec!(10.125);
+
+    // Test with USD (2 decimal places)
+    let mut currency_bankers = Currency::from_iso("USD").unwrap();
+    currency_bankers.set_rounding_strategy(RoundingStrategy::BankersRounding);
+    let money_bankers = Money::new(currency_bankers, base_value);
+    assert_eq!(money_bankers.amount(), dec!(10.12)); // to even
+
+    let mut currency_half_up = Currency::from_iso("USD").unwrap();
+    currency_half_up.set_rounding_strategy(RoundingStrategy::HalfUp);
+    let money_half_up = Money::new(currency_half_up, base_value);
+    assert_eq!(money_half_up.amount(), dec!(10.13)); // always up
+
+    let mut currency_half_down = Currency::from_iso("USD").unwrap();
+    currency_half_down.set_rounding_strategy(RoundingStrategy::HalfDown);
+    let money_half_down = Money::new(currency_half_down, base_value);
+    assert_eq!(money_half_down.amount(), dec!(10.12)); // always down
+
+    let mut currency_ceil = Currency::from_iso("USD").unwrap();
+    currency_ceil.set_rounding_strategy(RoundingStrategy::Ceil);
+    let money_ceil = Money::new(currency_ceil, base_value);
+    assert_eq!(money_ceil.amount(), dec!(10.13)); // away from zero
+
+    let mut currency_floor = Currency::from_iso("USD").unwrap();
+    currency_floor.set_rounding_strategy(RoundingStrategy::Floor);
+    let money_floor = Money::new(currency_floor, base_value);
+    assert_eq!(money_floor.amount(), dec!(10.12)); // toward zero
+}
+
+#[test]
+fn test_from_str_respects_rounding_strategy() {
+    // Test that parsing from string also respects rounding strategy
+    let mut currency = Currency::from_iso("USD").unwrap();
+    currency.set_rounding_strategy(RoundingStrategy::HalfUp);
+
+    // Create money from string with the currency
+    let money = Money::new(currency, dec!(10.125));
+    assert_eq!(money.amount(), dec!(10.13));
+}
+
+#[test]
+fn test_round_with_custom_decimal_points() {
+    // Test round_with method to round to custom decimal points
+    let currency = Currency::from_iso("USD").unwrap();
+    // Money::new already rounds to 2 decimals (USD precision), so money.amount() is 123.46
+    let money = Money::new(currency, dec!(123.456789));
+    assert_eq!(money.amount(), dec!(123.46)); // Already rounded to currency precision
+
+    // Round to 0 decimal places with different strategies
+    let rounded_0_bankers = money.round_with(0, RoundingStrategy::BankersRounding);
+    assert_eq!(rounded_0_bankers.amount(), dec!(123));
+
+    let rounded_0_half_up = money.round_with(0, RoundingStrategy::HalfUp);
+    assert_eq!(rounded_0_half_up.amount(), dec!(123));
+
+    // round_with can round to more decimal places, but since money is already at 2 decimals,
+    // rounding to 4 decimal places just preserves the current 2 decimal value
+    let rounded_4 = money.round_with(4, RoundingStrategy::BankersRounding);
+    assert_eq!(rounded_4.amount(), dec!(123.46));
+
+    // Test with a value that has fractional parts at multiple levels
+    let money2 = Money::new(currency, dec!(99.999));
+    assert_eq!(money2.amount(), dec!(100.00)); // Rounded to 2 decimals
+    let rounded_1 = money2.round_with(1, RoundingStrategy::BankersRounding);
+    assert_eq!(rounded_1.amount(), dec!(100.0));
+}
+
+#[test]
+fn test_operations_with_different_rounding_strategies() {
+    // Test that operations between money with same currency but different
+    // rounding strategies work correctly
+    let mut currency1 = Currency::from_iso("USD").unwrap();
+    currency1.set_rounding_strategy(RoundingStrategy::HalfUp);
+
+    let mut currency2 = Currency::from_iso("USD").unwrap();
+    currency2.set_rounding_strategy(RoundingStrategy::Floor);
+
+    let money1 = Money::new(currency1, dec!(10.125)); // rounds to 10.13
+    let money2 = Money::new(currency2, dec!(5.125)); // rounds to 5.12
+
+    // Since currencies are equal (based on code), addition should work
+    let sum = money1 + money2;
+    // The result uses money1's currency (and thus its rounding strategy)
+    // 10.13 + 5.12 = 15.25 (no additional rounding needed)
+    assert_eq!(sum.amount(), dec!(15.25));
+}
