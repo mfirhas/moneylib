@@ -9,9 +9,9 @@ use std::fmt::Display;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::{fmt::Debug, str::FromStr, sync::LazyLock};
 
-pub(crate) const COMMA_SEPARATOR: &'static str = ",";
+pub(crate) const COMMA_SEPARATOR: &str = ",";
 
-pub(crate) const DOT_SEPARATOR: &'static str = ".";
+pub(crate) const DOT_SEPARATOR: &str = ".";
 
 pub static COMMA_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     regex::Regex::new(r"^([A-Za-z]{3})\s+((?:\d{1,3}(?:,\d{3})*|\d+)(?:\.\d+)?)$")
@@ -71,12 +71,11 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     /// Get money amount in its smallest unit
     #[inline]
     fn minor_amount(&self) -> MoneyResult<i128> {
-        Ok(self
-            .amount()
+        self.amount()
             .checked_mul(dec!(10).powu(self.minor_unit() as u64))
             .ok_or(MoneyError::ArithmeticOverflow)?
             .to_i128()
-            .ok_or(MoneyError::DecimalToInteger)?)
+            .ok_or(MoneyError::DecimalToInteger)
     }
 
     /// Get money thousands separator

@@ -8,7 +8,7 @@ use crate::{
 };
 use std::hash::{Hash, Hasher};
 
-const DEFAULT_MINOR_UNIT_SYMBOL: &'static str = "minor";
+const DEFAULT_MINOR_UNIT_SYMBOL: &str = "minor";
 
 #[derive(Debug, Clone, Copy, Eq)]
 pub struct Currency {

@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-const ERROR_PREFIX: &'static str = "[MONEYLIB_ERROR]";
+const ERROR_PREFIX: &str = "[MONEYLIB_ERROR]";
 
 #[derive(Debug, Error)]
 pub enum MoneyError {

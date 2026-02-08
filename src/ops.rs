@@ -22,9 +22,7 @@ impl Add for Money {
             .checked_add(rhs.amount())
             .expect("addition operation overflow");
 
-        let ret = Self::new(self.currency(), ret);
-
-        ret
+        Self::new(self.currency(), ret)
     }
 }
 
@@ -46,9 +44,7 @@ impl Sub for Money {
             .checked_sub(rhs.amount())
             .expect("substraction operation overflow");
 
-        let ret = Self::new(self.currency(), ret);
-
-        ret
+        Self::new(self.currency(), ret)
     }
 }
 
@@ -70,9 +66,7 @@ impl Mul for Money {
             .checked_mul(rhs.amount())
             .expect("multiplication operation overflow");
 
-        let ret = Self::new(self.currency(), ret);
-
-        ret
+        Self::new(self.currency(), ret)
     }
 }
 
@@ -96,9 +90,7 @@ impl Div for Money {
             .checked_div(rhs.amount())
             .expect("division operation overflow");
 
-        let ret = Self::new(self.currency(), ret);
-
-        ret
+        Self::new(self.currency(), ret)
     }
 }
 
