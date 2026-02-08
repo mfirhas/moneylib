@@ -12,7 +12,7 @@ impl Add<Decimal> for Money {
             .checked_add(rhs)
             .expect("addition operation overflow");
 
-        Self::new(self.currency(), ret).round()
+        Self::new(self.currency(), ret)
     }
 }
 
@@ -27,7 +27,7 @@ impl Sub<Decimal> for Money {
             .checked_sub(rhs)
             .expect("subtraction operation overflow");
 
-        Self::new(self.currency(), ret).round()
+        Self::new(self.currency(), ret)
     }
 }
 
@@ -42,7 +42,7 @@ impl Mul<Decimal> for Money {
             .checked_mul(rhs)
             .expect("multiplication operation overflow");
 
-        Self::new(self.currency(), ret).round()
+        Self::new(self.currency(), ret)
     }
 }
 
@@ -59,7 +59,7 @@ impl Div<Decimal> for Money {
             .checked_div(rhs)
             .expect("division operation overflow");
 
-        Self::new(self.currency(), ret).round()
+        Self::new(self.currency(), ret)
     }
 }
 
@@ -73,7 +73,7 @@ impl Add<Money> for Decimal {
             .checked_add(rhs.amount())
             .expect("addition operation overflow");
 
-        Money::new(rhs.currency(), ret).round()
+        Money::new(rhs.currency(), ret)
     }
 }
 
@@ -87,7 +87,7 @@ impl Sub<Money> for Decimal {
             .checked_sub(rhs.amount())
             .expect("subtraction operation overflow");
 
-        Money::new(rhs.currency(), ret).round()
+        Money::new(rhs.currency(), ret)
     }
 }
 
@@ -101,7 +101,7 @@ impl Mul<Money> for Decimal {
             .checked_mul(rhs.amount())
             .expect("multiplication operation overflow");
 
-        Money::new(rhs.currency(), ret).round()
+        Money::new(rhs.currency(), ret)
     }
 }
 
@@ -117,6 +117,6 @@ impl Div<Money> for Decimal {
             .checked_div(rhs.amount())
             .expect("division operation overflow");
 
-        Money::new(rhs.currency(), ret).round()
+        Money::new(rhs.currency(), ret)
     }
 }
