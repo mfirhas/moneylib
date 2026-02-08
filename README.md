@@ -4,7 +4,9 @@ Library to deal with money in Rust.
 
 ## Code Coverage
 
-This project has **100.00% code coverage** (305/305 lines covered).
+This project maintains excellent code coverage. As of February 2026, it has **100.00% code coverage** (305/305 lines covered).
+
+To see current coverage results, run the coverage command below.
 
 ### Running Code Coverage
 
@@ -25,7 +27,7 @@ This will:
 - Display coverage results in the terminal
 - Generate an HTML report (`tarpaulin-report.html`) for detailed visualization
 
-### Coverage Results
+### Coverage Results (as of February 2026)
 
 ```
 Tested/Total Lines:
@@ -37,3 +39,5 @@ src/ops.rs: 40/40 (100%)
 
 Total: 100.00% coverage, 305/305 lines covered
 ```
+
+*Note: These numbers represent a snapshot from February 2026. Run the coverage command to see current results.*
