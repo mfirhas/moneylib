@@ -11,7 +11,8 @@ repository = "https://github.com/mfirhas/moneylib"
 rust_decimal = {version = "1.40.0", features = ["maths"]}
 rust_decimal_macros = "1.40.0"
 accounting = { version = "0.2.0", features = ["decimal"] }
-iso_currency = { version = "0.5.3", features = ["iterator"] }
+# iso_currency = { version = "0.5.3", features = ["iterator"] }
+iso_currency = { git = "https://github.com/mfirhas/iso_currency", rev = "eeb0390" }
 thiserror = "1"
 anyhow = "1"
 regex = "1"
