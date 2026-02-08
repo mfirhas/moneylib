@@ -2,6 +2,9 @@
 
 pub use iso_currency::Country;
 pub use rust_decimal::Decimal;
+pub mod money_macros {
+    pub use rust_decimal_macros::dec;
+}
 
 mod base;
 pub use base::{BaseMoney, BaseOps, CustomMoney, RoundingStrategy};

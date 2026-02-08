@@ -1,5 +1,5 @@
+use crate::money_macros::dec;
 use crate::{BaseMoney, BaseOps, Currency, CustomMoney, Money, MoneyError, RoundingStrategy};
-use rust_decimal_macros::dec;
 use std::str::FromStr;
 
 // ==================== Money::new() Tests ====================

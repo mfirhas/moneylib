@@ -1,10 +1,10 @@
+use crate::money_macros::dec;
 use crate::{Country, Currency, MoneyError};
 use crate::{Decimal, MoneyResult};
 use accounting::Accounting;
 use regex::Regex;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
-use rust_decimal_macros::dec;
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::{fmt::Debug, str::FromStr, sync::LazyLock};
