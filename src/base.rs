@@ -227,8 +227,9 @@ pub trait BaseOps:
     fn div(&self, rhs: Decimal) -> MoneyResult<Self>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RoundingStrategy {
+    #[default]
     BankersRounding,
 
     HalfUp,
@@ -238,12 +239,6 @@ pub enum RoundingStrategy {
     Ceil,
 
     Floor,
-}
-
-impl Default for RoundingStrategy {
-    fn default() -> Self {
-        Self::BankersRounding
-    }
 }
 
 impl From<RoundingStrategy> for DecimalRoundingStrategy {
