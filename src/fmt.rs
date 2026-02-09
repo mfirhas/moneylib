@@ -35,10 +35,23 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 /// - 'm': minor symbol (e.g., "cents")
 /// - 'n': negative sign (-), only displayed when amount is negative
 ///
+/// # Escaping Format Symbols
+///
+/// To display format symbols as literal characters, prefix them with a backslash (\).
+/// This allows you to:
+/// 1. Insert literal format symbol characters (a, c, s, m, n) into the output
+/// 2. Mix escaped symbols with actual format symbols in the same string
+///
+/// Examples of escaping:
+/// - `\a` outputs literal "a"
+/// - `\c` outputs literal "c"
+/// - `\\` outputs literal "\"
+/// - `\x` (where x is not a format symbol) outputs literal "\x"
+///
 /// # Arguments
 ///
 /// * `money` - The Money value to format
-/// * `format_str` - The format string containing format symbols
+/// * `format_str` - The format string containing format symbols and optional literal text
 ///
 /// # Examples
 ///
@@ -49,6 +62,7 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 /// let currency = Currency::from_iso("USD").unwrap();
 /// let money = Money::new(currency, dec!(100.50));
 ///
+/// // Basic formatting
 /// // "USD 100.50"
 /// assert_eq!(format(money, "c a"), "USD 100.50");
 ///
@@ -57,6 +71,14 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 ///
 /// // "USD 10,050 ¢" (amount in minor units when 'm' is present)
 /// assert_eq!(format(money, "c a m"), "USD 10,050 ¢");
+///
+/// // Mixing literals with format symbols
+/// // "Total: $100.50"
+/// assert_eq!(format(money, "Total: sa"), "Total: $100.50");
+///
+/// // Escaping format symbols to display them as literals
+/// // "a=100.50, c=USD"
+/// assert_eq!(format(money, "\\a=a, \\c=c"), "a=100.50, c=USD");
 ///
 /// let negative = Money::new(currency, dec!(-50.00));
 /// // "USD -50.00"
