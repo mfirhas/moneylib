@@ -76,7 +76,7 @@ fn test_all_errors_have_prefix() {
         MoneyError::DecimalToInteger,
         MoneyError::ArithmeticOverflow,
     ];
-    
+
     for error in errors {
         let message = error.to_string();
         assert!(
