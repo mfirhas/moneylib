@@ -28,7 +28,9 @@ pub static DOT_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// BaseMoney is the base trait for dealing with money type.
-pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + FromStr {
+pub trait BaseMoney:
+    Sized + Debug + Display + Clone + PartialOrd + PartialEq + Eq + FromStr
+{
     // REQUIRED
 
     /// Get currency of money
