@@ -189,9 +189,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "iso_currency"
-version = "0.5.1"
-source = "git+https://github.com/mfirhas/iso_currency?rev=eeb0390#eeb0390120aece36adf92110ef1ae5df503d2841"
+name = "iso_currency_lib"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fffb781d759927eed2f4e0e049b64ca0dd55f0b6e1d4032c6c7dfba9893decb"
 dependencies = [
  "iso_country",
  "proc-macro2",
@@ -238,7 +239,7 @@ version = "0.0.0"
 dependencies = [
  "accounting",
  "anyhow",
- "iso_currency",
+ "iso_currency_lib",
  "regex",
  "rust_decimal",
  "rust_decimal_macros",
