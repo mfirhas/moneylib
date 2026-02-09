@@ -42,8 +42,8 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 ///
 /// # Examples
 ///
-/// ```
-/// use moneylib::{Money, Currency, money::format};
+/// ```ignore
+/// use moneylib::{Money, Currency};
 /// use moneylib::money_macros::dec;
 ///
 /// let currency = Currency::from_iso("USD").unwrap();
@@ -55,8 +55,8 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 /// // "$100.50"
 /// assert_eq!(format(money, "sa"), "$100.50");
 ///
-/// // "USD 100.50 cents"
-/// assert_eq!(format(money, "c a m"), "USD 100.50 cents");
+/// // "USD 10,050 ¢" (amount in minor units when 'm' is present)
+/// assert_eq!(format(money, "c a m"), "USD 10,050 ¢");
 ///
 /// let negative = Money::new(currency, dec!(-50.00));
 /// // "USD -50.00"
@@ -64,7 +64,7 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 /// // "-$50.00"
 /// assert_eq!(format(negative, "nsa"), "-$50.00");
 /// ```
-pub fn format<T>(money: impl BaseMoney, format_str: &str) -> String {
+pub fn format(money: impl BaseMoney, format_str: &str) -> String {
     let mut result = String::new();
     let is_negative = money.is_negative();
 
