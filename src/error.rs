@@ -1,12 +1,9 @@
 use thiserror::Error;
 
-const ERROR_PREFIX: &str = "[MONEYLIB_ERROR]";
+const ERROR_PREFIX: &str = "[MONEYLIB]";
 
 #[derive(Debug, Error)]
 pub enum MoneyError {
-    #[error("{ERROR_PREFIX} error: {0}")]
-    Error(#[from] anyhow::Error),
-
     #[error(
         "{ERROR_PREFIX} new currency must have code, symbol, name, and minor unit atleast, and not already existed in ISO 4217"
     )]
