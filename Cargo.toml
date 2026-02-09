@@ -13,6 +13,5 @@ rust_decimal_macros = "1.40.0"
 accounting = { version = "0.2.0", features = ["decimal"] }
 # iso_currency = { version = "0.5.3", features = ["iterator"] }
 iso_currency_lib = "0.1.1"
-thiserror = "1"
 regex = "1"
 
