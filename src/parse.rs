@@ -92,7 +92,7 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
 
     // Split by decimal point if present
     let decimal_parts: Vec<&str> = amount_str.split('.').collect();
-    if decimal_parts.is_empty() || decimal_parts.len() > 2 {
+    if decimal_parts.len() > 2 {
         return None;
     }
 
@@ -141,7 +141,7 @@ pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
 
     // Split by comma (decimal separator) if present
     let decimal_parts: Vec<&str> = amount_str.split(',').collect();
-    if decimal_parts.is_empty() || decimal_parts.len() > 2 {
+    if decimal_parts.len() > 2 {
         return None;
     }
 
