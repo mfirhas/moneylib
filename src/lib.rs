@@ -24,8 +24,16 @@ mod ops;
 mod currency;
 pub use currency::Currency;
 
+mod fmt;
+
+#[cfg(test)]
+mod fmt_test;
+
 #[cfg(test)]
 mod currency_test;
 
 #[cfg(test)]
 mod money_test;
+
+#[cfg(test)]
+mod error_test;

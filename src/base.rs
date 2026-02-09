@@ -1,7 +1,11 @@
+use crate::fmt::{
+    CODE_FORMAT_NEGATIVE, CODE_FORMAT_NEGATIVE_MINOR, CODE_FORMAT_POSITIVE,
+    CODE_FORMAT_POSITIVE_MINOR, SYMBOL_FORMAT_NEGATIVE, SYMBOL_FORMAT_NEGATIVE_MINOR,
+    SYMBOL_FORMAT_POSITIVE, SYMBOL_FORMAT_POSITIVE_MINOR, format,
+};
 use crate::money_macros::dec;
 use crate::{Country, Currency, MoneyError};
 use crate::{Decimal, MoneyResult};
-use accounting::Accounting;
 use regex::Regex;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
@@ -111,74 +115,41 @@ pub trait BaseMoney: Sized + Debug + Display + Clone + PartialOrd + PartialEq + 
     /// Format money with code along with thousands and decimal separators.
     /// Example: USD 1,234.45
     fn format_code(&self) -> String {
-        let mut fmt = Accounting::new_from_seperator(
-            self.code(),
-            self.minor_unit() as usize,
-            self.thousand_separator(),
-            self.decimal_separator(),
-        );
-        if self.amount().is_sign_negative() {
-            let abs = self.amount().abs();
-            fmt.set_format("{s} -{v}");
-            fmt.format_money(abs)
-        } else {
-            fmt.set_format("{s} {v}");
-            fmt.format_money(self.amount())
+        if self.is_negative() {
+            return format(self.to_owned(), CODE_FORMAT_NEGATIVE);
         }
+        format(self.to_owned(), CODE_FORMAT_POSITIVE)
     }
 
     /// Format money with symbol along with thousands and decimal separators.
     /// Example: $1,234.45
     fn format_symbol(&self) -> String {
-        let mut fmt = Accounting::new_from_seperator(
-            self.symbol(),
-            self.minor_unit() as usize,
-            self.thousand_separator(),
-            self.decimal_separator(),
-        );
-        fmt.set_format("{s}{v}");
-        fmt.format_money(self.amount())
+        if self.is_negative() {
+            return format(self.to_owned(), SYMBOL_FORMAT_NEGATIVE);
+        }
+        format(self.to_owned(), SYMBOL_FORMAT_POSITIVE)
     }
 
     /// Format money with code in the smallest unit along with thousands separators.
     /// Example USD 1,234.45 --> USD 123,445 ¢
     /// If the currency has no minor unit symbol, it defaults to "minor".
     /// You can set the minor unit symbol in `Currency` type's setter.
-    fn format_code_minor(&self) -> MoneyResult<String> {
-        let minor_amount = self.minor_amount()?;
-        let mut fmt = Accounting::new_from_seperator(
-            self.code(),
-            0,
-            self.thousand_separator(),
-            self.decimal_separator(),
-        );
-        if minor_amount.is_negative() {
-            let abs = minor_amount.abs();
-            let f = format!("{{s}} -{{v}} {}", self.currency().minor_symbol());
-            fmt.set_format(&f);
-            Ok(fmt.format_money(abs))
-        } else {
-            let f = format!("{{s}} {{v}} {}", self.currency().minor_symbol());
-            fmt.set_format(&f);
-            Ok(fmt.format_money(minor_amount))
+    fn format_code_minor(&self) -> String {
+        if self.is_negative() {
+            return format(self.to_owned(), CODE_FORMAT_NEGATIVE_MINOR);
         }
+        format(self.to_owned(), CODE_FORMAT_POSITIVE_MINOR)
     }
 
     /// Format money with code in the smallest unit along with thousands separators.
     /// Example $1,234.45 --> $123,445 ¢
     /// If the currency has no minor unit symbol, it defaults to "minor".
     /// You can set the minor unit symbol in `Currency` type's setter.
-    fn format_symbol_minor(&self) -> MoneyResult<String> {
-        let minor_amount = self.minor_amount()?;
-        let mut fmt = Accounting::new_from_seperator(
-            self.symbol(),
-            0,
-            self.thousand_separator(),
-            self.decimal_separator(),
-        );
-        let f = format!("{{s}}{{v}} {}", self.currency().minor_symbol());
-        fmt.set_format(&f);
-        Ok(fmt.format_money(minor_amount))
+    fn format_symbol_minor(&self) -> String {
+        if self.is_negative() {
+            return format(self.to_owned(), SYMBOL_FORMAT_NEGATIVE_MINOR);
+        }
+        format(self.to_owned(), SYMBOL_FORMAT_POSITIVE_MINOR)
     }
 
     /// Default display of money
@@ -253,9 +224,89 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
 }
 
 pub trait CustomMoney: Sized + BaseMoney {
+    // REQUIRED
+
     fn set_thousand_separator(&mut self, separator: &'static str);
 
     fn set_decimal_separator(&mut self, separator: &'static str);
 
     fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self;
+
+    // PROVIDED
+
+    /// Format money according to the provided format string `f`.
+    ///
+    /// Format symbols:
+    /// - 'a': amount (displayed as absolute value)
+    /// - 'c': currency code (e.g., "USD")
+    /// - 's': currency symbol (e.g., "$")
+    /// - 'm': minor symbol (e.g., "cents")
+    /// - 'n': negative sign (-), only displayed when amount is negative
+    ///
+    /// # Escaping Format Symbols
+    ///
+    /// To display format symbols as literal characters, prefix them with a backslash (\).
+    /// This allows you to:
+    /// 1. Insert literal format symbol characters (a, c, s, m, n) into the output
+    /// 2. Mix escaped symbols with actual format symbols in the same string
+    ///
+    /// Escape sequences:
+    /// - `\a` outputs literal "a"
+    /// - `\c` outputs literal "c"
+    /// - `\s` outputs literal "s"
+    /// - `\m` outputs literal "m"
+    /// - `\n` outputs literal "n"
+    /// - `\\` (double backslash in source) outputs literal "\"
+    /// - `\x` (where x is not a format symbol or backslash) outputs literal "\x"
+    ///
+    /// # Arguments
+    ///
+    /// * `money` - The Money value to format
+    /// * `format_str` - The format string containing format symbols and optional literal text
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency};
+    /// use moneylib::money_macros::dec;
+    /// use moneylib::CustomMoney;
+    ///
+    /// let currency = Currency::from_iso("USD").unwrap();
+    /// let money = Money::new(currency, dec!(100.50));
+    ///
+    /// // Basic formatting
+    /// // "USD 100.50"
+    /// assert_eq!(money.format("c a"), "USD 100.50");
+    ///
+    /// // "$100.50"
+    /// assert_eq!(money.format("sa"), "$100.50");
+    ///
+    /// // "USD 10,050 ¢" (amount in minor units when 'm' is present)
+    /// assert_eq!(money.format("c a m"), "USD 10,050 ¢");
+    ///
+    /// // adding `n` to positive money will be ignored
+    /// assert_eq!(money.format("c na"), "USD 100.50");
+    ///
+    /// // Mixing literals with format symbols
+    /// // "Total: $100.50"
+    /// assert_eq!(money.format("Tot\\al: sa"), "Total: $100.50");
+    ///
+    /// // Escaping format symbols to display them as literals
+    /// // "a=100.50, c=USD"
+    /// assert_eq!(money.format("\\a=a, \\c=c"), "a=100.50, c=USD");
+    ///
+    /// let negative = Money::new(currency, dec!(-50.00));
+    /// // "USD -50.00"
+    /// assert_eq!(negative.format("c na"), "USD -50.00");
+    /// // "-$50.00"
+    /// assert_eq!(negative.format("nsa"), "-$50.00");
+    ///
+    /// // not specifying the `n` for negative sign will omit the negative sign.
+    /// assert_eq!(negative.format("sa"), "$50.00")
+    ///
+    ///
+    /// ```
+    fn format(&self, f: &str) -> String {
+        format(self.to_owned(), f)
+    }
 }

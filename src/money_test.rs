@@ -555,7 +555,7 @@ fn test_base_money_format_symbol_negative() {
 fn test_base_money_format_code_minor() {
     let currency = Currency::from_iso("USD").unwrap();
     let money = Money::new(currency, dec!(1234.56));
-    let formatted = money.format_code_minor().unwrap();
+    let formatted = money.format_code_minor();
     assert!(formatted.contains("USD"));
     assert!(formatted.contains("123,456"));
 }
@@ -564,7 +564,7 @@ fn test_base_money_format_code_minor() {
 fn test_base_money_format_code_minor_negative() {
     let currency = Currency::from_iso("USD").unwrap();
     let money = Money::new(currency, dec!(-1234.56));
-    let formatted = money.format_code_minor().unwrap();
+    let formatted = money.format_code_minor();
     assert!(formatted.contains("USD"));
     assert!(formatted.contains("-123,456"));
     // Assert full display string
@@ -575,11 +575,22 @@ fn test_base_money_format_code_minor_negative() {
 fn test_base_money_format_symbol_minor() {
     let currency = Currency::from_iso("USD").unwrap();
     let money = Money::new(currency, dec!(1234.56));
-    let formatted = money.format_symbol_minor().unwrap();
+    let formatted = money.format_symbol_minor();
     assert!(formatted.contains("$"));
     assert!(formatted.contains("123,456"));
     // Assert full display string
     assert_eq!(formatted, "$123,456 ¢");
+}
+
+#[test]
+fn test_base_money_format_symbol_minor_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(-1234.56));
+    let formatted = money.format_symbol_minor();
+    assert!(formatted.contains("$"));
+    assert!(formatted.contains("123,456"));
+    // Assert full display string
+    assert_eq!(formatted, "-$123,456 ¢");
 }
 
 #[test]
@@ -1879,4 +1890,36 @@ fn test_operations_with_different_rounding_strategies() {
     // The result uses money1's currency (and thus its rounding strategy)
     // 10.13 + 5.12 = 15.25 (no additional rounding needed)
     assert_eq!(sum.amount(), dec!(15.25));
+}
+
+#[test]
+fn test_custom_formatting() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.50));
+
+    // Basic formatting
+    // "USD 100.50"
+    assert_eq!(money.format("c a"), "USD 100.50");
+    // "$100.50"
+    assert_eq!(money.format("sa"), "$100.50");
+    // "USD 10,050 ¢" (amount in minor units when 'm' is present)
+    assert_eq!(money.format("c a m"), "USD 10,050 ¢");
+    // adding `n` to positive money will be ignored
+    assert_eq!(money.format("c na"), "USD 100.50");
+    // Mixing literals with format symbols
+    // "Total: $100.50"
+    assert_eq!(money.format("Tot\\al: sa"), "Total: $100.50");
+    // Escaping format symbols to display them as literals
+    // "a=100.50, c=USD"
+    assert_eq!(money.format("\\a=a, \\c=c"), "a=100.50, c=USD");
+    let negative = Money::new(currency, dec!(-50.00));
+    // "USD -50.00"
+    assert_eq!(negative.format("c na"), "USD -50.00");
+    // "-$50.00"
+    assert_eq!(negative.format("nsa"), "-$50.00");
+    // not specifying the `n` for negative sign will omit the negative sign.
+    assert_eq!(negative.format("sa"), "$50.00");
+
+    // negative minor
+    assert_eq!(negative.format("sa m"), "$5,000 ¢");
 }
