@@ -283,6 +283,7 @@ fn test_format_mix_literals_with_format_symbols() {
     );
     
     // Complex real-world example
+    // Note: When 'm' is present in the format string, ALL 'a' symbols display the minor amount
     assert_eq!(
         format(money, "Full: c a (\\mi\\nor u\\nit\\s: a m)"),
         "Full: USD 10,050 (minor units: 10,050 ¢)"

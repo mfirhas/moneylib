@@ -42,11 +42,14 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 /// 1. Insert literal format symbol characters (a, c, s, m, n) into the output
 /// 2. Mix escaped symbols with actual format symbols in the same string
 ///
-/// Examples of escaping:
+/// Escape sequences:
 /// - `\a` outputs literal "a"
 /// - `\c` outputs literal "c"
-/// - `\\` outputs literal "\"
-/// - `\x` (where x is not a format symbol) outputs literal "\x"
+/// - `\s` outputs literal "s"
+/// - `\m` outputs literal "m"
+/// - `\n` outputs literal "n"
+/// - `\\` (double backslash in source) outputs literal "\"
+/// - `\x` (where x is not a format symbol or backslash) outputs literal "\x"
 ///
 /// # Arguments
 ///
