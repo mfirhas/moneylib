@@ -6,26 +6,15 @@ use crate::fmt::{
 use crate::money_macros::dec;
 use crate::{Country, Currency, MoneyError};
 use crate::{Decimal, MoneyResult};
-use regex::Regex;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use std::{fmt::Debug, str::FromStr, sync::LazyLock};
+use std::{fmt::Debug, str::FromStr};
 
 pub(crate) const COMMA_SEPARATOR: &str = ",";
 
 pub(crate) const DOT_SEPARATOR: &str = ".";
-
-pub static COMMA_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    regex::Regex::new(r"^([A-Za-z]{3})\s+((?:\d{1,3}(?:,\d{3})*|\d+)(?:\.\d+)?)$")
-        .expect("failed compiling money format regex: comma thousands separator")
-});
-
-pub static DOT_THOUSANDS_SEPARATOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    regex::Regex::new(r"^([A-Za-z]{3})\s+((?:\d{1,3}(?:.\d{3})*|\d+)(?:\,\d+)?)$")
-        .expect("failed compiling money format regex: dot thousands separator")
-});
 
 /// BaseMoney is the base trait for dealing with money type.
 pub trait BaseMoney:

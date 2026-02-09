@@ -11,5 +11,4 @@ repository = "https://github.com/mfirhas/moneylib"
 rust_decimal = {version = "1.40.0", features = ["maths"]}
 rust_decimal_macros = "1.40.0"
 iso_currency_lib = "0.1.1"
-regex = "1"
 

@@ -2,10 +2,8 @@ use std::{fmt::Display, str::FromStr};
 
 use crate::{
     BaseMoney, Currency, Decimal, MoneyError, MoneyResult,
-    base::{
-        BaseOps, COMMA_SEPARATOR, COMMA_THOUSANDS_SEPARATOR_REGEX, CustomMoney, DOT_SEPARATOR,
-        DOT_THOUSANDS_SEPARATOR_REGEX,
-    },
+    base::{BaseOps, COMMA_SEPARATOR, CustomMoney, DOT_SEPARATOR},
+    parse::{parse_comma_thousands_separator, parse_dot_thousands_separator},
 };
 
 #[derive(Debug, Clone, Copy, Eq)]
@@ -41,40 +39,37 @@ impl FromStr for Money {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
-        let money_parts: Vec<&str> = s.split_whitespace().collect();
-        if money_parts.len() != 2 {
-            return Err(MoneyError::ParseStr);
-        }
 
-        let mut currency = money_parts[0]
-            .parse::<Currency>()
-            .map_err(|_| MoneyError::InvalidCurrency)?;
+        // Try parsing with comma thousands separator first
+        if let Some((currency_code, amount_str)) = parse_comma_thousands_separator(s) {
+            let mut currency = currency_code
+                .parse::<Currency>()
+                .map_err(|_| MoneyError::InvalidCurrency)?;
 
-        let amount_str = if COMMA_THOUSANDS_SEPARATOR_REGEX.is_match(s) {
             currency.set_thousand_separator(COMMA_SEPARATOR);
             currency.set_decimal_separator(DOT_SEPARATOR);
 
-            let comma = ',';
-            // remove commas
-            let amount_str: String = money_parts[1].chars().filter(|&c| c != comma).collect();
-            amount_str
-        } else if DOT_THOUSANDS_SEPARATOR_REGEX.is_match(s) {
+            let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
+
+            return Ok(Self { currency, amount }.round());
+        }
+
+        // Try parsing with dot thousands separator
+        if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {
+            let mut currency = currency_code
+                .parse::<Currency>()
+                .map_err(|_| MoneyError::InvalidCurrency)?;
+
             currency.set_thousand_separator(DOT_SEPARATOR);
             currency.set_decimal_separator(COMMA_SEPARATOR);
 
-            let dot = '.';
-            // remove dots
-            let amount_str: String = money_parts[1].chars().filter(|&c| c != dot).collect();
-            // convert comma to dot
-            let amount_str: String = amount_str.replace(',', ".");
-            amount_str
-        } else {
-            return Err(MoneyError::ParseStr);
-        };
+            let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
 
-        let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
+            return Ok(Self { currency, amount }.round());
+        }
 
-        Ok(Self { currency, amount }.round())
+        // Neither format matched
+        Err(MoneyError::ParseStr)
     }
 }
 
