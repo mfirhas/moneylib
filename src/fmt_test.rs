@@ -347,5 +347,5 @@ fn test_format_negative_zero() {
     
     // Should not show negative sign for zero
     let result = format(neg_zero, "nsa");
-    assert!(!result.contains('-') || result == "$0");
+    assert!(!result.contains('-') && result == "$0");
 }
