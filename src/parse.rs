@@ -1,3 +1,63 @@
+/// Validate and build result from parsed parts
+fn validate_and_build_result<'a>(
+    currency_code: &'a str,
+    integer_part: &'a str,
+    decimal_part: Option<&'a str>,
+    separator: char,
+) -> Option<(&'a str, String)> {
+    if integer_part.is_empty() {
+        return None;
+    }
+
+    // Check if there are separators
+    if integer_part.contains(separator) {
+        // Validate separator-separated format
+        let groups: Vec<&str> = integer_part.split(separator).collect();
+        
+        // First group can be 1-3 digits
+        if groups[0].is_empty() || groups[0].len() > 3 || !groups[0].chars().all(|c| c.is_ascii_digit()) {
+            return None;
+        }
+        
+        // All subsequent groups must be exactly 3 digits
+        for group in groups.iter().skip(1) {
+            if group.len() != 3 || !group.chars().all(|c| c.is_ascii_digit()) {
+                return None;
+            }
+        }
+        
+        // Build result without separators
+        let mut result = groups.join("");
+        if let Some(dec) = decimal_part {
+            // Decimal part must be all digits
+            if dec.is_empty() || !dec.chars().all(|c| c.is_ascii_digit()) {
+                return None;
+            }
+            result.push('.');
+            result.push_str(dec);
+        }
+        
+        Some((currency_code, result))
+    } else {
+        // No separators, just validate it's all digits
+        if !integer_part.chars().all(|c| c.is_ascii_digit()) {
+            return None;
+        }
+        
+        let mut result = integer_part.to_string();
+        if let Some(dec) = decimal_part {
+            // Decimal part must be all digits
+            if dec.is_empty() || !dec.chars().all(|c| c.is_ascii_digit()) {
+                return None;
+            }
+            result.push('.');
+            result.push_str(dec);
+        }
+        
+        Some((currency_code, result))
+    }
+}
+
 /// Parse money string with comma thousands separator and dot decimal separator
 /// Format: "CCC amount" where CCC is 3-letter currency code
 /// Examples: "USD 1,234.56", "USD 100.50", "USD 1000000"
@@ -43,58 +103,7 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
         None
     };
 
-    // Validate integer part (may have commas)
-    if integer_part.is_empty() {
-        return None;
-    }
-
-    // Check if there are commas
-    if integer_part.contains(',') {
-        // Validate comma-separated format
-        let groups: Vec<&str> = integer_part.split(',').collect();
-        
-        // First group can be 1-3 digits
-        if groups[0].is_empty() || groups[0].len() > 3 || !groups[0].chars().all(|c| c.is_ascii_digit()) {
-            return None;
-        }
-        
-        // All subsequent groups must be exactly 3 digits
-        for group in groups.iter().skip(1) {
-            if group.len() != 3 || !group.chars().all(|c| c.is_ascii_digit()) {
-                return None;
-            }
-        }
-        
-        // Build result without commas
-        let mut result = groups.join("");
-        if let Some(dec) = decimal_part {
-            // Decimal part must be all digits
-            if dec.is_empty() || !dec.chars().all(|c| c.is_ascii_digit()) {
-                return None;
-            }
-            result.push('.');
-            result.push_str(dec);
-        }
-        
-        Some((currency_code, result))
-    } else {
-        // No commas, just validate it's all digits
-        if !integer_part.chars().all(|c| c.is_ascii_digit()) {
-            return None;
-        }
-        
-        let mut result = integer_part.to_string();
-        if let Some(dec) = decimal_part {
-            // Decimal part must be all digits
-            if dec.is_empty() || !dec.chars().all(|c| c.is_ascii_digit()) {
-                return None;
-            }
-            result.push('.');
-            result.push_str(dec);
-        }
-        
-        Some((currency_code, result))
-    }
+    validate_and_build_result(currency_code, integer_part, decimal_part, ',')
 }
 
 /// Parse money string with dot thousands separator and comma decimal separator
@@ -143,56 +152,5 @@ pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
         None
     };
 
-    // Validate integer part (may have dots as thousands separators)
-    if integer_part.is_empty() {
-        return None;
-    }
-
-    // Check if there are dots
-    if integer_part.contains('.') {
-        // Validate dot-separated format
-        let groups: Vec<&str> = integer_part.split('.').collect();
-        
-        // First group can be 1-3 digits
-        if groups[0].is_empty() || groups[0].len() > 3 || !groups[0].chars().all(|c| c.is_ascii_digit()) {
-            return None;
-        }
-        
-        // All subsequent groups must be exactly 3 digits
-        for group in groups.iter().skip(1) {
-            if group.len() != 3 || !group.chars().all(|c| c.is_ascii_digit()) {
-                return None;
-            }
-        }
-        
-        // Build result without dots, convert comma to dot
-        let mut result = groups.join("");
-        if let Some(dec) = decimal_part {
-            // Decimal part must be all digits
-            if dec.is_empty() || !dec.chars().all(|c| c.is_ascii_digit()) {
-                return None;
-            }
-            result.push('.');
-            result.push_str(dec);
-        }
-        
-        Some((currency_code, result))
-    } else {
-        // No dots, just validate it's all digits
-        if !integer_part.chars().all(|c| c.is_ascii_digit()) {
-            return None;
-        }
-        
-        let mut result = integer_part.to_string();
-        if let Some(dec) = decimal_part {
-            // Decimal part must be all digits
-            if dec.is_empty() || !dec.chars().all(|c| c.is_ascii_digit()) {
-                return None;
-            }
-            result.push('.');
-            result.push_str(dec);
-        }
-        
-        Some((currency_code, result))
-    }
+    validate_and_build_result(currency_code, integer_part, decimal_part, '.')
 }
