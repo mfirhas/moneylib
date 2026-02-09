@@ -34,3 +34,6 @@ mod currency_test;
 
 #[cfg(test)]
 mod money_test;
+
+#[cfg(test)]
+mod error_test;
