@@ -222,6 +222,75 @@ fn test_format_with_text_literals() {
 }
 
 #[test]
+fn test_format_literal_characters_including_format_symbols() {
+    // Test case 1: We can insert literal characters (1 or many), even if it includes the format symbols
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.50));
+    
+    // Single literal format symbol characters
+    assert_eq!(format(money, "\\a"), "a");
+    assert_eq!(format(money, "\\c"), "c");
+    assert_eq!(format(money, "\\s"), "s");
+    assert_eq!(format(money, "\\m"), "m");
+    assert_eq!(format(money, "\\n"), "n");
+    
+    // Multiple consecutive literal format symbols
+    assert_eq!(format(money, "\\a\\c\\s\\m\\n"), "acsmn");
+    
+    // Literal format symbols with other literal text (no accidental format symbols)
+    assert_eq!(format(money, "word: "), "word: ");
+    assert_eq!(format(money, "text \\a\\nd \\more"), "text and more");
+    assert_eq!(format(money, "letter \\c here"), "letter c here");
+    
+    // All format symbols as literals
+    assert_eq!(
+        format(money, "Five: \\a, \\c, \\s, \\m, \\n"),
+        "Five: a, c, s, m, n"
+    );
+}
+
+#[test]
+fn test_format_mix_literals_with_format_symbols() {
+    // Test case 2: We can mix literal characters with format symbols
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.50));
+    let negative = Money::new(currency, dec!(-50.25));
+    
+    // Mix literal text with format symbols (using words without format symbols)
+    assert_eq!(format(money, "Buy: sa"), "Buy: $100.50");
+    assert_eq!(format(money, "V\\alue: a USD"), "Value: 100.50 USD");
+    assert_eq!(format(money, "c = a"), "USD = 100.50");
+    
+    // Mix escaped format symbols with actual format symbols
+    assert_eq!(format(money, "\\a=a, \\c=c"), "a=100.50, c=USD");
+    assert_eq!(format(money, "\\s: s, v\\alue: a"), "s: $, value: 100.50");
+    assert_eq!(format(money, "Code \\c: c, \\a: a"), "Code c: USD, a: 100.50");
+    
+    // Complex mixing with multiple literal and format symbols
+    assert_eq!(
+        format(money, "Full: sa (\\code: c)"),
+        "Full: $100.50 (code: USD)"
+    );
+    
+    // Negative amounts with mixed literals
+    assert_eq!(format(negative, "Debt: nsa"), "Debt: -$50.25");
+    assert_eq!(format(negative, "Due: c na"), "Due: USD -50.25");
+    
+    // Mix all types: regular text, escaped symbols, and format symbols
+    assert_eq!(
+        format(money, "Order #123: sa"),
+        "Order #123: $100.50"
+    );
+    
+    // Complex real-world example
+    // Note: When 'm' is present in the format string, ALL 'a' symbols display the minor amount
+    assert_eq!(
+        format(money, "Full: c a (\\mi\\nor u\\nit\\s: a m)"),
+        "Full: USD 10,050 (minor units: 10,050 ¢)"
+    );
+}
+
+#[test]
 fn test_format_different_currencies() {
     // EUR
     let eur = Currency::from_iso("EUR").unwrap();
