@@ -555,7 +555,7 @@ fn test_base_money_format_symbol_negative() {
 fn test_base_money_format_code_minor() {
     let currency = Currency::from_iso("USD").unwrap();
     let money = Money::new(currency, dec!(1234.56));
-    let formatted = money.format_code_minor().unwrap();
+    let formatted = money.format_code_minor();
     assert!(formatted.contains("USD"));
     assert!(formatted.contains("123,456"));
 }
@@ -564,7 +564,7 @@ fn test_base_money_format_code_minor() {
 fn test_base_money_format_code_minor_negative() {
     let currency = Currency::from_iso("USD").unwrap();
     let money = Money::new(currency, dec!(-1234.56));
-    let formatted = money.format_code_minor().unwrap();
+    let formatted = money.format_code_minor();
     assert!(formatted.contains("USD"));
     assert!(formatted.contains("-123,456"));
     // Assert full display string
@@ -575,7 +575,7 @@ fn test_base_money_format_code_minor_negative() {
 fn test_base_money_format_symbol_minor() {
     let currency = Currency::from_iso("USD").unwrap();
     let money = Money::new(currency, dec!(1234.56));
-    let formatted = money.format_symbol_minor().unwrap();
+    let formatted = money.format_symbol_minor();
     assert!(formatted.contains("$"));
     assert!(formatted.contains("123,456"));
     // Assert full display string

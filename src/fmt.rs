@@ -55,40 +55,6 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 ///
 /// * `money` - The Money value to format
 /// * `format_str` - The format string containing format symbols and optional literal text
-///
-/// # Examples
-///
-/// ```ignore
-/// use moneylib::{Money, Currency};
-/// use moneylib::money_macros::dec;
-///
-/// let currency = Currency::from_iso("USD").unwrap();
-/// let money = Money::new(currency, dec!(100.50));
-///
-/// // Basic formatting
-/// // "USD 100.50"
-/// assert_eq!(format(money, "c a"), "USD 100.50");
-///
-/// // "$100.50"
-/// assert_eq!(format(money, "sa"), "$100.50");
-///
-/// // "USD 10,050 ¢" (amount in minor units when 'm' is present)
-/// assert_eq!(format(money, "c a m"), "USD 10,050 ¢");
-///
-/// // Mixing literals with format symbols
-/// // "Total: $100.50"
-/// assert_eq!(format(money, "Total: sa"), "Total: $100.50");
-///
-/// // Escaping format symbols to display them as literals
-/// // "a=100.50, c=USD"
-/// assert_eq!(format(money, "\\a=a, \\c=c"), "a=100.50, c=USD");
-///
-/// let negative = Money::new(currency, dec!(-50.00));
-/// // "USD -50.00"
-/// assert_eq!(format(negative, "c na"), "USD -50.00");
-/// // "-$50.00"
-/// assert_eq!(format(negative, "nsa"), "-$50.00");
-/// ```
 pub(crate) fn format(money: impl BaseMoney, format_str: &str) -> String {
     let mut result = String::new();
     let is_negative = money.is_negative();
@@ -153,7 +119,7 @@ pub(crate) fn format_128_abs(num: i128, thousand_separator: &str) -> String {
     let len = num_str.len();
 
     for (i, ch) in num_str.chars().enumerate() {
-        if i > 0 && (len - i) % 3 == 0 {
+        if i > 0 && (len - i).is_multiple_of(3) {
             result.push_str(thousand_separator);
         }
         result.push(ch);
@@ -182,7 +148,7 @@ pub(crate) fn format_decimal_abs(
     let len = integer_part.len();
 
     for (i, ch) in integer_part.chars().enumerate() {
-        if i > 0 && (len - i) % 3 == 0 {
+        if i > 0 && (len - i).is_multiple_of(3) {
             result.push_str(thousand_separator);
         }
         result.push(ch);

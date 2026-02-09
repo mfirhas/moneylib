@@ -3,16 +3,6 @@
 version = 4
 
 [[package]]
-name = "accounting"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02d1c1ee38294fb8811aa880433a5557bbddbaa35ffbc456531f6325c687f50f"
-dependencies = [
- "regex",
- "rust_decimal",
-]
-
-[[package]]
 name = "ahash"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -231,7 +221,6 @@ checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 name = "moneylib"
 version = "0.1.0"
 dependencies = [
- "accounting",
  "iso_currency_lib",
  "regex",
  "rust_decimal",
