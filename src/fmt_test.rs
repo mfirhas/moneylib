@@ -456,3 +456,51 @@ fn test_format_decimal_abs_with_minor_unit() {
         "1,000.5"
     );
 }
+
+#[test]
+fn test_format_minor_amount_overflow() {
+    // Test that when minor_amount() overflows, we get "OVERFLOWED_AMOUNT"
+    // Use Decimal::MAX with USD (2 decimal places)
+    // Decimal::MAX * 100 will overflow i128
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, Decimal::MAX);
+
+    // When using 'm' in format string, it tries to convert to minor amount
+    // which will overflow and return the error string
+    assert_eq!(format(money, "a m"), "OVERFLOWED_AMOUNT ¢");
+    assert_eq!(format(money, "c a m"), "USD OVERFLOWED_AMOUNT ¢");
+}
+
+#[test]
+fn test_format_negative_symbol_with_positive_amount() {
+    // Explicit test to ensure line 99 (NEGATIVE_FORMAT_SYMBOL match arm) is covered
+    // when used with a positive amount (where the body doesn't execute)
+    let currency = Currency::from_iso("USD").unwrap();
+    let positive = Money::new(currency, dec!(100.00));
+
+    // 'n' should not add anything for positive amounts
+    assert_eq!(format(positive, "n"), "");
+    assert_eq!(format(positive, "na"), "100.00");
+    assert_eq!(format(positive, "nnn"), "");
+
+    // Also test with negative amount to ensure both branches are covered
+    let negative = Money::new(currency, dec!(-100.00));
+    assert_eq!(format(negative, "n"), "-");
+    assert_eq!(format(negative, "na"), "-100.00");
+}
+
+#[test]
+fn test_format_escape_all_format_symbols_explicitly() {
+    // Explicit test to ensure line 86 (continue after escape) is covered
+    // for all format symbols
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+
+    // Test escaping each format symbol individually to ensure continue is hit
+    assert_eq!(format(money, "\\a"), "a");
+    assert_eq!(format(money, "\\c"), "c");
+    assert_eq!(format(money, "\\s"), "s");
+    assert_eq!(format(money, "\\m"), "m");
+    assert_eq!(format(money, "\\n"), "n");
+    assert_eq!(format(money, "\\\\"), "\\");
+}
