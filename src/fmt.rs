@@ -80,6 +80,7 @@ pub(crate) fn format(money: impl BaseMoney, format_str: &str) -> String {
             money.amount(),
             money.thousand_separator(),
             money.decimal_separator(),
+            money.minor_unit() as u32,
         )
     };
 
@@ -141,6 +142,7 @@ pub(crate) fn format_decimal_abs(
     decimal: Decimal,
     thousand_separator: &str,
     decimal_separator: &str,
+    minor_unit: u32,
 ) -> String {
     let abs_decimal = decimal.abs();
     let decimal_str = abs_decimal.to_string();
@@ -161,10 +163,16 @@ pub(crate) fn format_decimal_abs(
         result.push(ch);
     }
 
-    // Add fractional part if it exists
+    // Add fractional part if it exists, or append zeros if None
     if let Some(frac) = fractional_part {
         result.push_str(decimal_separator);
         result.push_str(frac);
+    } else if minor_unit > 0 {
+        // If no fractional part and minor_unit > 0, append decimal separator with zeros
+        result.push_str(decimal_separator);
+        for _ in 0..minor_unit {
+            result.push('0');
+        }
     }
 
     result
