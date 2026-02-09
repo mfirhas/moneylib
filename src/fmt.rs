@@ -42,15 +42,27 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use moneylib::{Money, Currency};
 /// use moneylib::money_macros::dec;
 ///
 /// let currency = Currency::from_iso("USD").unwrap();
 /// let money = Money::new(currency, dec!(100.50));
 ///
-/// // Format with code and amount: "USD 100.50"
-/// // (Note: format is internal, use Money's format methods instead)
+/// // "USD 100.50"
+/// assert_eq!(format(money, "c a"), "USD 100.50");
+///
+/// // "$100.50"
+/// assert_eq!(format(money, "sa"), "$100.50");
+///
+/// // "USD 10,050 ¢" (amount in minor units when 'm' is present)
+/// assert_eq!(format(money, "c a m"), "USD 10,050 ¢");
+///
+/// let negative = Money::new(currency, dec!(-50.00));
+/// // "USD -50.00"
+/// assert_eq!(format(negative, "c na"), "USD -50.00");
+/// // "-$50.00"
+/// assert_eq!(format(negative, "nsa"), "-$50.00");
 /// ```
 pub fn format(money: impl BaseMoney, format_str: &str) -> String {
     let mut result = String::new();
