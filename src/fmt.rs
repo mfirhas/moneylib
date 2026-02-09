@@ -64,13 +64,17 @@ pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023
 /// // "-$50.00"
 /// assert_eq!(format(negative, "nsa"), "-$50.00");
 /// ```
-pub fn format(money: impl BaseMoney, format_str: &str) -> String {
+pub(crate) fn format(money: impl BaseMoney, format_str: &str) -> String {
     let mut result = String::new();
     let is_negative = money.is_negative();
 
     // Use absolute value for display if negative
     let display_amount = if format_str.contains(MINOR_FORMAT_SYMBOL) {
-        format_128_abs(money.minor_amount().unwrap(), money.thousand_separator())
+        if let Ok(minor_amount) = money.minor_amount() {
+            format_128_abs(minor_amount, money.thousand_separator())
+        } else {
+            "OVERFLOWED_AMOUNT".into()
+        }
     } else {
         format_decimal_abs(
             money.amount(),
