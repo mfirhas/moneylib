@@ -170,9 +170,7 @@ pub(crate) fn format_decimal_abs(
     } else if minor_unit > 0 {
         // If no fractional part and minor_unit > 0, append decimal separator with zeros
         result.push_str(decimal_separator);
-        for _ in 0..minor_unit {
-            result.push('0');
-        }
+        result.push_str(&"0".repeat(minor_unit as usize));
     }
 
     result

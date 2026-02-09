@@ -377,4 +377,13 @@ fn test_format_decimal_abs_with_minor_unit() {
         format_decimal_abs(Decimal::from_str("1000").unwrap(), ",", ".", 0),
         "1,000"
     );
+    
+    // Test that existing fractional parts shorter than minor_unit are preserved as-is
+    // Note: In practice, Money objects are rounded to the currency's minor_unit,
+    // so this scenario represents the actual usage where the Decimal has already
+    // been rounded to the correct precision by rust_decimal's round_dp_with_strategy
+    assert_eq!(
+        format_decimal_abs(Decimal::from_str("1000.5").unwrap(), ",", ".", 3),
+        "1,000.5"
+    );
 }
