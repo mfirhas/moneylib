@@ -25,7 +25,6 @@ mod currency;
 pub use currency::Currency;
 
 mod fmt;
-pub use fmt::format;
 
 #[cfg(test)]
 mod fmt_test;
