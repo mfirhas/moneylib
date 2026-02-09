@@ -19,31 +19,31 @@ fn test_format_with_thousands() {
 #[test]
 fn test_format_decimal_with_thousands() {
     assert_eq!(
-        format_decimal_abs(Decimal::from_str("1000").unwrap(), ",", "."),
+        format_decimal_abs(Decimal::from_str("1000").unwrap(), ",", ".", 0),
         "1,000"
     );
     assert_eq!(
-        format_decimal_abs(Decimal::from_str("100").unwrap(), ",", "."),
+        format_decimal_abs(Decimal::from_str("100").unwrap(), ",", ".", 0),
         "100"
     );
     assert_eq!(
-        format_decimal_abs(Decimal::from_str("100000").unwrap(), ",", "."),
+        format_decimal_abs(Decimal::from_str("100000").unwrap(), ",", ".", 0),
         "100,000"
     );
     assert_eq!(
-        format_decimal_abs(Decimal::from_str("1000.50").unwrap(), ",", "."),
+        format_decimal_abs(Decimal::from_str("1000.50").unwrap(), ",", ".", 0),
         "1,000.50"
     );
     assert_eq!(
-        format_decimal_abs(Decimal::from_str("1234567.89").unwrap(), ",", "."),
+        format_decimal_abs(Decimal::from_str("1234567.89").unwrap(), ",", ".", 0),
         "1,234,567.89"
     );
     assert_eq!(
-        format_decimal_abs(Decimal::from_str("-1000").unwrap(), ",", "."),
+        format_decimal_abs(Decimal::from_str("-1000").unwrap(), ",", ".", 0),
         "1,000"
     );
     assert_eq!(
-        format_decimal_abs(Decimal::from_str("-1000.25").unwrap(), ",", "."),
+        format_decimal_abs(Decimal::from_str("-1000.25").unwrap(), ",", ".", 0),
         "1,000.25"
     );
 }
@@ -122,9 +122,9 @@ fn test_format_zero_amount() {
     let currency = Currency::from_iso("USD").unwrap();
     let zero = Money::new(currency, dec!(0));
     
-    assert_eq!(format(zero, "c a"), "USD 0");
-    assert_eq!(format(zero, "sa"), "$0");
-    assert_eq!(format(zero, "nsa"), "$0");
+    assert_eq!(format(zero, "c a"), "USD 0.00");
+    assert_eq!(format(zero, "sa"), "$0.00");
+    assert_eq!(format(zero, "nsa"), "$0.00");
     assert_eq!(format(zero, "a m"), "0 ¢");
 }
 
@@ -334,9 +334,9 @@ fn test_format_one_unit() {
     let currency = Currency::from_iso("USD").unwrap();
     let money = Money::new(currency, dec!(1));
     
-    assert_eq!(format(money, "a"), "1");
-    assert_eq!(format(money, "sa"), "$1");
-    assert_eq!(format(money, "c a"), "USD 1");
+    assert_eq!(format(money, "a"), "1.00");
+    assert_eq!(format(money, "sa"), "$1.00");
+    assert_eq!(format(money, "c a"), "USD 1.00");
 }
 
 #[test]
@@ -347,5 +347,43 @@ fn test_format_negative_zero() {
     
     // Should not show negative sign for zero
     let result = format(neg_zero, "nsa");
-    assert!(!result.contains('-') && result == "$0");
+    assert!(!result.contains('-') && result == "$0.00");
+}
+
+#[test]
+fn test_format_decimal_abs_with_minor_unit() {
+    // Test that when fractional part is None and minor_unit > 0, zeros are appended
+    assert_eq!(
+        format_decimal_abs(Decimal::from_str("1000").unwrap(), ",", ".", 2),
+        "1,000.00"
+    );
+    assert_eq!(
+        format_decimal_abs(Decimal::from_str("100").unwrap(), ",", ".", 2),
+        "100.00"
+    );
+    assert_eq!(
+        format_decimal_abs(Decimal::from_str("50").unwrap(), ",", ".", 3),
+        "50.000"
+    );
+    
+    // Test that when fractional part exists, it's preserved
+    assert_eq!(
+        format_decimal_abs(Decimal::from_str("1000.50").unwrap(), ",", ".", 2),
+        "1,000.50"
+    );
+    
+    // Test with minor_unit = 0 (no zeros appended)
+    assert_eq!(
+        format_decimal_abs(Decimal::from_str("1000").unwrap(), ",", ".", 0),
+        "1,000"
+    );
+    
+    // Test that existing fractional parts shorter than minor_unit are preserved as-is
+    // Note: In practice, Money objects are rounded to the currency's minor_unit,
+    // so this scenario represents the actual usage where the Decimal has already
+    // been rounded to the correct precision by rust_decimal's round_dp_with_strategy
+    assert_eq!(
+        format_decimal_abs(Decimal::from_str("1000.5").unwrap(), ",", ".", 3),
+        "1,000.5"
+    );
 }
