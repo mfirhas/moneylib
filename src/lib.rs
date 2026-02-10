@@ -37,3 +37,6 @@ mod money_test;
 
 #[cfg(test)]
 mod error_test;
+
+#[cfg(test)]
+mod ops_test;
