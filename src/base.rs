@@ -154,6 +154,11 @@ pub trait BaseMoney:
     }
 }
 
+/// Trait for types that can be converted to Decimal for arithmetic operations
+pub trait IntoDecimal {
+    fn into_decimal(self) -> MoneyResult<Decimal>;
+}
+
 pub trait BaseOps:
     Sized
     + BaseMoney
@@ -181,19 +186,19 @@ pub trait BaseOps:
 
     fn add<T>(&self, rhs: T) -> MoneyResult<Self>
     where
-        T: Into<crate::MoneyAmount>;
+        T: IntoDecimal;
 
     fn sub<T>(&self, rhs: T) -> MoneyResult<Self>
     where
-        T: Into<crate::MoneyAmount>;
+        T: IntoDecimal;
 
     fn mul<T>(&self, rhs: T) -> MoneyResult<Self>
     where
-        T: Into<crate::MoneyAmount>;
+        T: IntoDecimal;
 
     fn div<T>(&self, rhs: T) -> MoneyResult<Self>
     where
-        T: Into<crate::MoneyAmount>;
+        T: IntoDecimal;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

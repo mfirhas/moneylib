@@ -7,7 +7,7 @@ pub mod money_macros {
 }
 
 mod base;
-pub use base::{BaseMoney, BaseOps, CustomMoney, RoundingStrategy};
+pub use base::{BaseMoney, BaseOps, CustomMoney, IntoDecimal, RoundingStrategy};
 
 mod error;
 pub use error::MoneyError;

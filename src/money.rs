@@ -5,7 +5,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 
 use crate::{
     BaseMoney, Currency, Decimal, MoneyError, MoneyResult,
-    base::{BaseOps, COMMA_SEPARATOR, CustomMoney, DOT_SEPARATOR},
+    base::{BaseOps, COMMA_SEPARATOR, CustomMoney, DOT_SEPARATOR, IntoDecimal},
     parse::{parse_comma_thousands_separator, parse_dot_thousands_separator},
 };
 
@@ -236,6 +236,50 @@ impl TryFrom<MoneyAmount> for i128 {
 
 //// MoneyAmount ---
 
+// Implement IntoDecimal trait for all supported types
+
+impl IntoDecimal for Decimal {
+    fn into_decimal(self) -> MoneyResult<Decimal> {
+        Ok(self)
+    }
+}
+
+impl IntoDecimal for f64 {
+    fn into_decimal(self) -> MoneyResult<Decimal> {
+        Decimal::from_f64(self).ok_or(MoneyError::MoneyAmount(
+            "failed converting f64 to decimal".into(),
+        ))
+    }
+}
+
+impl IntoDecimal for i64 {
+    fn into_decimal(self) -> MoneyResult<Decimal> {
+        Decimal::from_i64(self).ok_or(MoneyError::MoneyAmount(
+            "failed converting i64 to decimal".into(),
+        ))
+    }
+}
+
+impl IntoDecimal for i128 {
+    fn into_decimal(self) -> MoneyResult<Decimal> {
+        Decimal::from_i128(self).ok_or(MoneyError::MoneyAmount(
+            "failed converting i128 to decimal".into(),
+        ))
+    }
+}
+
+impl IntoDecimal for Money {
+    fn into_decimal(self) -> MoneyResult<Decimal> {
+        Ok(self.amount())
+    }
+}
+
+impl IntoDecimal for MoneyAmount {
+    fn into_decimal(self) -> MoneyResult<Decimal> {
+        self.try_into()
+    }
+}
+
 impl BaseMoney for Money {
     /// Get currency of money
     fn currency(&self) -> Currency {
@@ -295,10 +339,9 @@ impl BaseOps for Money {
 
     fn add<T>(&self, rhs: T) -> MoneyResult<Self>
     where
-        T: Into<MoneyAmount>,
+        T: IntoDecimal,
     {
-        let amount: MoneyAmount = rhs.into();
-        let decimal: Decimal = amount.try_into()?;
+        let decimal: Decimal = rhs.into_decimal()?;
         Ok(Self {
             currency: self.currency,
             amount: self
@@ -311,10 +354,9 @@ impl BaseOps for Money {
 
     fn sub<T>(&self, rhs: T) -> MoneyResult<Self>
     where
-        T: Into<MoneyAmount>,
+        T: IntoDecimal,
     {
-        let amount: MoneyAmount = rhs.into();
-        let decimal: Decimal = amount.try_into()?;
+        let decimal: Decimal = rhs.into_decimal()?;
         Ok(Self {
             currency: self.currency,
             amount: self
@@ -327,10 +369,9 @@ impl BaseOps for Money {
 
     fn mul<T>(&self, rhs: T) -> MoneyResult<Self>
     where
-        T: Into<MoneyAmount>,
+        T: IntoDecimal,
     {
-        let amount: MoneyAmount = rhs.into();
-        let decimal: Decimal = amount.try_into()?;
+        let decimal: Decimal = rhs.into_decimal()?;
         Ok(Self {
             currency: self.currency,
             amount: self
@@ -343,10 +384,9 @@ impl BaseOps for Money {
 
     fn div<T>(&self, rhs: T) -> MoneyResult<Self>
     where
-        T: Into<MoneyAmount>,
+        T: IntoDecimal,
     {
-        let amount: MoneyAmount = rhs.into();
-        let decimal: Decimal = amount.try_into()?;
+        let decimal: Decimal = rhs.into_decimal()?;
         Ok(Self {
             currency: self.currency,
             amount: self
