@@ -79,6 +79,13 @@ impl Display for Money {
     }
 }
 
+impl From<Money> for Decimal {
+    /// Get the amount of money
+    fn from(value: Money) -> Self {
+        value.amount()
+    }
+}
+
 impl BaseMoney for Money {
     /// Get currency of money
     fn currency(&self) -> Currency {

@@ -1,5 +1,7 @@
 use crate::money_macros::dec;
-use crate::{BaseMoney, BaseOps, Currency, CustomMoney, Money, MoneyError, RoundingStrategy};
+use crate::{
+    BaseMoney, BaseOps, Currency, CustomMoney, Decimal, Money, MoneyError, RoundingStrategy,
+};
 use std::str::FromStr;
 
 // ==================== Money::new() Tests ====================
@@ -1922,4 +1924,18 @@ fn test_custom_formatting() {
 
     // negative minor
     assert_eq!(negative.format("sa m"), "$5,000 ¢");
+}
+
+// --- conversion from Money to Decimal ---
+//
+// Get the amount of money
+
+#[test]
+fn test_from_money_to_decimal() {
+    let rupiah = Currency::from_iso("IDR").unwrap();
+    let duit = Money::new(rupiah, dec!(125_000_000));
+    let expected = dec!(125_000_000);
+    let amount: Decimal = duit.into();
+
+    assert_eq!(amount, expected);
 }
