@@ -2477,3 +2477,78 @@ fn test_base_ops_div_with_i64_negative() {
     let result = money.div(-4_i64).unwrap();
     assert_eq!(result.amount(), dec!(-25.00));
 }
+
+// ==================== Currency Mismatch Tests ====================
+
+#[test]
+fn test_base_ops_add_with_money_same_currency() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(usd, dec!(100.00));
+    let money2 = Money::new(usd, dec!(50.00));
+    let result = money1.add(money2).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_with_money_different_currency_fails() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let eur = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(usd, dec!(100.00));
+    let money2 = Money::new(eur, dec!(50.00));
+    let result = money1.add(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_sub_with_money_different_currency_fails() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let gbp = Currency::from_iso("GBP").unwrap();
+    let money1 = Money::new(usd, dec!(100.00));
+    let money2 = Money::new(gbp, dec!(50.00));
+    let result = money1.sub(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_mul_with_money_different_currency_fails() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let jpy = Currency::from_iso("JPY").unwrap();
+    let money1 = Money::new(usd, dec!(100.00));
+    let money2 = Money::new(jpy, dec!(2.00));
+    let result = money1.mul(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_div_with_money_different_currency_fails() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let eur = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(usd, dec!(100.00));
+    let money2 = Money::new(eur, dec!(5.00));
+    let result = money1.div(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_add_with_decimal_no_currency_check() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let money = Money::new(usd, dec!(100.00));
+    // Decimal has no currency, so no check is performed
+    let result = money.add(dec!(50.00)).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_with_primitives_no_currency_check() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let money = Money::new(usd, dec!(100.00));
+    
+    // f64, i64, i128 have no currency, so no check is performed
+    assert!(money.add(50.0_f64).is_ok());
+    assert!(money.add(50_i64).is_ok());
+    assert!(money.add(50_i128).is_ok());
+}

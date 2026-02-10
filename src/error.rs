@@ -8,6 +8,7 @@ pub enum MoneyError {
     ExistsInISO,
     ParseStr,
     InvalidCurrency,
+    CurrencyMismatch,
     DivisionByZero,
     DecimalToInteger,
     ArithmeticOverflow,
@@ -37,6 +38,11 @@ impl Display for MoneyError {
             MoneyError::InvalidCurrency => write!(
                 f,
                 "{} invalid currency, please use currencies supported by ISO 4217",
+                ERROR_PREFIX
+            ),
+            MoneyError::CurrencyMismatch => write!(
+                f,
+                "{} currency mismatch for operation",
                 ERROR_PREFIX
             ),
             MoneyError::DivisionByZero => write!(f, "{} cannot divide by zero", ERROR_PREFIX),

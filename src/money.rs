@@ -272,6 +272,10 @@ impl IntoDecimal for Money {
     fn into_decimal(self) -> MoneyResult<Decimal> {
         Ok(self.amount())
     }
+    
+    fn money_currency(&self) -> Option<Currency> {
+        Some(self.currency)
+    }
 }
 
 impl IntoDecimal for MoneyAmount {
@@ -341,6 +345,13 @@ impl BaseOps for Money {
     where
         T: IntoDecimal,
     {
+        // Check currency compatibility if rhs is Money
+        if let Some(rhs_currency) = rhs.money_currency() {
+            if self.currency != rhs_currency {
+                return Err(MoneyError::CurrencyMismatch);
+            }
+        }
+        
         let decimal: Decimal = rhs.into_decimal()?;
         Ok(Self {
             currency: self.currency,
@@ -356,6 +367,13 @@ impl BaseOps for Money {
     where
         T: IntoDecimal,
     {
+        // Check currency compatibility if rhs is Money
+        if let Some(rhs_currency) = rhs.money_currency() {
+            if self.currency != rhs_currency {
+                return Err(MoneyError::CurrencyMismatch);
+            }
+        }
+        
         let decimal: Decimal = rhs.into_decimal()?;
         Ok(Self {
             currency: self.currency,
@@ -371,6 +389,13 @@ impl BaseOps for Money {
     where
         T: IntoDecimal,
     {
+        // Check currency compatibility if rhs is Money
+        if let Some(rhs_currency) = rhs.money_currency() {
+            if self.currency != rhs_currency {
+                return Err(MoneyError::CurrencyMismatch);
+            }
+        }
+        
         let decimal: Decimal = rhs.into_decimal()?;
         Ok(Self {
             currency: self.currency,
@@ -386,6 +411,13 @@ impl BaseOps for Money {
     where
         T: IntoDecimal,
     {
+        // Check currency compatibility if rhs is Money
+        if let Some(rhs_currency) = rhs.money_currency() {
+            if self.currency != rhs_currency {
+                return Err(MoneyError::CurrencyMismatch);
+            }
+        }
+        
         let decimal: Decimal = rhs.into_decimal()?;
         Ok(Self {
             currency: self.currency,

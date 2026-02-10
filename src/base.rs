@@ -156,7 +156,14 @@ pub trait BaseMoney:
 
 /// Trait for types that can be converted to Decimal for arithmetic operations
 pub trait IntoDecimal {
+    /// Convert to Decimal
     fn into_decimal(self) -> MoneyResult<Decimal>;
+    
+    /// Get the currency if this is a Money type, None otherwise
+    /// This allows checking currency compatibility before operations
+    fn money_currency(&self) -> Option<Currency> {
+        None
+    }
 }
 
 pub trait BaseOps:
