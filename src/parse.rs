@@ -13,19 +13,22 @@ fn validate_and_build_result<'a>(
     if integer_part.contains(separator) {
         // Validate separator-separated format
         let groups: Vec<&str> = integer_part.split(separator).collect();
-        
+
         // First group can be 1-3 digits
-        if groups[0].is_empty() || groups[0].len() > 3 || !groups[0].chars().all(|c| c.is_ascii_digit()) {
+        if groups[0].is_empty()
+            || groups[0].len() > 3
+            || !groups[0].chars().all(|c| c.is_ascii_digit())
+        {
             return None;
         }
-        
+
         // All subsequent groups must be exactly 3 digits
         for group in groups.iter().skip(1) {
             if group.len() != 3 || !group.chars().all(|c| c.is_ascii_digit()) {
                 return None;
             }
         }
-        
+
         // Build result without separators
         let mut result = groups.join("");
         if let Some(dec) = decimal_part {
@@ -36,14 +39,14 @@ fn validate_and_build_result<'a>(
             result.push('.');
             result.push_str(dec);
         }
-        
+
         Some((currency_code, result))
     } else {
         // No separators, just validate it's all digits
         if !integer_part.chars().all(|c| c.is_ascii_digit()) {
             return None;
         }
-        
+
         let mut result = integer_part.to_string();
         if let Some(dec) = decimal_part {
             // Decimal part must be all digits
@@ -53,7 +56,7 @@ fn validate_and_build_result<'a>(
             result.push('.');
             result.push_str(dec);
         }
-        
+
         Some((currency_code, result))
     }
 }
@@ -61,7 +64,7 @@ fn validate_and_build_result<'a>(
 /// Parse money string with comma thousands separator and dot decimal separator
 /// Format: "CCC amount" where CCC is 3-letter currency code
 /// Examples: "USD 1,234.56", "USD 100.50", "USD 1000000"
-/// 
+///
 /// Returns Some((currency_code, amount_without_separators)) on success
 /// Returns None if the format doesn't match
 pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
@@ -85,7 +88,7 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
     // - with decimal: "123.45"
     // - with thousands separator: "1,234", "1,234,567"
     // - with both: "1,234.56", "1,000,000.99"
-    
+
     if amount_str.is_empty() {
         return None;
     }
@@ -109,7 +112,7 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
 /// Parse money string with dot thousands separator and comma decimal separator
 /// Format: "CCC amount" where CCC is 3-letter currency code
 /// Examples: "EUR 1.234,56", "EUR 100,50", "EUR 1000000"
-/// 
+///
 /// Returns Some((currency_code, amount_converted_to_standard)) on success
 /// The returned amount has commas converted to dots for decimal separator
 /// Returns None if the format doesn't match
@@ -134,7 +137,7 @@ pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
     // - with decimal: "123,45"
     // - with thousands separator: "1.234", "1.234.567"
     // - with both: "1.234,56", "1.000.000,99"
-    
+
     if amount_str.is_empty() {
         return None;
     }

@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::{base::IntoMoneyAmount, money_macros::dec};
+use crate::{base::MoneyAmount, money_macros::dec};
 use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 
 use crate::{
@@ -22,9 +22,9 @@ impl Money {
 
     pub fn from_amount<T>(currency: Currency, amount: T) -> MoneyResult<Self>
     where
-        T: IntoMoneyAmount<Money>,
+        T: MoneyAmount<Money>,
     {
-        match (amount.into_money(), amount.into_decimal()) {
+        match (amount.get_money(), amount.get_decimal()) {
             (Some(money), _) if money.currency() == currency => Ok(money),
             (None, Some(amount)) => Ok(Self::new(currency, amount)),
             _ => Err(MoneyError::NewMoney(
@@ -116,67 +116,69 @@ impl From<Money> for Decimal {
     }
 }
 
-//// --- MoneyAmount
-impl IntoMoneyAmount<Money> for Money {
-    fn into_money(&self) -> Option<Money> {
+// --- MoneyAmount
+
+impl MoneyAmount<Money> for Money {
+    fn get_money(&self) -> Option<Money> {
         Some(*self)
     }
 
-    fn into_decimal(&self) -> Option<Decimal> {
+    fn get_decimal(&self) -> Option<Decimal> {
         Some(self.amount())
     }
 }
 
-impl IntoMoneyAmount<Money> for Decimal {
-    fn into_money(&self) -> Option<Money> {
+impl MoneyAmount<Money> for Decimal {
+    fn get_money(&self) -> Option<Money> {
         None
     }
 
-    fn into_decimal(&self) -> Option<Decimal> {
+    fn get_decimal(&self) -> Option<Decimal> {
         Some(*self)
     }
 }
 
-impl IntoMoneyAmount<Money> for f64 {
-    fn into_money(&self) -> Option<Money> {
+impl MoneyAmount<Money> for f64 {
+    fn get_money(&self) -> Option<Money> {
         None
     }
 
-    fn into_decimal(&self) -> Option<Decimal> {
+    fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_f64(*self)
     }
 }
 
-impl IntoMoneyAmount<Money> for i32 {
-    fn into_money(&self) -> Option<Money> {
+impl MoneyAmount<Money> for i32 {
+    fn get_money(&self) -> Option<Money> {
         None
     }
 
-    fn into_decimal(&self) -> Option<Decimal> {
+    fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i32(*self)
     }
 }
 
-impl IntoMoneyAmount<Money> for i64 {
-    fn into_money(&self) -> Option<Money> {
+impl MoneyAmount<Money> for i64 {
+    fn get_money(&self) -> Option<Money> {
         None
     }
 
-    fn into_decimal(&self) -> Option<Decimal> {
+    fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i64(*self)
     }
 }
 
-impl IntoMoneyAmount<Money> for i128 {
-    fn into_money(&self) -> Option<Money> {
+impl MoneyAmount<Money> for i128 {
+    fn get_money(&self) -> Option<Money> {
         None
     }
 
-    fn into_decimal(&self) -> Option<Decimal> {
+    fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i128(*self)
     }
 }
-//// MoneyAmount ---
+
+// MoneyAmount ---
 
 impl BaseMoney for Money {
     /// Get currency of money

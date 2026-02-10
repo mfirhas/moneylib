@@ -188,13 +188,13 @@ pub trait BaseOps:
     fn div(&self, rhs: Decimal) -> MoneyResult<Self>;
 }
 
-pub trait IntoMoneyAmount<T>: Sized
+pub trait MoneyAmount<T>: Sized
 where
     T: BaseMoney,
 {
-    fn into_money(&self) -> Option<T>;
+    fn get_money(&self) -> Option<T>;
 
-    fn into_decimal(&self) -> Option<Decimal>;
+    fn get_decimal(&self) -> Option<Decimal>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
