@@ -805,6 +805,545 @@ fn test_base_ops_div_decimal_zero_error() {
     ));
 }
 
+// ==================== BaseOps with Money Type Tests ====================
+
+#[test]
+fn test_base_ops_add_money() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(50.00));
+    let result = money1.add(money2).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_money_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(-50.00));
+    let result = money1.add(money2).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_add_money_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(0.005));
+    let result = money1.add(money2).unwrap();
+    // Banker's rounding: 0.005 rounds to 0.00 (rounds to nearest even)
+    assert_eq!(result.amount(), dec!(100.00));
+}
+
+#[test]
+fn test_base_ops_add_money_currency_mismatch() {
+    let currency1 = Currency::from_iso("USD").unwrap();
+    let currency2 = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(currency1, dec!(100.00));
+    let money2 = Money::new(currency2, dec!(50.00));
+    let result = money1.add(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_sub_money() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(50.00));
+    let result = money1.sub(money2).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_money_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(-50.00));
+    let result = money1.sub(money2).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_sub_money_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(0.005));
+    let result = money1.sub(money2).unwrap();
+    assert_eq!(result.amount(), dec!(100.00));
+}
+
+#[test]
+fn test_base_ops_sub_money_currency_mismatch() {
+    let currency1 = Currency::from_iso("USD").unwrap();
+    let currency2 = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(currency1, dec!(100.00));
+    let money2 = Money::new(currency2, dec!(50.00));
+    let result = money1.sub(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_mul_money() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(2.5));
+    let result = money1.mul(money2).unwrap();
+    assert_eq!(result.amount(), dec!(250.00));
+}
+
+#[test]
+fn test_base_ops_mul_money_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(-2.0));
+    let result = money1.mul(money2).unwrap();
+    assert_eq!(result.amount(), dec!(-200.00));
+}
+
+#[test]
+fn test_base_ops_mul_money_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    // Money2 will be rounded to 1.00 when created because USD has 2 decimal places
+    let money2 = Money::new(currency, dec!(1.005));
+    let result = money1.mul(money2).unwrap();
+    // 100.00 * 1.00 = 100.00
+    assert_eq!(result.amount(), dec!(100.00));
+}
+
+#[test]
+fn test_base_ops_mul_money_currency_mismatch() {
+    let currency1 = Currency::from_iso("USD").unwrap();
+    let currency2 = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(currency1, dec!(100.00));
+    let money2 = Money::new(currency2, dec!(2.0));
+    let result = money1.mul(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_div_money() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(2.0));
+    let result = money1.div(money2).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_div_money_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(-2.0));
+    let result = money1.div(money2).unwrap();
+    assert_eq!(result.amount(), dec!(-50.00));
+}
+
+#[test]
+fn test_base_ops_div_money_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(3.0));
+    let result = money1.div(money2).unwrap();
+    assert_eq!(result.amount(), dec!(33.33));
+}
+
+#[test]
+fn test_base_ops_div_money_zero_error() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(0));
+    let result = money1.div(money2);
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        MoneyError::ArithmeticOverflow
+    ));
+}
+
+#[test]
+fn test_base_ops_div_money_currency_mismatch() {
+    let currency1 = Currency::from_iso("USD").unwrap();
+    let currency2 = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(currency1, dec!(100.00));
+    let money2 = Money::new(currency2, dec!(2.0));
+    let result = money1.div(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+// ==================== BaseOps with f64 Type Tests ====================
+
+#[test]
+fn test_base_ops_add_f64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(50.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_f64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(-50.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_add_f64_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(0.005_f64).unwrap();
+    // Banker's rounding: 0.005 rounds to 0.00 (rounds to nearest even)
+    assert_eq!(result.amount(), dec!(100.00));
+}
+
+#[test]
+fn test_base_ops_sub_f64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(50.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_f64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(-50.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_sub_f64_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(0.005_f64).unwrap();
+    assert_eq!(result.amount(), dec!(100.00));
+}
+
+#[test]
+fn test_base_ops_mul_f64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(2.5_f64).unwrap();
+    assert_eq!(result.amount(), dec!(250.00));
+}
+
+#[test]
+fn test_base_ops_mul_f64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(-2.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(-200.00));
+}
+
+#[test]
+fn test_base_ops_mul_f64_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(1.005_f64).unwrap();
+    assert_eq!(result.amount(), dec!(100.50));
+}
+
+#[test]
+fn test_base_ops_div_f64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(2.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_div_f64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(-2.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(-50.00));
+}
+
+#[test]
+fn test_base_ops_div_f64_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(3.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(33.33));
+}
+
+#[test]
+fn test_base_ops_div_f64_zero_error() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(0.0_f64);
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        MoneyError::ArithmeticOverflow
+    ));
+}
+
+// ==================== BaseOps with i32 Type Tests ====================
+
+#[test]
+fn test_base_ops_add_i32() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(50_i32).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_i32_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(-50_i32).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_i32() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(50_i32).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_i32_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(-50_i32).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_mul_i32() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(3_i32).unwrap();
+    assert_eq!(result.amount(), dec!(300.00));
+}
+
+#[test]
+fn test_base_ops_mul_i32_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(-2_i32).unwrap();
+    assert_eq!(result.amount(), dec!(-200.00));
+}
+
+#[test]
+fn test_base_ops_div_i32() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(2_i32).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_div_i32_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(-2_i32).unwrap();
+    assert_eq!(result.amount(), dec!(-50.00));
+}
+
+#[test]
+fn test_base_ops_div_i32_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(3_i32).unwrap();
+    assert_eq!(result.amount(), dec!(33.33));
+}
+
+#[test]
+fn test_base_ops_div_i32_zero_error() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(0_i32);
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        MoneyError::ArithmeticOverflow
+    ));
+}
+
+// ==================== BaseOps with i64 Type Tests ====================
+
+#[test]
+fn test_base_ops_add_i64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(50_i64).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_i64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(-50_i64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_i64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(50_i64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_i64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(-50_i64).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_mul_i64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(3_i64).unwrap();
+    assert_eq!(result.amount(), dec!(300.00));
+}
+
+#[test]
+fn test_base_ops_mul_i64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(-2_i64).unwrap();
+    assert_eq!(result.amount(), dec!(-200.00));
+}
+
+#[test]
+fn test_base_ops_div_i64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(2_i64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_div_i64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(-2_i64).unwrap();
+    assert_eq!(result.amount(), dec!(-50.00));
+}
+
+#[test]
+fn test_base_ops_div_i64_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(3_i64).unwrap();
+    assert_eq!(result.amount(), dec!(33.33));
+}
+
+#[test]
+fn test_base_ops_div_i64_zero_error() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(0_i64);
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        MoneyError::ArithmeticOverflow
+    ));
+}
+
+// ==================== BaseOps with i128 Type Tests ====================
+
+#[test]
+fn test_base_ops_add_i128() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(50_i128).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_i128_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(-50_i128).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_i128() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(50_i128).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_i128_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(-50_i128).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_mul_i128() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(3_i128).unwrap();
+    assert_eq!(result.amount(), dec!(300.00));
+}
+
+#[test]
+fn test_base_ops_mul_i128_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(-2_i128).unwrap();
+    assert_eq!(result.amount(), dec!(-200.00));
+}
+
+#[test]
+fn test_base_ops_div_i128() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(2_i128).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_div_i128_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(-2_i128).unwrap();
+    assert_eq!(result.amount(), dec!(-50.00));
+}
+
+#[test]
+fn test_base_ops_div_i128_rounds() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(3_i128).unwrap();
+    assert_eq!(result.amount(), dec!(33.33));
+}
+
+#[test]
+fn test_base_ops_div_i128_zero_error() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(0_i128);
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        MoneyError::ArithmeticOverflow
+    ));
+}
+
 // ==================== CustomMoney Trait Tests ====================
 
 #[test]
