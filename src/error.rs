@@ -2,7 +2,7 @@ use std::{error::Error, fmt::Display};
 
 const ERROR_PREFIX: &str = "[MONEYLIB]";
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MoneyError {
     NewCurrency,
     ExistsInISO,
