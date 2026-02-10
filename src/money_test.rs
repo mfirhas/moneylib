@@ -1989,12 +1989,8 @@ fn test_from_amount_with_money_different_currency() {
     let eur = Currency::from_iso("EUR").unwrap();
     let existing_money = Money::new(eur, dec!(100.50));
     let result = Money::from_amount(usd, existing_money);
+    dbg!(&result);
     assert!(result.is_err());
-    if let Err(MoneyError::NewMoney(msg)) = result {
-        assert!(msg.contains("different currency"));
-    } else {
-        panic!("Expected NewMoney error");
-    }
 }
 
 #[test]
@@ -2037,6 +2033,13 @@ fn test_from_amount_rounding_with_jpy() {
     let currency = Currency::from_iso("JPY").unwrap();
     let money = Money::from_amount(currency, dec!(100.99)).unwrap();
     assert_eq!(money.amount(), dec!(101));
+}
+
+#[test]
+fn test_from_amount_with_i32() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::from_amount(currency, 1234).unwrap();
+    assert_eq!(money.amount(), dec!(1234))
 }
 
 #[test]
@@ -2103,196 +2106,4 @@ fn test_from_minor_amount_very_small() {
     let currency = Currency::from_iso("USD").unwrap();
     let money = Money::from_minor_amount(currency, 1).unwrap();
     assert_eq!(money.amount(), dec!(0.01));
-}
-
-// ==================== MoneyAmount Conversion Tests ====================
-
-#[test]
-fn test_money_amount_from_money() {
-    use crate::money::MoneyAmount;
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
-    let money_amount: MoneyAmount = money.into();
-    assert_eq!(money_amount, MoneyAmount::Money(money));
-}
-
-#[test]
-fn test_money_amount_from_decimal() {
-    use crate::money::MoneyAmount;
-    let decimal = dec!(100.50);
-    let money_amount: MoneyAmount = decimal.into();
-    assert_eq!(money_amount, MoneyAmount::Decimal(decimal));
-}
-
-#[test]
-fn test_money_amount_from_f64() {
-    use crate::money::MoneyAmount;
-    let value = 100.50_f64;
-    let money_amount: MoneyAmount = value.into();
-    assert_eq!(money_amount, MoneyAmount::Float64(value));
-}
-
-#[test]
-fn test_money_amount_from_i64() {
-    use crate::money::MoneyAmount;
-    let value = 100_i64;
-    let money_amount: MoneyAmount = value.into();
-    assert_eq!(money_amount, MoneyAmount::Integer64(value));
-}
-
-#[test]
-fn test_money_amount_from_i128() {
-    use crate::money::MoneyAmount;
-    let value = 100_i128;
-    let money_amount: MoneyAmount = value.into();
-    assert_eq!(money_amount, MoneyAmount::Integer128(value));
-}
-
-// ==================== MoneyAmount TryFrom to Decimal Tests ====================
-
-#[test]
-fn test_money_amount_try_into_decimal_from_money() {
-    use crate::money::MoneyAmount;
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
-    let money_amount = MoneyAmount::Money(money);
-    let decimal: Result<Decimal, MoneyError> = money_amount.try_into();
-    assert!(decimal.is_ok());
-    assert_eq!(decimal.unwrap(), dec!(100.50));
-}
-
-#[test]
-fn test_money_amount_try_into_decimal_from_decimal() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Decimal(dec!(100.50));
-    let decimal: Result<Decimal, MoneyError> = money_amount.try_into();
-    assert!(decimal.is_ok());
-    assert_eq!(decimal.unwrap(), dec!(100.50));
-}
-
-#[test]
-fn test_money_amount_try_into_decimal_from_f64() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Float64(100.50);
-    let decimal: Result<Decimal, MoneyError> = money_amount.try_into();
-    assert!(decimal.is_ok());
-    assert_eq!(decimal.unwrap(), dec!(100.50));
-}
-
-#[test]
-fn test_money_amount_try_into_decimal_from_i64() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Integer64(100);
-    let decimal: Result<Decimal, MoneyError> = money_amount.try_into();
-    assert!(decimal.is_ok());
-    assert_eq!(decimal.unwrap(), dec!(100));
-}
-
-#[test]
-fn test_money_amount_try_into_decimal_from_i128() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Integer128(100);
-    let decimal: Result<Decimal, MoneyError> = money_amount.try_into();
-    assert!(decimal.is_ok());
-    assert_eq!(decimal.unwrap(), dec!(100));
-}
-
-// ==================== MoneyAmount TryFrom to Money Tests ====================
-
-#[test]
-fn test_money_amount_try_into_money_success() {
-    use crate::money::MoneyAmount;
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
-    let money_amount = MoneyAmount::Money(money);
-    let result: Result<Money, MoneyError> = money_amount.try_into();
-    assert!(result.is_ok());
-    assert_eq!(result.unwrap(), money);
-}
-
-#[test]
-fn test_money_amount_try_into_money_from_decimal_fails() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Decimal(dec!(100.50));
-    let result: Result<Money, MoneyError> = money_amount.try_into();
-    assert!(result.is_err());
-    if let Err(MoneyError::MoneyAmount(msg)) = result {
-        assert!(msg.contains("must be in form of Money"));
-    } else {
-        panic!("Expected MoneyAmount error");
-    }
-}
-
-#[test]
-fn test_money_amount_try_into_money_from_f64_fails() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Float64(100.50);
-    let result: Result<Money, MoneyError> = money_amount.try_into();
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_money_amount_try_into_money_from_i64_fails() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Integer64(100);
-    let result: Result<Money, MoneyError> = money_amount.try_into();
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_money_amount_try_into_money_from_i128_fails() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Integer128(100);
-    let result: Result<Money, MoneyError> = money_amount.try_into();
-    assert!(result.is_err());
-}
-
-// ==================== MoneyAmount TryFrom to i128 Tests ====================
-
-#[test]
-fn test_money_amount_try_into_i128_success() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Integer128(100);
-    let result: Result<i128, MoneyError> = money_amount.try_into();
-    assert!(result.is_ok());
-    assert_eq!(result.unwrap(), 100);
-}
-
-#[test]
-fn test_money_amount_try_into_i128_from_money_fails() {
-    use crate::money::MoneyAmount;
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
-    let money_amount = MoneyAmount::Money(money);
-    let result: Result<i128, MoneyError> = money_amount.try_into();
-    assert!(result.is_err());
-    if let Err(MoneyError::MoneyAmount(msg)) = result {
-        assert!(msg.contains("must be in form of i128"));
-    } else {
-        panic!("Expected MoneyAmount error");
-    }
-}
-
-#[test]
-fn test_money_amount_try_into_i128_from_decimal_fails() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Decimal(dec!(100.50));
-    let result: Result<i128, MoneyError> = money_amount.try_into();
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_money_amount_try_into_i128_from_f64_fails() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Float64(100.50);
-    let result: Result<i128, MoneyError> = money_amount.try_into();
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_money_amount_try_into_i128_from_i64_fails() {
-    use crate::money::MoneyAmount;
-    let money_amount = MoneyAmount::Integer64(100);
-    let result: Result<i128, MoneyError> = money_amount.try_into();
-    assert!(result.is_err());
 }

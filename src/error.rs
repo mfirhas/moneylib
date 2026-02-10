@@ -12,7 +12,6 @@ pub enum MoneyError {
     DecimalToInteger,
     ArithmeticOverflow,
 
-    MoneyAmount(String),
     NewMoney(String),
 }
 
@@ -46,12 +45,6 @@ impl Display for MoneyError {
                 ERROR_PREFIX
             ),
             MoneyError::ArithmeticOverflow => write!(f, "{} Arithmetic overflow", ERROR_PREFIX),
-
-            MoneyError::MoneyAmount(err_msg) => write!(
-                f,
-                "{} MoneyAmount conversion error: {}",
-                ERROR_PREFIX, err_msg
-            ),
 
             Self::NewMoney(err_msg) => {
                 write!(f, "{} failed creating new money: {}", ERROR_PREFIX, err_msg)

@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::money_macros::dec;
+use crate::{base::IntoMoneyAmount, money_macros::dec};
 use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 
 use crate::{
@@ -22,44 +22,14 @@ impl Money {
 
     pub fn from_amount<T>(currency: Currency, amount: T) -> MoneyResult<Self>
     where
-        T: Sized + Into<MoneyAmount>,
+        T: IntoMoneyAmount<Money>,
     {
-        let money_amount: MoneyAmount = amount.into();
-
-        let money: MoneyResult<Money> = money_amount.try_into();
-
-        let decimal: MoneyResult<Decimal> = money_amount.try_into();
-
-        let integer128: MoneyResult<i128> = money_amount.try_into();
-
-        match (money, decimal, integer128) {
-            (Ok(val), _, _) => {
-                if val.currency() != currency {
-                    return Err(MoneyError::NewMoney("creating Money from MoneyAmount with Money but the Money has different currency than `currency`".into()));
-                }
-                Ok(val)
-            }
-            (_, Ok(val), _) => Ok(Self::new(currency, val)),
-            (_, _, Ok(val)) => {
-                if let Some(amount) = Decimal::from_i128(val) {
-                    return Ok(Self::new(currency, amount));
-                }
-                Err(MoneyError::NewMoney(
-                    "failed creating money from i128, converting to decimal".into(),
-                ))
-            }
-            (money_ret, dec_ret, int_ret) => {
-                let err_msg = if let Err(err) = money_ret {
-                    err.to_string()
-                } else if let Err(err) = dec_ret {
-                    err.to_string()
-                } else if let Err(err) = int_ret {
-                    err.to_string()
-                } else {
-                    "failed creating money from amount".to_string()
-                };
-                Err(MoneyError::NewMoney(err_msg))
-            }
+        match (amount.into_money(), amount.into_decimal()) {
+            (Some(money), _) if money.currency() == currency => Ok(money),
+            (None, Some(amount)) => Ok(Self::new(currency, amount)),
+            _ => Err(MoneyError::NewMoney(
+                "amount type is invalid or or money's currency mismatches".into(),
+            )),
         }
     }
 
@@ -146,94 +116,66 @@ impl From<Money> for Decimal {
     }
 }
 
-/// Types accepted as amount of money
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum MoneyAmount {
-    Money(Money),
-    Decimal(Decimal),
-    Float64(f64),
-    Integer64(i64),
-    Integer128(i128),
-}
-
 //// --- MoneyAmount
+impl IntoMoneyAmount<Money> for Money {
+    fn into_money(&self) -> Option<Money> {
+        Some(*self)
+    }
 
-impl From<Money> for MoneyAmount {
-    fn from(value: Money) -> Self {
-        Self::Money(value)
+    fn into_decimal(&self) -> Option<Decimal> {
+        Some(self.amount())
     }
 }
 
-impl From<Decimal> for MoneyAmount {
-    fn from(value: Decimal) -> Self {
-        Self::Decimal(value)
+impl IntoMoneyAmount<Money> for Decimal {
+    fn into_money(&self) -> Option<Money> {
+        None
+    }
+
+    fn into_decimal(&self) -> Option<Decimal> {
+        Some(*self)
     }
 }
 
-impl From<f64> for MoneyAmount {
-    fn from(value: f64) -> Self {
-        Self::Float64(value)
+impl IntoMoneyAmount<Money> for f64 {
+    fn into_money(&self) -> Option<Money> {
+        None
+    }
+
+    fn into_decimal(&self) -> Option<Decimal> {
+        Decimal::from_f64(*self)
     }
 }
 
-impl From<i64> for MoneyAmount {
-    fn from(value: i64) -> Self {
-        Self::Integer64(value)
+impl IntoMoneyAmount<Money> for i32 {
+    fn into_money(&self) -> Option<Money> {
+        None
+    }
+
+    fn into_decimal(&self) -> Option<Decimal> {
+        Decimal::from_i32(*self)
     }
 }
 
-impl From<i128> for MoneyAmount {
-    fn from(value: i128) -> Self {
-        Self::Integer128(value)
+impl IntoMoneyAmount<Money> for i64 {
+    fn into_money(&self) -> Option<Money> {
+        None
+    }
+
+    fn into_decimal(&self) -> Option<Decimal> {
+        Decimal::from_i64(*self)
     }
 }
 
-impl TryFrom<MoneyAmount> for Decimal {
-    type Error = MoneyError;
+impl IntoMoneyAmount<Money> for i128 {
+    fn into_money(&self) -> Option<Money> {
+        None
+    }
 
-    fn try_from(value: MoneyAmount) -> Result<Self, Self::Error> {
-        match value {
-            MoneyAmount::Money(val) => Ok(val.amount()),
-            MoneyAmount::Decimal(val) => Ok(val),
-            MoneyAmount::Float64(val) => Decimal::from_f64(val).ok_or(MoneyError::MoneyAmount(
-                "failed converting f64 to decimal".into(),
-            )),
-            MoneyAmount::Integer64(val) => Decimal::from_i64(val).ok_or(MoneyError::MoneyAmount(
-                "failed converting i64 to decimal".into(),
-            )),
-            MoneyAmount::Integer128(val) => Decimal::from_i128(val).ok_or(MoneyError::MoneyAmount(
-                "failed converting i128 to decimal".into(),
-            )),
-        }
+    fn into_decimal(&self) -> Option<Decimal> {
+        Decimal::from_i128(*self)
     }
 }
-
-impl TryFrom<MoneyAmount> for Money {
-    type Error = MoneyError;
-
-    fn try_from(value: MoneyAmount) -> Result<Self, Self::Error> {
-        if let MoneyAmount::Money(val) = value {
-            return Ok(val);
-        }
-        Err(MoneyError::MoneyAmount(
-            "MoneyAmount must be in form of Money".into(),
-        ))
-    }
-}
-
-impl TryFrom<MoneyAmount> for i128 {
-    type Error = MoneyError;
-
-    fn try_from(value: MoneyAmount) -> Result<Self, Self::Error> {
-        if let MoneyAmount::Integer128(val) = value {
-            return Ok(val);
-        }
-        Err(MoneyError::MoneyAmount(
-            "MoneyAmount must be in form of i128".into(),
-        ))
-    }
-}
-
 //// MoneyAmount ---
 
 impl BaseMoney for Money {

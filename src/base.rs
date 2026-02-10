@@ -188,6 +188,15 @@ pub trait BaseOps:
     fn div(&self, rhs: Decimal) -> MoneyResult<Self>;
 }
 
+pub trait IntoMoneyAmount<T>: Sized
+where
+    T: BaseMoney,
+{
+    fn into_money(&self) -> Option<T>;
+
+    fn into_decimal(&self) -> Option<Decimal>;
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RoundingStrategy {
     #[default]
