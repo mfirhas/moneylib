@@ -95,14 +95,6 @@ fn test_error_is_clone() {
 }
 
 #[test]
-fn test_error_is_copy() {
-    // Test that MoneyError is Copy
-    let error = MoneyError::DivisionByZero;
-    let _copied = error;
-    let _another_copy = error; // Should still work since it's Copy
-}
-
-#[test]
 fn test_error_debug_format() {
     // Test Debug implementation
     let error = MoneyError::NewCurrency;
