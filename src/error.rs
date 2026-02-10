@@ -13,6 +13,8 @@ pub enum MoneyError {
     ArithmeticOverflow,
 
     NewMoney(String),
+
+    CurrencyMismatch,
 }
 
 impl Display for MoneyError {
@@ -46,8 +48,16 @@ impl Display for MoneyError {
             ),
             MoneyError::ArithmeticOverflow => write!(f, "{} Arithmetic overflow", ERROR_PREFIX),
 
-            Self::NewMoney(err_msg) => {
+            MoneyError::NewMoney(err_msg) => {
                 write!(f, "{} failed creating new money: {}", ERROR_PREFIX, err_msg)
+            }
+
+            MoneyError::CurrencyMismatch => {
+                write!(
+                    f,
+                    "{} currency mismatch between money operations",
+                    ERROR_PREFIX
+                )
             }
         }
     }

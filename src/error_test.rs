@@ -76,6 +76,7 @@ fn test_all_errors_have_prefix() {
         MoneyError::DecimalToInteger,
         MoneyError::ArithmeticOverflow,
         MoneyError::NewMoney("new money error".into()),
+        MoneyError::CurrencyMismatch,
     ];
 
     for error in errors {

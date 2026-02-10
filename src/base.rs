@@ -179,13 +179,25 @@ pub trait BaseOps:
     /// clamp the money amount between `from` and `to` inclusively.
     fn clamp(&self, from: Decimal, to: Decimal) -> Self;
 
-    fn add(&self, rhs: Decimal) -> MoneyResult<Self>;
+    fn add<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    where
+        RHS: MoneyAmount<T>,
+        T: BaseMoney;
 
-    fn sub(&self, rhs: Decimal) -> MoneyResult<Self>;
+    fn sub<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    where
+        RHS: MoneyAmount<T>,
+        T: BaseMoney;
 
-    fn mul(&self, rhs: Decimal) -> MoneyResult<Self>;
+    fn mul<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    where
+        RHS: MoneyAmount<T>,
+        T: BaseMoney;
 
-    fn div(&self, rhs: Decimal) -> MoneyResult<Self>;
+    fn div<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    where
+        RHS: MoneyAmount<T>,
+        T: BaseMoney;
 }
 
 pub trait MoneyAmount<T>: Sized

@@ -237,48 +237,76 @@ impl BaseOps for Money {
         .round()
     }
 
-    fn add(&self, rhs: Decimal) -> MoneyResult<Self> {
-        Ok(Self {
-            currency: self.currency,
-            amount: self
-                .amount
-                .checked_add(rhs)
+    fn add<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    where
+        RHS: MoneyAmount<T>,
+        T: BaseMoney,
+    {
+        let amount = match (rhs.get_money(), rhs.get_decimal()) {
+            (Some(money), _) if money.currency() == self.currency() => money.amount(),
+            (None, Some(amount)) => amount,
+            _ => return Err(MoneyError::CurrencyMismatch),
+        };
+        Ok(Self::new(
+            self.currency,
+            self.amount
+                .checked_add(amount)
                 .ok_or(MoneyError::ArithmeticOverflow)?,
-        }
-        .round())
+        ))
     }
 
-    fn sub(&self, rhs: Decimal) -> MoneyResult<Self> {
-        Ok(Self {
-            currency: self.currency,
-            amount: self
-                .amount
-                .checked_sub(rhs)
+    fn sub<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    where
+        RHS: MoneyAmount<T>,
+        T: BaseMoney,
+    {
+        let amount = match (rhs.get_money(), rhs.get_decimal()) {
+            (Some(money), _) if money.currency() == self.currency() => money.amount(),
+            (None, Some(amount)) => amount,
+            _ => return Err(MoneyError::CurrencyMismatch),
+        };
+        Ok(Self::new(
+            self.currency,
+            self.amount
+                .checked_sub(amount)
                 .ok_or(MoneyError::ArithmeticOverflow)?,
-        }
-        .round())
+        ))
     }
 
-    fn mul(&self, rhs: Decimal) -> MoneyResult<Self> {
-        Ok(Self {
-            currency: self.currency,
-            amount: self
-                .amount
-                .checked_mul(rhs)
+    fn mul<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    where
+        RHS: MoneyAmount<T>,
+        T: BaseMoney,
+    {
+        let amount = match (rhs.get_money(), rhs.get_decimal()) {
+            (Some(money), _) if money.currency() == self.currency() => money.amount(),
+            (None, Some(amount)) => amount,
+            _ => return Err(MoneyError::CurrencyMismatch),
+        };
+        Ok(Self::new(
+            self.currency,
+            self.amount
+                .checked_mul(amount)
                 .ok_or(MoneyError::ArithmeticOverflow)?,
-        }
-        .round())
+        ))
     }
 
-    fn div(&self, rhs: Decimal) -> MoneyResult<Self> {
-        Ok(Self {
-            currency: self.currency,
-            amount: self
-                .amount
-                .checked_div(rhs)
+    fn div<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    where
+        RHS: MoneyAmount<T>,
+        T: BaseMoney,
+    {
+        let amount = match (rhs.get_money(), rhs.get_decimal()) {
+            (Some(money), _) if money.currency() == self.currency() => money.amount(),
+            (None, Some(amount)) => amount,
+            _ => return Err(MoneyError::CurrencyMismatch),
+        };
+        Ok(Self::new(
+            self.currency,
+            self.amount
+                .checked_div(amount)
                 .ok_or(MoneyError::ArithmeticOverflow)?,
-        }
-        .round())
+        ))
     }
 }
 
