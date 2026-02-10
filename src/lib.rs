@@ -16,7 +16,7 @@ pub use error::MoneyError;
 pub type MoneyResult<T> = Result<T, MoneyError>;
 
 mod money;
-pub use money::Money;
+pub use money::{Money, MoneyAmount};
 
 mod dec_ops;
 mod ops;

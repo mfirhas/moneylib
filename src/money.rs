@@ -293,45 +293,65 @@ impl BaseOps for Money {
         .round()
     }
 
-    fn add(&self, rhs: Decimal) -> MoneyResult<Self> {
+    fn add<T>(&self, rhs: T) -> MoneyResult<Self>
+    where
+        T: Into<MoneyAmount>,
+    {
+        let amount: MoneyAmount = rhs.into();
+        let decimal: Decimal = amount.try_into()?;
         Ok(Self {
             currency: self.currency,
             amount: self
                 .amount
-                .checked_add(rhs)
+                .checked_add(decimal)
                 .ok_or(MoneyError::ArithmeticOverflow)?,
         }
         .round())
     }
 
-    fn sub(&self, rhs: Decimal) -> MoneyResult<Self> {
+    fn sub<T>(&self, rhs: T) -> MoneyResult<Self>
+    where
+        T: Into<MoneyAmount>,
+    {
+        let amount: MoneyAmount = rhs.into();
+        let decimal: Decimal = amount.try_into()?;
         Ok(Self {
             currency: self.currency,
             amount: self
                 .amount
-                .checked_sub(rhs)
+                .checked_sub(decimal)
                 .ok_or(MoneyError::ArithmeticOverflow)?,
         }
         .round())
     }
 
-    fn mul(&self, rhs: Decimal) -> MoneyResult<Self> {
+    fn mul<T>(&self, rhs: T) -> MoneyResult<Self>
+    where
+        T: Into<MoneyAmount>,
+    {
+        let amount: MoneyAmount = rhs.into();
+        let decimal: Decimal = amount.try_into()?;
         Ok(Self {
             currency: self.currency,
             amount: self
                 .amount
-                .checked_mul(rhs)
+                .checked_mul(decimal)
                 .ok_or(MoneyError::ArithmeticOverflow)?,
         }
         .round())
     }
 
-    fn div(&self, rhs: Decimal) -> MoneyResult<Self> {
+    fn div<T>(&self, rhs: T) -> MoneyResult<Self>
+    where
+        T: Into<MoneyAmount>,
+    {
+        let amount: MoneyAmount = rhs.into();
+        let decimal: Decimal = amount.try_into()?;
         Ok(Self {
             currency: self.currency,
             amount: self
                 .amount
-                .checked_div(rhs)
+                .checked_div(decimal)
                 .ok_or(MoneyError::ArithmeticOverflow)?,
         }
         .round())

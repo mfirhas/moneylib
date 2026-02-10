@@ -179,13 +179,21 @@ pub trait BaseOps:
     /// clamp the money amount between `from` and `to` inclusively.
     fn clamp(&self, from: Decimal, to: Decimal) -> Self;
 
-    fn add(&self, rhs: Decimal) -> MoneyResult<Self>;
+    fn add<T>(&self, rhs: T) -> MoneyResult<Self>
+    where
+        T: Into<crate::MoneyAmount>;
 
-    fn sub(&self, rhs: Decimal) -> MoneyResult<Self>;
+    fn sub<T>(&self, rhs: T) -> MoneyResult<Self>
+    where
+        T: Into<crate::MoneyAmount>;
 
-    fn mul(&self, rhs: Decimal) -> MoneyResult<Self>;
+    fn mul<T>(&self, rhs: T) -> MoneyResult<Self>
+    where
+        T: Into<crate::MoneyAmount>;
 
-    fn div(&self, rhs: Decimal) -> MoneyResult<Self>;
+    fn div<T>(&self, rhs: T) -> MoneyResult<Self>
+    where
+        T: Into<crate::MoneyAmount>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

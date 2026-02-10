@@ -2296,3 +2296,184 @@ fn test_money_amount_try_into_i128_from_i64_fails() {
     let result: Result<i128, MoneyError> = money_amount.try_into();
     assert!(result.is_err());
 }
+
+// ==================== Generic BaseOps Tests (add, sub, mul, div with different types) ====================
+
+#[test]
+fn test_base_ops_add_with_f64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(50.00_f64).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_with_i64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(50_i64).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_with_i128() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(50_i128).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_add_with_money() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(50.00));
+    let result = money1.add(money2).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_sub_with_f64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(50.00_f64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_with_i64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(50_i64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_with_i128() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(50_i128).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_with_money() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(50.00));
+    let result = money1.sub(money2).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_mul_with_f64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(2.5_f64).unwrap();
+    assert_eq!(result.amount(), dec!(250.00));
+}
+
+#[test]
+fn test_base_ops_mul_with_i64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(3_i64).unwrap();
+    assert_eq!(result.amount(), dec!(300.00));
+}
+
+#[test]
+fn test_base_ops_mul_with_i128() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(3_i128).unwrap();
+    assert_eq!(result.amount(), dec!(300.00));
+}
+
+#[test]
+fn test_base_ops_mul_with_money() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(2.00));
+    let result = money1.mul(money2).unwrap();
+    assert_eq!(result.amount(), dec!(200.00));
+}
+
+#[test]
+fn test_base_ops_div_with_f64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(2.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_div_with_i64() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(4_i64).unwrap();
+    assert_eq!(result.amount(), dec!(25.00));
+}
+
+#[test]
+fn test_base_ops_div_with_i128() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(4_i128).unwrap();
+    assert_eq!(result.amount(), dec!(25.00));
+}
+
+#[test]
+fn test_base_ops_div_with_money() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(5.00));
+    let result = money1.div(money2).unwrap();
+    assert_eq!(result.amount(), dec!(20.00));
+}
+
+#[test]
+fn test_base_ops_generic_mixed_operations() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    
+    // Test chaining operations with different types
+    let result = money
+        .add(50_i64).unwrap()           // 100 + 50 = 150
+        .mul(2.0_f64).unwrap()          // 150 * 2 = 300
+        .sub(dec!(50.00)).unwrap()      // 300 - 50 = 250
+        .div(5_i128).unwrap();          // 250 / 5 = 50
+    
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_add_with_f64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.add(-50.00_f64).unwrap();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+#[test]
+fn test_base_ops_sub_with_i64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.sub(-50_i64).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_mul_with_f64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.mul(-2.0_f64).unwrap();
+    assert_eq!(result.amount(), dec!(-200.00));
+}
+
+#[test]
+fn test_base_ops_div_with_i64_negative() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money = Money::new(currency, dec!(100.00));
+    let result = money.div(-4_i64).unwrap();
+    assert_eq!(result.amount(), dec!(-25.00));
+}
