@@ -51,7 +51,7 @@ impl FromStr for Money {
 
             let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
 
-            return Ok(Self { currency, amount }.round());
+            return Ok(Self::new(currency, amount));
         }
 
         // Try parsing with dot thousands separator
@@ -65,7 +65,7 @@ impl FromStr for Money {
 
             let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
 
-            return Ok(Self { currency, amount }.round());
+            return Ok(Self::new(currency, amount));
         }
 
         // Neither format matched
