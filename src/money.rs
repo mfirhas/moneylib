@@ -30,9 +30,9 @@ impl Money {
 
         let decimal: MoneyResult<Decimal> = money_amount.try_into();
 
-        let minor_amount: MoneyResult<i128> = money_amount.try_into();
+        let integer128: MoneyResult<i128> = money_amount.try_into();
 
-        match (money, decimal, minor_amount) {
+        match (money, decimal, integer128) {
             (Ok(val), _, _) => {
                 if val.currency() != currency {
                     return Err(MoneyError::NewMoney("creating Money from MoneyAmount with Money but the Money has different currency than `currency`".into()));
