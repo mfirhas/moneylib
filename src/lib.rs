@@ -26,6 +26,11 @@ pub use currency::Currency;
 
 mod fmt;
 
+mod parse;
+
+#[cfg(test)]
+mod parse_test;
+
 #[cfg(test)]
 mod fmt_test;
 
