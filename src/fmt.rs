@@ -161,7 +161,9 @@ pub(crate) fn format_decimal_abs(
     } else if minor_unit > 0 {
         // If no fractional part and minor_unit > 0, append decimal separator with zeros
         result.push_str(decimal_separator);
-        result.push_str(&"0".repeat(minor_unit.try_into().unwrap_or(0)));
+        // Safe: minor_unit is u32, which always fits in usize on all supported platforms
+        // (32-bit: u32::MAX = usize::MAX; 64-bit: usize is larger)
+        result.push_str(&"0".repeat(minor_unit as usize));
     }
 
     result
