@@ -39,7 +39,7 @@ impl Money {
         ))?;
 
         let amount = dec
-            .checked_div(dec!(10).powu(currency.minor_unit() as u64))
+            .checked_div(dec!(10).powu(currency.minor_unit().into()))
             .ok_or(MoneyError::NewMoney(
                 "failed converting minor amount into amount".into(),
             ))?;
@@ -196,7 +196,7 @@ impl BaseMoney for Money {
         Self {
             currency: self.currency,
             amount: self.amount.round_dp_with_strategy(
-                self.currency().minor_unit() as u32,
+                self.currency().minor_unit().into(),
                 self.currency.rounding_strategy().into(),
             ),
         }

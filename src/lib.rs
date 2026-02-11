@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+#![forbid(clippy::cast_possible_truncation)]
 
 pub use iso_currency_lib::Country;
 pub use rust_decimal::Decimal;

@@ -67,7 +67,7 @@ pub trait BaseMoney:
     #[inline]
     fn minor_amount(&self) -> MoneyResult<i128> {
         self.amount()
-            .checked_mul(dec!(10).powu(self.minor_unit() as u64))
+            .checked_mul(dec!(10).powu(self.minor_unit().into()))
             .ok_or(MoneyError::ArithmeticOverflow)?
             .to_i128()
             .ok_or(MoneyError::DecimalToInteger)
