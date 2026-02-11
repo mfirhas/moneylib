@@ -3,7 +3,7 @@
 pub use iso_currency_lib::Country;
 pub use rust_decimal::Decimal;
 pub mod money_macros {
-    pub use rust_decimal_macros::dec;
+    pub use rust_decimal::dec;
 }
 
 mod base;

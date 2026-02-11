@@ -8,7 +8,6 @@ license = "MIT"
 repository = "https://github.com/mfirhas/moneylib"
 
 [dependencies]
-rust_decimal = {version = "1.40.0", features = ["maths"]}
-rust_decimal_macros = "1.40.0"
+rust_decimal = { version = "1.40.0", default-features = false, features = ["maths", "macros"] }
 iso_currency_lib = "0.1.1"
 
