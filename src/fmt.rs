@@ -162,7 +162,9 @@ pub(crate) fn format_decimal_abs(
         // If no fractional part and minor_unit > 0, append decimal separator with zeros
         result.push_str(decimal_separator);
         // Safe: minor_unit is u32, which always fits in usize on all supported platforms
-        // (32-bit: u32::MAX = usize::MAX; 64-bit: usize is larger)
+        // (32-bit: u32::MAX = usize::MAX; 64-bit: usize is larger than u32)
+        // Using 'as' cast here is the idiomatic choice for this platform-dependent conversion.
+        #[allow(clippy::cast_possible_truncation)]
         result.push_str(&"0".repeat(minor_unit as usize));
     }
 
