@@ -1,5 +1,11 @@
 #![forbid(unsafe_code)]
+#![forbid(clippy::float_arithmetic)]
+#![forbid(clippy::float_cmp)]
+#![forbid(clippy::as_conversions)]
 #![forbid(clippy::cast_possible_truncation)]
+#![forbid(clippy::cast_sign_loss)]
+#![forbid(clippy::cast_possible_wrap)]
+#![forbid(clippy::unwrap_used)]
 
 pub use iso_currency_lib::Country;
 pub use rust_decimal::Decimal;
