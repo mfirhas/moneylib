@@ -39,7 +39,11 @@ impl Money {
         ))?;
 
         let amount = dec
-            .checked_div(dec!(10).powu(currency.minor_unit().into()))
+            .checked_div(
+                dec!(10)
+                    .checked_powu(currency.minor_unit().into())
+                    .ok_or(MoneyError::ArithmeticOverflow)?,
+            )
             .ok_or(MoneyError::NewMoney(
                 "failed converting minor amount into amount".into(),
             ))?;
