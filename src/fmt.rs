@@ -71,7 +71,7 @@ pub(crate) fn format(money: impl BaseMoney, format_str: &str) -> String {
             money.amount(),
             money.thousand_separator(),
             money.decimal_separator(),
-            money.minor_unit().into(),
+            money.minor_unit(),
         )
     };
 
@@ -133,7 +133,7 @@ pub(crate) fn format_decimal_abs(
     decimal: Decimal,
     thousand_separator: &str,
     decimal_separator: &str,
-    minor_unit: u32,
+    minor_unit: u16,
 ) -> String {
     let abs_decimal = decimal.abs();
     let decimal_str = abs_decimal.to_string();
@@ -161,12 +161,7 @@ pub(crate) fn format_decimal_abs(
     } else if minor_unit > 0 {
         // If no fractional part and minor_unit > 0, append decimal separator with zeros
         result.push_str(decimal_separator);
-        // Safe: u32 always fits in usize on all supported platforms without data loss:
-        // - 32-bit platforms: both u32 and usize are 32-bit (u32::MAX = usize::MAX = 2^32-1)
-        // - 64-bit platforms: usize is 64-bit, larger than u32
-        // Using 'as' cast is idiomatic for this platform-dependent conversion.
-        #[allow(clippy::cast_possible_truncation)]
-        result.push_str(&"0".repeat(minor_unit as usize));
+        result.push_str(&"0".repeat(minor_unit.into()));
     }
 
     result
