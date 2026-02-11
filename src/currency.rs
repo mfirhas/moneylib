@@ -72,7 +72,7 @@ impl Currency {
             symbol: ret.symbol().symbol,
             name: ret.name(),
             minor_unit: ret.exponent().unwrap_or_default(),
-            numeric_code: ret.numeric() as i32,
+            numeric_code: ret.numeric().into(),
             thousand_separator: COMMA_SEPARATOR,
             decimal_separator: DOT_SEPARATOR,
             minor_symbol: ret
