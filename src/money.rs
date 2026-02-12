@@ -123,60 +123,72 @@ impl From<Money> for Decimal {
 // --- MoneyAmount
 
 impl MoneyAmount<Money> for Money {
+    #[inline]
     fn get_money(&self) -> Option<Money> {
         Some(*self)
     }
 
+    #[inline]
     fn get_decimal(&self) -> Option<Decimal> {
         Some(self.amount())
     }
 }
 
 impl MoneyAmount<Money> for Decimal {
+    #[inline]
     fn get_money(&self) -> Option<Money> {
         None
     }
 
+    #[inline]
     fn get_decimal(&self) -> Option<Decimal> {
         Some(*self)
     }
 }
 
 impl MoneyAmount<Money> for f64 {
+    #[inline]
     fn get_money(&self) -> Option<Money> {
         None
     }
 
+    #[inline]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_f64(*self)
     }
 }
 
 impl MoneyAmount<Money> for i32 {
+    #[inline]
     fn get_money(&self) -> Option<Money> {
         None
     }
 
+    #[inline]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i32(*self)
     }
 }
 
 impl MoneyAmount<Money> for i64 {
+    #[inline]
     fn get_money(&self) -> Option<Money> {
         None
     }
 
+    #[inline]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i64(*self)
     }
 }
 
 impl MoneyAmount<Money> for i128 {
+    #[inline]
     fn get_money(&self) -> Option<Money> {
         None
     }
 
+    #[inline]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i128(*self)
     }
@@ -186,16 +198,19 @@ impl MoneyAmount<Money> for i128 {
 
 impl BaseMoney for Money {
     /// Get currency of money
+    #[inline]
     fn currency(&self) -> Currency {
         self.currency
     }
 
     /// Get amount of money
+    #[inline]
     fn amount(&self) -> Decimal {
         self.amount
     }
 
     /// Round money using `Currency`'s rounding strategy to the scale of currency's minor unit
+    #[inline]
     fn round(self) -> Self {
         Self {
             currency: self.currency,
@@ -208,6 +223,7 @@ impl BaseMoney for Money {
 }
 
 impl BaseOps for Money {
+    #[inline]
     fn abs(&self) -> Self {
         Self {
             currency: self.currency,
@@ -216,6 +232,7 @@ impl BaseOps for Money {
         .round()
     }
 
+    #[inline]
     fn min(&self, rhs: Self) -> Self {
         Self {
             currency: self.currency,
@@ -224,6 +241,7 @@ impl BaseOps for Money {
         .round()
     }
 
+    #[inline]
     fn max(&self, rhs: Self) -> Self {
         Self {
             currency: self.currency,
@@ -233,6 +251,7 @@ impl BaseOps for Money {
     }
 
     /// clamp the money amount between `from` and `to` inclusively.
+    #[inline]
     fn clamp(&self, from: Decimal, to: Decimal) -> Self {
         Self {
             currency: self.currency,
@@ -315,14 +334,17 @@ impl BaseOps for Money {
 }
 
 impl CustomMoney for Money {
+    #[inline]
     fn set_thousand_separator(&mut self, separator: &'static str) {
         self.currency.set_thousand_separator(separator);
     }
 
+    #[inline]
     fn set_decimal_separator(&mut self, separator: &'static str) {
         self.currency.set_decimal_separator(separator);
     }
 
+    #[inline]
     fn round_with(self, decimal_points: u32, strategy: crate::base::RoundingStrategy) -> Self {
         Self {
             currency: self.currency,
