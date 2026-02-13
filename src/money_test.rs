@@ -107,22 +107,25 @@ fn test_partial_ord_same_currency_equal() {
 }
 
 #[test]
+#[should_panic]
 fn test_partial_ord_different_currency_returns_none() {
     let usd = Currency::from_iso("USD").unwrap();
     let eur = Currency::from_iso("EUR").unwrap();
     let money1 = Money::new(usd, dec!(100.00));
     let money2 = Money::new(eur, dec!(100.00));
+    // panic comparing money with different currencies
     assert_eq!(money1.partial_cmp(&money2), None);
 }
 
 #[test]
+#[should_panic]
 fn test_partial_ord_different_currency_operators_return_false() {
     let usd = Currency::from_iso("USD").unwrap();
     let eur = Currency::from_iso("EUR").unwrap();
     let money1 = Money::new(usd, dec!(100.00));
     let money2 = Money::new(eur, dec!(100.00));
 
-    // When partial_cmp returns None, all comparison operators return false
+    // panic comparing money with different currencies
     assert_eq!(money1 < money2, false);
     assert_eq!(money1 > money2, false);
     assert_eq!(money1 <= money2, false);

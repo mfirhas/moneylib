@@ -61,11 +61,12 @@ impl PartialEq for Money {
 
 impl PartialOrd for Money {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.currency == other.currency {
-            self.amount.partial_cmp(&other.amount)
-        } else {
-            None
-        }
+        // WARN: PANIC!
+        assert_eq!(
+            self.currency, other.currency,
+            "cannot compare 2 money with different currencies"
+        );
+        self.amount.partial_cmp(&other.amount)
     }
 }
 
