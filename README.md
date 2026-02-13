@@ -13,16 +13,22 @@ also provides `Currency` storing metadata about the money that involves in logic
 
 This library provides these main components to work with money:
 - `Money`: represents the money itself and all operations on it.
-- `Currency`: represents the money's currency and all of its metadata. it Involves in money's states and lifecycles throughout its operations.
+- `Currency`: represents the money's currency and all of its metadata. It involves in money's states and lifecycles throughout its operations.
 - `Decimal`: 128 bit floating-point with fixed-precision decimal number. Re-export from [rust_decimal](https://crates.io/crates/rust_decimal) represents main type for money's amount.
-- `BaseMoney`: trait of money.
-- `BaseOps`: trait for some operations on money.
+- `BaseMoney`: trait of money providing core operations and accessors.
+- `BaseOps`: trait for arithmetic and comparison operations on money.
+- `CustomMoney`: trait for custom formatting and rounding operations on money.
+- `RoundingStrategy`: enum defining rounding strategies (BankersRounding, HalfUp, HalfDown, Ceil, Floor).
+- `MoneyError`: enum of possible errors that can occur in money operations.
+- `MoneyResult<T>`: Result type alias for operations that can fail, equivalent to `Result<T, MoneyError>`.
+- `Country`: re-export from iso_currency_lib for country information.
 
 `Money`, `Currency`, and `Decimal` are all `Copy` so it can be passed around freely without having to worry about borrow checker.
 
 Example:
 ```rust
 use moneylib::{Money, BaseMoney, BaseOps, Currency, money_macros::dec};
+use std::str::FromStr;
 
 let usd = Money::from_str("USD 12,000").unwrap();
 let add = usd + dec!(500);
@@ -33,14 +39,13 @@ println!("{}", add); // prints "USD 12,500.00"
 Here are some features supported:
 - Value type to represent money.
 - Access to its amount and currency's metadata.
-- Arithmetics. (*,/,+,-), operators overloading supported.
-- Comparisons. (>,<,>=,<=,==,!=), operators overloading supported.
+- Arithmetics: (*,/,+,-), operator overloading supported.
+- Comparisons: (>,<,>=,<=,==,!=), operator overloading supported.
 - Negative money.
 - Formatting and custom formatting.
-- Rounding with multiple strategy: Bankers rounding, half-up, half-down, ceil, and floor.
+- Rounding with multiple strategies: Bankers rounding, half-up, half-down, ceil, and floor.
 - Money in form of its smallest amount (minor amount).
 - Some basic operations like absolute value, min, max, and clamp.
-- Accounting operations (TODO)
 
 ## Invariants
 Monetary values are sensitive matter and its invariants must always hold true.
@@ -49,9 +54,8 @@ Monetary values are sensitive matter and its invariants must always hold true.
 - Decimal points(s): 0 <= s <= 28
 
 ### Money
-- Always rounded to its currency's minor unit using currency's rounding strategy(default to bankers rounding) after each creations and operations done on it.
-  Use `RawMoney`(TODO) to avoid this state.
-- Creating money from string only accept currencies already defined in ISO 4217. For new/custom currencies, create new currency using `Currency::new` function.
+- Always rounded to its currency's minor unit using currency's rounding strategy (default to bankers rounding) after each creation and operation done on it.
+- Creating money from string only accepts currencies already defined in ISO 4217. For new/custom currencies, create new currency using `Currency::new` function.
 - Comparisons: Equality only for money with same currencies. For ordering equality will *PANIC* if currencies are different. Use methods in `BaseOps` for non-panic comparisons.
 - Arithmetics:
   - *,+,-: will PANIC if: Overflowed, or currencies are different.
@@ -59,7 +63,7 @@ Monetary values are sensitive matter and its invariants must always hold true.
   - Use methods in `BaseOps` for non-panic arithmetics.
 
 ### Currency
-- Creation from string accept ISO 4217 alphabetical code, case insensitive. E.g. USD, usd, uSd, idR.
+- Creation from string accepts ISO 4217 alphabetical code, case insensitive. E.g. USD, usd, uSd, idr.
 - Comparisons and hash are on currency's alphabetical code.
 
 This library as much as it can prevents invalid state by either returning Result(`MoneyResult`) or going PANIC.
