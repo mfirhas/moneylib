@@ -699,6 +699,198 @@ fn test_base_ops_clamp_above_range() {
     assert_eq!(clamped.amount(), dec!(200.00));
 }
 
+// ==================== BaseOps Comparison Tests ====================
+
+#[test]
+fn test_base_ops_is_bigger_true() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(200.00));
+    let money2 = Money::new(currency, dec!(100.00));
+    assert_eq!(money1.is_bigger(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_bigger_false() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(200.00));
+    assert_eq!(money1.is_bigger(money2).unwrap(), false);
+}
+
+#[test]
+fn test_base_ops_is_bigger_equal_amounts() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(100.00));
+    assert_eq!(money1.is_bigger(money2).unwrap(), false);
+}
+
+#[test]
+fn test_base_ops_is_bigger_negative_amounts() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(-50.00));
+    let money2 = Money::new(currency, dec!(-100.00));
+    assert_eq!(money1.is_bigger(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_bigger_currency_mismatch() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let eur = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(usd, dec!(200.00));
+    let money2 = Money::new(eur, dec!(100.00));
+    let result = money1.is_bigger(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_is_smaller_true() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(200.00));
+    assert_eq!(money1.is_smaller(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_smaller_false() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(200.00));
+    let money2 = Money::new(currency, dec!(100.00));
+    assert_eq!(money1.is_smaller(money2).unwrap(), false);
+}
+
+#[test]
+fn test_base_ops_is_smaller_equal_amounts() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(100.00));
+    assert_eq!(money1.is_smaller(money2).unwrap(), false);
+}
+
+#[test]
+fn test_base_ops_is_smaller_negative_amounts() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(-100.00));
+    let money2 = Money::new(currency, dec!(-50.00));
+    assert_eq!(money1.is_smaller(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_smaller_currency_mismatch() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let eur = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(usd, dec!(100.00));
+    let money2 = Money::new(eur, dec!(200.00));
+    let result = money1.is_smaller(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_is_bigger_equal_true_greater() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(200.00));
+    let money2 = Money::new(currency, dec!(100.00));
+    assert_eq!(money1.is_bigger_equal(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_bigger_equal_true_equal() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(100.00));
+    assert_eq!(money1.is_bigger_equal(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_bigger_equal_false() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(200.00));
+    assert_eq!(money1.is_bigger_equal(money2).unwrap(), false);
+}
+
+#[test]
+fn test_base_ops_is_bigger_equal_negative_amounts() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(-50.00));
+    let money2 = Money::new(currency, dec!(-50.00));
+    assert_eq!(money1.is_bigger_equal(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_bigger_equal_currency_mismatch() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let eur = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(usd, dec!(200.00));
+    let money2 = Money::new(eur, dec!(100.00));
+    let result = money1.is_bigger_equal(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_is_smaller_equal_true_smaller() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(200.00));
+    assert_eq!(money1.is_smaller_equal(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_smaller_equal_true_equal() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(100.00));
+    assert_eq!(money1.is_smaller_equal(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_smaller_equal_false() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(200.00));
+    let money2 = Money::new(currency, dec!(100.00));
+    assert_eq!(money1.is_smaller_equal(money2).unwrap(), false);
+}
+
+#[test]
+fn test_base_ops_is_smaller_equal_negative_amounts() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(-100.00));
+    let money2 = Money::new(currency, dec!(-100.00));
+    assert_eq!(money1.is_smaller_equal(money2).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_is_smaller_equal_currency_mismatch() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let eur = Currency::from_iso("EUR").unwrap();
+    let money1 = Money::new(usd, dec!(100.00));
+    let money2 = Money::new(eur, dec!(200.00));
+    let result = money1.is_smaller_equal(money2);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_base_ops_comparison_with_zero() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(0.00));
+    assert_eq!(money1.is_bigger(money2).unwrap(), true);
+    assert_eq!(money2.is_smaller(money1).unwrap(), true);
+}
+
+#[test]
+fn test_base_ops_comparison_cross_zero() {
+    let currency = Currency::from_iso("USD").unwrap();
+    let money1 = Money::new(currency, dec!(100.00));
+    let money2 = Money::new(currency, dec!(-100.00));
+    assert_eq!(money1.is_bigger(money2).unwrap(), true);
+    assert_eq!(money2.is_smaller(money1).unwrap(), true);
+}
+
 #[test]
 fn test_base_ops_add_decimal() {
     let currency = Currency::from_iso("USD").unwrap();
