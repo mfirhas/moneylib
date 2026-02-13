@@ -16,6 +16,7 @@ pub struct Money {
 }
 
 impl Money {
+    #[inline]
     pub fn new(currency: Currency, amount: Decimal) -> Self {
         Money { currency, amount }.round()
     }
