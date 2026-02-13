@@ -79,13 +79,13 @@ pub trait BaseMoney:
 
     /// Get money thousands separator
     #[inline]
-    fn thousand_separator(&self) -> &'static str {
+    fn thousand_separator(&self) -> &str {
         self.currency().thousand_separator()
     }
 
     /// Get money decimal separator
     #[inline]
-    fn decimal_separator(&self) -> &'static str {
+    fn decimal_separator(&self) -> &str {
         self.currency().decimal_separator()
     }
 
