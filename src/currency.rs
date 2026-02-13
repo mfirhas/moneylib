@@ -126,26 +126,32 @@ impl Currency {
         })
     }
 
+    #[inline]
     pub fn set_thousand_separator(&mut self, separator: &'static str) {
         self.thousand_separator = separator;
     }
 
+    #[inline]
     pub fn set_decimal_separator(&mut self, separator: &'static str) {
         self.decimal_separator = separator;
     }
 
+    #[inline]
     pub fn set_minor_symbol(&mut self, minor_symbol: &'static str) {
         self.minor_symbol = minor_symbol;
     }
 
+    #[inline]
     pub fn set_numeric_code(&mut self, numeric_code: i32) {
         self.numeric_code = numeric_code;
     }
 
+    #[inline]
     pub fn set_rounding_strategy(&mut self, strategy: RoundingStrategy) {
         self.rounding_strategy = strategy
     }
 
+    #[inline]
     pub fn set_countries(&mut self, countries: &'static [Country]) {
         self.countries = Some(countries);
     }
