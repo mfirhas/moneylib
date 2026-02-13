@@ -302,11 +302,11 @@ pub trait BaseMoney:
     /// use moneylib::BaseMoney;
     ///
     /// let usd = Currency::from_iso("USD").unwrap();
-    /// let positive = Money::new(usd, dec!(10));
+    /// let positive = Money::new(usd.clone(), dec!(10));
     /// assert!(positive.is_positive());
     ///
-    /// let negative = Money::new(usd.clone(), dec!(-10));
-    /// assert!(!negative.is_positive());
+    /// let negative_money = Money::new(usd, dec!(-10));
+    /// assert!(!negative_money.is_positive());
     /// ```
     #[inline]
     fn is_positive(&self) -> bool {
@@ -323,11 +323,11 @@ pub trait BaseMoney:
     /// use moneylib::BaseMoney;
     ///
     /// let usd = Currency::from_iso("USD").unwrap();
-    /// let negative = Money::new(usd, dec!(-10));
+    /// let negative = Money::new(usd.clone(), dec!(-10));
     /// assert!(negative.is_negative());
     ///
-    /// let positive = Money::new(usd.clone(), dec!(10));
-    /// assert!(!positive.is_negative());
+    /// let positive_money = Money::new(usd, dec!(10));
+    /// assert!(!positive_money.is_negative());
     /// ```
     #[inline]
     fn is_negative(&self) -> bool {
