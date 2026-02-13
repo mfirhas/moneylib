@@ -202,6 +202,36 @@ pub trait BaseOps:
     where
         RHS: MoneyAmount<T>,
         T: BaseMoney;
+
+    // PROVIDED
+
+    fn is_bigger(&self, rhs: impl BaseMoney) -> MoneyResult<bool> {
+        if self.currency() != rhs.currency() {
+            return Err(MoneyError::CurrencyMismatch);
+        }
+        Ok(self.amount() > rhs.amount())
+    }
+
+    fn is_smaller(&self, rhs: impl BaseMoney) -> MoneyResult<bool> {
+        if self.currency() != rhs.currency() {
+            return Err(MoneyError::CurrencyMismatch);
+        }
+        Ok(self.amount() < rhs.amount())
+    }
+
+    fn is_bigger_equal(&self, rhs: impl BaseMoney) -> MoneyResult<bool> {
+        if self.currency() != rhs.currency() {
+            return Err(MoneyError::CurrencyMismatch);
+        }
+        Ok(self.amount() >= rhs.amount())
+    }
+
+    fn is_smaller_equal(&self, rhs: impl BaseMoney) -> MoneyResult<bool> {
+        if self.currency() != rhs.currency() {
+            return Err(MoneyError::CurrencyMismatch);
+        }
+        Ok(self.amount() <= rhs.amount())
+    }
 }
 
 pub trait MoneyAmount<T>: Sized
