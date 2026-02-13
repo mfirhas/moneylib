@@ -823,17 +823,16 @@ where
 /// use moneylib::{BaseMoney, CustomMoney};
 ///
 /// let usd = Currency::from_iso("USD").unwrap();
-/// let money = Money::new(usd, dec!(123.456));
 ///
-/// // Round using different strategies
-/// let floor = money.clone().round_with(2, RoundingStrategy::Floor);
-/// assert_eq!(floor.amount(), dec!(123.46));
+/// // Note: Money values are rounded to currency minor unit on creation,
+/// // so we use round_with with more precision to demonstrate differences
+/// let money1 = Money::new(usd, dec!(2.5));
+/// let bankers = money1.round_with(0, RoundingStrategy::BankersRounding);
+/// assert_eq!(bankers.amount(), dec!(2));  // Rounds to even
 ///
-/// let ceil = money.clone().round_with(2, RoundingStrategy::Ceil);
-/// assert_eq!(ceil.amount(), dec!(123.46));
-///
-/// let half_up = money.clone().round_with(2, RoundingStrategy::HalfUp);
-/// assert_eq!(half_up.amount(), dec!(123.46));
+/// let money2 = Money::new(usd, dec!(2.5));
+/// let half_up = money2.round_with(0, RoundingStrategy::HalfUp);
+/// assert_eq!(half_up.amount(), dec!(3));  // Always rounds up at halfway
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RoundingStrategy {
@@ -1036,8 +1035,10 @@ pub trait CustomMoney: Sized + BaseMoney {
     /// let usd = Currency::from_iso("USD").unwrap();
     /// let mut money = Money::new(usd, dec!(1234.56));
     ///
+    /// // Set European-style formatting
+    /// money.set_thousand_separator(".");
     /// money.set_decimal_separator(",");
-    /// assert_eq!(money.format_code(), "USD 1,234,56");
+    /// assert_eq!(money.format_code(), "USD 1.234,56");
     /// ```
     fn set_decimal_separator(&mut self, separator: &'static str);
 
