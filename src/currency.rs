@@ -214,11 +214,11 @@ impl Currency {
     /// ```
     /// use moneylib::Currency;
     ///
-    /// // Create a custom cryptocurrency
-    /// let btc = Currency::new("XBT", "₿", "Bitcoin", 8).unwrap();
-    /// assert_eq!(btc.code(), "XBT");
-    /// assert_eq!(btc.symbol(), "₿");
-    /// assert_eq!(btc.minor_unit(), 8);
+    /// // Create a custom currency for loyalty points
+    /// let points = Currency::new("PTS", "P", "Loyalty Points", 2).unwrap();
+    /// assert_eq!(points.code(), "PTS");
+    /// assert_eq!(points.symbol(), "P");
+    /// assert_eq!(points.minor_unit(), 2);
     ///
     /// // Create a zero-decimal currency
     /// let gold = Currency::new("GOLD", "Au", "Gold Ounce", 0).unwrap();
@@ -414,9 +414,11 @@ impl Currency {
     /// ```
     /// use moneylib::{Currency, Country};
     ///
+    /// // The countries slice must have static lifetime
+    /// static COUNTRIES: &[Country] = &[Country::US, Country::CA];
+    ///
     /// let mut custom = Currency::new("REG", "R", "Regional Currency", 2).unwrap();
-    /// let countries = &[Country::US, Country::CA];
-    /// custom.set_countries(countries);
+    /// custom.set_countries(COUNTRIES);
     /// ```
     #[inline]
     pub fn set_countries(&mut self, countries: &'static [Country]) {
