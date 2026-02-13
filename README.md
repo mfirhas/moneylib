@@ -13,7 +13,7 @@ also provides `Currency` storing metadata about the money that involves in logic
 
 This library provides these main components to work with money:
 - `Money`: represents the money itself and all operations on it.
-- `Currency`: represents the money's currency and all of its metadata. It involves in money's states and lifecycles throughout its operations.
+- `Currency`: represents the money's currency and all of its metadata. It is involved in money's states and lifecycles throughout its operations.
 - `Decimal`: 128 bit floating-point with fixed-precision decimal number. Re-export from [rust_decimal](https://crates.io/crates/rust_decimal) represents main type for money's amount.
 - `BaseMoney`: trait of money providing core operations and accessors.
 - `BaseOps`: trait for arithmetic and comparison operations on money.
@@ -63,7 +63,7 @@ Monetary values are sensitive matter and its invariants must always hold true.
   - Use methods in `BaseOps` for non-panic arithmetics.
 
 ### Currency
-- Creation from string accepts ISO 4217 alphabetical code, case insensitive. E.g. USD, usd, uSd, idr.
+- Creation from string accepts ISO 4217 alphabetical code, case insensitive. E.g. USD, usd, uSd, IDR.
 - Comparisons and hash are on currency's alphabetical code.
 
 This library as much as it can prevents invalid state by either returning Result(`MoneyResult`) or going PANIC.
