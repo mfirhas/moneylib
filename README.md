@@ -22,7 +22,7 @@ This library provides these main components to work with money:
 
 Example:
 ```rust
-use moneylib::{Money, BaseMoney, BaseOps, Currency};
+use moneylib::{Money, BaseMoney, BaseOps, Currency, money_macros::dec};
 
 let usd = Money::from_str("USD 12,000").unwrap();
 let add = usd + dec!(500);
