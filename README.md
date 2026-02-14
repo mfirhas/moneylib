@@ -1,6 +1,6 @@
 # moneylib
 
-A library to deal with money in Rust with type-safety using fixed-precision decimal.
+A library to deal with money using floating-point fixed-precision decimal.
 
 ## Overview
 
@@ -46,9 +46,11 @@ Here are some features supported:
 - Rounding with multiple strategies: Bankers rounding, half-up, half-down, ceil, and floor.
 - Money in form of its smallest amount (minor amount).
 - Some basic operations like absolute value, min, max, and clamp.
+- Custom currency.
 
 ## Invariants
-Monetary values are sensitive matter and its invariants must always hold true.
+Monetary values are sensitive matter and their invariants must always hold true.
+
 ### Decimal
 - Significand(m): -2^96 < m < 2^96
 - Decimal points(s): 0 <= s <= 28
@@ -58,19 +60,19 @@ Monetary values are sensitive matter and its invariants must always hold true.
 - Creating money from string only accepts currencies already defined in ISO 4217. For new/custom currencies, create new currency using `Currency::new` function.
 - Comparisons: Equality only for money with same currencies. For ordering equality will *PANIC* if currencies are different. Use methods in `BaseOps` for non-panic comparisons.
 - Arithmetics:
-  - *,+,-: will PANIC if: Overflowed, or currencies are different.
-  - /: will PANIC if: Overflowed, division by zero, or currencies are different.
+  - *,+,-: will *PANIC* if: Overflowed, or currencies are different.
+  - /: will *PANIC* if: Overflowed, division by zero, or currencies are different.
   - Use methods in `BaseOps` for non-panic arithmetics.
 
 ### Currency
 - Creation from string accepts ISO 4217 alphabetical code, case insensitive. E.g. USD, usd, uSd, IDR.
 - Comparisons and hash are on currency's alphabetical code.
 
-This library as much as it can prevents invalid state by either returning Result(`MoneyResult`) or going PANIC.
+This library maintains type-safety by preventing invalid state either by returning Result(`MoneyResult`) or going *PANIC*.
 
 ## Code Coverage
 
-This project maintains excellent code coverage.
+This library maintains excellent code coverage.
 
 To see current coverage results, run the coverage command below.
 
