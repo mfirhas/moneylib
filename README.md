@@ -37,6 +37,7 @@ println!("{}", add); // prints "USD 12,500.00"
 
 ## Features
 Here are some features supported:
+- Type-safe: prevents invalid state and follow monetary standard.
 - Value type to represent money.
 - Access to its amount and currency's metadata.
 - Arithmetics: (*,/,+,-), operator overloading supported.
