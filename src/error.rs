@@ -2,6 +2,7 @@ use std::{error::Error, fmt::Display};
 
 const ERROR_PREFIX: &str = "[MONEYLIB]";
 
+/// Error type for moneylib
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MoneyError {
     NewCurrency,

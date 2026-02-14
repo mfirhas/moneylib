@@ -18,7 +18,7 @@ use crate::{
 /// # Key Features
 ///
 /// - **Type Safety**: Ensures currency consistency in operations
-/// - **Precision**: Uses 128-bit fixed-point decimal for accurate calculations
+/// - **Precision**: Uses 128-bit fixed-precision decimal for accurate calculations
 /// - **Automatic Rounding**: Rounds to currency's minor unit after each operation
 /// - **Zero-Cost**: `Copy` type with no heap allocations
 ///
