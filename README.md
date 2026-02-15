@@ -19,6 +19,7 @@ also provides `Currency` storing metadata about the money that involves in logic
 ## Features
 Here are some features supported:
 - Type-safe: prevents invalid state and follow monetary standard.
+- Supports ISO 4217 currencies.
 - Value type to represent money.
 - Access to its amount and currency's metadata.
 - Arithmetics: (*,/,+,-), operator overloading supported.
@@ -103,6 +104,8 @@ match money_a.add(eur_money) {
 }
 ```
 
+For more examples check inside `examples/` directory.
+
 ## Components
 This library provides these main components to work with money:
 - `Money`: represents the money itself and all operations on it.
@@ -139,6 +142,14 @@ Monetary values are sensitive matter and their invariants must always hold true.
 - Comparisons and hash are on currency's alphabetical code.
 
 This library maintains type-safety by preventing invalid state either by returning Result(`MoneyResult`) or going *PANIC*.
+
+## Feature flags
+
+### Raw Money(`raw_money`)
+This feature flag toggle `RawMoney` type which doesn't do rounding like `Money` type does.
+It keeps the precision intact and you can choose when to round it using `.round()` or `.round_with(...)`.
+Use method `.finish()` to round it into final form and convert it back to `Money`.
+Method `.finish()` will call `.round()` inside and round using currency's rounding rule.
 
 ## Code Coverage
 
