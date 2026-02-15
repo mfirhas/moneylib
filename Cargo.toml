@@ -6,6 +6,9 @@ authors = ["Muhammad Fathir Irhas <fathir.irhas@gmail.com>"]
 description = "Library to deal with money in Rust."
 license = "MIT"
 repository = "https://github.com/mfirhas/moneylib"
+documentation = "https://docs.rs/moneylib"
+keywords = ["finance", "money", "currency", "decimal", "type-safe"]
+categories = ["finance", "data-structures"]
 
 [dependencies]
 rust_decimal = { version = "1.40.0", default-features = false, features = ["maths", "macros"] }
