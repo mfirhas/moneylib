@@ -248,34 +248,26 @@ fn main() {
 
     let amount_to_round = dec!(123.456);
 
+    // Helper function to demonstrate different rounding strategies
+    let demonstrate_rounding = |strategy: RoundingStrategy, strategy_name: &str| {
+        let mut currency = usd;
+        currency.set_rounding_strategy(strategy);
+        let money = Money::new(currency, amount_to_round);
+        println!("{}: {} -> {}", strategy_name, amount_to_round, money.amount());
+    };
+
     // Different rounding strategies
-    let mut currency_bankers = usd;
-    currency_bankers.set_rounding_strategy(RoundingStrategy::BankersRounding);
-    let money_bankers = Money::new(currency_bankers, amount_to_round);
-    println!("Banker's Rounding: {} -> {}", amount_to_round, money_bankers.amount());
-
-    let mut currency_half_up = usd;
-    currency_half_up.set_rounding_strategy(RoundingStrategy::HalfUp);
-    let money_half_up = Money::new(currency_half_up, amount_to_round);
-    println!("Half Up: {} -> {}", amount_to_round, money_half_up.amount());
-
-    let mut currency_half_down = usd;
-    currency_half_down.set_rounding_strategy(RoundingStrategy::HalfDown);
-    let money_half_down = Money::new(currency_half_down, amount_to_round);
-    println!("Half Down: {} -> {}", amount_to_round, money_half_down.amount());
-
-    let mut currency_ceil = usd;
-    currency_ceil.set_rounding_strategy(RoundingStrategy::Ceil);
-    let money_ceil = Money::new(currency_ceil, amount_to_round);
-    println!("Ceil: {} -> {}", amount_to_round, money_ceil.amount());
-
-    let mut currency_floor = usd;
-    currency_floor.set_rounding_strategy(RoundingStrategy::Floor);
-    let money_floor = Money::new(currency_floor, amount_to_round);
-    println!("Floor: {} -> {}", amount_to_round, money_floor.amount());
+    demonstrate_rounding(RoundingStrategy::BankersRounding, "Banker's Rounding");
+    demonstrate_rounding(RoundingStrategy::HalfUp, "Half Up");
+    demonstrate_rounding(RoundingStrategy::HalfDown, "Half Down");
+    demonstrate_rounding(RoundingStrategy::Ceil, "Ceil");
+    demonstrate_rounding(RoundingStrategy::Floor, "Floor");
 
     // Custom rounding with round_with()
-    let money_custom_round = money_bankers.round_with(1, RoundingStrategy::HalfUp);
+    let mut currency_for_custom = usd;
+    currency_for_custom.set_rounding_strategy(RoundingStrategy::BankersRounding);
+    let money_for_custom = Money::new(currency_for_custom, amount_to_round);
+    let money_custom_round = money_for_custom.round_with(1, RoundingStrategy::HalfUp);
     println!("Custom round (1 decimal, HalfUp): {}", money_custom_round.amount());
     println!();
 
@@ -380,7 +372,8 @@ fn main() {
         Err(e) => println!("Error creating currency: {:?}", e),
     }
 
-    // Invalid money string format
+    // Invalid money string format (currency code must come FIRST, not last)
+    // The correct format is "CURRENCY AMOUNT", not "AMOUNT CURRENCY"
     match Money::from_str("100.00 USD") {
         Ok(money) => println!("Money created: {}", money),
         Err(e) => println!("Error parsing money: {:?}", e),
