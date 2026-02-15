@@ -35,14 +35,14 @@ impl Sub for RawMoney {
         assert_eq!(
             self.currency(),
             rhs.currency(),
-            "currency mismatch for substraction operation"
+            "currency mismatch for subtraction operation"
         );
 
         // WARN: PANIC!
         let ret = self
             .amount()
             .checked_sub(rhs.amount())
-            .expect("substraction operation overflow");
+            .expect("subtraction operation overflow");
 
         Self::new(self.currency(), ret)
     }

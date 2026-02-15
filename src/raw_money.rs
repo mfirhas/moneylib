@@ -160,7 +160,7 @@ impl RawMoney {
             (Some(money), _) if money.currency() == currency => Ok(money),
             (None, Some(amount)) => Ok(Self::new(currency, amount)),
             _ => Err(MoneyError::NewMoney(
-                "amount type is invalid or or money's currency mismatches".into(),
+                "amount type is invalid or money's currency mismatches".into(),
             )),
         }
     }
