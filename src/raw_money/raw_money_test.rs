@@ -1,7 +1,5 @@
 use crate::money_macros::dec;
-use crate::{
-    BaseMoney, BaseOps, Currency, CustomMoney, Decimal, Money, MoneyError, RawMoney, RoundingStrategy,
-};
+use crate::{BaseMoney, BaseOps, Currency, CustomMoney, Money, RawMoney, RoundingStrategy};
 use std::str::FromStr;
 
 // ==================== RawMoney::new() Tests ====================
@@ -86,10 +84,10 @@ fn test_round_trip_conversion() {
     let original = Money::new(usd, dec!(100.567));
     // Money rounds to 100.57
     assert_eq!(original.amount(), dec!(100.57));
-    
+
     let raw = original.into_raw();
     assert_eq!(raw.amount(), dec!(100.57));
-    
+
     let back_to_money = raw.finish();
     assert_eq!(back_to_money.amount(), dec!(100.57));
 }
@@ -550,23 +548,23 @@ fn test_set_decimal_separator() {
 #[test]
 fn test_precise_calculation_workflow() {
     let usd = Currency::from_iso("USD").unwrap();
-    
+
     // Start with Money (rounded)
     let money = Money::new(usd, dec!(100));
-    
+
     // Convert to RawMoney for precise calculations
     let raw = money.into_raw();
-    
+
     // Divide by 3 (preserves precision)
     let divided = raw / dec!(3);
     let expected_divided = dec!(100) / dec!(3);
     assert_eq!(divided.amount(), expected_divided);
-    
+
     // Multiply by 3 (should get back close to original)
     let multiplied = divided * dec!(3);
     let expected_multiplied = expected_divided * dec!(3);
     assert_eq!(multiplied.amount(), expected_multiplied);
-    
+
     // Convert back to Money (rounds)
     let final_money = multiplied.finish();
     assert_eq!(final_money.amount(), dec!(100.00));
@@ -575,23 +573,23 @@ fn test_precise_calculation_workflow() {
 #[test]
 fn test_tax_calculation_precision() {
     let usd = Currency::from_iso("USD").unwrap();
-    
+
     // Item price
     let price = Money::new(usd, dec!(19.99));
-    
+
     // Convert to raw for tax calculation
     let raw_price = price.into_raw();
-    
+
     // Apply 8.875% tax (NYC tax rate)
     let tax_rate = dec!(0.08875);
     let tax = raw_price * tax_rate;
-    
+
     // Tax should preserve precision
     assert_eq!(tax.amount(), dec!(1.7741125));
-    
+
     // Total with tax
     let total_raw = raw_price + tax;
-    
+
     // Convert to Money for final display (rounds)
     let total = total_raw.finish();
     assert_eq!(total.amount(), dec!(21.76));
@@ -600,21 +598,21 @@ fn test_tax_calculation_precision() {
 #[test]
 fn test_percentage_split_workflow() {
     let usd = Currency::from_iso("USD").unwrap();
-    
+
     // Total amount
     let total = Money::new(usd, dec!(100));
     let raw_total = total.into_raw();
-    
+
     // Split into percentages: 33.33%, 33.33%, 33.34%
     let part1 = (raw_total * dec!(0.3333)).finish();
     let part2 = (raw_total * dec!(0.3333)).finish();
     let part3 = (raw_total * dec!(0.3334)).finish();
-    
+
     // Each part is rounded
     assert_eq!(part1.amount(), dec!(33.33));
     assert_eq!(part2.amount(), dec!(33.33));
     assert_eq!(part3.amount(), dec!(33.34));
-    
+
     // Sum should equal original (after rounding)
     let sum = part1 + part2 + part3;
     assert_eq!(sum.amount(), dec!(100.00));
@@ -623,22 +621,22 @@ fn test_percentage_split_workflow() {
 #[test]
 fn test_compound_interest_calculation() {
     let usd = Currency::from_iso("USD").unwrap();
-    
+
     // Principal: $1000
     let principal = Money::new(usd, dec!(1000));
     let mut raw_amount = principal.into_raw();
-    
+
     // Interest rate: 5% per year
     let rate = dec!(1.05);
-    
+
     // Compound for 3 years
     for _ in 0..3 {
         raw_amount = raw_amount * rate;
     }
-    
+
     // Final amount should be 1000 * 1.05^3 = 1157.625
     assert_eq!(raw_amount.amount(), dec!(1157.625));
-    
+
     // Convert to Money for display
     let final_amount = raw_amount.finish();
     // USD rounds to 2 decimal places, and 1157.625 rounds to 1157.62 with banker's rounding (round to even)

@@ -34,13 +34,13 @@ use crate::{
 ///
 /// let usd = Currency::from_iso("USD").unwrap();
 /// let money = Money::new(usd, dec!(100.50));
-/// 
+///
 /// // Convert to RawMoney to preserve precision during calculations
 /// let raw = money.into_raw();
-/// 
+///
 /// // Perform calculations without rounding
-/// let result = raw * dec!(1.0 / 3.0);
-/// 
+/// let result = raw * (dec!(1.0) / dec!(3.0));
+///
 /// // Convert back to Money when ready to round
 /// let final_money = result.finish();
 /// ```
@@ -74,11 +74,11 @@ impl RawMoney {
     /// use moneylib::{RawMoney, Currency, money_macros::dec, BaseMoney};
     ///
     /// let usd = Currency::from_iso("USD").unwrap();
-    /// 
+    ///
     /// // Preserves all decimal places
     /// let raw = RawMoney::new(usd, dec!(100.567));
     /// assert_eq!(raw.amount(), dec!(100.567));
-    /// 
+    ///
     /// // No rounding even for currencies with limited minor units
     /// let jpy = Currency::from_iso("JPY").unwrap();
     /// let raw_jpy = RawMoney::new(jpy, dec!(100.567));
@@ -101,7 +101,7 @@ impl RawMoney {
     ///
     /// let usd = Currency::from_iso("USD").unwrap();
     /// let raw = RawMoney::new(usd, dec!(100.567));
-    /// 
+    ///
     /// // Convert to Money with rounding
     /// let money = raw.finish();
     /// assert_eq!(money.amount(), dec!(100.57));
@@ -251,16 +251,14 @@ impl FromStr for RawMoney {
         // Try parsing with comma thousands separator first (e.g., "USD 1,234.56")
         if let Some((code, amount_str)) = parse_comma_thousands_separator(s) {
             let currency = Currency::from_iso(code)?;
-            let amount = Decimal::from_str(&amount_str)
-                .map_err(|_| MoneyError::ParseStr)?;
+            let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
             return Ok(Self::new(currency, amount));
         }
 
         // Try parsing with dot thousands separator (e.g., "USD 1.234,56")
         if let Some((code, amount_str)) = parse_dot_thousands_separator(s) {
             let currency = Currency::from_iso(code)?;
-            let amount = Decimal::from_str(&amount_str)
-                .map_err(|_| MoneyError::ParseStr)?;
+            let amount = Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?;
             return Ok(Self::new(currency, amount));
         }
 

@@ -1,5 +1,5 @@
-use crate::{BaseMoney, Money};
 use super::RawMoney;
+use crate::{BaseMoney, Money};
 
 /// Extension trait for Money to support conversion to RawMoney
 impl Money {
@@ -15,14 +15,14 @@ impl Money {
     ///
     /// let usd = Currency::from_iso("USD").unwrap();
     /// let money = Money::new(usd, dec!(100.50));
-    /// 
+    ///
     /// // Convert to RawMoney
     /// let raw = money.into_raw();
     /// assert_eq!(raw.amount(), dec!(100.50));
-    /// 
+    ///
     /// // Perform calculations without auto-rounding
-    /// let result = raw * dec!(1.0 / 3.0);
-    /// 
+    /// let result = raw * (dec!(1.0) / dec!(3.0));
+    ///
     /// // Convert back when ready to round
     /// let final_money = result.finish();
     /// ```
