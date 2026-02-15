@@ -1,7 +1,10 @@
 use std::{fmt::Display, str::FromStr};
 
 use crate::{base::MoneyAmount, money_macros::dec};
-use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
+use rust_decimal::{
+    MathematicalOps,
+    prelude::{FromPrimitive, ToPrimitive},
+};
 
 use crate::{
     BaseMoney, Currency, Decimal, Money, MoneyError, MoneyResult,
@@ -293,6 +296,21 @@ impl BaseMoney for RawMoney {
     #[inline]
     fn amount(&self) -> Decimal {
         self.amount
+    }
+
+    /// RawMoney minor amount will round the amount since minor amount cannot have fractions.
+    #[inline]
+    fn minor_amount(&self) -> MoneyResult<i128> {
+        self.amount()
+            .checked_mul(
+                dec!(10)
+                    .checked_powu(self.minor_unit().into())
+                    .ok_or(MoneyError::ArithmeticOverflow)?,
+            )
+            .ok_or(MoneyError::ArithmeticOverflow)?
+            .round_dp_with_strategy(0, self.currency().rounding_strategy().into())
+            .to_i128()
+            .ok_or(MoneyError::DecimalToInteger)
     }
 
     /// Round money using `Currency`'s rounding strategy to the scale of currency's minor unit

@@ -642,3 +642,18 @@ fn test_compound_interest_calculation() {
     // USD rounds to 2 decimal places, and 1157.625 rounds to 1157.62 with banker's rounding (round to even)
     assert_eq!(final_amount.amount(), dec!(1157.62));
 }
+
+// test minor amount of RawMoney to make sure it rounded to currency's minor unit.
+#[test]
+fn test_raw_money_minor_amount_rounding() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let raw = RawMoney::new(usd, dec!(123.238533));
+    assert_eq!(raw.minor_amount().unwrap(), 12324_i128);
+}
+
+#[test]
+fn test_raw_money_minor_amount_rounding_2() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let raw = RawMoney::new(usd, dec!(123.234533));
+    assert_eq!(raw.minor_amount().unwrap(), 12323_i128);
+}
