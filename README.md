@@ -1,6 +1,6 @@
 # moneylib
 
-A library to deal with money using floating-point fixed-precision decimal.
+A library to deal with money safely using floating-point fixed-precision decimal.
 
 ## Overview
 
