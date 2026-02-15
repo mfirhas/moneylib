@@ -121,6 +121,24 @@ fn test_multiplication_no_rounding() {
 }
 
 #[test]
+fn test_multiplication_raw_money_no_rounding() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let raw = RawMoney::new(usd, dec!(100.123));
+    let raw2 = RawMoney::new(usd, dec!(2.5));
+    let result = raw * raw2;
+    assert_eq!(result.amount(), dec!(250.3075));
+}
+
+#[test]
+fn test_division_raw_money_no_rounding() {
+    let usd = Currency::from_iso("USD").unwrap();
+    let raw = RawMoney::new(usd, dec!(100.123));
+    let raw2 = RawMoney::new(usd, dec!(2.5));
+    let result = raw / raw2;
+    assert_eq!(result.amount(), dec!(40.0492));
+}
+
+#[test]
 fn test_division_no_rounding() {
     let usd = Currency::from_iso("USD").unwrap();
     let raw = RawMoney::new(usd, dec!(100));
