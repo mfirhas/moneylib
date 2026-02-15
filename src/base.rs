@@ -1,8 +1,4 @@
-use crate::fmt::{
-    CODE_FORMAT_NEGATIVE, CODE_FORMAT_NEGATIVE_MINOR, CODE_FORMAT_POSITIVE,
-    CODE_FORMAT_POSITIVE_MINOR, SYMBOL_FORMAT_NEGATIVE, SYMBOL_FORMAT_NEGATIVE_MINOR,
-    SYMBOL_FORMAT_POSITIVE, SYMBOL_FORMAT_POSITIVE_MINOR, format,
-};
+use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format};
 use crate::money_macros::dec;
 use crate::{Country, Currency, MoneyError};
 use crate::{Decimal, MoneyResult};
@@ -351,10 +347,7 @@ pub trait BaseMoney:
     /// assert_eq!(negative.format_code(), "USD -1,234.45");
     /// ```
     fn format_code(&self) -> String {
-        if self.is_negative() {
-            return format(self.to_owned(), CODE_FORMAT_NEGATIVE);
-        }
-        format(self.to_owned(), CODE_FORMAT_POSITIVE)
+        format(self.to_owned(), CODE_FORMAT)
     }
 
     /// Formats money with currency symbol along with thousands and decimal separators.
@@ -375,10 +368,7 @@ pub trait BaseMoney:
     /// assert_eq!(negative.format_symbol(), "-€500.50");
     /// ```
     fn format_symbol(&self) -> String {
-        if self.is_negative() {
-            return format(self.to_owned(), SYMBOL_FORMAT_NEGATIVE);
-        }
-        format(self.to_owned(), SYMBOL_FORMAT_POSITIVE)
+        format(self.to_owned(), SYMBOL_FORMAT)
     }
 
     /// Formats money with currency code in the smallest unit along with thousands separators.
@@ -401,10 +391,7 @@ pub trait BaseMoney:
     /// assert_eq!(negative.format_code_minor(), "USD -123,445 ¢");
     /// ```
     fn format_code_minor(&self) -> String {
-        if self.is_negative() {
-            return format(self.to_owned(), CODE_FORMAT_NEGATIVE_MINOR);
-        }
-        format(self.to_owned(), CODE_FORMAT_POSITIVE_MINOR)
+        format(self.to_owned(), CODE_FORMAT_MINOR)
     }
 
     /// Formats money with currency symbol in the smallest unit along with thousands separators.
@@ -427,10 +414,7 @@ pub trait BaseMoney:
     /// assert_eq!(negative.format_symbol_minor(), "-$1,050 ¢");
     /// ```
     fn format_symbol_minor(&self) -> String {
-        if self.is_negative() {
-            return format(self.to_owned(), SYMBOL_FORMAT_NEGATIVE_MINOR);
-        }
-        format(self.to_owned(), SYMBOL_FORMAT_POSITIVE_MINOR)
+        format(self.to_owned(), SYMBOL_FORMAT_MINOR)
     }
 
     /// Returns the default display format for money (same as `format_code`).

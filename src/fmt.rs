@@ -16,15 +16,11 @@ pub(crate) static FORMAT_SYMBOLS: &[char] = &[
     'n', // negative sign
 ];
 
-pub(crate) const CODE_FORMAT_POSITIVE: &str = "c a"; // E.g. USD 1,000.23
-pub(crate) const CODE_FORMAT_NEGATIVE: &str = "c na"; // E.g. USD -1,000.23
-pub(crate) const SYMBOL_FORMAT_POSITIVE: &str = "sa"; // E.g. $1,000.23
-pub(crate) const SYMBOL_FORMAT_NEGATIVE: &str = "nsa"; // E.g. -$1,000.23
+pub(crate) const CODE_FORMAT: &str = "c na"; // E.g. USD 1,000.23 or USD -1,000.23
+pub(crate) const SYMBOL_FORMAT: &str = "nsa"; // E.g. $1,000.23 or -$1,000.23
 
-pub(crate) const CODE_FORMAT_POSITIVE_MINOR: &str = "c a m"; // E.g. USD 100,023 cents
-pub(crate) const CODE_FORMAT_NEGATIVE_MINOR: &str = "c na m"; // E.g. USD -100,023 cents
-pub(crate) const SYMBOL_FORMAT_POSITIVE_MINOR: &str = "sa m"; // E.g. $100,023 cents
-pub(crate) const SYMBOL_FORMAT_NEGATIVE_MINOR: &str = "nsa m"; // E.g. -$100,023 cents
+pub(crate) const CODE_FORMAT_MINOR: &str = "c na m"; // E.g. USD 100,023 cents or USD -100,023 cents
+pub(crate) const SYMBOL_FORMAT_MINOR: &str = "nsa m"; // E.g. $100,023 cents or -$100,023 cents
 
 /// Format money according to the provided format string.
 ///
