@@ -1,5 +1,10 @@
 # moneylib
 
+![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
+[![Crates.io](https://img.shields.io/crates/v/moneylib.svg)](https://crates.io/crates/moneylib)
+[![Documentation](https://docs.rs/moneylib/badge.svg)](https://docs.rs/moneylib)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/mfirhas/moneylib/blob/master/LICENSE)
+
 A library to deal with money safely using floating-point fixed-precision decimal.
 
 ## Overview
