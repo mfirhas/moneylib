@@ -30,7 +30,7 @@ mod dec_ops;
 mod ops;
 
 #[cfg(feature = "raw_money")]
-pub mod raw_money;
+mod raw_money;
 #[cfg(feature = "raw_money")]
 pub use raw_money::RawMoney;
 
