@@ -1,7 +1,7 @@
 //! RawMoney is money type that contains raw value of money amount without rounding to keep the precision, and choose when to round it into tender money.
 //!
 
-use crate::{Currency, Decimal};
+use crate::{BaseMoney, Currency, Decimal, Money};
 
 #[derive(Debug, Clone, Copy, Eq)]
 pub struct RawMoney {
@@ -19,5 +19,14 @@ impl RawMoney {
 impl PartialEq for RawMoney {
     fn eq(&self, other: &Self) -> bool {
         self.currency == other.currency && self.amount == other.amount
+    }
+}
+
+impl From<Money> for RawMoney {
+    fn from(value: Money) -> Self {
+        Self {
+            currency: value.currency(),
+            amount: value.amount(),
+        }
     }
 }
