@@ -150,12 +150,11 @@ This feature flag toggle `RawMoney` type which doesn't do rounding like `Money` 
 It keeps the precision intact and you can choose when to round it using `.round()` or `.round_with(...)`.
 Use method `.finish()` to round it into final form and convert it back to `Money`.
 Method `.finish()` will call `.round()` inside and round using currency's rounding rule.
-Method `.minor_amount()` will do the rounding inside to currency's minor unit since minor amount can't have fractions and it's valid state of minor amount.
+Method `.minor_amount()` will NOT do the rounding on RawMoney, but calculate the minor amount from rounded value of RawMoney's amount.
 
 Where roundings happen:
 - `.round()`: round using currency's rounding strategy. Returns `RawMoney`.
 - `.round_with(...)`: round using custom decimal points and strategy. Returns `RawMoney`.
-- `.minor_amount()`: round using currency's rounding strategy. Returns `MoneyResult<i128>`.
 - `.finish()`: round using currency's rounding strategy and finalize raw money operations. Returns `Money`.
 
 ## Code Coverage
