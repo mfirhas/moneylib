@@ -86,7 +86,7 @@ impl RawMoney {
     /// ```
     #[inline]
     pub const fn new(currency: Currency, amount: Decimal) -> Self {
-        RawMoney { currency, amount }
+        Self { currency, amount }
     }
 
     /// Converts this `RawMoney` to `Money`, applying rounding.
@@ -224,6 +224,63 @@ impl RawMoney {
             .ok_or(MoneyError::ArithmeticOverflow)?;
 
         Ok(Self::new(currency, amount))
+    }
+}
+
+impl PartialEq for RawMoney {
+    fn eq(&self, other: &Self) -> bool {
+        self.currency == other.currency && self.amount == other.amount
+    }
+}
+
+impl PartialOrd for RawMoney {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        // WARN: PANIC!
+        assert_eq!(
+            self.currency, other.currency,
+            "cannot compare 2 money with different currencies"
+        );
+        self.amount.partial_cmp(&other.amount)
+    }
+}
+
+impl FromStr for RawMoney {
+    type Err = MoneyError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Try parsing with comma thousands separator first (e.g., "USD 1,234.56")
+        if let Some((code, amount_str)) = parse_comma_thousands_separator(s) {
+            let currency = Currency::from_iso(code)?;
+            let amount = Decimal::from_str(&amount_str)
+                .map_err(|_| MoneyError::ParseStr)?;
+            return Ok(Self::new(currency, amount));
+        }
+
+        // Try parsing with dot thousands separator (e.g., "USD 1.234,56")
+        if let Some((code, amount_str)) = parse_dot_thousands_separator(s) {
+            let currency = Currency::from_iso(code)?;
+            let amount = Decimal::from_str(&amount_str)
+                .map_err(|_| MoneyError::ParseStr)?;
+            return Ok(Self::new(currency, amount));
+        }
+
+        Err(MoneyError::ParseStr)
+    }
+}
+
+impl Display for RawMoney {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", crate::fmt::format(*self, crate::fmt::CODE_FORMAT))
+    }
+}
+
+impl MoneyAmount<RawMoney> for RawMoney {
+    fn get_money(&self) -> Option<RawMoney> {
+        Some(*self)
+    }
+
+    fn get_decimal(&self) -> Option<Decimal> {
+        Some(self.amount())
     }
 }
 
@@ -382,68 +439,6 @@ impl CustomMoney for RawMoney {
                 .amount
                 .round_dp_with_strategy(decimal_points, strategy.into()),
         }
-    }
-}
-
-// Implement Display using the same formatting logic as Money
-impl Display for RawMoney {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", crate::fmt::format(*self, crate::fmt::CODE_FORMAT))
-    }
-}
-
-// Implement PartialEq
-impl PartialEq for RawMoney {
-    fn eq(&self, other: &Self) -> bool {
-        self.currency == other.currency && self.amount == other.amount
-    }
-}
-
-// Implement PartialOrd
-impl PartialOrd for RawMoney {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        // WARN: PANIC!
-        assert_eq!(
-            self.currency, other.currency,
-            "cannot compare 2 money with different currencies"
-        );
-        self.amount.partial_cmp(&other.amount)
-    }
-}
-
-// Implement FromStr using the same parsing logic as Money
-impl FromStr for RawMoney {
-    type Err = MoneyError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // Try parsing with comma thousands separator first (e.g., "USD 1,234.56")
-        if let Some((code, amount_str)) = parse_comma_thousands_separator(s) {
-            let currency = Currency::from_iso(code)?;
-            let amount = Decimal::from_str(&amount_str)
-                .map_err(|_| MoneyError::ParseStr)?;
-            return Ok(Self::new(currency, amount));
-        }
-
-        // Try parsing with dot thousands separator (e.g., "USD 1.234,56")
-        if let Some((code, amount_str)) = parse_dot_thousands_separator(s) {
-            let currency = Currency::from_iso(code)?;
-            let amount = Decimal::from_str(&amount_str)
-                .map_err(|_| MoneyError::ParseStr)?;
-            return Ok(Self::new(currency, amount));
-        }
-
-        Err(MoneyError::ParseStr)
-    }
-}
-
-// Add MoneyAmount implementation for RawMoney
-impl MoneyAmount<RawMoney> for RawMoney {
-    fn get_money(&self) -> Option<RawMoney> {
-        Some(*self)
-    }
-
-    fn get_decimal(&self) -> Option<Decimal> {
-        Some(self.amount())
     }
 }
 
