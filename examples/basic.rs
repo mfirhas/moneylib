@@ -3,8 +3,7 @@
 // handling currency, precision, rounding, and arithmetic operations.
 
 use moneylib::{
-    BaseMoney, BaseOps, Currency, CustomMoney, Decimal, Money, RoundingStrategy,
-    money_macros::dec,
+    BaseMoney, BaseOps, Currency, CustomMoney, Decimal, Money, RoundingStrategy, money_macros::dec,
 };
 use std::str::FromStr;
 
@@ -19,8 +18,12 @@ fn main() {
 
     // Create a Currency first (using ISO 4217 standard codes)
     let usd = Currency::from_iso("USD").unwrap();
-    println!("Created USD currency: code={}, symbol={}, name={}", 
-        usd.code(), usd.symbol(), usd.name());
+    println!(
+        "Created USD currency: code={}, symbol={}, name={}",
+        usd.code(),
+        usd.symbol(),
+        usd.name()
+    );
 
     // Create Money with currency and decimal amount using the dec! macro
     let money1 = Money::new(usd, dec!(100.50));
@@ -28,7 +31,11 @@ fn main() {
 
     // Money is automatically rounded to the currency's minor unit (2 decimal places for USD)
     let money2 = Money::new(usd, dec!(100.567));
-    println!("Money 2 (rounded): {} (amount: {})", money2, money2.amount());
+    println!(
+        "Money 2 (rounded): {} (amount: {})",
+        money2,
+        money2.amount()
+    );
     println!();
 
     // ============================================================================
@@ -154,7 +161,10 @@ fn main() {
 
     // Divide using the div() method
     let quotient_method = money_d.div(dec!(2.5)).unwrap();
-    println!("Using div() method: {} / 2.5 = {}", money_d, quotient_method);
+    println!(
+        "Using div() method: {} / 2.5 = {}",
+        money_d, quotient_method
+    );
 
     // Division results are rounded to currency's minor unit
     let quotient_rounded = money_d / dec!(3);
@@ -172,13 +182,19 @@ fn main() {
     let money_100_copy = Money::new(usd, dec!(100.00));
 
     // Equality comparison
-    println!("money_100 == money_100_copy: {}", money_100 == money_100_copy);
+    println!(
+        "money_100 == money_100_copy: {}",
+        money_100 == money_100_copy
+    );
     println!("money_100 == money_200: {}", money_100 == money_200);
 
     // Ordering comparisons
     println!("money_100 < money_200: {}", money_100 < money_200);
     println!("money_200 > money_100: {}", money_200 > money_100);
-    println!("money_100 <= money_100_copy: {}", money_100 <= money_100_copy);
+    println!(
+        "money_100 <= money_100_copy: {}",
+        money_100 <= money_100_copy
+    );
     println!("money_200 >= money_100: {}", money_200 >= money_100);
     println!();
 
@@ -204,12 +220,20 @@ fn main() {
     // Different currencies with different decimal places
     println!("\nCurrency with no decimal places:");
     let jpy_money = Money::new(jpy, dec!(10000));
-    println!("JPY Money: {} (minor_unit: {})", jpy_money, jpy.minor_unit());
+    println!(
+        "JPY Money: {} (minor_unit: {})",
+        jpy_money,
+        jpy.minor_unit()
+    );
 
     // Currency with 3 decimal places
     let bhd = Currency::from_iso("BHD").unwrap(); // Bahraini Dinar
     let bhd_money = Money::new(bhd, dec!(12.345));
-    println!("BHD Money: {} (minor_unit: {})", bhd_money, bhd.minor_unit());
+    println!(
+        "BHD Money: {} (minor_unit: {})",
+        bhd_money,
+        bhd.minor_unit()
+    );
     println!();
 
     // ============================================================================
@@ -253,7 +277,12 @@ fn main() {
         let mut currency = usd;
         currency.set_rounding_strategy(strategy);
         let money = Money::new(currency, amount_to_round);
-        println!("{}: {} -> {}", strategy_name, amount_to_round, money.amount());
+        println!(
+            "{}: {} -> {}",
+            strategy_name,
+            amount_to_round,
+            money.amount()
+        );
     };
 
     // Different rounding strategies
@@ -268,7 +297,10 @@ fn main() {
     currency_for_custom.set_rounding_strategy(RoundingStrategy::BankersRounding);
     let money_for_custom = Money::new(currency_for_custom, amount_to_round);
     let money_custom_round = money_for_custom.round_with(1, RoundingStrategy::HalfUp);
-    println!("Custom round (1 decimal, HalfUp): {}", money_custom_round.amount());
+    println!(
+        "Custom round (1 decimal, HalfUp): {}",
+        money_custom_round.amount()
+    );
     println!();
 
     // ============================================================================
@@ -279,8 +311,13 @@ fn main() {
 
     // Create a custom currency for cryptocurrency
     let btc = Currency::new("BTC", "₿", "Bitcoin", 8).unwrap();
-    println!("Custom currency: code={}, symbol={}, name={}, minor_unit={}", 
-        btc.code(), btc.symbol(), btc.name(), btc.minor_unit());
+    println!(
+        "Custom currency: code={}, symbol={}, name={}, minor_unit={}",
+        btc.code(),
+        btc.symbol(),
+        btc.name(),
+        btc.minor_unit()
+    );
 
     let btc_money = Money::new(btc, dec!(0.12345678));
     println!("Bitcoin money: {}", btc_money);
@@ -395,7 +432,10 @@ fn main() {
     // Cannot create custom currency with ISO code
     match Currency::new("USD", "$", "My Dollar", 2) {
         Ok(curr) => println!("Currency created: {}", curr.code()),
-        Err(e) => println!("Error: Cannot create custom currency with ISO code - {:?}", e),
+        Err(e) => println!(
+            "Error: Cannot create custom currency with ISO code - {:?}",
+            e
+        ),
     }
     println!();
 
@@ -428,7 +468,7 @@ fn main() {
     println!("-------------------------");
 
     let money_convert = Money::new(usd, dec!(123.45));
-    
+
     // Get the amount as Decimal
     let decimal_amount = money_convert.amount();
     println!("Money: {}", money_convert);
