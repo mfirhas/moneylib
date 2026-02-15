@@ -85,7 +85,7 @@ impl RawMoney {
     /// assert_eq!(raw_jpy.amount(), dec!(100.567));
     /// ```
     #[inline]
-    pub fn new(currency: Currency, amount: Decimal) -> Self {
+    pub const fn new(currency: Currency, amount: Decimal) -> Self {
         RawMoney { currency, amount }
     }
 
@@ -402,11 +402,12 @@ impl PartialEq for RawMoney {
 // Implement PartialOrd
 impl PartialOrd for RawMoney {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.currency != other.currency {
-            None
-        } else {
-            self.amount.partial_cmp(&other.amount)
-        }
+        // WARN: PANIC!
+        assert_eq!(
+            self.currency, other.currency,
+            "cannot compare 2 money with different currencies"
+        );
+        self.amount.partial_cmp(&other.amount)
     }
 }
 

@@ -317,12 +317,13 @@ fn test_partial_ord_same_currency_greater_than() {
 }
 
 #[test]
+#[should_panic(expected = "cannot compare 2 money with different currencies")]
 fn test_partial_ord_different_currency() {
     let usd = Currency::from_iso("USD").unwrap();
     let eur = Currency::from_iso("EUR").unwrap();
     let raw1 = RawMoney::new(usd, dec!(100.00));
     let raw2 = RawMoney::new(eur, dec!(200.00));
-    assert!(raw1.partial_cmp(&raw2).is_none());
+    let _ = raw1.partial_cmp(&raw2);
 }
 
 // ==================== BaseOps Tests ====================
