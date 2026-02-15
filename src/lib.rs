@@ -26,6 +26,8 @@ pub type MoneyResult<T> = Result<T, MoneyError>;
 mod money;
 pub use money::Money;
 
+mod raw_money;
+
 mod dec_ops;
 mod ops;
 
