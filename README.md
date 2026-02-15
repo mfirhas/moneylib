@@ -11,30 +11,6 @@ It also make sure the money always in valid state on every operations and arithm
 This crate uses [Decimal](https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html) type underneath for the amount of money. Using it alone is not enough for many money operations and this crate
 also provides `Currency` storing metadata about the money that involves in logics and state of the money. 
 
-This library provides these main components to work with money:
-- `Money`: represents the money itself and all operations on it.
-- `Currency`: represents the money's currency and all of its metadata. It is involved in money's states and lifecycles throughout its operations.
-- `Decimal`: 128 bit floating-point with fixed-precision decimal number. Re-export from [rust_decimal](https://crates.io/crates/rust_decimal) represents main type for money's amount.
-- `BaseMoney`: trait of money providing core operations and accessors.
-- `BaseOps`: trait for arithmetic and comparison operations on money.
-- `CustomMoney`: trait for custom formatting and rounding operations on money.
-- `RoundingStrategy`: enum defining rounding strategies (BankersRounding, HalfUp, HalfDown, Ceil, Floor).
-- `MoneyError`: enum of possible errors that can occur in money operations.
-- `MoneyResult<T>`: Result type alias for operations that can fail, equivalent to `Result<T, MoneyError>`.
-- `Country`: re-export from iso_currency_lib for country information.
-
-`Money`, `Currency`, and `Decimal` are all `Copy` so it can be passed around freely without having to worry about borrow checker.
-
-Example:
-```rust
-use moneylib::{Money, BaseMoney, BaseOps, Currency, money_macros::dec};
-use std::str::FromStr;
-
-let usd = Money::from_str("USD 12,000").unwrap();
-let add = usd + dec!(500);
-println!("{}", add); // prints "USD 12,500.00"
-```
-
 ## Features
 Here are some features supported:
 - Type-safe: prevents invalid state and follow monetary standard.
@@ -48,6 +24,31 @@ Here are some features supported:
 - Money in form of its smallest amount (minor amount).
 - Some basic operations like absolute value, min, max, and clamp.
 - Custom currency.
+
+Example:
+```rust
+use moneylib::{Money, BaseMoney, BaseOps, Currency, money_macros::dec};
+use std::str::FromStr;
+
+let usd = Money::from_str("USD 12,000").unwrap();
+let add = usd + dec!(500);
+println!("{}", add); // prints "USD 12,500.00"
+```
+
+## Components
+This library provides these main components to work with money:
+- `Money`: represents the money itself and all operations on it.
+- `Currency`: represents the money's currency and all of its metadata. It is involved in money's states and lifecycles throughout its operations.
+- `Decimal`: 128 bit floating-point with fixed-precision decimal number. Re-export from [rust_decimal](https://crates.io/crates/rust_decimal) represents main type for money's amount.
+- `BaseMoney`: trait of money providing core operations and accessors.
+- `BaseOps`: trait for arithmetic and comparison operations on money.
+- `CustomMoney`: trait for custom formatting and rounding operations on money.
+- `RoundingStrategy`: enum defining rounding strategies (BankersRounding, HalfUp, HalfDown, Ceil, Floor).
+- `MoneyError`: enum of possible errors that can occur in money operations.
+- `MoneyResult<T>`: Result type alias for operations that can fail, equivalent to `Result<T, MoneyError>`.
+- `Country`: re-export from iso_currency_lib for country information.
+
+`Money`, `Currency`, and `Decimal` are all `Copy` so it can be passed around freely without having to worry about borrow checker.
 
 ## Invariants
 Monetary values are sensitive matter and their invariants must always hold true.
