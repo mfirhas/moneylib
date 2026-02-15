@@ -30,14 +30,77 @@ Here are some features supported:
 - Some basic operations like absolute value, min, max, and clamp.
 - Custom currency.
 
-Example:
+## Example
+
 ```rust
-use moneylib::{Money, BaseMoney, BaseOps, Currency, money_macros::dec};
+use moneylib::{Money, BaseMoney, BaseOps, Currency, RoundingStrategy, money_macros::dec};
 use std::str::FromStr;
 
-let usd = Money::from_str("USD 12,000").unwrap();
-let add = usd + dec!(500);
-println!("{}", add); // prints "USD 12,500.00"
+// Creating money from string (supports thousand separators)
+let usd_money = Money::from_str("USD 1,234.56").unwrap();
+println!("{}", usd_money); // USD 1,234.56
+
+// Creating money from minor amount (cents for USD)
+let from_cents = Money::from_minor_amount(
+    Currency::from_iso("USD").unwrap(), 
+    12345
+).unwrap();
+println!("{}", from_cents); // USD 123.45
+
+// Arithmetic operations with automatic rounding
+let money_a = Money::new(Currency::from_iso("USD").unwrap(), dec!(100.00));
+let money_b = Money::new(Currency::from_iso("USD").unwrap(), dec!(50.00));
+println!("{}", money_a + money_b); // USD 150.00
+println!("{}", money_a * dec!(1.5)); // USD 150.00
+println!("{}", money_a / dec!(3)); // USD 33.33 (rounded)
+
+// Comparisons
+println!("{}", money_a > money_b); // true
+println!("{}", money_a == Money::new(Currency::from_iso("USD").unwrap(), dec!(100.00))); // true
+
+// Working with different currencies
+let jpy = Currency::from_iso("JPY").unwrap(); // 0 decimal places
+let jpy_money = Money::new(jpy, dec!(1000));
+println!("{}", jpy_money); // JPY 1,000
+
+let bhd = Currency::from_iso("BHD").unwrap(); // 3 decimal places
+let bhd_money = Money::new(bhd, dec!(12.345));
+println!("{}", bhd_money); // BHD 12.345
+
+// Custom formatting
+let money = Money::new(Currency::from_iso("USD").unwrap(), dec!(1234.56));
+println!("{}", money.format_symbol()); // $1,234.56
+println!("{}", money.format_code()); // USD 1,234.56
+
+// Rounding strategies
+let mut currency = Currency::from_iso("USD").unwrap();
+currency.set_rounding_strategy(RoundingStrategy::HalfUp);
+let rounded = Money::new(currency, dec!(123.456));
+println!("{}", rounded.amount()); // 123.46
+
+// Custom currencies (e.g., cryptocurrencies)
+let btc = Currency::new("BTC", "₿", "Bitcoin", 8).unwrap();
+let btc_money = Money::new(btc, dec!(0.12345678));
+println!("{}", btc_money); // BTC 0.12345678
+
+// Negative amounts
+let negative = Money::new(Currency::from_iso("USD").unwrap(), dec!(-50.00));
+println!("{}", negative); // USD -50.00
+println!("{}", negative.abs()); // USD 50.00
+
+// Error handling with Result types
+match money_a.add(money_b) {
+    Ok(sum) => println!("Sum: {}", sum),
+    Err(e) => println!("Error: {:?}", e),
+}
+
+// Safe operations with different currencies
+let eur = Currency::from_iso("EUR").unwrap();
+let eur_money = Money::new(eur, dec!(100.00));
+match money_a.add(eur_money) {
+    Ok(_) => println!("Addition succeeded"),
+    Err(e) => println!("Error: {:?}", e), // Error: CurrencyMismatch
+}
 ```
 
 ## Components
