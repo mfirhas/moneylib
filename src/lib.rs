@@ -29,11 +29,10 @@ pub use money::Money;
 mod dec_ops;
 mod ops;
 
-mod raw_money;
+#[cfg(feature = "raw_money")]
+pub mod raw_money;
+#[cfg(feature = "raw_money")]
 pub use raw_money::RawMoney;
-
-mod raw_money_dec_ops;
-mod raw_money_ops;
 
 mod currency;
 pub use currency::Currency;
@@ -59,6 +58,3 @@ mod error_test;
 
 #[cfg(test)]
 mod ops_test;
-
-#[cfg(test)]
-mod raw_money_test;
