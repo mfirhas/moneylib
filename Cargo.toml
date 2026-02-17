@@ -12,5 +12,5 @@ categories = ["finance", "data-structures"]
 
 [dependencies]
 rust_decimal = { version = "1.40.0", default-features = false, features = ["maths", "macros"] }
-iso_currency_lib = "0.1.1"
+currencylib = "0.1.0"
 

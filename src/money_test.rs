@@ -1,3 +1,5 @@
+use crate::USD;
+
 use crate::money_macros::dec;
 use crate::{
     BaseMoney, BaseOps, Currency, CustomMoney, Decimal, Money, MoneyError, RoundingStrategy,
@@ -8,9 +10,7 @@ use std::str::FromStr;
 
 #[test]
 fn test_new_with_usd() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
-    assert_eq!(money.currency(), currency);
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
     assert_eq!(money.amount(), dec!(100.50));
 }
 
