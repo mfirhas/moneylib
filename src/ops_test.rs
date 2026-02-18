@@ -67,8 +67,8 @@ fn test_operator_ordering_equality() {
 
     // // wont even compile
     // let money4 = Money::<IDR>::from_decimal(dec!(400000));
-    // let check = money1 == money3;
-    // let check = money2 > money3;
+    // let check = money1 == money4;
+    // let check = money2 > money4;
 
     let check = money1 > money2;
     assert!(check);
