@@ -1,4 +1,4 @@
-use currencylib::{EUR, IDR, USD};
+use crate::{EUR, IDR, USD};
 
 use crate::money_macros::dec;
 use crate::{BaseMoney, Money};
@@ -17,7 +17,7 @@ fn test_add_same_currencies() {
 #[test]
 fn test_add_different_currencies_wont_compile() {
     // let money1 = Money::<USD>::new(dec!(100.50)).unwrap();
-    // use currencylib::EUR;
+    // use crate::EUR;
     // let money2 = Money::<EUR>::new(dec!(50.25)).unwrap();
 
     // // won't even compile
@@ -50,4 +50,35 @@ fn test_arithmetics_with_decimals() {
     let d = a * c + b / amount - dec!(2);
     assert_eq!(c.amount(), dec!(39876766));
     assert_eq!(d.amount(), dec!(4865124959162.19));
+}
+
+#[test]
+fn test_operator_ordering_equality() {
+    let money1 = Money::<EUR>::from_decimal(dec!(123234));
+    let money2 = Money::<EUR>::from_decimal(dec!(1230));
+    let money3 = Money::<EUR>::from_decimal(dec!(1230));
+
+    let check = money1 == money2;
+    assert!(!check);
+    let check = money1 != money2;
+    assert!(check);
+    let check = money2 == money3;
+    assert!(check);
+
+    // // wont even compile
+    // let money4 = Money::<IDR>::from_decimal(dec!(400000));
+    // let check = money1 == money3;
+    // let check = money2 > money3;
+
+    let check = money1 > money2;
+    assert!(check);
+
+    let check = money1 < money2;
+    assert!(!check);
+
+    let check = money1 >= money2;
+    assert!(check);
+
+    let check = money1 <= money2;
+    assert!(!check);
 }

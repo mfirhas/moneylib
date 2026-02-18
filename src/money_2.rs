@@ -13,7 +13,7 @@ use crate::{
 use crate::{Currency, CustomMoney};
 use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Money<C: Currency> {
     amount: Decimal,
     _currency: PhantomData<C>,
@@ -58,6 +58,24 @@ impl<C: Currency> Money<C> {
                 .round_dp(C::MINOR_UNIT.into()),
             _currency: PhantomData,
         })
+    }
+}
+
+impl<C: Currency> Ord for Money<C>
+where
+    C: Currency + PartialEq + Eq,
+{
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.amount.cmp(&other.amount)
+    }
+}
+
+impl<C> PartialOrd for Money<C>
+where
+    C: Currency + PartialEq + Eq,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 

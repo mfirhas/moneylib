@@ -1,7 +1,7 @@
-use currencylib::EUR;
-use currencylib::GBP;
-use currencylib::JPY;
-use currencylib::USD;
+use crate::EUR;
+use crate::GBP;
+use crate::JPY;
+use crate::USD;
 
 use crate::Decimal;
 use crate::Money;
