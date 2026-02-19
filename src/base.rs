@@ -575,6 +575,9 @@ pub trait BaseOps<C: Currency>:
 /// assert_eq!(money.amount(), money2.amount());
 /// ```
 pub trait Amount<C: Currency>: Sized {
+    /// Get decimal amount of Self.
+    ///
+    /// Returns `None` if Self cannot be converted into Decimal.
     fn get_decimal(&self) -> Option<Decimal>;
 }
 
