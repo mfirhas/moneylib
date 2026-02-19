@@ -18,7 +18,7 @@ also provides `Currency` storing metadata about the money that involves in logic
 
 ## Features
 Here are some features supported:
-- Type-safe: prevents invalid state and follow monetary standard.
+- Type-safe: prevents invalid state and follow monetary standard with compile-time currency checking.
 - Value type to represent money.
 - Access to its amount and currency's metadata.
 - Arithmetics: (*,/,+,-), operator overloading supported.
@@ -28,63 +28,54 @@ Here are some features supported:
 - Rounding with multiple strategies: Bankers rounding, half-up, half-down, ceil, and floor.
 - Money in form of its smallest amount (minor amount).
 - Some basic operations like absolute value, min, max, and clamp.
-- Custom currency.
+- Support for all ISO 4217 currencies.
 
 ## Example
 
 ```rust
-use moneylib::{Money, BaseMoney, BaseOps, Currency, RoundingStrategy, money_macros::dec};
+use moneylib::{Money, BaseMoney, BaseOps, CustomMoney, RoundingStrategy, USD, JPY, BHD, EUR, money_macros::dec};
 use std::str::FromStr;
 
 // Creating money from string (supports thousand separators)
-let usd_money = Money::from_str("USD 1,234.56").unwrap();
+let usd_money = Money::<USD>::from_str("USD 1,234.56").unwrap();
 println!("{}", usd_money); // USD 1,234.56
 
 // Creating money from minor amount (cents for USD)
-let from_cents = Money::from_minor_amount(
-    Currency::from_iso("USD").unwrap(), 
-    12345
-).unwrap();
+let from_cents = Money::<USD>::from_minor(12345).unwrap();
 println!("{}", from_cents); // USD 123.45
 
 // Arithmetic operations with automatic rounding
-let money_a = Money::new(Currency::from_iso("USD").unwrap(), dec!(100.00));
-let money_b = Money::new(Currency::from_iso("USD").unwrap(), dec!(50.00));
+let money_a = Money::<USD>::new(dec!(100.00)).unwrap();
+let money_b = Money::<USD>::new(dec!(50.00)).unwrap();
 println!("{}", money_a + money_b); // USD 150.00
 println!("{}", money_a * dec!(1.5)); // USD 150.00
 println!("{}", money_a / dec!(3)); // USD 33.33 (rounded)
 
 // Comparisons
 println!("{}", money_a > money_b); // true
-println!("{}", money_a == Money::new(Currency::from_iso("USD").unwrap(), dec!(100.00))); // true
+println!("{}", money_a == Money::<USD>::new(dec!(100.00)).unwrap()); // true
 
 // Working with different currencies
-let jpy = Currency::from_iso("JPY").unwrap(); // 0 decimal places
-let jpy_money = Money::new(jpy, dec!(1000));
+// JPY has 0 decimal places
+let jpy_money = Money::<JPY>::new(dec!(1000)).unwrap();
 println!("{}", jpy_money); // JPY 1,000
 
-let bhd = Currency::from_iso("BHD").unwrap(); // 3 decimal places
-let bhd_money = Money::new(bhd, dec!(12.345));
+// BHD has 3 decimal places
+let bhd_money = Money::<BHD>::new(dec!(12.345)).unwrap();
 println!("{}", bhd_money); // BHD 12.345
 
 // Custom formatting
-let money = Money::new(Currency::from_iso("USD").unwrap(), dec!(1234.56));
+let money = Money::<USD>::new(dec!(1234.56)).unwrap();
 println!("{}", money.format_symbol()); // $1,234.56
 println!("{}", money.format_code()); // USD 1,234.56
 
-// Rounding strategies
-let mut currency = Currency::from_iso("USD").unwrap();
-currency.set_rounding_strategy(RoundingStrategy::HalfUp);
-let rounded = Money::new(currency, dec!(123.456));
-println!("{}", rounded.amount()); // 123.46
-
-// Custom currencies (e.g., cryptocurrencies)
-let btc = Currency::new("BTC", "₿", "Bitcoin", 8).unwrap();
-let btc_money = Money::new(btc, dec!(0.12345678));
-println!("{}", btc_money); // BTC 0.12345678
+// Rounding with round_with method
+let rounded = Money::<USD>::new(dec!(123.456)).unwrap();
+let half_up_rounded = rounded.round_with(2, RoundingStrategy::HalfUp);
+println!("{}", half_up_rounded.amount()); // 123.46
 
 // Negative amounts
-let negative = Money::new(Currency::from_iso("USD").unwrap(), dec!(-50.00));
+let negative = Money::<USD>::new(dec!(-50.00)).unwrap();
 println!("{}", negative); // USD -50.00
 println!("{}", negative.abs()); // USD 50.00
 
@@ -94,19 +85,16 @@ match money_a.add(money_b) {
     Err(e) => println!("Error: {:?}", e),
 }
 
-// Safe operations with different currencies
-let eur = Currency::from_iso("EUR").unwrap();
-let eur_money = Money::new(eur, dec!(100.00));
-match money_a.add(eur_money) {
-    Ok(_) => println!("Addition succeeded"),
-    Err(e) => println!("Error: {:?}", e), // Error: CurrencyMismatch
-}
+// Safe operations with different currencies (won't compile due to type safety)
+let eur_money = Money::<EUR>::new(dec!(100.00)).unwrap();
+// This won't compile because USD and EUR are different types:
+// let result = money_a + eur_money; // Compile error!
 ```
 
 ## Components
 This library provides these main components to work with money:
-- `Money`: represents the money itself and all operations on it.
-- `Currency`: represents the money's currency and all of its metadata. It is involved in money's states and lifecycles throughout its operations.
+- `Money<C>`: represents the money itself and all operations on it. Generic over currency type `C`.
+- `Currency`: trait that defines currency behavior and metadata. Implemented by currency marker types (e.g., `USD`, `EUR`, `JPY`).
 - `Decimal`: 128 bit floating-point with fixed-precision decimal number. Re-export from [rust_decimal](https://crates.io/crates/rust_decimal) represents main type for money's amount.
 - `BaseMoney`: trait of money providing core operations and accessors.
 - `BaseOps`: trait for arithmetic and comparison operations on money.
@@ -114,9 +102,9 @@ This library provides these main components to work with money:
 - `RoundingStrategy`: enum defining rounding strategies (BankersRounding, HalfUp, HalfDown, Ceil, Floor).
 - `MoneyError`: enum of possible errors that can occur in money operations.
 - `MoneyResult<T>`: Result type alias for operations that can fail, equivalent to `Result<T, MoneyError>`.
-- `Country`: re-export from iso_currency_lib for country information.
 
-`Money`, `Currency`, and `Decimal` are all `Copy` so it can be passed around freely without having to worry about borrow checker.
+`Money<C>` and `Decimal` are `Copy` types so they can be passed around freely without having to worry about borrow checker.
+Currency marker types are zero-sized types (ZST) for compile-time type safety.
 
 ## Invariants
 Monetary values are sensitive matter and their invariants must always hold true.
@@ -126,17 +114,18 @@ Monetary values are sensitive matter and their invariants must always hold true.
 - Decimal points(s): 0 <= s <= 28
 
 ### Money
-- Always rounded to its currency's minor unit using currency's rounding strategy (default to bankers rounding) after each creation and operation done on it.
-- Creating money from string only accepts currencies already defined in ISO 4217. For new/custom currencies, create new currency using `Currency::new` function.
-- Comparisons: Equality only for money with same currencies. For ordering equality will *PANIC* if currencies are different. Use methods in `BaseOps` for non-panic comparisons.
+- Always rounded to its currency's minor unit using bankers rounding after each creation and operation done on it.
+- Creating money from string only accepts currencies already defined in ISO 4217.
+- Comparisons: Currency type safety is enforced at compile time. Operations between different currencies won't compile.
 - Arithmetics:
-  - *,+,-: will *PANIC* if: Overflowed, or currencies are different.
-  - /: will *PANIC* if: Overflowed, division by zero, or currencies are different.
+  - *,+,-: will *PANIC* if overflowed. Currency mismatches are prevented at compile time.
+  - /: will *PANIC* if overflowed or division by zero. Currency mismatches are prevented at compile time.
   - Use methods in `BaseOps` for non-panic arithmetics.
 
 ### Currency
-- Creation from string accepts ISO 4217 alphabetical code, case insensitive. E.g. USD, usd, uSd, IDR.
-- Comparisons and hash are on currency's alphabetical code.
+- Currency types are defined at compile time using marker types (e.g., `USD`, `EUR`, `JPY`).
+- All ISO 4217 currencies are supported via the `Currency` trait.
+- Currency information is available through trait methods: `code()`, `symbol()`, `name()`, `minor_unit()`.
 
 This library maintains type-safety by preventing invalid state either by returning Result(`MoneyResult`) or going *PANIC*.
 
