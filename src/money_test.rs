@@ -1790,6 +1790,13 @@ fn test_multiple_separators_in_parsing() {
 }
 
 #[test]
+fn test_currency_mismatch_in_parsing() {
+    let money = Money::<EUR>::from_str("USD 1,234,567.89");
+    assert!(money.is_err());
+    assert_eq!(money.err().unwrap(), MoneyError::CurrencyMismatch);
+}
+
+#[test]
 fn test_format_preserves_precision() {
     let money = Money::<USD>::new(dec!(0.01)).unwrap();
     let formatted = money.format_code();
