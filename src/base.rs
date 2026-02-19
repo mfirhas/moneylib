@@ -55,9 +55,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// ```
     fn amount(&self) -> Decimal;
 
-    /// Rounds the money amount using the currency's rounding strategy to the scale of the currency's minor unit.
-    ///
-    /// The rounding strategy is determined by the currency's configuration.
+    /// Rounds the money amount using bankers rounding rule to the scale of the currency's minor unit.
     ///
     /// # Examples
     ///
@@ -406,8 +404,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
 /// Trait for arithmetic and comparison operations on money values.
 ///
 /// This trait extends `BaseMoney` with mathematical operations (addition, subtraction,
-/// multiplication, division) and comparison methods. All operations ensure currency
-/// compatibility and return appropriate errors when currencies don't match.
+/// multiplication, division) and comparison methods. All arithmetic operations ensure runtime safety like overflowed/wrapped/truncated values.
 ///
 /// # Examples
 ///
@@ -596,8 +593,7 @@ pub trait BaseOps<C: Currency>:
 
 /// Trait for types that can represent a money amount.
 ///
-/// This trait allows for flexible input types in arithmetic operations. A type can represent
-/// either a money value or a decimal number for scaling operations.
+/// This trait allows for flexible input types in constructing and arithmetic operations.
 ///
 /// # Examples
 ///
@@ -788,7 +784,6 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
 /// Trait for customizing money formatting and rounding behavior.
 ///
 /// This trait extends `BaseMoney` with methods to customize how money is displayed and rounded.
-/// It allows you to change separators and apply specific rounding strategies.
 ///
 /// # Examples
 ///
