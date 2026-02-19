@@ -629,199 +629,51 @@ fn test_base_ops_clamp_above_range() {
     assert_eq!(clamped.amount(), dec!(200.00));
 }
 
-// ==================== BaseOps Comparison Tests ====================
+/// Test BaseOps abs, min, max, clamp
 
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_bigger_true() {
-//     let money1 = Money::<USD>::new(dec!(200.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     assert_eq!(money1.is_bigger(money2).unwrap(), true);
-// }
+#[test]
+fn test_money_abs() {
+    let money = Money::<USD>::from_decimal(dec!(-1234));
+    let abs_money = money.abs();
+    assert_eq!(abs_money.amount(), dec!(1234));
+}
 
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_bigger_false() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(200.00)).unwrap();
-//     assert_eq!(money1.is_bigger(money2).unwrap(), false);
-// }
+#[test]
+fn test_money_min() {
+    let money = Money::<USD>::from_decimal(dec!(-1234));
+    let money2 = Money::<USD>::from_decimal(dec!(1234));
+    let min_money = money.min(money2);
+    assert_eq!(min_money, money);
+}
 
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_bigger_equal_amounts() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     assert_eq!(money1.is_bigger(money2).unwrap(), false);
-// }
+#[test]
+fn test_money_max() {
+    let money = Money::<USD>::from_decimal(dec!(-1234));
+    let money2 = Money::<USD>::from_decimal(dec!(1234));
+    let max_money = money.max(money2);
+    assert_eq!(max_money, money2);
+}
 
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_bigger_negative_amounts() {
-//     let money1 = Money::<USD>::new(dec!(-50.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(-100.00)).unwrap();
-//     assert_eq!(money1.is_bigger(money2).unwrap(), true);
-// }
+#[test]
+fn test_money_clamp() {
+    let money = Money::<USD>::from_decimal(dec!(1234));
+    let min_budget = Money::<USD>::from_decimal(dec!(500));
+    let max_budget = Money::<USD>::from_decimal(dec!(2000));
+    let clamped = money.clamp(min_budget, max_budget);
+    assert_eq!(clamped, money);
 
-// Note: Currency mismatch tests removed - compile-time type safety prevents mismatched currency operations
-// #[test]
-// fn test_base_ops_is_bigger_currency_mismatch() {
-//     let money1 = Money::<USD>::new(dec!(200.00)).unwrap();
-//     let money2 = Money::<EUR>::new(dec!(100.00)).unwrap();
-//     let result = money1.is_bigger(money2);
-//     assert!(result.is_err());
-//     assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
-// }
+    let money = Money::<USD>::from_decimal(dec!(430));
+    let min_budget = Money::<USD>::from_decimal(dec!(500));
+    let max_budget = Money::<USD>::from_decimal(dec!(2000));
+    let clamped = money.clamp(min_budget, max_budget);
+    assert_eq!(clamped, min_budget);
 
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_smaller_true() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(200.00)).unwrap();
-//     assert_eq!(money1.is_smaller(money2).unwrap(), true);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_smaller_false() {
-//     let money1 = Money::<USD>::new(dec!(200.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     assert_eq!(money1.is_smaller(money2).unwrap(), false);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_smaller_equal_amounts() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     assert_eq!(money1.is_smaller(money2).unwrap(), false);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_smaller_negative_amounts() {
-//     let money1 = Money::<USD>::new(dec!(-100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(-50.00)).unwrap();
-//     assert_eq!(money1.is_smaller(money2).unwrap(), true);
-// }
-
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// fn test_base_ops_is_smaller_currency_mismatch() {
-//     let usd = Currency::from_iso("USD").unwrap();
-//     let eur = Currency::from_iso("EUR").unwrap();
-//     let money1 = Money::new(usd, dec!(100.00));
-//     let money2 = Money::new(eur, dec!(200.00));
-//     let result = money1.is_smaller(money2);
-//     assert!(result.is_err());
-//     assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_bigger_equal_true_greater() {
-//     let money1 = Money::<USD>::new(dec!(200.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     assert_eq!(money1.is_bigger_equal(money2).unwrap(), true);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_bigger_equal_true_equal() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     assert_eq!(money1.is_bigger_equal(money2).unwrap(), true);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_bigger_equal_false() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(200.00)).unwrap();
-//     assert_eq!(money1.is_bigger_equal(money2).unwrap(), false);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_bigger_equal_negative_amounts() {
-//     let money1 = Money::<USD>::new(dec!(-50.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(-50.00)).unwrap();
-//     assert_eq!(money1.is_bigger_equal(money2).unwrap(), true);
-// }
-
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// fn test_base_ops_is_bigger_equal_currency_mismatch() {
-//     let usd = Currency::from_iso("USD").unwrap();
-//     let eur = Currency::from_iso("EUR").unwrap();
-//     let money1 = Money::new(usd, dec!(200.00));
-//     let money2 = Money::new(eur, dec!(100.00));
-//     let result = money1.is_bigger_equal(money2);
-//     assert!(result.is_err());
-//     assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_smaller_equal_true_smaller() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(200.00)).unwrap();
-//     assert_eq!(money1.is_smaller_equal(money2).unwrap(), true);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_smaller_equal_true_equal() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     assert_eq!(money1.is_smaller_equal(money2).unwrap(), true);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_smaller_equal_false() {
-//     let money1 = Money::<USD>::new(dec!(200.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     assert_eq!(money1.is_smaller_equal(money2).unwrap(), false);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_is_smaller_equal_negative_amounts() {
-//     let money1 = Money::<USD>::new(dec!(-100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(-100.00)).unwrap();
-//     assert_eq!(money1.is_smaller_equal(money2).unwrap(), true);
-// }
-
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// fn test_base_ops_is_smaller_equal_currency_mismatch() {
-//     let usd = Currency::from_iso("USD").unwrap();
-//     let eur = Currency::from_iso("EUR").unwrap();
-//     let money1 = Money::new(usd, dec!(100.00));
-//     let money2 = Money::new(eur, dec!(200.00));
-//     let result = money1.is_smaller_equal(money2);
-//     assert!(result.is_err());
-//     assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_comparison_with_zero() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(0.00)).unwrap();
-//     assert_eq!(money1.is_bigger(money2).unwrap(), true);
-//     assert_eq!(money2.is_smaller(money1).unwrap(), true);
-// }
-
-// Note: Test uses old is_bigger/is_smaller API - use standard operators (>, <, >=, <=) instead
-// #[test]
-// fn test_base_ops_comparison_cross_zero() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(-100.00)).unwrap();
-//     assert_eq!(money1.is_bigger(money2).unwrap(), true);
-//     assert_eq!(money2.is_smaller(money1).unwrap(), true);
-// }
+    let money = Money::<USD>::from_decimal(dec!(3000));
+    let min_budget = Money::<USD>::from_decimal(dec!(500));
+    let max_budget = Money::<USD>::from_decimal(dec!(2000));
+    let clamped = money.clamp(min_budget, max_budget);
+    assert_eq!(clamped, max_budget);
+}
 
 #[test]
 fn test_base_ops_add_decimal() {
