@@ -307,34 +307,6 @@ fn test_from_str_no_thousands_separator_various() {
     }
 }
 
-// Note: Test disabled - FromStr with mixed currencies and type annotation needs revision for new API
-// #[test]
-// fn test_from_str_edge_case_variations() {
-//     // Test various edge cases with different decimal formats
-//     let tests = vec![
-//         // USD with extra zeros after decimal
-//         ("USD 100.000", dec!(100.00)),    // Decimal .000 rounds to .00
-//         ("USD 100.0000", dec!(100.00)),   // Decimal .0000 rounds to .00
-//         ("USD 100,000", dec!(100000.00)), // Comma as thousands separator: 100,000
-//         ("USD 100,0000", dec!(100.00)),   // Matches pattern but results in 100.00
-//         // EUR with extra zeros
-//         ("EUR 100.000", dec!(100.00)),    // Decimal .000 rounds to .00
-//         ("EUR 100.0000", dec!(100.00)),   // Decimal .0000 rounds to .00
-//         ("EUR 100,000", dec!(100000.00)), // Comma as decimal in EUR format: 100,000
-//         ("EUR 100,0000", dec!(100.00)),   // Matches pattern but results in 100.00
-//         // USD 1000 variations
-//         ("USD 1000,000", dec!(1000.00)), // Matches dot regex, comma as decimal separator
-//         ("USD 1000.000", dec!(1000.00)), // Decimal .000 rounds to .00
-//         // EUR 1000 variations
-//         ("EUR 1000,000", dec!(1000.00)), // Comma as decimal: rounds to .00
-//         ("EUR 1000.000", dec!(1000.00)), // Decimal .000 rounds to .00
-//     ];
-//
-//     for (input, expected) in tests {
-//         let money: Money<USD> = Money::from_str(input).unwrap();
-//         assert_eq!(money.amount(), expected, "Failed for input: {}", input);
-//     }
-// }
 
 // ==================== Display Tests ====================
 
@@ -361,8 +333,6 @@ fn test_display_zero() {
 
 // ==================== BaseMoney Trait Tests ====================
 
-// Note: test_base_money_currency removed - currency() method no longer exists
-// Currency is now a compile-time type parameter
 
 #[test]
 fn test_base_money_amount() {
@@ -539,13 +509,6 @@ fn test_base_money_display() {
     assert_eq!(money.display(), "EUR 1.234,56");
 }
 
-// Note: countries() method removed in new API - currency metadata accessed directly
-// #[test]
-// fn test_base_money_countries() {
-//     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let countries = money.countries();
-//     assert!(countries.is_some());
-// }
 
 // ==================== BaseOps Trait Tests ====================
 
@@ -798,17 +761,6 @@ fn test_base_ops_add_money_rounds() {
     assert_eq!(result.amount(), dec!(100.00));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// fn test_base_ops_add_money_currency_mismatch() {
-//     let currency1 = Currency::from_iso("USD").unwrap();
-//     let currency2 = Currency::from_iso("EUR").unwrap();
-//     let money1 = Money::new(currency1, dec!(100.00));
-//     let money2 = Money::new(currency2, dec!(50.00));
-//     let result = money1.add(money2);
-//     assert!(result.is_err());
-//     assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
-// }
 
 #[test]
 fn test_base_ops_sub_money() {
@@ -834,17 +786,6 @@ fn test_base_ops_sub_money_rounds() {
     assert_eq!(result.amount(), dec!(100.00));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// fn test_base_ops_sub_money_currency_mismatch() {
-//     let currency1 = Currency::from_iso("USD").unwrap();
-//     let currency2 = Currency::from_iso("EUR").unwrap();
-//     let money1 = Money::new(currency1, dec!(100.00));
-//     let money2 = Money::new(currency2, dec!(50.00));
-//     let result = money1.sub(money2);
-//     assert!(result.is_err());
-//     assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
-// }
 
 #[test]
 fn test_base_ops_mul_money() {
@@ -872,17 +813,6 @@ fn test_base_ops_mul_money_rounds() {
     assert_eq!(result.amount(), dec!(100.00));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// fn test_base_ops_mul_money_currency_mismatch() {
-//     let currency1 = Currency::from_iso("USD").unwrap();
-//     let currency2 = Currency::from_iso("EUR").unwrap();
-//     let money1 = Money::new(currency1, dec!(100.00));
-//     let money2 = Money::new(currency2, dec!(2.0));
-//     let result = money1.mul(money2);
-//     assert!(result.is_err());
-//     assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
-// }
 
 #[test]
 fn test_base_ops_div_money() {
@@ -920,17 +850,6 @@ fn test_base_ops_div_money_zero_error() {
     ));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// fn test_base_ops_div_money_currency_mismatch() {
-//     let currency1 = Currency::from_iso("USD").unwrap();
-//     let currency2 = Currency::from_iso("EUR").unwrap();
-//     let money1 = Money::new(currency1, dec!(100.00));
-//     let money2 = Money::new(currency2, dec!(2.0));
-//     let result = money1.div(money2);
-//     assert!(result.is_err());
-//     assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
-// }
 
 // ==================== BaseOps with f64 Type Tests ====================
 
@@ -1260,21 +1179,6 @@ fn test_base_ops_div_i128_zero_error() {
 
 // ==================== CustomMoney Trait Tests ====================
 
-// Note: Test uses CustomMoney methods not available in new API
-// #[test]
-// fn test_custom_money_set_thousand_separator() {
-//     let mut money = Money::<USD>::new(dec!(1234.56)).unwrap();
-//     money.set_thousand_separator(".");
-//     assert_eq!(money.thousand_separator(), ".");
-// }
-
-// Note: Test uses CustomMoney methods not available in new API
-// #[test]
-// fn test_custom_money_set_decimal_separator() {
-//     let mut money = Money::<USD>::new(dec!(1234.56)).unwrap();
-//     money.set_decimal_separator(",");
-//     assert_eq!(money.decimal_separator(), ",");
-// }
 
 #[test]
 fn test_custom_money_round_with_bankers_rounding() {
@@ -1329,14 +1233,6 @@ fn test_add_money_negative() {
     assert_eq!(result.amount(), dec!(50.00));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// #[should_panic(expected = "currency mismatch for addition operation")]
-// fn test_add_money_different_currencies_panic() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<EUR>::new(dec!(50.00)).unwrap();
-//     let _ = money1 + money2; // Won't compile due to type mismatch
-// }
 
 #[test]
 fn test_sub_money_from_money() {
@@ -1354,14 +1250,6 @@ fn test_sub_money_negative_result() {
     assert_eq!(result.amount(), dec!(-50.00));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// #[should_panic(expected = "currency mismatch for substraction operation")]
-// fn test_sub_money_different_currencies_panic() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<EUR>::new(dec!(50.00)).unwrap();
-//     let _ = money1 - money2; // Won't compile due to type mismatch
-// }
 
 #[test]
 fn test_mul_money_by_money() {
@@ -1379,14 +1267,6 @@ fn test_mul_money_negative() {
     assert_eq!(result.amount(), dec!(-50.00));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// #[should_panic(expected = "currency mismatch for multiplication operation")]
-// fn test_mul_money_different_currencies_panic() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<EUR>::new(dec!(50.00)).unwrap();
-//     let _ = money1 * money2; // Won't compile due to type mismatch
-// }
 
 #[test]
 fn test_div_money_by_money() {
@@ -1412,14 +1292,6 @@ fn test_div_money_by_zero_panic() {
     let _ = money1 / money2;
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// #[should_panic(expected = "currency mismatch for division operation")]
-// fn test_div_money_different_currencies_panic() {
-//     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<EUR>::new(dec!(50.00)).unwrap();
-//     let _ = money1 / money2; // Won't compile due to type mismatch
-// }
 
 // ==================== Operator Tests (Money + Decimal) ====================
 
@@ -1505,14 +1377,6 @@ fn test_add_assign_money() {
     assert_eq!(money1.amount(), dec!(150.00));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// #[should_panic(expected = "currency mismatch for add assign operation")]
-// fn test_add_assign_different_currencies_panic() {
-//     let mut money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<EUR>::new(dec!(50.00)).unwrap();
-//     money1 += money2; // Won't compile due to type mismatch
-// }
 
 #[test]
 fn test_sub_assign_money() {
@@ -1522,14 +1386,6 @@ fn test_sub_assign_money() {
     assert_eq!(money1.amount(), dec!(50.00));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// #[should_panic(expected = "currency mismatch for sub assign operation")]
-// fn test_sub_assign_different_currencies_panic() {
-//     let mut money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<EUR>::new(dec!(50.00)).unwrap();
-//     money1 -= money2; // Won't compile due to type mismatch
-// }
 
 #[test]
 fn test_mul_assign_money() {
@@ -1539,14 +1395,6 @@ fn test_mul_assign_money() {
     assert_eq!(money1.amount(), dec!(50.00));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// #[should_panic(expected = "currency mismatch for mul assign operation")]
-// fn test_mul_assign_different_currencies_panic() {
-//     let mut money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<EUR>::new(dec!(50.00)).unwrap();
-//     money1 *= money2; // Won't compile due to type mismatch
-// }
 
 #[test]
 fn test_div_assign_money() {
@@ -1564,14 +1412,6 @@ fn test_div_assign_zero_panic() {
     money1 /= money2;
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// #[should_panic(expected = "currency mismatch for div assign operation")]
-// fn test_div_assign_different_currencies_panic() {
-//     let mut money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-//     let money2 = Money::<EUR>::new(dec!(50.00)).unwrap();
-//     money1 /= money2; // Won't compile due to type mismatch
-// }
 
 // ==================== Negation Operator Tests ====================
 
@@ -1673,16 +1513,6 @@ fn test_bhd_three_decimal_places() {
     assert_eq!(rounded.amount(), dec!(100.123));
 }
 
-// Note: Test uses CustomMoney methods not available in new API
-// #[test]
-// fn test_format_with_different_separators() {
-//     let mut money = Money::<EUR>::new(dec!(1234.56)).unwrap();
-//     money.set_thousand_separator(".");
-//     money.set_decimal_separator(",");
-//     let formatted = money.format_code();
-//     assert!(formatted.contains("1.234"));
-//     assert!(formatted.contains("56"));
-// }
 
 #[test]
 fn test_parse_and_format_roundtrip() {
@@ -1908,267 +1738,6 @@ fn test_clamp_applies_rounding_upper_bound() {
     );
 }
 
-// ==================== Rounding Strategy Tests ====================
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_bankers_rounding_half_to_even() {
-//     // Banker's rounding: round 0.5 to nearest even number
-//     // Currency implicit via Money::<USD> // USD has 2 decimal places
-//
-//     // Test 0.125 -> 0.12 (down to even)
-//     let money1 = Money::<USD>::new(dec!(0.125)).unwrap();
-//     assert_eq!(money1.amount(), dec!(0.12));
-//
-//     // Test 0.135 -> 0.14 (up to even)
-//     let money2 = Money::<USD>::new(dec!(0.135)).unwrap();
-//     assert_eq!(money2.amount(), dec!(0.14));
-//
-//     // Test 0.115 -> 0.12 (up to even)
-//     let money3 = Money::<USD>::new(dec!(0.115)).unwrap();
-//     assert_eq!(money3.amount(), dec!(0.12));
-//
-//     // Test 0.105 -> 0.10 (down to even)
-//     let money4 = Money::<USD>::new(dec!(0.105)).unwrap();
-//     assert_eq!(money4.amount(), dec!(0.10));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_bankers_rounding_negative() {
-//     // Currency implicit via Money::<USD>
-//
-//     // Test -0.125 -> -0.12 (rounds to even: 2 is even)
-//     let money1 = Money::<USD>::new(dec!(-0.125)).unwrap();
-//     assert_eq!(money1.amount(), dec!(-0.12));
-//
-//     // Test -0.135 -> -0.14 (rounds to even: 4 is even)
-//     let money2 = Money::<USD>::new(dec!(-0.135)).unwrap();
-//     assert_eq!(money2.amount(), dec!(-0.14));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_half_up_strategy() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::HalfUp);
-//
-//     // Test 0.125 -> 0.13 (always round up on 0.5)
-//     let money1 = Money::<USD>::new(dec!(0.125)).unwrap();
-//     assert_eq!(money1.amount(), dec!(0.13));
-//
-//     // Test 0.135 -> 0.14
-//     let money2 = Money::<USD>::new(dec!(0.135)).unwrap();
-//     assert_eq!(money2.amount(), dec!(0.14));
-//
-//     // Test 0.115 -> 0.12
-//     let money3 = Money::<USD>::new(dec!(0.115)).unwrap();
-//     assert_eq!(money3.amount(), dec!(0.12));
-//
-//     // Test 0.105 -> 0.11
-//     let money4 = Money::<USD>::new(dec!(0.105)).unwrap();
-//     assert_eq!(money4.amount(), dec!(0.11));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_half_up_strategy_negative() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::HalfUp);
-//
-//     // Negative values round away from zero
-//     // Test -0.125 -> -0.13
-//     let money1 = Money::<USD>::new(dec!(-0.125)).unwrap();
-//     assert_eq!(money1.amount(), dec!(-0.13));
-//
-//     // Test -0.135 -> -0.14
-//     let money2 = Money::<USD>::new(dec!(-0.135)).unwrap();
-//     assert_eq!(money2.amount(), dec!(-0.14));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_half_down_strategy() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::HalfDown);
-//
-//     // Test 0.125 -> 0.12 (always round down on 0.5)
-//     let money1 = Money::<USD>::new(dec!(0.125)).unwrap();
-//     assert_eq!(money1.amount(), dec!(0.12));
-//
-//     // Test 0.135 -> 0.13
-//     let money2 = Money::<USD>::new(dec!(0.135)).unwrap();
-//     assert_eq!(money2.amount(), dec!(0.13));
-//
-//     // Test 0.115 -> 0.11
-//     let money3 = Money::<USD>::new(dec!(0.115)).unwrap();
-//     assert_eq!(money3.amount(), dec!(0.11));
-//
-//     // Test 0.105 -> 0.10
-//     let money4 = Money::<USD>::new(dec!(0.105)).unwrap();
-//     assert_eq!(money4.amount(), dec!(0.10));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_half_down_strategy_negative() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::HalfDown);
-//
-//     // Negative values round toward zero
-//     // Test -0.125 -> -0.12
-//     let money1 = Money::<USD>::new(dec!(-0.125)).unwrap();
-//     assert_eq!(money1.amount(), dec!(-0.12));
-//
-//     // Test -0.135 -> -0.13
-//     let money2 = Money::<USD>::new(dec!(-0.135)).unwrap();
-//     assert_eq!(money2.amount(), dec!(-0.13));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_ceil_strategy() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::Ceil);
-//
-//     // Ceil strategy (AwayFromZero) rounds away from zero in both directions
-//     // Test 0.121 -> 0.13 (rounds up, away from zero)
-//     let money1 = Money::<USD>::new(dec!(0.121)).unwrap();
-//     assert_eq!(money1.amount(), dec!(0.13));
-//
-//     // Test 0.001 -> 0.01
-//     let money2 = Money::<USD>::new(dec!(0.001)).unwrap();
-//     assert_eq!(money2.amount(), dec!(0.01));
-//
-//     // Test 0.10 -> 0.10 (already at precision)
-//     let money3 = Money::<USD>::new(dec!(0.10)).unwrap();
-//     assert_eq!(money3.amount(), dec!(0.10));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_ceil_strategy_negative() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::Ceil);
-//
-//     // Ceil strategy (AwayFromZero) rounds away from zero
-//     // For negative numbers, this means rounding down (more negative)
-//     // Test -0.121 -> -0.13 (rounds down, away from zero)
-//     let money1 = Money::<USD>::new(dec!(-0.121)).unwrap();
-//     assert_eq!(money1.amount(), dec!(-0.13));
-//
-//     // Test -0.001 -> -0.01
-//     let money2 = Money::<USD>::new(dec!(-0.001)).unwrap();
-//     assert_eq!(money2.amount(), dec!(-0.01));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_floor_strategy() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::Floor);
-//
-//     // Floor strategy (ToZero) rounds toward zero in both directions
-//     // For positive numbers, this means rounding down
-//     // Test 0.129 -> 0.12 (rounds down, toward zero)
-//     let money1 = Money::<USD>::new(dec!(0.129)).unwrap();
-//     assert_eq!(money1.amount(), dec!(0.12));
-//
-//     // Test 0.999 -> 0.99
-//     let money2 = Money::<USD>::new(dec!(0.999)).unwrap();
-//     assert_eq!(money2.amount(), dec!(0.99));
-//
-//     // Test 0.10 -> 0.10 (already at precision)
-//     let money3 = Money::<USD>::new(dec!(0.10)).unwrap();
-//     assert_eq!(money3.amount(), dec!(0.10));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_floor_strategy_negative() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::Floor);
-//
-//     // Floor strategy (ToZero) rounds toward zero
-//     // For negative numbers, this means rounding up (less negative)
-//     // Test -0.129 -> -0.12 (rounds up, toward zero)
-//     let money1 = Money::<USD>::new(dec!(-0.129)).unwrap();
-//     assert_eq!(money1.amount(), dec!(-0.12));
-//
-//     // Test -0.999 -> -0.99
-//     let money2 = Money::<USD>::new(dec!(-0.999)).unwrap();
-//     assert_eq!(money2.amount(), dec!(-0.99));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_jpy_no_decimal_places() {
-//     // JPY has 0 decimal places
-//     // Currency implicit via Money::<JPY>
-//
-//     // Test 123.45 -> 123
-//     let money1 = Money::<USD>::new(dec!(123.45)).unwrap();
-//     assert_eq!(money1.amount(), dec!(123));
-//
-//     // Test 123.55 -> 124 (banker's rounding)
-//     let money2 = Money::<USD>::new(dec!(123.55)).unwrap();
-//     assert_eq!(money2.amount(), dec!(124));
-//
-//     // Test 124.50 -> 124 (banker's rounding to even)
-//     let money3 = Money::<USD>::new(dec!(124.50)).unwrap();
-//     assert_eq!(money3.amount(), dec!(124));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_round_with_bhd_three_decimal_places() {
-//     // BHD (Bahraini Dinar) has 3 decimal places
-//     // Currency implicit via Money::<BHD>
-//
-//     // Test 1.2345 -> 1.234 (at midpoint, round to keep last digit 4 even)
-//     let money1 = Money::<USD>::new(dec!(1.2345)).unwrap();
-//     assert_eq!(money1.amount(), dec!(1.234));
-//
-//     // Test 1.2355 -> 1.236 (at midpoint, round up to make last digit even: 6)
-//     let money2 = Money::<USD>::new(dec!(1.2355)).unwrap();
-//     assert_eq!(money2.amount(), dec!(1.236));
-//
-//     // Test 1.2365 -> 1.236 (at midpoint, last digit 6 is already even, round down)
-//     let money3 = Money::<USD>::new(dec!(1.2365)).unwrap();
-//     assert_eq!(money3.amount(), dec!(1.236));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_arithmetic_operations_preserve_rounding_strategy() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::HalfUp);
-//
-//     let money1 = Money::<USD>::new(dec!(10.00)).unwrap();
-//     let money2 = Money::<USD>::new(dec!(3.00)).unwrap();
-//
-//     // Division should apply rounding strategy
-//     let result = money1 / money2;
-//     // 10 / 3 = 3.333... with HalfUp should round to 3.33
-//     assert_eq!(result.amount(), dec!(3.33));
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_rounding_strategy_with_multiplication() {
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::HalfUp);
-//
-//     let money = Money::<USD>::new(dec!(10.00)).unwrap();
-//
-//     // 10.00 * 0.333 = 3.33 (no rounding needed)
-//     let result = money.mul(dec!(0.333)).unwrap();
-//     assert_eq!(result.amount(), dec!(3.33));
-//
-//     // 10.00 * 0.3335 = 3.335 -> 3.34 with HalfUp
-//     let result2 = money.mul(dec!(0.3335)).unwrap();
-//     assert_eq!(result2.amount(), dec!(3.34));
-// }
 
 #[test]
 fn test_edge_case_very_small_amounts() {
@@ -2223,50 +1792,6 @@ fn test_edge_case_exact_midpoint_sequences() {
     }
 }
 
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_edge_case_rounding_strategy_comparison() {
-//     // Compare different strategies on the same value
-//     let base_value = dec!(10.125);
-//
-//     // Test with USD (2 decimal places)
-//     let mut currency_bankers = Currency::from_iso("USD").unwrap();
-//     currency_bankers.set_rounding_strategy(RoundingStrategy::BankersRounding);
-//     let money_bankers = Money::new(currency_bankers, base_value);
-//     assert_eq!(money_bankers.amount(), dec!(10.12)); // to even
-//
-//     let mut currency_half_up = Currency::from_iso("USD").unwrap();
-//     currency_half_up.set_rounding_strategy(RoundingStrategy::HalfUp);
-//     let money_half_up = Money::new(currency_half_up, base_value);
-//     assert_eq!(money_half_up.amount(), dec!(10.13)); // always up
-//
-//     let mut currency_half_down = Currency::from_iso("USD").unwrap();
-//     currency_half_down.set_rounding_strategy(RoundingStrategy::HalfDown);
-//     let money_half_down = Money::new(currency_half_down, base_value);
-//     assert_eq!(money_half_down.amount(), dec!(10.12)); // always down
-//
-//     let mut currency_ceil = Currency::from_iso("USD").unwrap();
-//     currency_ceil.set_rounding_strategy(RoundingStrategy::Ceil);
-//     let money_ceil = Money::new(currency_ceil, base_value);
-//     assert_eq!(money_ceil.amount(), dec!(10.13)); // away from zero
-//
-//     let mut currency_floor = Currency::from_iso("USD").unwrap();
-//     currency_floor.set_rounding_strategy(RoundingStrategy::Floor);
-//     let money_floor = Money::new(currency_floor, base_value);
-//     assert_eq!(money_floor.amount(), dec!(10.12)); // toward zero
-// }
-
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_from_str_respects_rounding_strategy() {
-//     // Test that parsing from string also respects rounding strategy
-//     let mut currency = Currency::from_iso("USD").unwrap();
-//     currency.set_rounding_strategy(RoundingStrategy::HalfUp);
-//
-//     // Create money from string with the currency
-//     let money = Money::<USD>::new(dec!(10.125)).unwrap();
-//     assert_eq!(money.amount(), dec!(10.13));
-// }
 
 #[test]
 fn test_round_with_custom_decimal_points() {
@@ -2295,26 +1820,6 @@ fn test_round_with_custom_decimal_points() {
     assert_eq!(rounded_1.amount(), dec!(100.0));
 }
 
-// Note: Test uses old mutable Currency API with rounding strategies - skipped for new API
-// #[test]
-// fn test_operations_with_different_rounding_strategies() {
-//     // Test that operations between money with same currency but different
-//     // rounding strategies work correctly
-//     let mut currency1 = Currency::from_iso("USD").unwrap();
-//     currency1.set_rounding_strategy(RoundingStrategy::HalfUp);
-//
-//     let mut currency2 = Currency::from_iso("USD").unwrap();
-//     currency2.set_rounding_strategy(RoundingStrategy::Floor);
-//
-//     let money1 = Money::new(currency1, dec!(10.125)); // rounds to 10.13
-//     let money2 = Money::new(currency2, dec!(5.125)); // rounds to 5.12
-//
-//     // Since currencies are equal (based on code), addition should work
-//     let sum = money1 + money2;
-//     // The result uses money1's currency (and thus its rounding strategy)
-//     // 10.13 + 5.12 = 15.25 (no additional rounding needed)
-//     assert_eq!(sum.amount(), dec!(15.25));
-// }
 
 #[test]
 fn test_custom_formatting() {
@@ -2347,20 +1852,8 @@ fn test_custom_formatting() {
     assert_eq!(negative.format("sa m"), "$5,000 ¢");
 }
 
-// --- conversion from Money to Decimal ---
-//
-// Get the amount of money
 
-// Note: IDR is not available as a currency marker type in the new API
-// #[test]
-// fn test_from_money_to_decimal() {
-//     let duit = Money::<IDR>::new(dec!(125_000_000)).unwrap();
-//     let expected = dec!(125_000_000);
-//     let amount: Decimal = duit.into();
-//     assert_eq!(amount, expected);
-// }
-
-// ==================== Money::from_amount() Tests ====================
+// ==================== Money::new() with Various Amount Types ====================
 
 #[test]
 fn test_from_amount_with_decimal() {
@@ -2398,16 +1891,6 @@ fn test_from_amount_with_money_same_currency() {
     assert_eq!(money.amount(), dec!(100.50));
 }
 
-// Note: Currency mismatch test commented out - compile-time type safety prevents this
-// #[test]
-// fn test_from_amount_with_money_different_currency() {
-//     let usd = Currency::from_iso("USD").unwrap();
-//     let eur = Currency::from_iso("EUR").unwrap();
-//     let existing_money = Money::new(eur, dec!(100.50));
-//     let result = Money::from_amount(usd, existing_money);
-//     dbg!(&result);
-//     assert!(result.is_err());
-// }
 
 #[test]
 fn test_from_amount_with_negative_decimal() {
@@ -2461,7 +1944,7 @@ fn test_from_amount_rounding_with_bhd() {
     assert_eq!(money.amount(), dec!(101.000));
 }
 
-// ==================== Money::from_minor_amount() Tests ====================
+// ==================== Money::from_minor() Tests ====================
 
 #[test]
 fn test_from_minor_amount_usd() {
