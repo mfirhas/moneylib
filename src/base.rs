@@ -457,53 +457,6 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn abs(&self) -> Self;
 
-    /// Returns the minimum of two money values.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let m1 = Money::<USD>::new(dec!(100)).unwrap();
-    /// let m2 = Money::<USD>::new(dec!(50)).unwrap();
-    /// let minimum = m1.min(m2);
-    /// assert_eq!(minimum.amount(), dec!(50));
-    /// ```
-    fn min(&self, rhs: Self) -> Self;
-
-    /// Returns the maximum of two money values.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let m1 = Money::<USD>::new(dec!(100)).unwrap();
-    /// let m2 = Money::<USD>::new(dec!(50)).unwrap();
-    /// let maximum = m1.max(m2);
-    /// assert_eq!(maximum.amount(), dec!(100));
-    /// ```
-    fn max(&self, rhs: Self) -> Self;
-
-    /// Clamps the money amount between `from` and `to` inclusively.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let money = Money::<USD>::new(dec!(100)).unwrap();
-    /// let clamped = money.clamp(dec!(20), dec!(80));
-    /// assert_eq!(clamped.amount(), dec!(80));
-    /// ```
-    fn clamp(&self, from: Decimal, to: Decimal) -> Self;
-
     /// Adds another money value to this one.
     ///
     /// # Examples
