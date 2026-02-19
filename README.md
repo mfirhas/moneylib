@@ -88,7 +88,7 @@ match money_a.add(money_b) {
 // Safe operations with different currencies (won't compile due to type safety)
 let eur_money = Money::<EUR>::new(dec!(100.00)).unwrap();
 // This won't compile because USD and EUR are different types:
-// let result = money_a.add(eur_money); // Compile error!
+// let result = money_a + eur_money; // Compile error!
 ```
 
 ## Components
