@@ -1750,6 +1750,7 @@ fn test_clone() {
     let money2 = money1.clone();
     assert_eq!(money1, money2);
     assert_eq!(money1.amount(), money2.amount());
+    assert_eq!(money1.code(), money2.code());
 }
 
 #[test]
@@ -2590,7 +2591,7 @@ fn test_from_amount_rounding_with_jpy() {
 #[test]
 fn test_from_amount_with_i32() {
     let money = Money::<USD>::new(1234).unwrap();
-    assert_eq!(money.amount(), dec!(1234));
+    assert_eq!(money.amount(), dec!(1234.00));
 }
 
 #[test]
