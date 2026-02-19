@@ -42,8 +42,8 @@ mod parse_test;
 #[cfg(test)]
 mod fmt_test;
 
-// #[cfg(test)]
-// mod money_test;
+#[cfg(test)]
+mod money_test;
 
 #[cfg(test)]
 mod error_test;
