@@ -162,7 +162,7 @@ pub(crate) fn format_decimal_abs(
             let frac_len = frac.len();
             let minor_unit_len: usize = minor_unit.into();
             let remaining_frac_len = minor_unit_len - frac_len;
-            result.push_str(&"0".repeat(remaining_frac_len.into()));
+            result.push_str(&"0".repeat(remaining_frac_len));
         }
     } else if minor_unit > 0 {
         // If no fractional part and minor_unit > 0, append decimal separator with zeros
