@@ -24,10 +24,8 @@ pub type MoneyResult<T> = Result<T, MoneyError>;
 
 pub use currencylib::*;
 
-// mod money;
-mod money_2;
-pub use money_2::Money;
-// pub use money::Money;
+mod money;
+pub use money::Money;
 
 mod dec_ops;
 mod ops;
