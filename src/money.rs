@@ -62,7 +62,6 @@ impl<C: Currency> Money<C> {
     ///
     /// # Arguments
     ///
-    /// * `currency` - Type argument for currency
     /// * `amount` - The amount of money
     ///
     /// # Examples
