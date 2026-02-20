@@ -13,12 +13,13 @@ A library to deal with money safely using floating-point fixed-precision decimal
 It handles currency and amount with operations and arithmetics avoiding floating, rounding, and precision issue exist in typical binary floating-point type. 
 It also make sure the money always in valid state on every operations and arithmetics done on it avoiding overflow/truncation/wrap and without fractions.
 
-This crate uses [Decimal](https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html) type underneath for the amount of money. Using it alone is not enough for many money operations and this crate
-also provides `Currency` storing metadata about the money that involves in logics and state of the money. 
+This crate uses [Decimal](https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html) type underneath for the amount of money. 
 
 ## Features
 Here are some features supported:
-- Type-safe: prevents invalid state and follow monetary standard with compile-time currency checking.
+- Type-safe: 
+  - Compile-time check for arithmetics and operations.
+  - Runtime check for overflowed/wrapped/truncated amount.
 - Value type to represent money.
 - Access to its amount and currency's metadata.
 - Arithmetics: (*,/,+,-), operator overloading supported.
@@ -29,6 +30,8 @@ Here are some features supported:
 - Money in form of its smallest amount (minor amount).
 - Some basic operations like absolute value, min, max, and clamp.
 - Support for all ISO 4217 currencies.
+- New/custom currency by implementing `Currency` trait.
+- Some accounting operations.(TODO)
 
 ## Example
 
@@ -101,7 +104,6 @@ This library provides these main components to work with money:
 - `CustomMoney`: trait for custom formatting and rounding operations on money.
 - `RoundingStrategy`: enum defining rounding strategies (BankersRounding, HalfUp, HalfDown, Ceil, Floor).
 - `MoneyError`: enum of possible errors that can occur in money operations.
-- `MoneyResult<T>`: Result type alias for operations that can fail, equivalent to `Result<T, MoneyError>`.
 
 `Money<C>` and `Decimal` are `Copy` types so they can be passed around freely without having to worry about borrow checker.
 Currency marker types are zero-sized types (ZST) for compile-time type safety.
