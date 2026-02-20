@@ -99,9 +99,7 @@ impl<C: Currency> Money<C> {
         Ok(Self {
             amount: amount
                 .get_decimal()
-                .ok_or(MoneyError::NewMoney(
-                    "failed converting into Decimal".into(),
-                ))?
+                .ok_or(MoneyError::DecimalConversion)?
                 .round_dp(C::MINOR_UNIT.into()),
             _currency: PhantomData,
         })
@@ -139,7 +137,7 @@ impl<C: Currency> Money<C> {
     pub fn from_minor(minor_amount: i128) -> MoneyResult<Self> {
         Ok(Self {
             amount: Decimal::from_i128(minor_amount)
-                .ok_or(MoneyError::ArithmeticOverflow)?
+                .ok_or(MoneyError::DecimalConversion)?
                 .checked_div(
                     dec!(10)
                         .checked_powu(C::MINOR_UNIT.into())

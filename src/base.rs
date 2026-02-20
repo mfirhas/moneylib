@@ -200,7 +200,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
             )
             .ok_or(MoneyError::ArithmeticOverflow)?
             .to_i128()
-            .ok_or(MoneyError::DecimalToInteger)
+            .ok_or(MoneyError::DecimalConversion)
     }
 
     /// Returns the thousands separator used by the currency.
