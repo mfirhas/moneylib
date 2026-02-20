@@ -434,7 +434,7 @@ fn main() {
     // The correct format is "CURRENCY AMOUNT", not "AMOUNT CURRENCY"
     match Money::<USD>::from_str("100.00 USD") {
         Ok(money) => println!("Money created: {}", money),
-        Err(e) => println!("Error parsing money (wrong format): {:?}", e),
+        Err(e) => println!("Error parsing money (wrong format): {}", e),
     }
 
     // Currency mismatch in string parsing (type is USD but string contains EUR)
