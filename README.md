@@ -20,6 +20,7 @@ Here are some features supported:
 - Type-safe: 
   - Compile-time check for arithmetics and operations.
   - Runtime check for overflowed/wrapped/truncated amount.
+  - Prevents currencies mixing at compile-time.
 - Value type to represent money.
 - Access to its amount and currency's metadata.
 - Arithmetics: (*,/,+,-), operator overloading supported.
