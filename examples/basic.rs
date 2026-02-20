@@ -270,7 +270,9 @@ fn main() {
     println!(
         "Banker's Rounding: {} -> {}",
         amount_to_round,
-        money.round_with(2, RoundingStrategy::BankersRounding).amount()
+        money
+            .round_with(2, RoundingStrategy::BankersRounding)
+            .amount()
     );
     println!(
         "Half Up:           {} -> {}",
@@ -469,7 +471,10 @@ fn main() {
     println!("  Name: {}", usd_money2.name());
     println!("  Minor unit: {}", usd_money2.minor_unit());
     println!("  Numeric code: {}", usd_money2.numeric_code());
-    println!("  Thousand separator: '{}'", usd_money2.thousand_separator());
+    println!(
+        "  Thousand separator: '{}'",
+        usd_money2.thousand_separator()
+    );
     println!("  Decimal separator: '{}'", usd_money2.decimal_separator());
 
     // Currency metadata is also available as compile-time constants
