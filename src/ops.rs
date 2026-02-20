@@ -84,6 +84,7 @@ where
     C: Currency + Clone,
 {
     fn add_assign(&mut self, other: Self) {
+        // WARN: PANIC!
         let ret = self
             .amount()
             .checked_add(other.amount())
@@ -101,6 +102,7 @@ where
     C: Currency + Clone,
 {
     fn sub_assign(&mut self, other: Self) {
+        // WARN: PANIC!
         let ret = self
             .amount()
             .checked_sub(other.amount())
@@ -118,6 +120,7 @@ where
     C: Currency + Clone,
 {
     fn mul_assign(&mut self, other: Self) {
+        // WARN: PANIC!
         let ret = self
             .amount()
             .checked_mul(other.amount())
@@ -135,6 +138,7 @@ where
     C: Currency + Clone,
 {
     fn div_assign(&mut self, other: Self) {
+        // WARN: PANIC!
         let ret = self
             .amount()
             .checked_div(other.amount())

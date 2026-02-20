@@ -404,7 +404,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
 /// Trait for arithmetic and comparison operations on money values.
 ///
 /// This trait extends `BaseMoney` with mathematical operations (addition, subtraction,
-/// multiplication, division) and comparison methods. All arithmetic operations ensure runtime safety like overflowed/wrapped/truncated values.
+/// multiplication, division) and absolute value. All arithmetic operations ensure runtime safety like overflowed and wrapped values.
 ///
 /// # Examples
 ///
@@ -821,6 +821,8 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     ///
     /// // "$100.50"
     /// assert_eq!(money.format("sa"), "$100.50");
+    ///
+    /// assert_eq!(money.format("c nsa"), "USD $100.50");
     ///
     /// // "USD 10,050 ¢" (amount in minor units when 'm' is present)
     /// assert_eq!(money.format("c a m"), "USD 10,050 ¢");

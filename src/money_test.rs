@@ -307,7 +307,6 @@ fn test_from_str_no_thousands_separator_various() {
     }
 }
 
-
 // ==================== Display Tests ====================
 
 #[test]
@@ -332,7 +331,6 @@ fn test_display_zero() {
 }
 
 // ==================== BaseMoney Trait Tests ====================
-
 
 #[test]
 fn test_base_money_amount() {
@@ -508,7 +506,6 @@ fn test_base_money_display() {
     let money = Money::<EUR>::new(dec!(1234.56)).unwrap();
     assert_eq!(money.display(), "EUR 1.234,56");
 }
-
 
 // ==================== BaseOps Trait Tests ====================
 
@@ -761,7 +758,6 @@ fn test_base_ops_add_money_rounds() {
     assert_eq!(result.amount(), dec!(100.00));
 }
 
-
 #[test]
 fn test_base_ops_sub_money() {
     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
@@ -785,7 +781,6 @@ fn test_base_ops_sub_money_rounds() {
     let result = money1.sub(money2).unwrap();
     assert_eq!(result.amount(), dec!(100.00));
 }
-
 
 #[test]
 fn test_base_ops_mul_money() {
@@ -812,7 +807,6 @@ fn test_base_ops_mul_money_rounds() {
     // 100.00 * 1.00 = 100.00
     assert_eq!(result.amount(), dec!(100.00));
 }
-
 
 #[test]
 fn test_base_ops_div_money() {
@@ -849,7 +843,6 @@ fn test_base_ops_div_money_zero_error() {
         MoneyError::ArithmeticOverflow
     ));
 }
-
 
 // ==================== BaseOps with f64 Type Tests ====================
 
@@ -1179,7 +1172,6 @@ fn test_base_ops_div_i128_zero_error() {
 
 // ==================== CustomMoney Trait Tests ====================
 
-
 #[test]
 fn test_custom_money_round_with_bankers_rounding() {
     let money = Money::<USD>::new(dec!(123.456)).unwrap();
@@ -1233,7 +1225,6 @@ fn test_add_money_negative() {
     assert_eq!(result.amount(), dec!(50.00));
 }
 
-
 #[test]
 fn test_sub_money_from_money() {
     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
@@ -1250,7 +1241,6 @@ fn test_sub_money_negative_result() {
     assert_eq!(result.amount(), dec!(-50.00));
 }
 
-
 #[test]
 fn test_mul_money_by_money() {
     let money1 = Money::<USD>::new(dec!(10.00)).unwrap();
@@ -1266,7 +1256,6 @@ fn test_mul_money_negative() {
     let result = money1 * money2;
     assert_eq!(result.amount(), dec!(-50.00));
 }
-
 
 #[test]
 fn test_div_money_by_money() {
@@ -1291,7 +1280,6 @@ fn test_div_money_by_zero_panic() {
     let money2 = Money::<USD>::new(dec!(0)).unwrap();
     let _ = money1 / money2;
 }
-
 
 // ==================== Operator Tests (Money + Decimal) ====================
 
@@ -1377,7 +1365,6 @@ fn test_add_assign_money() {
     assert_eq!(money1.amount(), dec!(150.00));
 }
 
-
 #[test]
 fn test_sub_assign_money() {
     let mut money1 = Money::<USD>::new(dec!(100.00)).unwrap();
@@ -1386,7 +1373,6 @@ fn test_sub_assign_money() {
     assert_eq!(money1.amount(), dec!(50.00));
 }
 
-
 #[test]
 fn test_mul_assign_money() {
     let mut money1 = Money::<USD>::new(dec!(10.00)).unwrap();
@@ -1394,7 +1380,6 @@ fn test_mul_assign_money() {
     money1 *= money2;
     assert_eq!(money1.amount(), dec!(50.00));
 }
-
 
 #[test]
 fn test_div_assign_money() {
@@ -1411,7 +1396,6 @@ fn test_div_assign_zero_panic() {
     let money2 = Money::<USD>::new(dec!(0)).unwrap();
     money1 /= money2;
 }
-
 
 // ==================== Negation Operator Tests ====================
 
@@ -1512,7 +1496,6 @@ fn test_bhd_three_decimal_places() {
     let rounded = money.round();
     assert_eq!(rounded.amount(), dec!(100.123));
 }
-
 
 #[test]
 fn test_parse_and_format_roundtrip() {
@@ -1738,7 +1721,6 @@ fn test_clamp_applies_rounding_upper_bound() {
     );
 }
 
-
 #[test]
 fn test_edge_case_very_small_amounts() {
     // Currency implicit via Money::<USD>
@@ -1792,7 +1774,6 @@ fn test_edge_case_exact_midpoint_sequences() {
     }
 }
 
-
 #[test]
 fn test_round_with_custom_decimal_points() {
     // Test round_with method to round to custom decimal points
@@ -1819,7 +1800,6 @@ fn test_round_with_custom_decimal_points() {
     let rounded_1 = money2.round_with(1, RoundingStrategy::BankersRounding);
     assert_eq!(rounded_1.amount(), dec!(100.0));
 }
-
 
 #[test]
 fn test_custom_formatting() {
@@ -1851,7 +1831,6 @@ fn test_custom_formatting() {
     // negative minor
     assert_eq!(negative.format("sa m"), "$5,000 ¢");
 }
-
 
 // ==================== Money::new() with Various Amount Types ====================
 
@@ -1890,7 +1869,6 @@ fn test_from_amount_with_money_same_currency() {
     assert_eq!(money.code(), "USD");
     assert_eq!(money.amount(), dec!(100.50));
 }
-
 
 #[test]
 fn test_from_amount_with_negative_decimal() {
