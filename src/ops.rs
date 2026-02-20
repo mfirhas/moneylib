@@ -20,7 +20,7 @@ where
             .checked_add(rhs.amount())
             .expect("addition operation overflow");
 
-        Self::new(ret).expect("failed doing addition")
+        Self::from_decimal(ret)
     }
 }
 
@@ -38,7 +38,7 @@ where
             .checked_sub(rhs.amount())
             .expect("substraction operation overflow");
 
-        Self::new(ret).expect("failed doing substraction")
+        Self::from_decimal(ret)
     }
 }
 
@@ -56,7 +56,7 @@ where
             .checked_mul(rhs.amount())
             .expect("multiplication operation overflow");
 
-        Self::new(ret).expect("failed doing multiplication")
+        Self::from_decimal(ret)
     }
 }
 
@@ -74,7 +74,7 @@ where
             .checked_div(rhs.amount())
             .expect("division operation overflow");
 
-        Self::new(ret).expect("failed doing division")
+        Self::from_decimal(ret)
     }
 }
 
@@ -90,7 +90,7 @@ where
             .checked_add(other.amount())
             .expect("addition operation overflow");
 
-        let ret = Money::new(ret).expect("failed add assign");
+        let ret = Self::from_decimal(ret);
 
         *self = ret
     }
@@ -108,7 +108,7 @@ where
             .checked_sub(other.amount())
             .expect("subtraction operation overflow");
 
-        let ret = Money::new(ret).expect("failed sub assign");
+        let ret = Self::from_decimal(ret);
 
         *self = ret
     }
@@ -126,7 +126,7 @@ where
             .checked_mul(other.amount())
             .expect("multiplication operation overflow");
 
-        let ret = Money::new(ret).expect("failed mul assign");
+        let ret = Self::from_decimal(ret);
 
         *self = ret
     }
@@ -144,7 +144,7 @@ where
             .checked_div(other.amount())
             .expect("division operation failed");
 
-        let ret = Money::new(ret).expect("failed div assign");
+        let ret = Self::from_decimal(ret);
 
         *self = ret
     }
