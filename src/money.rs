@@ -317,7 +317,10 @@ where
 
     #[inline]
     fn round(self) -> Self {
-        Self::from_decimal(self.amount().round_dp(C::MINOR_UNIT.into()))
+        Self {
+            amount: self.amount().round_dp(C::MINOR_UNIT.into()),
+            _currency: PhantomData,
+        }
     }
 }
 
