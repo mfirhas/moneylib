@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    BaseMoney, BaseOps, Decimal, MoneyError, MoneyResult,
+    BaseMoney, BaseOps, Decimal, MoneyError,
     base::Amount,
     money_macros::dec,
     parse::{parse_comma_thousands_separator, parse_dot_thousands_separator},
@@ -92,7 +92,7 @@ impl<C: Currency> Money<C> {
     /// assert_eq!(money.amount(), dec!(3000));
     /// ```
     #[inline]
-    pub fn new<T>(amount: T) -> MoneyResult<Self>
+    pub fn new<T>(amount: T) -> Result<Self, MoneyError>
     where
         T: Amount<C>,
     {
@@ -134,7 +134,7 @@ impl<C: Currency> Money<C> {
     /// assert_eq!(money.amount(), dec!(123.02));
     /// ```
     #[inline]
-    pub fn from_minor(minor_amount: i128) -> MoneyResult<Self> {
+    pub fn from_minor(minor_amount: i128) -> Result<Self, MoneyError> {
         Ok(Self {
             amount: Decimal::from_i128(minor_amount)
                 .ok_or(MoneyError::DecimalConversion)?
@@ -326,7 +326,7 @@ where
     }
 
     #[inline]
-    fn add<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn add<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
         RHS: Amount<C>,
     {
@@ -338,7 +338,7 @@ where
     }
 
     #[inline]
-    fn sub<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn sub<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
         RHS: Amount<C>,
     {
@@ -350,7 +350,7 @@ where
     }
 
     #[inline]
-    fn mul<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn mul<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
         RHS: Amount<C>,
     {
@@ -362,7 +362,7 @@ where
     }
 
     #[inline]
-    fn div<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn div<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
         RHS: Amount<C>,
     {

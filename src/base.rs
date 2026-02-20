@@ -1,8 +1,8 @@
 use crate::Currency;
+use crate::Decimal;
 use crate::MoneyError;
 use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format};
 use crate::money_macros::dec;
-use crate::{Decimal, MoneyResult};
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -191,7 +191,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// Returns `MoneyError::ArithmeticOverflow` if the calculation exceeds the maximum value.
     /// Returns `MoneyError::DecimalToInteger` if the conversion to integer fails.
     #[inline]
-    fn minor_amount(&self) -> MoneyResult<i128> {
+    fn minor_amount(&self) -> Result<i128, MoneyError> {
         self.amount()
             .checked_mul(
                 dec!(10)
@@ -471,7 +471,7 @@ pub trait BaseOps<C: Currency>:
     /// let sum = m1.add(m2).unwrap();
     /// assert_eq!(sum.amount(), dec!(150));
     /// ```
-    fn add<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn add<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
         RHS: Amount<C>;
 
@@ -489,7 +489,7 @@ pub trait BaseOps<C: Currency>:
     /// let diff = m1.sub(m2).unwrap();
     /// assert_eq!(diff.amount(), dec!(70));
     /// ```
-    fn sub<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn sub<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
         RHS: Amount<C>;
 
@@ -506,7 +506,7 @@ pub trait BaseOps<C: Currency>:
     /// let product = money.mul(dec!(3)).unwrap();
     /// assert_eq!(product.amount(), dec!(30));
     /// ```
-    fn mul<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn mul<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
         RHS: Amount<C>;
 
@@ -523,7 +523,7 @@ pub trait BaseOps<C: Currency>:
     /// let quotient = money.div(dec!(4)).unwrap();
     /// assert_eq!(quotient.amount(), dec!(25));
     /// ```
-    fn div<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn div<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
         RHS: Amount<C>;
 }

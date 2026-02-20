@@ -19,9 +19,6 @@ pub use base::{BaseMoney, BaseOps, CustomMoney, RoundingStrategy};
 mod error;
 pub use error::MoneyError;
 
-/// Money result type
-pub type MoneyResult<T> = Result<T, MoneyError>;
-
 pub use currencylib::*;
 
 mod money;
