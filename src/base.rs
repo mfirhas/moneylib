@@ -471,10 +471,6 @@ pub trait BaseOps<C: Currency>:
     /// let sum = m1.add(m2).unwrap();
     /// assert_eq!(sum.amount(), dec!(150));
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if the currencies don't match.
     fn add<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
     where
         RHS: Amount<C>;
@@ -493,10 +489,6 @@ pub trait BaseOps<C: Currency>:
     /// let diff = m1.sub(m2).unwrap();
     /// assert_eq!(diff.amount(), dec!(70));
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if the currencies don't match.
     fn sub<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
     where
         RHS: Amount<C>;
@@ -514,10 +506,6 @@ pub trait BaseOps<C: Currency>:
     /// let product = money.mul(dec!(3)).unwrap();
     /// assert_eq!(product.amount(), dec!(30));
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if multiplying by money with different currency.
     fn mul<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
     where
         RHS: Amount<C>;
@@ -535,10 +523,6 @@ pub trait BaseOps<C: Currency>:
     /// let quotient = money.div(dec!(4)).unwrap();
     /// assert_eq!(quotient.amount(), dec!(25));
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if dividing by money with different currency.
     fn div<RHS>(&self, rhs: RHS) -> MoneyResult<Self>
     where
         RHS: Amount<C>;

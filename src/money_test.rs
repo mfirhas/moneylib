@@ -191,10 +191,7 @@ fn test_from_str_invalid_currency() {
     let result = Money::<USD>::from_str("XYZ 100.50");
     assert!(result.is_err());
     // The error will be CurrencyMismatch since "XYZ" != "USD"
-    assert!(matches!(
-        result.unwrap_err(),
-        MoneyError::CurrencyMismatch | MoneyError::InvalidCurrency | MoneyError::ParseStr
-    ));
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
 }
 
 #[test]
