@@ -53,7 +53,10 @@ pub struct Money<C: Currency> {
     _currency: PhantomData<C>,
 }
 
-impl<C: Currency> Money<C> {
+impl<C> Money<C>
+where
+    C: Currency + Clone,
+{
     /// Creates a new `Money` instance with amount of Decimal, f64, i32, i64, i128,
     /// or taking amount from another instance of money of same currency.
     ///
@@ -97,12 +100,10 @@ impl<C: Currency> Money<C> {
         T: Amount<C>,
     {
         Ok(Self {
-            amount: amount
-                .get_decimal()
-                .ok_or(MoneyError::DecimalConversion)?
-                .round_dp(C::MINOR_UNIT.into()),
+            amount: amount.get_decimal().ok_or(MoneyError::DecimalConversion)?,
             _currency: PhantomData,
-        })
+        }
+        .round())
     }
 
     /// Creates a new `Money` instance from Decimal
@@ -118,9 +119,10 @@ impl<C: Currency> Money<C> {
     #[inline]
     pub fn from_decimal(amount: Decimal) -> Self {
         Self {
-            amount: amount.round_dp(C::MINOR_UNIT.into()),
+            amount,
             _currency: PhantomData,
         }
+        .round()
     }
 
     /// Creates a new `Money` from minor amount i128.
@@ -143,10 +145,10 @@ impl<C: Currency> Money<C> {
                         .checked_powu(C::MINOR_UNIT.into())
                         .ok_or(MoneyError::ArithmeticOverflow)?,
                 )
-                .ok_or(MoneyError::ArithmeticOverflow)?
-                .round_dp(C::MINOR_UNIT.into()),
+                .ok_or(MoneyError::ArithmeticOverflow)?,
             _currency: PhantomData,
-        })
+        }
+        .round())
     }
 }
 
@@ -242,7 +244,10 @@ impl<C: Currency> Amount<C> for i128 {
 /// // Error: currencies mismatch
 /// assert!(Money::<EUR>::from_str("USD 100.00").is_err());
 /// ```
-impl<C: Currency> FromStr for Money<C> {
+impl<C> FromStr for Money<C>
+where
+    C: Currency + Clone,
+{
     type Err = MoneyError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -322,7 +327,7 @@ where
 {
     #[inline]
     fn abs(&self) -> Self {
-        Self::from_decimal(self.amount.abs()).round()
+        Self::from_decimal(self.amount.abs())
     }
 
     #[inline]
@@ -380,9 +385,11 @@ where
 {
     #[inline]
     fn round_with(self, decimal_points: u32, strategy: crate::base::RoundingStrategy) -> Self {
-        Self::from_decimal(
-            self.amount
+        Self {
+            amount: self
+                .amount
                 .round_dp_with_strategy(decimal_points, strategy.into()),
-        )
+            _currency: PhantomData,
+        }
     }
 }
