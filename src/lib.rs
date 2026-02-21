@@ -27,6 +27,8 @@ pub use money::Money;
 mod dec_ops;
 mod ops;
 
+mod raw_money;
+
 mod fmt;
 
 mod parse;
