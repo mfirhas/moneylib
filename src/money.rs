@@ -209,47 +209,58 @@ impl<C: Currency> Amount<C> for i128 {
     }
 }
 
-/// Implementation of string parsing for `Money`.
-///
-/// Parses a string representation of money in the format "CURRENCY AMOUNT".
-/// Supports two thousand separator formats:
-/// - Comma as thousand separator, dot as decimal separator (e.g., "USD 1,234.56")
-/// - Dot as thousand separator, comma as decimal separator (e.g., "EUR 1.234,56")
-///
-/// The currency code must be a valid ISO 4217 alphabetic code.
-///
-/// # Examples
-///
-/// ```
-/// use moneylib::{Money, money_macros::dec, BaseMoney, USD, EUR, GBP};
-/// use std::str::FromStr;
-///
-/// // Comma as thousand separator, dot as decimal
-/// let money = Money::<USD>::from_str("USD 1,234.56").unwrap();
-/// assert_eq!(money.amount(), dec!(1234.56));
-/// assert_eq!(money.code(), "USD");
-///
-/// // Dot as thousand separator, comma as decimal
-/// let money = Money::<EUR>::from_str("EUR 1.234,56").unwrap();
-/// assert_eq!(money.amount(), dec!(1234.56));
-/// assert_eq!(money.code(), "EUR");
-///
-/// // No thousand separator
-/// let money = Money::<GBP>::from_str("GBP 123.45").unwrap();
-/// assert_eq!(money.amount(), dec!(123.45));
-///
-/// // Error: invalid format (currency must come first)
-/// assert!(Money::<USD>::from_str("100.00 USD").is_err());
-///
-/// // Error: currencies mismatch
-/// assert!(Money::<EUR>::from_str("USD 100.00").is_err());
-/// ```
 impl<C> FromStr for Money<C>
 where
     C: Currency + Clone,
 {
     type Err = MoneyError;
 
+    /// Implementation of string parsing for `Money`.
+    ///
+    /// Parses a string representation of money in the format "CURRENCY AMOUNT".
+    /// Supports two thousand separator formats:
+    /// - Comma as thousand separator, dot as decimal separator (e.g., "USD 1,234.56")
+    /// - Dot as thousand separator, comma as decimal separator (e.g., "EUR 1.234,56")
+    ///
+    /// The currency code must be a valid ISO 4217 alphabetic code.
+    ///
+    /// # **IMPORTANT!**
+    ///
+    /// This function emphasize on comma as thousand separator.
+    /// First it will parse using comma as thousand separator,
+    /// if failed, it will parse using dot as thousand separator.
+    ///
+    /// So "EUR 100.000" will be parsed into 100.00 , since it succeed first parsing.
+    ///
+    /// "EUR 1.000.000,123" will be parsed into 1 million and 12 cents, since it failed first parsing, and succeed at second parsing.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, money_macros::dec, BaseMoney, USD, EUR, GBP};
+    /// use std::str::FromStr;
+    ///
+    /// // Comma as thousand separator, dot as decimal
+    /// let money = Money::<USD>::from_str("USD 1,234.56").unwrap();
+    /// assert_eq!(money.amount(), dec!(1234.56));
+    /// assert_eq!(money.code(), "USD");
+    ///
+    /// // Dot as thousand separator, comma as decimal
+    /// let money = Money::<EUR>::from_str("EUR 1.234,56").unwrap();
+    /// assert_eq!(money.amount(), dec!(1234.56));
+    /// assert_eq!(money.code(), "EUR");
+    ///
+    /// // No thousand separator
+    /// let money = Money::<GBP>::from_str("GBP 123.45").unwrap();
+    /// assert_eq!(money.amount(), dec!(123.45));
+    ///
+    /// // Error: invalid format (currency must come first)
+    /// assert!(Money::<USD>::from_str("100.00 USD").is_err());
+    ///
+    /// // Error: currencies mismatch
+    /// assert!(Money::<EUR>::from_str("USD 100.00").is_err());
+    /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
 
