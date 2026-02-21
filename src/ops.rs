@@ -2,189 +2,161 @@
 
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+use crate::Currency;
+
 use crate::{BaseMoney, Money};
 
 /// Money + Money = Money
-impl Add for Money {
+impl<C> Add for Money<C>
+where
+    C: Currency + Clone,
+{
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        // WARN: PANIC!
-        assert_eq!(
-            self.currency(),
-            rhs.currency(),
-            "currency mismatch for addition operation"
-        );
-
         // WARN: PANIC!
         let ret = self
             .amount()
             .checked_add(rhs.amount())
             .expect("addition operation overflow");
 
-        Self::new(self.currency(), ret)
+        Self::from_decimal(ret)
     }
 }
 
 /// Money - Money = Money
-impl Sub for Money {
+impl<C> Sub for Money<C>
+where
+    C: Currency + Clone,
+{
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        // WARN: PANIC!
-        assert_eq!(
-            self.currency(),
-            rhs.currency(),
-            "currency mismatch for substraction operation"
-        );
-
         // WARN: PANIC!
         let ret = self
             .amount()
             .checked_sub(rhs.amount())
             .expect("substraction operation overflow");
 
-        Self::new(self.currency(), ret)
+        Self::from_decimal(ret)
     }
 }
 
 /// Money * Money = Money
-impl Mul for Money {
+impl<C> Mul for Money<C>
+where
+    C: Currency + Clone,
+{
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        // WARN: PANIC!
-        assert_eq!(
-            self.currency(),
-            rhs.currency(),
-            "currency mismatch for multiplication operation"
-        );
-
         // WARN: PANIC!
         let ret = self
             .amount()
             .checked_mul(rhs.amount())
             .expect("multiplication operation overflow");
 
-        Self::new(self.currency(), ret)
+        Self::from_decimal(ret)
     }
 }
 
 /// Money / Money = Money
-impl Div for Money {
+impl<C> Div for Money<C>
+where
+    C: Currency + Clone,
+{
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
-        // WARN: PANIC!
-        assert_eq!(
-            self.currency(),
-            rhs.currency(),
-            "currency mismatch for division operation"
-        );
-
-        assert!(!rhs.is_zero(), "divisor must not be zero");
-
         // WARN: PANIC!
         let ret = self
             .amount()
             .checked_div(rhs.amount())
             .expect("division operation overflow");
 
-        Self::new(self.currency(), ret)
+        Self::from_decimal(ret)
     }
 }
 
 /// Money += Money
-impl AddAssign for Money {
+impl<C> AddAssign for Money<C>
+where
+    C: Currency + Clone,
+{
     fn add_assign(&mut self, other: Self) {
         // WARN: PANIC!
-        assert_eq!(
-            self.currency(),
-            other.currency(),
-            "currency mismatch for add assign operation"
-        );
-
         let ret = self
             .amount()
             .checked_add(other.amount())
             .expect("addition operation overflow");
 
-        let ret = Money::new(self.currency(), ret);
+        let ret = Self::from_decimal(ret);
 
         *self = ret
     }
 }
 
 /// Money -= Money
-impl SubAssign for Money {
+impl<C> SubAssign for Money<C>
+where
+    C: Currency + Clone,
+{
     fn sub_assign(&mut self, other: Self) {
         // WARN: PANIC!
-        assert_eq!(
-            self.currency(),
-            other.currency(),
-            "currency mismatch for sub assign operation"
-        );
-
         let ret = self
             .amount()
             .checked_sub(other.amount())
             .expect("subtraction operation overflow");
 
-        let ret = Money::new(self.currency(), ret);
+        let ret = Self::from_decimal(ret);
 
         *self = ret
     }
 }
 
 /// Money *= Money
-impl MulAssign for Money {
+impl<C> MulAssign for Money<C>
+where
+    C: Currency + Clone,
+{
     fn mul_assign(&mut self, other: Self) {
         // WARN: PANIC!
-        assert_eq!(
-            self.currency(),
-            other.currency(),
-            "currency mismatch for mul assign operation"
-        );
-
         let ret = self
             .amount()
             .checked_mul(other.amount())
             .expect("multiplication operation overflow");
 
-        let ret = Money::new(self.currency(), ret);
+        let ret = Self::from_decimal(ret);
 
         *self = ret
     }
 }
 
 /// Money /= Money
-impl DivAssign for Money {
+impl<C> DivAssign for Money<C>
+where
+    C: Currency + Clone,
+{
     fn div_assign(&mut self, other: Self) {
         // WARN: PANIC!
-        assert_eq!(
-            self.currency(),
-            other.currency(),
-            "currency mismatch for div assign operation"
-        );
-
-        // WARN: PANIC!
-        assert!(!other.is_zero(), "divisor must not be zero");
-
         let ret = self
             .amount()
             .checked_div(other.amount())
             .expect("division operation failed");
 
-        let ret = Money::new(self.currency(), ret);
+        let ret = Self::from_decimal(ret);
 
         *self = ret
     }
 }
 
-impl Neg for Money {
+impl<C> Neg for Money<C>
+where
+    C: Currency + Clone,
+{
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Self::new(self.currency(), -self.amount())
+        Self::from_decimal(-self.amount())
     }
 }

@@ -8,7 +8,6 @@
 #![forbid(clippy::cast_possible_wrap)]
 #![forbid(clippy::unwrap_used)]
 
-pub use iso_currency_lib::Country;
 pub use rust_decimal::Decimal;
 pub mod money_macros {
     pub use rust_decimal::dec;
@@ -20,17 +19,13 @@ pub use base::{BaseMoney, BaseOps, CustomMoney, RoundingStrategy};
 mod error;
 pub use error::MoneyError;
 
-/// Money result type
-pub type MoneyResult<T> = Result<T, MoneyError>;
+pub use currencylib::*;
 
 mod money;
 pub use money::Money;
 
 mod dec_ops;
 mod ops;
-
-mod currency;
-pub use currency::Currency;
 
 mod fmt;
 
@@ -41,9 +36,6 @@ mod parse_test;
 
 #[cfg(test)]
 mod fmt_test;
-
-#[cfg(test)]
-mod currency_test;
 
 #[cfg(test)]
 mod money_test;

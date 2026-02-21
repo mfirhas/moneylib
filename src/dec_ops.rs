@@ -1,8 +1,13 @@
+use crate::Currency;
+
 use crate::{BaseMoney, Decimal, Money};
 use std::ops::{Add, Div, Mul, Sub};
 
 // Money + Decimal = Money
-impl Add<Decimal> for Money {
+impl<C> Add<Decimal> for Money<C>
+where
+    C: Currency + Clone,
+{
     type Output = Self;
 
     fn add(self, rhs: Decimal) -> Self::Output {
@@ -12,12 +17,15 @@ impl Add<Decimal> for Money {
             .checked_add(rhs)
             .expect("addition operation overflow");
 
-        Self::new(self.currency(), ret)
+        Self::from_decimal(ret)
     }
 }
 
 // Money - Decimal = Money
-impl Sub<Decimal> for Money {
+impl<C> Sub<Decimal> for Money<C>
+where
+    C: Currency + Clone,
+{
     type Output = Self;
 
     fn sub(self, rhs: Decimal) -> Self::Output {
@@ -27,12 +35,15 @@ impl Sub<Decimal> for Money {
             .checked_sub(rhs)
             .expect("subtraction operation overflow");
 
-        Self::new(self.currency(), ret)
+        Self::from_decimal(ret)
     }
 }
 
 // Money * Decimal = Money
-impl Mul<Decimal> for Money {
+impl<C> Mul<Decimal> for Money<C>
+where
+    C: Currency + Clone,
+{
     type Output = Self;
 
     fn mul(self, rhs: Decimal) -> Self::Output {
@@ -42,81 +53,92 @@ impl Mul<Decimal> for Money {
             .checked_mul(rhs)
             .expect("multiplication operation overflow");
 
-        Self::new(self.currency(), ret)
+        Self::from_decimal(ret)
     }
 }
 
 // Money / Decimal = Money
-impl Div<Decimal> for Money {
+impl<C> Div<Decimal> for Money<C>
+where
+    C: Currency + Clone,
+{
     type Output = Self;
 
     fn div(self, rhs: Decimal) -> Self::Output {
         // WARN: PANIC!
-        assert!(!rhs.is_zero(), "divisor must not be zero");
-
         let ret = self
             .amount()
             .checked_div(rhs)
             .expect("division operation overflow");
 
-        Self::new(self.currency(), ret)
+        Self::from_decimal(ret)
     }
 }
 
 // Decimal + Money = Money
-impl Add<Money> for Decimal {
-    type Output = Money;
+impl<C> Add<Money<C>> for Decimal
+where
+    C: Currency + Clone,
+{
+    type Output = Money<C>;
 
-    fn add(self, rhs: Money) -> Self::Output {
+    fn add(self, rhs: Money<C>) -> Self::Output {
         // WARN: PANIC!
         let ret = self
             .checked_add(rhs.amount())
             .expect("addition operation overflow");
 
-        Money::new(rhs.currency(), ret)
+        Money::from_decimal(ret)
     }
 }
 
 // Decimal - Money = Money
-impl Sub<Money> for Decimal {
-    type Output = Money;
+impl<C> Sub<Money<C>> for Decimal
+where
+    C: Currency + Clone,
+{
+    type Output = Money<C>;
 
-    fn sub(self, rhs: Money) -> Self::Output {
+    fn sub(self, rhs: Money<C>) -> Self::Output {
         // WARN: PANIC!
         let ret = self
             .checked_sub(rhs.amount())
             .expect("subtraction operation overflow");
 
-        Money::new(rhs.currency(), ret)
+        Money::from_decimal(ret)
     }
 }
 
 // Decimal * Money = Money
-impl Mul<Money> for Decimal {
-    type Output = Money;
+impl<C> Mul<Money<C>> for Decimal
+where
+    C: Currency + Clone,
+{
+    type Output = Money<C>;
 
-    fn mul(self, rhs: Money) -> Self::Output {
+    fn mul(self, rhs: Money<C>) -> Self::Output {
         // WARN: PANIC!
         let ret = self
             .checked_mul(rhs.amount())
             .expect("multiplication operation overflow");
 
-        Money::new(rhs.currency(), ret)
+        Money::from_decimal(ret)
     }
 }
 
 // Decimal / Money = Money
-impl Div<Money> for Decimal {
-    type Output = Money;
+impl<C> Div<Money<C>> for Decimal
+where
+    C: Currency + Clone,
+{
+    type Output = Money<C>;
 
-    fn div(self, rhs: Money) -> Self::Output {
+    fn div(self, rhs: Money<C>) -> Self::Output {
         // WARN: PANIC!
-        assert!(!rhs.is_zero(), "divisor must not be zero");
-
         let ret = self
             .checked_div(rhs.amount())
             .expect("division operation overflow");
 
-        Money::new(rhs.currency(), ret)
+        Money::from_decimal(ret)
     }
 }

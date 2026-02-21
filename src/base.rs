@@ -1,16 +1,12 @@
+use crate::Currency;
+use crate::Decimal;
+use crate::MoneyError;
 use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format};
 use crate::money_macros::dec;
-use crate::{Country, Currency, MoneyError};
-use crate::{Decimal, MoneyResult};
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
-use std::fmt::Display;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::{fmt::Debug, str::FromStr};
-
-pub(crate) const COMMA_SEPARATOR: &str = ",";
-
-pub(crate) const DOT_SEPARATOR: &str = ".";
 
 /// Base trait for all money types in the library.
 ///
@@ -21,12 +17,11 @@ pub(crate) const DOT_SEPARATOR: &str = ".";
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency};
+/// use moneylib::{Money, Currency, USD};
 /// use moneylib::money_macros::dec;
 /// use moneylib::BaseMoney;
 ///
-/// let usd = Currency::from_iso("USD").unwrap();
-/// let money = Money::new(usd, dec!(1234.56));
+/// let money = Money::<USD>::new(dec!(1234.56)).unwrap();
 ///
 /// // Access currency information
 /// assert_eq!(money.code(), "USD");
@@ -43,54 +38,34 @@ pub(crate) const DOT_SEPARATOR: &str = ".";
 /// assert_eq!(money.format_code(), "USD 1,234.56");
 /// assert_eq!(money.format_symbol(), "$1,234.56");
 /// ```
-pub trait BaseMoney:
-    Sized + Debug + Display + Clone + PartialOrd + PartialEq + Eq + FromStr
-{
+pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     // REQUIRED
-
-    /// Returns the currency of this money value.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::BaseMoney;
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd.clone(), dec!(100));
-    /// assert_eq!(money.currency(), usd);
-    /// ```
-    fn currency(&self) -> Currency;
 
     /// Returns the decimal amount of this money value.
     ///
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(100.50));
+    /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
     /// assert_eq!(money.amount(), dec!(100.50));
     /// ```
     fn amount(&self) -> Decimal;
 
-    /// Rounds the money amount using the currency's rounding strategy to the scale of the currency's minor unit.
-    ///
-    /// The rounding strategy is determined by the currency's configuration.
+    /// Rounds the money amount using bankers rounding rule to the scale of the currency's minor unit.
     ///
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(123.456));
+    /// let money = Money::<USD>::new(dec!(123.456)).unwrap();
+    /// assert_eq!(money.amount(), dec!(123.46));
     /// let rounded = money.round();
     /// assert_eq!(rounded.amount(), dec!(123.46));
     /// ```
@@ -103,17 +78,16 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(100));
+    /// let money = Money::<USD>::new(dec!(100)).unwrap();
     /// assert_eq!(money.name(), "United States dollar");
     /// ```
     #[inline]
     fn name(&self) -> &str {
-        self.currency().name()
+        C::NAME
     }
 
     /// Returns the currency symbol.
@@ -121,21 +95,22 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, IDR, USD, EUR};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(100));
+    /// let money = Money::<IDR>::new(dec!(1000000)).unwrap();
+    /// assert_eq!(money.symbol(), "Rp");
+    ///
+    /// let money = Money::<USD>::new(dec!(100)).unwrap();
     /// assert_eq!(money.symbol(), "$");
     ///
-    /// let eur = Currency::from_iso("EUR").unwrap();
-    /// let euro = Money::new(eur, dec!(100));
+    /// let euro = Money::<EUR>::new(dec!(100)).unwrap();
     /// assert_eq!(euro.symbol(), "€");
     /// ```
     #[inline]
     fn symbol(&self) -> &str {
-        self.currency().symbol()
+        C::SYMBOL
     }
 
     /// Returns the ISO 4217 currency code.
@@ -143,17 +118,16 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(100));
+    /// let money = Money::<USD>::new(dec!(100)).unwrap();
     /// assert_eq!(money.code(), "USD");
     /// ```
     #[inline]
     fn code(&self) -> &str {
-        self.currency().code()
+        C::CODE
     }
 
     /// Returns the ISO 4217 numeric code for the currency.
@@ -161,17 +135,16 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(100));
+    /// let money = Money::<USD>::new(dec!(100)).unwrap();
     /// assert_eq!(money.numeric_code(), 840);
     /// ```
     #[inline]
     fn numeric_code(&self) -> i32 {
-        self.currency().numeric_code()
+        C::NUMERIC.into()
     }
 
     /// Returns the number of decimal places used by the currency's minor unit.
@@ -179,21 +152,22 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD, JPY, BHD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(100));
-    /// assert_eq!(money.minor_unit(), 2);
+    /// let usd = Money::<USD>::new(dec!(100)).unwrap();
+    /// assert_eq!(usd.minor_unit(), 2);
     ///
-    /// let jpy = Currency::from_iso("JPY").unwrap();
-    /// let yen = Money::new(jpy, dec!(100));
+    /// let yen = Money::<JPY>::new(dec!(100)).unwrap();
     /// assert_eq!(yen.minor_unit(), 0);
+    ///
+    /// let bhd = Money::<BHD>::new(dec!(100)).unwrap();
+    /// assert_eq!(bhd.minor_unit(), 3);
     /// ```
     #[inline]
     fn minor_unit(&self) -> u16 {
-        self.currency().minor_unit()
+        C::MINOR_UNIT
     }
 
     /// Returns the money amount in its smallest unit (e.g., cents for USD, pence for GBP).
@@ -201,25 +175,23 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD, JPY};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(10.50));
+    /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
     /// assert_eq!(money.minor_amount().unwrap(), 1050);
     ///
-    /// let jpy = Currency::from_iso("JPY").unwrap();
-    /// let yen = Money::new(jpy, dec!(100));
+    /// let yen = Money::<JPY>::new(dec!(100)).unwrap();
     /// assert_eq!(yen.minor_amount().unwrap(), 100);
     /// ```
     ///
     /// # Errors
     ///
     /// Returns `MoneyError::ArithmeticOverflow` if the calculation exceeds the maximum value.
-    /// Returns `MoneyError::DecimalToInteger` if the conversion to integer fails.
+    /// Returns `MoneyError::DecimalConversion` if the conversion to integer fails.
     #[inline]
-    fn minor_amount(&self) -> MoneyResult<i128> {
+    fn minor_amount(&self) -> Result<i128, MoneyError> {
         self.amount()
             .checked_mul(
                 dec!(10)
@@ -228,7 +200,7 @@ pub trait BaseMoney:
             )
             .ok_or(MoneyError::ArithmeticOverflow)?
             .to_i128()
-            .ok_or(MoneyError::DecimalToInteger)
+            .ok_or(MoneyError::DecimalConversion)
     }
 
     /// Returns the thousands separator used by the currency.
@@ -236,17 +208,18 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD, EUR};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(1000));
+    /// let money = Money::<USD>::new(dec!(1000)).unwrap();
     /// assert_eq!(money.thousand_separator(), ",");
+    /// let money = Money::<EUR>::new(dec!(1000)).unwrap();
+    /// assert_eq!(money.thousand_separator(), ".");
     /// ```
     #[inline]
     fn thousand_separator(&self) -> &str {
-        self.currency().thousand_separator()
+        C::THOUSAND_SEPARATOR
     }
 
     /// Returns the decimal separator used by the currency.
@@ -254,17 +227,19 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD, EUR};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(10.50));
+    /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
     /// assert_eq!(money.decimal_separator(), ".");
+    ///
+    /// let money = Money::<EUR>::new(dec!(10.50)).unwrap();
+    /// assert_eq!(money.decimal_separator(), ",");
     /// ```
     #[inline]
     fn decimal_separator(&self) -> &str {
-        self.currency().decimal_separator()
+        C::DECIMAL_SEPARATOR
     }
 
     /// Returns `true` if the amount is zero.
@@ -272,15 +247,14 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let zero = Money::new(usd.clone(), dec!(0));
+    /// let zero = Money::<USD>::new(dec!(0)).unwrap();
     /// assert!(zero.is_zero());
     ///
-    /// let nonzero = Money::new(usd, dec!(1));
+    /// let nonzero = Money::<USD>::new(dec!(1)).unwrap();
     /// assert!(!nonzero.is_zero());
     /// ```
     #[inline]
@@ -293,15 +267,14 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let positive = Money::new(usd.clone(), dec!(10));
+    /// let positive = Money::<USD>::new(dec!(10)).unwrap();
     /// assert!(positive.is_positive());
     ///
-    /// let negative_money = Money::new(usd, dec!(-10));
+    /// let negative_money = Money::<USD>::new(dec!(-10)).unwrap();
     /// assert!(!negative_money.is_positive());
     /// ```
     #[inline]
@@ -314,15 +287,14 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let negative = Money::new(usd.clone(), dec!(-10));
+    /// let negative = Money::<USD>::new(dec!(-10)).unwrap();
     /// assert!(negative.is_negative());
     ///
-    /// let positive_money = Money::new(usd, dec!(10));
+    /// let positive_money = Money::<USD>::new(dec!(10)).unwrap();
     /// assert!(!positive_money.is_negative());
     /// ```
     #[inline]
@@ -335,15 +307,14 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd.clone(), dec!(1234.45));
+    /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
     /// assert_eq!(money.format_code(), "USD 1,234.45");
     ///
-    /// let negative = Money::new(usd, dec!(-1234.45));
+    /// let negative = Money::<USD>::new(dec!(-1234.45)).unwrap();
     /// assert_eq!(negative.format_code(), "USD -1,234.45");
     /// ```
     fn format_code(&self) -> String {
@@ -355,17 +326,15 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD, EUR};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(1234.45));
+    /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
     /// assert_eq!(money.format_symbol(), "$1,234.45");
     ///
-    /// let eur = Currency::from_iso("EUR").unwrap();
-    /// let negative = Money::new(eur, dec!(-500.50));
-    /// assert_eq!(negative.format_symbol(), "-€500.50");
+    /// let negative = Money::<EUR>::new(dec!(-500.50)).unwrap();
+    /// assert_eq!(negative.format_symbol(), "-€500,50");
     /// ```
     fn format_symbol(&self) -> String {
         format(self.to_owned(), SYMBOL_FORMAT)
@@ -379,15 +348,14 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd.clone(), dec!(1234.45));
+    /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
     /// assert_eq!(money.format_code_minor(), "USD 123,445 ¢");
     ///
-    /// let negative = Money::new(usd, dec!(-1234.45));
+    /// let negative = Money::<USD>::new(dec!(-1234.45)).unwrap();
     /// assert_eq!(negative.format_code_minor(), "USD -123,445 ¢");
     /// ```
     fn format_code_minor(&self) -> String {
@@ -402,15 +370,14 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(1234.45));
+    /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
     /// assert_eq!(money.format_symbol_minor(), "$123,445 ¢");
     ///
-    /// let negative = Money::new(usd.clone(), dec!(-10.50));
+    /// let negative = Money::<USD>::new(dec!(-10.50)).unwrap();
     /// assert_eq!(negative.format_symbol_minor(), "-$1,050 ¢");
     /// ```
     fn format_symbol_minor(&self) -> String {
@@ -422,68 +389,47 @@ pub trait BaseMoney:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::BaseMoney;
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(1234.45));
+    /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
     /// assert_eq!(money.display(), "USD 1,234.45");
     /// ```
     fn display(&self) -> String {
         self.format_code()
-    }
-
-    /// Returns a list of countries that use this currency.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::BaseMoney;
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(100));
-    /// let countries = money.countries();
-    /// assert!(countries.is_some());
-    /// ```
-    fn countries(&self) -> Option<Vec<Country>> {
-        self.currency().countries()
     }
 }
 
 /// Trait for arithmetic and comparison operations on money values.
 ///
 /// This trait extends `BaseMoney` with mathematical operations (addition, subtraction,
-/// multiplication, division) and comparison methods. All operations ensure currency
-/// compatibility and return appropriate errors when currencies don't match.
+/// multiplication, division) and absolute value. All arithmetic operations ensure runtime safety like overflowed and wrapped values.
 ///
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency};
+/// use moneylib::{Money, Currency, USD};
 /// use moneylib::money_macros::dec;
 /// use moneylib::{BaseMoney, BaseOps};
 ///
-/// let usd = Currency::from_iso("USD").unwrap();
-/// let m1 = Money::new(usd.clone(), dec!(100));
-/// let m2 = Money::new(usd, dec!(50));
+/// let m1 = Money::<USD>::new(dec!(100)).unwrap();
+/// let m2 = Money::<USD>::new(dec!(50)).unwrap();
 ///
 /// // Arithmetic operations
-/// let sum = m1.add(m2.clone()).unwrap();
+/// let sum = m1.add(m2).unwrap();
 /// assert_eq!(sum.amount(), dec!(150));
 ///
-/// let diff = m1.sub(m2.clone()).unwrap();
+/// let diff = m1.sub(m2).unwrap();
 /// assert_eq!(diff.amount(), dec!(50));
 ///
 /// // Comparison operations
-/// assert!(m1.is_bigger(m2.clone()).unwrap());
-/// assert!(!m1.is_smaller(m2).unwrap());
+/// assert_eq!(m1.max(m2), m1);
+/// assert_eq!(m1.min(m2), m2);
 /// ```
-pub trait BaseOps:
+pub trait BaseOps<C: Currency>:
     Sized
-    + BaseMoney
+    + BaseMoney<C>
     + Add<Output = Self>
     + Sub<Output = Self>
     + Mul<Output = Self>
@@ -501,296 +447,121 @@ pub trait BaseOps:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let negative = Money::new(usd, dec!(-100));
+    /// let negative = Money::<USD>::new(dec!(-100)).unwrap();
     /// let positive = negative.abs();
     /// assert_eq!(positive.amount(), dec!(100));
     /// ```
     fn abs(&self) -> Self;
-
-    /// Returns the minimum of two money values.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let m1 = Money::new(usd.clone(), dec!(100));
-    /// let m2 = Money::new(usd, dec!(50));
-    /// let minimum = m1.min(m2);
-    /// assert_eq!(minimum.amount(), dec!(50));
-    /// ```
-    fn min(&self, rhs: Self) -> Self;
-
-    /// Returns the maximum of two money values.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let m1 = Money::new(usd.clone(), dec!(100));
-    /// let m2 = Money::new(usd, dec!(50));
-    /// let maximum = m1.max(m2);
-    /// assert_eq!(maximum.amount(), dec!(100));
-    /// ```
-    fn max(&self, rhs: Self) -> Self;
-
-    /// Clamps the money amount between `from` and `to` inclusively.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(100));
-    /// let clamped = money.clamp(dec!(20), dec!(80));
-    /// assert_eq!(clamped.amount(), dec!(80));
-    /// ```
-    fn clamp(&self, from: Decimal, to: Decimal) -> Self;
 
     /// Adds another money value to this one.
     ///
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let m1 = Money::new(usd.clone(), dec!(100));
-    /// let m2 = Money::new(usd, dec!(50));
+    /// let m1 = Money::<USD>::new(dec!(100)).unwrap();
+    /// let m2 = Money::<USD>::new(dec!(50)).unwrap();
     /// let sum = m1.add(m2).unwrap();
     /// assert_eq!(sum.amount(), dec!(150));
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if the currencies don't match.
-    fn add<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn add<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: MoneyAmount<T>,
-        T: BaseMoney;
+        RHS: Amount<C>;
 
     /// Subtracts another money value from this one.
     ///
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let m1 = Money::new(usd.clone(), dec!(100));
-    /// let m2 = Money::new(usd, dec!(30));
+    /// let m1 = Money::<USD>::new(dec!(100)).unwrap();
+    /// let m2 = Money::<USD>::new(dec!(30)).unwrap();
     /// let diff = m1.sub(m2).unwrap();
     /// assert_eq!(diff.amount(), dec!(70));
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if the currencies don't match.
-    fn sub<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn sub<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: MoneyAmount<T>,
-        T: BaseMoney;
+        RHS: Amount<C>;
 
     /// Multiplies this money value by another value.
     ///
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(10));
+    /// let money = Money::<USD>::new(dec!(10)).unwrap();
     /// let product = money.mul(dec!(3)).unwrap();
     /// assert_eq!(product.amount(), dec!(30));
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if multiplying by money with different currency.
-    fn mul<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn mul<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: MoneyAmount<T>,
-        T: BaseMoney;
+        RHS: Amount<C>;
 
     /// Divides this money value by another value.
     ///
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(100));
+    /// let money = Money::<USD>::new(dec!(100)).unwrap();
     /// let quotient = money.div(dec!(4)).unwrap();
     /// assert_eq!(quotient.amount(), dec!(25));
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if dividing by money with different currency.
-    fn div<RHS, T>(&self, rhs: RHS) -> MoneyResult<Self>
+    fn div<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: MoneyAmount<T>,
-        T: BaseMoney;
-
-    // PROVIDED
-
-    /// Returns `true` if this money value is greater than another.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let m1 = Money::new(usd.clone(), dec!(100));
-    /// let m2 = Money::new(usd, dec!(50));
-    /// assert!(m1.is_bigger(m2).unwrap());
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if the currencies don't match.
-    fn is_bigger(&self, rhs: impl BaseMoney) -> MoneyResult<bool> {
-        if self.currency() != rhs.currency() {
-            return Err(MoneyError::CurrencyMismatch);
-        }
-        Ok(self.amount() > rhs.amount())
-    }
-
-    /// Returns `true` if this money value is less than another.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let m1 = Money::new(usd.clone(), dec!(50));
-    /// let m2 = Money::new(usd, dec!(100));
-    /// assert!(m1.is_smaller(m2).unwrap());
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if the currencies don't match.
-    fn is_smaller(&self, rhs: impl BaseMoney) -> MoneyResult<bool> {
-        if self.currency() != rhs.currency() {
-            return Err(MoneyError::CurrencyMismatch);
-        }
-        Ok(self.amount() < rhs.amount())
-    }
-
-    /// Returns `true` if this money value is greater than or equal to another.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let m1 = Money::new(usd.clone(), dec!(100));
-    /// let m2 = Money::new(usd, dec!(100));
-    /// assert!(m1.is_bigger_equal(m2).unwrap());
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if the currencies don't match.
-    fn is_bigger_equal(&self, rhs: impl BaseMoney) -> MoneyResult<bool> {
-        if self.currency() != rhs.currency() {
-            return Err(MoneyError::CurrencyMismatch);
-        }
-        Ok(self.amount() >= rhs.amount())
-    }
-
-    /// Returns `true` if this money value is less than or equal to another.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let m1 = Money::new(usd.clone(), dec!(50));
-    /// let m2 = Money::new(usd, dec!(50));
-    /// assert!(m1.is_smaller_equal(m2).unwrap());
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::CurrencyMismatch` if the currencies don't match.
-    fn is_smaller_equal(&self, rhs: impl BaseMoney) -> MoneyResult<bool> {
-        if self.currency() != rhs.currency() {
-            return Err(MoneyError::CurrencyMismatch);
-        }
-        Ok(self.amount() <= rhs.amount())
-    }
+        RHS: Amount<C>;
 }
 
 /// Trait for types that can represent a money amount.
 ///
-/// This trait allows for flexible input types in arithmetic operations. A type can represent
-/// either a money value or a decimal number for scaling operations.
+/// This trait allows for flexible input types in constructing and arithmetic operations.
 ///
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency};
+/// use moneylib::{Money, Currency, USD};
 /// use moneylib::money_macros::dec;
 /// use moneylib::{BaseMoney, BaseOps};
 ///
-/// let usd = Currency::from_iso("USD").unwrap();
-/// let money = Money::new(usd, dec!(100));
+/// let money = Money::<USD>::new(dec!(100)).unwrap();
+/// let money2 = Money::<USD>::new(money).unwrap();
+/// let money3 = Money::<USD>::new(123.000_f64).unwrap();
+/// let money4 = Money::<USD>::new(123_i32).unwrap();
+/// let money5 = Money::<USD>::new(123_i64).unwrap();
+/// let money6 = Money::<USD>::new(123_i128).unwrap();
 ///
-/// // Can add another money value
-/// let other = Money::new(money.currency(), dec!(50));
-/// let sum = money.add(other).unwrap();
-/// assert_eq!(sum.amount(), dec!(150));
+/// let check = money3 == money4;
+/// assert!(check);
+/// let check = money5 == money6;
+/// assert!(check);
+/// let check = money4 == money5;
+/// assert!(check);
+/// let check = money3 == money6;
+/// assert!(check);
 ///
-/// // Can multiply by a decimal
-/// let scaled = money.mul(dec!(2)).unwrap();
-/// assert_eq!(scaled.amount(), dec!(200));
+/// assert_eq!(money, money2);
+/// assert_eq!(money.amount(), money2.amount());
 /// ```
-pub trait MoneyAmount<T>: Sized
-where
-    T: BaseMoney,
-{
-    /// Returns the money value if this type represents money, otherwise `None`.
-    fn get_money(&self) -> Option<T>;
-
-    /// Returns the decimal value if this type represents a decimal, otherwise `None`.
+pub trait Amount<C: Currency>: Sized {
+    /// Get decimal amount of Self.
+    ///
+    /// Returns `None` if Self cannot be converted into Decimal.
     fn get_decimal(&self) -> Option<Decimal>;
 }
 
@@ -802,19 +573,17 @@ where
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, RoundingStrategy};
+/// use moneylib::{Money, Currency, RoundingStrategy, USD};
 /// use moneylib::money_macros::dec;
 /// use moneylib::{BaseMoney, CustomMoney};
 ///
-/// let usd = Currency::from_iso("USD").unwrap();
-///
 /// // Note: Money values are rounded to currency minor unit on creation,
 /// // so we use round_with with more precision to demonstrate differences
-/// let money1 = Money::new(usd, dec!(2.5));
+/// let money1 = Money::<USD>::new(dec!(2.5)).unwrap();
 /// let bankers = money1.round_with(0, RoundingStrategy::BankersRounding);
 /// assert_eq!(bankers.amount(), dec!(2));  // Rounds to even
 ///
-/// let money2 = Money::new(usd, dec!(2.5));
+/// let money2 = Money::<USD>::new(dec!(2.5)).unwrap();
 /// let half_up = money2.round_with(0, RoundingStrategy::HalfUp);
 /// assert_eq!(half_up.amount(), dec!(3));  // Always rounds up at halfway
 /// ```
@@ -829,19 +598,17 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy};
+    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    ///
     /// // 2.5 rounds to 2 (even)
-    /// let m1 = Money::new(usd.clone(), dec!(2.5));
+    /// let m1 = Money::<USD>::new(dec!(2.5)).unwrap();
     /// let rounded = m1.round_with(0, RoundingStrategy::BankersRounding);
     /// assert_eq!(rounded.amount(), dec!(2));
     ///
     /// // 3.5 rounds to 4 (even)
-    /// let m2 = Money::new(usd, dec!(3.5));
+    /// let m2 = Money::<USD>::new(dec!(3.5)).unwrap();
     /// let rounded = m2.round_with(0, RoundingStrategy::BankersRounding);
     /// assert_eq!(rounded.amount(), dec!(4));
     /// ```
@@ -856,19 +623,17 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy};
+    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    ///
     /// // 2.5 rounds to 3
-    /// let m1 = Money::new(usd.clone(), dec!(2.5));
+    /// let m1 = Money::<USD>::new(dec!(2.5)).unwrap();
     /// let rounded = m1.round_with(0, RoundingStrategy::HalfUp);
     /// assert_eq!(rounded.amount(), dec!(3));
     ///
     /// // -2.5 rounds to -3
-    /// let m2 = Money::new(usd, dec!(-2.5));
+    /// let m2 = Money::<USD>::new(dec!(-2.5)).unwrap();
     /// let rounded = m2.round_with(0, RoundingStrategy::HalfUp);
     /// assert_eq!(rounded.amount(), dec!(-3));
     /// ```
@@ -881,19 +646,17 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy};
+    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    ///
     /// // 2.5 rounds to 2
-    /// let m1 = Money::new(usd.clone(), dec!(2.5));
+    /// let m1 = Money::<USD>::new(dec!(2.5)).unwrap();
     /// let rounded = m1.round_with(0, RoundingStrategy::HalfDown);
     /// assert_eq!(rounded.amount(), dec!(2));
     ///
     /// // -2.5 rounds to -2
-    /// let m2 = Money::new(usd, dec!(-2.5));
+    /// let m2 = Money::<USD>::new(dec!(-2.5)).unwrap();
     /// let rounded = m2.round_with(0, RoundingStrategy::HalfDown);
     /// assert_eq!(rounded.amount(), dec!(-2));
     /// ```
@@ -906,19 +669,17 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy};
+    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    ///
     /// // 2.1 rounds to 3
-    /// let m1 = Money::new(usd.clone(), dec!(2.1));
+    /// let m1 = Money::<USD>::new(dec!(2.1)).unwrap();
     /// let rounded = m1.round_with(0, RoundingStrategy::Ceil);
     /// assert_eq!(rounded.amount(), dec!(3));
     ///
     /// // -2.1 rounds to -3
-    /// let m2 = Money::new(usd, dec!(-2.1));
+    /// let m2 = Money::<USD>::new(dec!(-2.1)).unwrap();
     /// let rounded = m2.round_with(0, RoundingStrategy::Ceil);
     /// assert_eq!(rounded.amount(), dec!(-3));
     /// ```
@@ -931,19 +692,17 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy};
+    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    ///
     /// // 2.9 rounds to 2
-    /// let m1 = Money::new(usd.clone(), dec!(2.9));
+    /// let m1 = Money::<USD>::new(dec!(2.9)).unwrap();
     /// let rounded = m1.round_with(0, RoundingStrategy::Floor);
     /// assert_eq!(rounded.amount(), dec!(2));
     ///
     /// // -2.9 rounds to -2
-    /// let m2 = Money::new(usd, dec!(-2.9));
+    /// let m2 = Money::<USD>::new(dec!(-2.9)).unwrap();
     /// let rounded = m2.round_with(0, RoundingStrategy::Floor);
     /// assert_eq!(rounded.amount(), dec!(-2));
     /// ```
@@ -965,78 +724,34 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
 /// Trait for customizing money formatting and rounding behavior.
 ///
 /// This trait extends `BaseMoney` with methods to customize how money is displayed and rounded.
-/// It allows you to change separators and apply specific rounding strategies.
 ///
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, RoundingStrategy};
+/// use moneylib::{Money, Currency, RoundingStrategy, USD};
 /// use moneylib::money_macros::dec;
 /// use moneylib::{BaseMoney, CustomMoney};
 ///
-/// let usd = Currency::from_iso("USD").unwrap();
-/// let mut money = Money::new(usd, dec!(1234.56));
-///
-/// // Customize separators
-/// money.set_thousand_separator(".");
-/// money.set_decimal_separator(",");
-/// assert_eq!(money.format_code(), "USD 1.234,56");
+/// let mut money = Money::<USD>::new(dec!(1234.56)).unwrap();
 ///
 /// // Custom rounding
-/// let value = Money::new(money.currency(), dec!(123.456));
+/// let value = Money::<USD>::new(dec!(123.456)).unwrap();
 /// let rounded = value.round_with(2, RoundingStrategy::Floor);
 /// assert_eq!(rounded.amount(), dec!(123.46));
 /// ```
-pub trait CustomMoney: Sized + BaseMoney {
+pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     // REQUIRED
-
-    /// Sets the thousands separator for formatting.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let mut money = Money::new(usd, dec!(1234.56));
-    ///
-    /// money.set_thousand_separator(" ");
-    /// assert_eq!(money.format_code(), "USD 1 234.56");
-    /// ```
-    fn set_thousand_separator(&mut self, separator: &'static str);
-
-    /// Sets the decimal separator for formatting.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency};
-    /// use moneylib::money_macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
-    ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let mut money = Money::new(usd, dec!(1234.56));
-    ///
-    /// // Set European-style formatting
-    /// money.set_thousand_separator(".");
-    /// money.set_decimal_separator(",");
-    /// assert_eq!(money.format_code(), "USD 1.234,56");
-    /// ```
-    fn set_decimal_separator(&mut self, separator: &'static str);
 
     /// Rounds the money amount to a specified number of decimal places using the given strategy.
     ///
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy};
+    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
-    /// let usd = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(usd, dec!(123.456));
+    /// let money = Money::<USD>::new(dec!(123.456)).unwrap();
     ///
     /// let rounded = money.round_with(2, RoundingStrategy::Floor);
     /// assert_eq!(rounded.amount(), dec!(123.46));
@@ -1078,12 +793,11 @@ pub trait CustomMoney: Sized + BaseMoney {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency};
+    /// use moneylib::{Money, Currency, USD};
     /// use moneylib::money_macros::dec;
     /// use moneylib::CustomMoney;
     ///
-    /// let currency = Currency::from_iso("USD").unwrap();
-    /// let money = Money::new(currency, dec!(100.50));
+    /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
     ///
     /// // Basic formatting
     /// // "USD 100.50"
@@ -1091,6 +805,8 @@ pub trait CustomMoney: Sized + BaseMoney {
     ///
     /// // "$100.50"
     /// assert_eq!(money.format("sa"), "$100.50");
+    ///
+    /// assert_eq!(money.format("c nsa"), "USD $100.50");
     ///
     /// // "USD 10,050 ¢" (amount in minor units when 'm' is present)
     /// assert_eq!(money.format("c a m"), "USD 10,050 ¢");
@@ -1106,7 +822,7 @@ pub trait CustomMoney: Sized + BaseMoney {
     /// // "a=100.50, c=USD"
     /// assert_eq!(money.format("\\a=a, \\c=c"), "a=100.50, c=USD");
     ///
-    /// let negative = Money::new(currency, dec!(-50.00));
+    /// let negative = Money::<USD>::new(dec!(-50.00)).unwrap();
     /// // "USD -50.00"
     /// assert_eq!(negative.format("c na"), "USD -50.00");
     /// // "-$50.00"

@@ -1,7 +1,12 @@
+use crate::EUR;
+use crate::GBP;
+use crate::JPY;
+use crate::USD;
+
 use crate::Decimal;
+use crate::Money;
 use crate::fmt::{format, format_128_abs, format_decimal_abs};
 use crate::money_macros::dec;
-use crate::{Currency, Money};
 use std::str::FromStr;
 
 #[test]
@@ -52,8 +57,7 @@ fn test_format_decimal_with_thousands() {
 
 #[test]
 fn test_format_basic_code() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     assert_eq!(format(money, "c a"), "USD 100.50");
     assert_eq!(format(money, "c"), "USD");
@@ -62,8 +66,7 @@ fn test_format_basic_code() {
 
 #[test]
 fn test_format_basic_symbol() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     assert_eq!(format(money, "sa"), "$100.50");
     assert_eq!(format(money, "s a"), "$ 100.50");
@@ -71,9 +74,22 @@ fn test_format_basic_symbol() {
 }
 
 #[test]
+fn test_format_decimal_places() {
+    let money = Money::<USD>::new(123.4_f64).unwrap();
+
+    assert_eq!(format(money, "c na"), "USD 123.40");
+
+    let money = Money::<USD>::new(12343.8_f64).unwrap();
+    assert_eq!(format(money, "c na"), "USD 12,343.80");
+
+    // test Money always rounded to its minor unit
+    let money = Money::<USD>::new(12345.29678).unwrap();
+    assert_eq!(format(money, "c na"), "USD 12,345.30");
+}
+
+#[test]
 fn test_format_negative_with_n_symbol() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let negative = Money::new(currency, dec!(-50.00));
+    let negative = Money::<USD>::new(dec!(-50.00)).unwrap();
 
     // 'n' should display '-' for negative amounts
     assert_eq!(format(negative, "c na"), "USD -50.00");
@@ -81,15 +97,14 @@ fn test_format_negative_with_n_symbol() {
     assert_eq!(format(negative, "n c a"), "- USD 50.00");
 
     // 'n' should not display anything for positive amounts
-    let positive = Money::new(currency, dec!(50.00));
+    let positive = Money::<USD>::new(dec!(50.00)).unwrap();
     assert_eq!(format(positive, "c na"), "USD 50.00");
     assert_eq!(format(positive, "nsa"), "$50.00");
 }
 
 #[test]
 fn test_format_minor_units() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     // When 'm' is in format string, amount is shown in minor units
     // and 'm' itself displays the minor symbol
@@ -100,8 +115,7 @@ fn test_format_minor_units() {
 
 #[test]
 fn test_format_minor_units_in_minor_amount() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(1000.23));
+    let money = Money::<USD>::new(dec!(1000.23)).unwrap();
 
     // When 'm' is present, amount is formatted as minor amount
     assert_eq!(format(money, "a m"), "100,023 ¢");
@@ -110,8 +124,7 @@ fn test_format_minor_units_in_minor_amount() {
 
 #[test]
 fn test_format_negative_minor_units() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let negative = Money::new(currency, dec!(-100.23));
+    let negative = Money::<USD>::new(dec!(-100.23)).unwrap();
 
     assert_eq!(format(negative, "c na m"), "USD -10,023 ¢");
     assert_eq!(format(negative, "nsa m"), "-$10,023 ¢");
@@ -119,8 +132,7 @@ fn test_format_negative_minor_units() {
 
 #[test]
 fn test_format_zero_amount() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let zero = Money::new(currency, dec!(0));
+    let zero = Money::<USD>::new(dec!(0)).unwrap();
 
     assert_eq!(format(zero, "c a"), "USD 0.00");
     assert_eq!(format(zero, "sa"), "$0.00");
@@ -130,8 +142,7 @@ fn test_format_zero_amount() {
 
 #[test]
 fn test_format_very_large_amount() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let large = Money::new(currency, dec!(1234567890.12));
+    let large = Money::<USD>::new(dec!(1234567890.12)).unwrap();
 
     assert_eq!(format(large, "c a"), "USD 1,234,567,890.12");
     assert_eq!(format(large, "sa"), "$1,234,567,890.12");
@@ -139,8 +150,7 @@ fn test_format_very_large_amount() {
 
 #[test]
 fn test_format_very_small_amount() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let small = Money::new(currency, dec!(0.01));
+    let small = Money::<USD>::new(dec!(0.01)).unwrap();
 
     assert_eq!(format(small, "c a"), "USD 0.01");
     assert_eq!(format(small, "sa"), "$0.01");
@@ -149,8 +159,7 @@ fn test_format_very_small_amount() {
 
 #[test]
 fn test_format_escape_sequences() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     // Escaping format symbols
     assert_eq!(format(money, "\\a"), "a");
@@ -169,8 +178,7 @@ fn test_format_escape_sequences() {
 
 #[test]
 fn test_format_backslash_without_format_symbol() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     // Backslash followed by non-format symbol should keep backslash
     assert_eq!(format(money, "\\x"), "\\x");
@@ -182,35 +190,31 @@ fn test_format_backslash_without_format_symbol() {
 
 #[test]
 fn test_format_all_symbols_together() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     assert_eq!(format(money, "c s a m"), "USD $ 10,050 ¢");
 
-    let negative = Money::new(currency, dec!(-100.50));
+    let negative = Money::<USD>::new(dec!(-100.50)).unwrap();
     assert_eq!(format(negative, "n c s a m"), "- USD $ 10,050 ¢");
 }
 
 #[test]
 fn test_format_empty_string() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     assert_eq!(format(money, ""), "");
 }
 
 #[test]
 fn test_format_only_spaces() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     assert_eq!(format(money, "   "), "   ");
 }
 
 #[test]
 fn test_format_with_text_literals() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     // Escaping format symbols allows literal display
     assert_eq!(format(money, "\\code: c"), "code: USD");
@@ -224,8 +228,7 @@ fn test_format_with_text_literals() {
 #[test]
 fn test_format_literal_characters_including_format_symbols() {
     // Test case 1: We can insert literal characters (1 or many), even if it includes the format symbols
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     // Single literal format symbol characters
     assert_eq!(format(money, "\\a"), "a");
@@ -252,9 +255,8 @@ fn test_format_literal_characters_including_format_symbols() {
 #[test]
 fn test_format_mix_literals_with_format_symbols() {
     // Test case 2: We can mix literal characters with format symbols
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
-    let negative = Money::new(currency, dec!(-50.25));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
+    let negative = Money::<USD>::new(dec!(-50.25)).unwrap();
 
     // Mix literal text with format symbols (using words without format symbols)
     assert_eq!(format(money, "Buy: sa"), "Buy: $100.50");
@@ -293,53 +295,34 @@ fn test_format_mix_literals_with_format_symbols() {
 #[test]
 fn test_format_different_currencies() {
     // EUR
-    let eur = Currency::from_iso("EUR").unwrap();
-    let money_eur = Money::new(eur, dec!(50.99));
-    assert_eq!(format(money_eur, "c a"), "EUR 50.99");
-    assert_eq!(format(money_eur, "sa"), "€50.99");
+    let money_eur = Money::<EUR>::new(dec!(50.99)).unwrap();
+    assert_eq!(format(money_eur, "c a"), "EUR 50,99");
+    assert_eq!(format(money_eur, "sa"), "€50,99");
 
     // GBP
-    let gbp = Currency::from_iso("GBP").unwrap();
-    let money_gbp = Money::new(gbp, dec!(75.50));
+    let money_gbp = Money::<GBP>::new(dec!(75.50)).unwrap();
     assert_eq!(format(money_gbp, "c a"), "GBP 75.50");
     assert_eq!(format(money_gbp, "sa"), "£75.50");
 
     // JPY (no minor units)
-    let jpy = Currency::from_iso("JPY").unwrap();
-    let money_jpy = Money::new(jpy, dec!(1000));
+    let money_jpy = Money::<JPY>::new(dec!(1000)).unwrap();
     assert_eq!(format(money_jpy, "c a"), "JPY 1,000");
     assert_eq!(format(money_jpy, "sa"), "¥1,000");
 }
 
 #[test]
-fn test_format_with_custom_separators() {
-    // Create currency with different separators
-    let mut currency = Currency::from_iso("USD").unwrap();
-    currency.set_thousand_separator(".");
-    currency.set_decimal_separator(",");
-
-    let money = Money::new(currency, dec!(1234.56));
-
-    assert_eq!(format(money, "a"), "1.234,56");
-    assert_eq!(format(money, "sa"), "$1.234,56");
-}
-
-#[test]
 fn test_format_rounding() {
-    let currency = Currency::from_iso("USD").unwrap();
-
     // USD has 2 decimal places, so should round
-    let money = Money::new(currency, dec!(100.123));
+    let money = Money::<USD>::new(dec!(100.123)).unwrap();
     assert_eq!(format(money, "a"), "100.12");
 
-    let money2 = Money::new(currency, dec!(100.126));
+    let money2 = Money::<USD>::new(dec!(100.126)).unwrap();
     assert_eq!(format(money2, "a"), "100.13");
 }
 
 #[test]
 fn test_format_multiple_escapes() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     // "\\" escapes to "\", then "a" is treated as format symbol
     assert_eq!(format(money, "\\\\a"), "\\100.50");
@@ -351,8 +334,7 @@ fn test_format_multiple_escapes() {
 
 #[test]
 fn test_format_special_characters() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     assert_eq!(format(money, "a!"), "100.50!");
     assert_eq!(format(money, "a@b#c$"), "100.50@b#USD$");
@@ -362,8 +344,7 @@ fn test_format_special_characters() {
 
 #[test]
 fn test_format_numeric_characters() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     assert_eq!(format(money, "1a2"), "1100.502");
     // Escape format symbols in text to display them literally
@@ -372,8 +353,7 @@ fn test_format_numeric_characters() {
 
 #[test]
 fn test_format_case_sensitivity() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.50));
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     // Format symbols are case-sensitive (lowercase only)
     assert_eq!(format(money, "A"), "A");
@@ -385,23 +365,20 @@ fn test_format_case_sensitivity() {
 
 #[test]
 fn test_format_boundary_values() {
-    let currency = Currency::from_iso("USD").unwrap();
-
     // Maximum positive decimal
-    let max_money = Money::new(currency, Decimal::MAX);
+    let max_money = Money::<USD>::new(Decimal::MAX).unwrap();
     let result = format(max_money, "c a");
     assert!(result.starts_with("USD "));
 
     // Minimum negative decimal (close to negative max)
-    let min_money = Money::new(currency, Decimal::MIN);
+    let min_money = Money::<USD>::new(Decimal::MIN).unwrap();
     let result = format(min_money, "nsa");
     assert!(result.starts_with("-$"));
 }
 
 #[test]
 fn test_format_one_unit() {
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(1));
+    let money = Money::<USD>::new(dec!(1)).unwrap();
 
     assert_eq!(format(money, "a"), "1.00");
     assert_eq!(format(money, "sa"), "$1.00");
@@ -410,9 +387,8 @@ fn test_format_one_unit() {
 
 #[test]
 fn test_format_negative_zero() {
-    let currency = Currency::from_iso("USD").unwrap();
     // Decimal can represent negative zero
-    let neg_zero = Money::new(currency, dec!(-0));
+    let neg_zero = Money::<USD>::new(dec!(-0)).unwrap();
 
     // Should not show negative sign for zero
     let result = format(neg_zero, "nsa");
@@ -447,13 +423,9 @@ fn test_format_decimal_abs_with_minor_unit() {
         "1,000"
     );
 
-    // Test that existing fractional parts shorter than minor_unit are preserved as-is
-    // Note: In practice, Money objects are rounded to the currency's minor_unit,
-    // so this scenario represents the actual usage where the Decimal has already
-    // been rounded to the correct precision by rust_decimal's round_dp_with_strategy
     assert_eq!(
         format_decimal_abs(Decimal::from_str("1000.5").unwrap(), ",", ".", 3),
-        "1,000.5"
+        "1,000.500"
     );
 }
 
@@ -462,8 +434,7 @@ fn test_format_minor_amount_overflow() {
     // Test that when minor_amount() overflows, we get "OVERFLOWED_AMOUNT"
     // Use Decimal::MAX with USD (2 decimal places)
     // Decimal::MAX * 100 will overflow i128
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, Decimal::MAX);
+    let money = Money::<USD>::new(Decimal::MAX).unwrap();
 
     // When using 'm' in format string, it tries to convert to minor amount
     // which will overflow and return the error string
@@ -475,8 +446,7 @@ fn test_format_minor_amount_overflow() {
 fn test_format_negative_symbol_with_positive_amount() {
     // Explicit test to ensure line 99 (NEGATIVE_FORMAT_SYMBOL match arm) is covered
     // when used with a positive amount (where the body doesn't execute)
-    let currency = Currency::from_iso("USD").unwrap();
-    let positive = Money::new(currency, dec!(100.00));
+    let positive = Money::<USD>::new(dec!(100.00)).unwrap();
 
     // 'n' should not add anything for positive amounts
     assert_eq!(format(positive, "n"), "");
@@ -484,7 +454,7 @@ fn test_format_negative_symbol_with_positive_amount() {
     assert_eq!(format(positive, "nnn"), "");
 
     // Also test with negative amount to ensure both branches are covered
-    let negative = Money::new(currency, dec!(-100.00));
+    let negative = Money::<USD>::new(dec!(-100.00)).unwrap();
     assert_eq!(format(negative, "n"), "-");
     assert_eq!(format(negative, "na"), "-100.00");
 }
@@ -493,8 +463,7 @@ fn test_format_negative_symbol_with_positive_amount() {
 fn test_format_escape_all_format_symbols_explicitly() {
     // Explicit test to ensure line 86 (continue after escape) is covered
     // for all format symbols
-    let currency = Currency::from_iso("USD").unwrap();
-    let money = Money::new(currency, dec!(100.00));
+    let money = Money::<USD>::new(dec!(100.00)).unwrap();
 
     // Test escaping each format symbol individually to ensure continue is hit
     assert_eq!(format(money, "\\a"), "a");
