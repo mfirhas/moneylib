@@ -306,6 +306,49 @@ fn test_from_str_no_thousands_separator_various() {
     }
 }
 
+#[test]
+fn test_from_str_edge_case_variations() {
+    // USD edge cases
+    let usd_tests = vec![
+        ("USD 100.000", dec!(100.00)),    // Decimal .000 rounds to .00
+        ("USD 100.0000", dec!(100.00)),   // Decimal .0000 rounds to .00
+        ("USD 100,000", dec!(100000.00)), // Comma as thousands separator: 100,000
+        ("USD 100,0000", dec!(100.00)),   // Matches pattern but results in 100.00
+        ("USD 1000,000", dec!(1000.00)),  // Matches dot regex, comma as decimal separator
+        ("USD 1000.000", dec!(1000.00)),  // Decimal .000 rounds to .00
+        ("USD 100.00", dec!(100.00)),
+        ("USD 1.000.000,123", dec!(1_000_000.12)),
+        ("USD 100,00", dec!(100.00)),
+        ("USD 1000000.243", dec!(1_000_000.24)),
+        ("USD 1000000,243", dec!(1_000_000.24)),
+    ];
+
+    for (input, expected) in usd_tests {
+        let money: Money<USD> = Money::from_str(input).unwrap();
+        assert_eq!(money.amount(), expected, "Failed for USD input: {}", input);
+    }
+
+    // EUR edge cases
+    let eur_tests = vec![
+        ("EUR 100.000", dec!(100.00)),    // Decimal .000 rounds to .00
+        ("EUR 100.0000", dec!(100.00)),   // Decimal .0000 rounds to .00
+        ("EUR 100,000", dec!(100000.00)), // Comma as decimal in EUR format: 100,000
+        ("EUR 100,0000", dec!(100.00)),   // Matches pattern but results in 100.00
+        ("EUR 1000,000", dec!(1000.00)),  // Comma as decimal: rounds to .00
+        ("EUR 1000.000", dec!(1000.00)),  // Decimal .000 rounds to .00
+        ("EUR 100.00", dec!(100.00)),
+        ("EUR 1.000.000,123", dec!(1_000_000.12)),
+        ("EUR 100,00", dec!(100.00)),
+        ("EUR 1000000.243", dec!(1_000_000.24)),
+        ("EUR 1000000,243", dec!(1_000_000.24)),
+    ];
+
+    for (input, expected) in eur_tests {
+        let money: Money<EUR> = Money::from_str(input).unwrap();
+        assert_eq!(money.amount(), expected, "Failed for EUR input: {}", input);
+    }
+}
+
 // ==================== Display Tests ====================
 
 #[test]
