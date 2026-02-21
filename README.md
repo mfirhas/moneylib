@@ -130,7 +130,7 @@ Monetary values are sensitive matter and their invariants must always hold true.
 - All ISO 4217 currencies are supported via the `Currency` trait.
 - Currency information is available through trait methods: `code()`, `symbol()`, `name()`, `minor_unit()`.
 
-This library maintains type-safety by preventing invalid state either by returning Result(`MoneyResult`) or going *PANIC*.
+This library maintains type-safety by preventing invalid state either by returning `Result` or going *PANIC*.
 
 ## Code Coverage
 
