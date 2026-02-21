@@ -150,6 +150,21 @@ where
         }
         .round())
     }
+
+    pub fn from_str_dot_thousands(s: &str) -> Result<Self, MoneyError> {
+        let s = s.trim();
+
+        if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {
+            if currency_code != C::CODE {
+                return Err(MoneyError::CurrencyMismatch);
+            }
+            return Ok(Self::from_decimal(
+                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
+            ));
+        }
+
+        Err(MoneyError::ParseStr)
+    }
 }
 
 impl<C: Currency> Ord for Money<C>
@@ -264,18 +279,7 @@ where
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
 
-        // Try parsing with comma thousands separator first
         if let Some((currency_code, amount_str)) = parse_comma_thousands_separator(s) {
-            if currency_code != C::CODE {
-                return Err(MoneyError::CurrencyMismatch);
-            }
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
-        }
-
-        // Try parsing with dot thousands separator
-        if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {
             if currency_code != C::CODE {
                 return Err(MoneyError::CurrencyMismatch);
             }
