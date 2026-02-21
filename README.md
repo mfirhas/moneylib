@@ -129,6 +129,7 @@ Monetary values are sensitive matter and their invariants must always hold true.
 - Currency types are defined at compile time using marker types (e.g., `USD`, `EUR`, `JPY`).
 - All ISO 4217 currencies are supported via the `Currency` trait.
 - Currency information is available through trait methods: `code()`, `symbol()`, `name()`, `minor_unit()`.
+- New/custom currency is supported by implementing `Currency` trait.
 
 This library maintains type-safety by preventing invalid state either by returning `Result` or going *PANIC*.
 
