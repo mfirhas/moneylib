@@ -107,9 +107,13 @@ fn test_from_str_usd_comma_separator() {
 
 #[test]
 fn test_from_str_eur_dot_separator() {
-    let money = Money::<EUR>::from_str("EUR 1.234,56").unwrap();
+    // Dot thousands separator uses from_str_dot_thousands
+    let money = Money::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
     assert_eq!(money.code(), "EUR");
     assert_eq!(money.amount(), dec!(1234.56));
+
+    // from_str only handles comma thousands separator, so dot-separator format fails
+    assert!(Money::<EUR>::from_str("EUR 1.234,56").is_err());
 }
 
 #[test]
@@ -127,7 +131,8 @@ fn test_from_str_large_amount_with_commas() {
 
 #[test]
 fn test_from_str_large_amount_with_dots() {
-    let money = Money::<EUR>::from_str("EUR 1.000.000,99").unwrap();
+    // Dot thousands separator requires from_str_dot_thousands
+    let money = Money::<EUR>::from_str_dot_thousands("EUR 1.000.000,99").unwrap();
     assert_eq!(money.amount(), dec!(1000000.99));
 }
 
@@ -253,9 +258,9 @@ fn test_from_str_optional_comma_thousands_separator() {
 
 #[test]
 fn test_from_str_optional_dot_thousands_separator() {
-    // Test that dot thousands separator is optional
-    let with_separator = Money::<EUR>::from_str("EUR 1.234,56").unwrap();
-    let without_separator = Money::<EUR>::from_str("EUR 1234,56").unwrap();
+    // Dot thousands separator uses from_str_dot_thousands
+    let with_separator = Money::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
+    let without_separator = Money::<EUR>::from_str_dot_thousands("EUR 1234,56").unwrap();
     assert_eq!(with_separator.amount(), dec!(1234.56));
     assert_eq!(without_separator.amount(), dec!(1234.56));
     assert_eq!(with_separator.amount(), without_separator.amount());
@@ -270,83 +275,207 @@ fn test_from_str_edge_case_1000_dot_000() {
 
 #[test]
 fn test_from_str_edge_case_1000_comma_000() {
-    // Test USD 1000,000 - This is interpreted by the regex as 1000 with thousands
-    // separator (comma) followed by 000. After removing the comma, it becomes "1000000"
-    // But the regex requires either \d{1,3}(?:,\d{3})* OR \d+ followed by optional .\d+
-    // Actually "1000,000" doesn't match the pattern \d{1,3}(?:,\d{3})* correctly
-    // Let me check - it matches because "1000,000" fits pattern but when comma is removed
-    // we get "1000000" which is parsed as 1000000.00
-    // Wait, my test showed 1000.00. Let me investigate properly with the regex.
-    let money = Money::<USD>::from_str("USD 1000,000").unwrap();
-    // Based on manual testing, this parses as 1000.00
+    // "USD 1000,000": comma is the decimal separator here (no proper thousands grouping),
+    // so from_str (comma-thousands) rejects it; from_str_dot_thousands parses it as 1000.000
+    assert!(Money::<USD>::from_str("USD 1000,000").is_err());
+    let money = Money::<USD>::from_str_dot_thousands("USD 1000,000").unwrap();
     assert_eq!(money.amount(), dec!(1000.00));
 }
 
 #[test]
 fn test_from_str_no_thousands_separator_various() {
     // Test various amounts without thousands separators
-    let tests = vec![
+    // USD uses from_str (comma thousands, dot decimal)
+    let usd_tests = vec![
         ("USD 100.00", dec!(100.00)),
         ("USD 1000.00", dec!(1000.00)),
         ("USD 10000.00", dec!(10000.00)),
+    ];
+
+    for (input, expected) in usd_tests {
+        let money = Money::<USD>::from_str(input).unwrap();
+        assert_eq!(money.amount(), expected, "Failed for input: {}", input);
+    }
+
+    // EUR amounts without thousands separator use comma as decimal separator,
+    // so they require from_str_dot_thousands
+    let eur_tests = vec![
         ("EUR 100,00", dec!(100.00)),
         ("EUR 1000,00", dec!(1000.00)),
         ("EUR 10000,00", dec!(10000.00)),
     ];
 
-    for (input, expected) in tests {
-        // Parse with appropriate currency type based on the input string
-        if input.starts_with("USD") {
-            let money = Money::<USD>::from_str(input).unwrap();
-            assert_eq!(money.amount(), expected, "Failed for input: {}", input);
-        } else if input.starts_with("EUR") {
-            let money = Money::<EUR>::from_str(input).unwrap();
-            assert_eq!(money.amount(), expected, "Failed for input: {}", input);
-        }
+    for (input, expected) in eur_tests {
+        let money = Money::<EUR>::from_str_dot_thousands(input).unwrap();
+        assert_eq!(money.amount(), expected, "Failed for input: {}", input);
     }
 }
 
 #[test]
 fn test_from_str_edge_case_variations() {
-    // USD edge cases
-    let usd_tests = vec![
+    // Cases that use comma as thousands separator (dot as decimal) → from_str
+    let comma_thousands_tests = vec![
         ("USD 100.000", dec!(100.00)),    // Decimal .000 rounds to .00
         ("USD 100.0000", dec!(100.00)),   // Decimal .0000 rounds to .00
-        ("USD 100,000", dec!(100000.00)), // Comma as thousands separator: 100,000
-        ("USD 100,0000", dec!(100.00)),   // Matches pattern but results in 100.00
-        ("USD 1000,000", dec!(1000.00)),  // Matches dot regex, comma as decimal separator
+        ("USD 100,000", dec!(100000.00)), // Comma thousands separator: 100,000
         ("USD 1000.000", dec!(1000.00)),  // Decimal .000 rounds to .00
         ("USD 100.00", dec!(100.00)),
-        ("USD 1.000.000,123", dec!(1_000_000.12)),
-        ("USD 100,00", dec!(100.00)),
         ("USD 1000000.243", dec!(1_000_000.24)),
-        ("USD 1000000,243", dec!(1_000_000.24)),
+        ("EUR 100.000", dec!(100.00)),
+        ("EUR 100.0000", dec!(100.00)),
+        ("EUR 100,000", dec!(100000.00)), // Comma as thousands separator
+        ("EUR 1000.000", dec!(1000.00)),
+        ("EUR 100.00", dec!(100.00)),
+        ("EUR 1000000.243", dec!(1_000_000.24)),
     ];
 
-    for (input, expected) in usd_tests {
-        let money: Money<USD> = Money::from_str(input).unwrap();
-        assert_eq!(money.amount(), expected, "Failed for USD input: {}", input);
+    for (input, expected) in &comma_thousands_tests {
+        if input.starts_with("USD") {
+            let money: Money<USD> = Money::from_str(input).unwrap();
+            assert_eq!(
+                money.amount(),
+                *expected,
+                "Failed for comma-thousands input: {}",
+                input
+            );
+        } else if input.starts_with("EUR") {
+            let money: Money<EUR> = Money::from_str(input).unwrap();
+            assert_eq!(
+                money.amount(),
+                *expected,
+                "Failed for comma-thousands input: {}",
+                input
+            );
+        }
     }
 
-    // EUR edge cases
-    let eur_tests = vec![
-        ("EUR 100.000", dec!(100.00)),    // Decimal .000 rounds to .00
-        ("EUR 100.0000", dec!(100.00)),   // Decimal .0000 rounds to .00
-        ("EUR 100,000", dec!(100000.00)), // Comma as decimal in EUR format: 100,000
-        ("EUR 100,0000", dec!(100.00)),   // Matches pattern but results in 100.00
-        ("EUR 1000,000", dec!(1000.00)),  // Comma as decimal: rounds to .00
-        ("EUR 1000.000", dec!(1000.00)),  // Decimal .000 rounds to .00
-        ("EUR 100.00", dec!(100.00)),
+    // Cases that use dot as thousands separator (comma as decimal) → from_str_dot_thousands
+    let dot_thousands_tests = vec![
+        ("USD 100,0000", dec!(100.00)),  // Comma as decimal separator
+        ("USD 1000,000", dec!(1000.00)), // Comma as decimal separator
+        ("USD 1.000.000,123", dec!(1_000_000.12)), // Dot thousands, comma decimal
+        ("USD 100,00", dec!(100.00)),    // Comma as decimal separator
+        ("USD 1000000,243", dec!(1_000_000.24)), // Comma as decimal separator
+        ("EUR 100,0000", dec!(100.00)),
+        ("EUR 1000,000", dec!(1000.00)),
         ("EUR 1.000.000,123", dec!(1_000_000.12)),
         ("EUR 100,00", dec!(100.00)),
-        ("EUR 1000000.243", dec!(1_000_000.24)),
         ("EUR 1000000,243", dec!(1_000_000.24)),
+        ("EUR 100.000", dec!(100000.00)),
+        ("EUR 1234,789", dec!(1_234.79)),
     ];
 
-    for (input, expected) in eur_tests {
-        let money: Money<EUR> = Money::from_str(input).unwrap();
-        assert_eq!(money.amount(), expected, "Failed for EUR input: {}", input);
+    for (input, expected) in &dot_thousands_tests {
+        if input.starts_with("USD") {
+            let money: Money<USD> = Money::from_str_dot_thousands(input).unwrap();
+            assert_eq!(
+                money.amount(),
+                *expected,
+                "Failed for dot-thousands input: {}",
+                input
+            );
+        } else if input.starts_with("EUR") {
+            let money: Money<EUR> = Money::from_str_dot_thousands(input).unwrap();
+            assert_eq!(
+                money.amount(),
+                *expected,
+                "Failed for dot-thousands input: {}",
+                input
+            );
+        }
     }
+}
+
+// ==================== from_str_dot_thousands Tests ====================
+
+#[test]
+fn test_from_str_dot_thousands_basic() {
+    let money = Money::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
+    assert_eq!(money.code(), "EUR");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_from_str_dot_thousands_no_thousands_separator() {
+    let money = Money::<EUR>::from_str_dot_thousands("EUR 100,50").unwrap();
+    assert_eq!(money.amount(), dec!(100.50));
+}
+
+#[test]
+fn test_from_str_dot_thousands_integer_only() {
+    let money = Money::<EUR>::from_str_dot_thousands("EUR 100").unwrap();
+    assert_eq!(money.amount(), dec!(100.00));
+}
+
+#[test]
+fn test_from_str_dot_thousands_large_amount() {
+    let money = Money::<EUR>::from_str_dot_thousands("EUR 1.000.000,99").unwrap();
+    assert_eq!(money.amount(), dec!(1000000.99));
+}
+
+#[test]
+fn test_from_str_dot_thousands_no_decimal() {
+    let money = Money::<EUR>::from_str_dot_thousands("EUR 1.234").unwrap();
+    assert_eq!(money.amount(), dec!(1234.00));
+}
+
+#[test]
+fn test_from_str_dot_thousands_zero() {
+    let money = Money::<EUR>::from_str_dot_thousands("EUR 0,00").unwrap();
+    assert_eq!(money.amount(), dec!(0.00));
+}
+
+#[test]
+fn test_from_str_dot_thousands_rounding() {
+    // EUR has 2 decimal places; comma is the decimal separator, so 100,999 means 100.999
+    // which rounds to 101.00
+    let money = Money::<EUR>::from_str_dot_thousands("EUR 100,999").unwrap();
+    assert_eq!(money.amount(), dec!(101.00));
+}
+
+#[test]
+fn test_from_str_dot_thousands_with_whitespace() {
+    let money = Money::<EUR>::from_str_dot_thousands("  EUR 1.234,56  ").unwrap();
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_from_str_dot_thousands_currency_mismatch() {
+    let result = Money::<USD>::from_str_dot_thousands("EUR 1.234,56");
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_from_str_dot_thousands_invalid_format() {
+    // Comma-thousands / dot-decimal format is rejected
+    assert!(Money::<USD>::from_str_dot_thousands("USD 1,234.56").is_err());
+}
+
+#[test]
+fn test_from_str_dot_thousands_invalid_empty() {
+    assert!(Money::<EUR>::from_str_dot_thousands("").is_err());
+}
+
+#[test]
+fn test_from_str_dot_thousands_invalid_no_space() {
+    assert!(Money::<EUR>::from_str_dot_thousands("EUR1.234,56").is_err());
+}
+
+#[test]
+fn test_from_str_dot_thousands_invalid_currency_mismatch() {
+    let result = Money::<EUR>::from_str_dot_thousands("USD 100,00");
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+}
+
+#[test]
+fn test_from_str_dot_thousands_optional_separator() {
+    // Thousands separator is optional
+    let with_sep = Money::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
+    let without_sep = Money::<EUR>::from_str_dot_thousands("EUR 1234,56").unwrap();
+    assert_eq!(with_sep.amount(), without_sep.amount());
+    assert_eq!(with_sep.amount(), dec!(1234.56));
 }
 
 // ==================== Display Tests ====================
@@ -1640,7 +1769,8 @@ fn test_multiple_separators_in_parsing() {
     let money: Money<USD> = Money::from_str("USD 1,234,567.89").unwrap();
     assert_eq!(money.amount(), dec!(1234567.89));
 
-    let money: Money<EUR> = Money::from_str("EUR 1.234.567,89").unwrap();
+    // Dot thousands separator requires from_str_dot_thousands
+    let money: Money<EUR> = Money::from_str_dot_thousands("EUR 1.234.567,89").unwrap();
     assert_eq!(money.amount(), dec!(1234567.89));
 }
 

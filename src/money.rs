@@ -150,6 +150,67 @@ where
         }
         .round())
     }
+
+    /// Creates a new `Money` instance by parsing a string that uses dot as the
+    /// thousands separator and comma as the decimal separator.
+    ///
+    /// The format is `"CCC amount"` where `CCC` is a 3-letter currency code and
+    /// `amount` uses dots for thousand grouping and an optional comma for the decimal
+    /// separator (e.g., `"EUR 1.234,56"`).
+    ///
+    /// # Arguments
+    ///
+    /// * `s` - A string slice in the format `"CCC amount"`, e.g. `"EUR 1.234,56"`
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MoneyError::CurrencyMismatch`] if the currency code in the string does
+    /// not match the currency type parameter `C`.
+    ///
+    /// Returns [`MoneyError::ParseStr`] if the string is not in the expected format.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, money_macros::dec, BaseMoney, EUR, USD};
+    ///
+    /// // Dot as thousand separator, comma as decimal
+    /// let money = Money::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
+    /// assert_eq!(money.amount(), dec!(1234.56));
+    /// assert_eq!(money.code(), "EUR");
+    ///
+    /// // Large amount with multiple dot thousand separators
+    /// let money = Money::<EUR>::from_str_dot_thousands("EUR 1.000.000,99").unwrap();
+    /// assert_eq!(money.amount(), dec!(1000000.99));
+    ///
+    /// // No thousand separator, only decimal comma
+    /// let money = Money::<EUR>::from_str_dot_thousands("EUR 100,50").unwrap();
+    /// assert_eq!(money.amount(), dec!(100.50));
+    ///
+    /// // Integer amount without decimal part
+    /// let money = Money::<EUR>::from_str_dot_thousands("EUR 1.234").unwrap();
+    /// assert_eq!(money.amount(), dec!(1234.00));
+    ///
+    /// // Error: currencies mismatch
+    /// assert!(Money::<USD>::from_str_dot_thousands("EUR 1.234,56").is_err());
+    ///
+    /// // Error: invalid format (wrong separator style)
+    /// assert!(Money::<EUR>::from_str_dot_thousands("EUR 1,234.56").is_err());
+    /// ```
+    pub fn from_str_dot_thousands(s: &str) -> Result<Self, MoneyError> {
+        let s = s.trim();
+
+        if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {
+            if currency_code != C::CODE {
+                return Err(MoneyError::CurrencyMismatch);
+            }
+            return Ok(Self::from_decimal(
+                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
+            ));
+        }
+
+        Err(MoneyError::ParseStr)
+    }
 }
 
 impl<C: Currency> Ord for Money<C>
@@ -215,30 +276,22 @@ where
 {
     type Err = MoneyError;
 
-    /// Implementation of string parsing for `Money`.
+    /// Implementation of string parsing for `Money` using comma as the thousands separator.
     ///
-    /// Parses a string representation of money in the format "CURRENCY AMOUNT".
-    /// Supports two thousand separator formats:
-    /// - Comma as thousand separator, dot as decimal separator (e.g., "USD 1,234.56")
-    /// - Dot as thousand separator, comma as decimal separator (e.g., "EUR 1.234,56")
+    /// Parses a string representation of money in the format `"CCC amount"` where
+    /// `CCC` is a 3-letter currency code and `amount` uses commas for thousand grouping
+    /// and an optional dot for the decimal separator (e.g., `"USD 1,234.56"`).
     ///
     /// The currency code must be a valid ISO 4217 alphabetic code.
     ///
-    /// # **IMPORTANT!**
-    ///
-    /// This function emphasize on comma as thousand separator.
-    /// First it will parse using comma as thousand separator,
-    /// if failed, it will parse using dot as thousand separator.
-    ///
-    /// So "EUR 100.000" will be parsed into 100.00 , since it succeed first parsing.
-    ///
-    /// "EUR 1.000.000,123" will be parsed into 1 million and 12 cents, since it failed first parsing, and succeed at second parsing.
-    ///
+    /// For strings that use dot as the thousands separator and comma as the decimal
+    /// separator (e.g., `"EUR 1.234,56"`), use
+    /// [`Money::from_str_dot_thousands`] instead.
     ///
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, money_macros::dec, BaseMoney, USD, EUR, GBP};
+    /// use moneylib::{Money, money_macros::dec, BaseMoney, USD, GBP};
     /// use std::str::FromStr;
     ///
     /// // Comma as thousand separator, dot as decimal
@@ -246,36 +299,27 @@ where
     /// assert_eq!(money.amount(), dec!(1234.56));
     /// assert_eq!(money.code(), "USD");
     ///
-    /// // Dot as thousand separator, comma as decimal
-    /// let money = Money::<EUR>::from_str("EUR 1.234,56").unwrap();
-    /// assert_eq!(money.amount(), dec!(1234.56));
-    /// assert_eq!(money.code(), "EUR");
-    ///
     /// // No thousand separator
     /// let money = Money::<GBP>::from_str("GBP 123.45").unwrap();
     /// assert_eq!(money.amount(), dec!(123.45));
+    ///
+    /// // Large amount with multiple comma thousand separators
+    /// let money = Money::<USD>::from_str("USD 1,000,000.99").unwrap();
+    /// assert_eq!(money.amount(), dec!(1000000.99));
     ///
     /// // Error: invalid format (currency must come first)
     /// assert!(Money::<USD>::from_str("100.00 USD").is_err());
     ///
     /// // Error: currencies mismatch
-    /// assert!(Money::<EUR>::from_str("USD 100.00").is_err());
+    /// assert!(Money::<USD>::from_str("EUR 100.00").is_err());
+    ///
+    /// // Error: dot thousands / comma decimal format not supported here
+    /// assert!(Money::<USD>::from_str("USD 1.234,56").is_err());
     /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
 
-        // Try parsing with comma thousands separator first
         if let Some((currency_code, amount_str)) = parse_comma_thousands_separator(s) {
-            if currency_code != C::CODE {
-                return Err(MoneyError::CurrencyMismatch);
-            }
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
-        }
-
-        // Try parsing with dot thousands separator
-        if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {
             if currency_code != C::CODE {
                 return Err(MoneyError::CurrencyMismatch);
             }
