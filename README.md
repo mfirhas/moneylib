@@ -133,6 +133,41 @@ Monetary values are sensitive matter and their invariants must always hold true.
 
 This library maintains type-safety by preventing invalid state either by returning `Result` or going *PANIC*.
 
+## Feature Flags
+
+### `raw_money`
+
+Enables the `RawMoney<C>` type which doesn't do automatic rounding like `Money<C>` does.
+It keeps full decimal precision and lets callers decide when to round.
+
+```toml
+[dependencies]
+moneylib = { version = "0.3.0", features = ["raw_money"] }
+```
+
+```rust
+use moneylib::{Money, RawMoney, BaseMoney, money_macros::dec, USD};
+
+// RawMoney preserves all decimal precision
+let raw = RawMoney::<USD>::new(dec!(100.567)).unwrap();
+assert_eq!(raw.amount(), dec!(100.567)); // Not rounded!
+
+// Convert from Money using into_raw()
+let money = Money::<USD>::new(dec!(100.50)).unwrap();
+let raw = money.into_raw();
+
+// Perform precise calculations
+let result = raw * dec!(1.08875); // Apply tax
+
+// Convert back to Money with rounding using finish()
+let final_money = result.finish();
+```
+
+Where rounding happens:
+- `.round()`: rounds using currency's minor unit (bankers rounding). Returns `RawMoney`.
+- `.round_with(...)`: rounds using custom decimal points and strategy. Returns `RawMoney`.
+- `.finish()`: rounds using currency's rounding strategy and converts to `Money`.
+
 ## Code Coverage
 
 This library maintains excellent code coverage.
