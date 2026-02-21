@@ -155,6 +155,8 @@ fn test_from_str_zero_amount_variations() {
     assert_eq!(money4.amount(), dec!(0.0000));
 
     let money5 = Money::<USD>::from_str("USD 0.00000").unwrap();
+    assert_eq!(money5.amount(), dec!(0));
+    assert_eq!(money5.amount(), dec!(0.00));
     assert_eq!(money5.amount(), dec!(0.00000));
 
     // All should be equal
