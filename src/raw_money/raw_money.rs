@@ -117,7 +117,7 @@ where
     /// assert_eq!(raw.amount(), dec!(123.309));
     /// ```
     #[inline]
-    pub fn from_decimal(amount: Decimal) -> Self {
+    pub const fn from_decimal(amount: Decimal) -> Self {
         Self {
             amount,
             _currency: PhantomData,
