@@ -211,6 +211,7 @@ where
 
         Err(MoneyError::ParseStr)
     }
+
 }
 
 impl<C: Currency> Ord for Money<C>
