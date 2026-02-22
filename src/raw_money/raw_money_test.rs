@@ -1,6 +1,7 @@
 use crate::money_macros::dec;
 use crate::{
-    BHD, BaseMoney, BaseOps, CustomMoney, EUR, GBP, JPY, Money, RawMoney, RoundingStrategy, USD,
+    BHD, BaseMoney, BaseOps, CustomMoney, EUR, GBP, JPY, Money, MoneyError, RawMoney,
+    RoundingStrategy, USD,
 };
 use std::str::FromStr;
 
@@ -515,6 +516,26 @@ fn test_from_str_dot_thousands() {
 fn test_from_str_dot_thousands_currency_mismatch() {
     let result = RawMoney::<USD>::from_str_dot_thousands("EUR 1.234,56");
     assert!(result.is_err());
+}
+
+#[test]
+fn test_from_str_dot_thousands_keep_precision() {
+    let result = RawMoney::<EUR>::from_str_dot_thousands("EUR 1.234,578396").unwrap();
+    assert_eq!(result.amount(), dec!(1_234.578396));
+}
+
+#[test]
+fn test_from_str_dot_thousands_invalid_format() {
+    let result = RawMoney::<EUR>::from_str_dot_thousands("EUR 1,234.578396");
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), MoneyError::ParseStr);
+}
+
+#[test]
+fn test_from_str_dot_thousands_invalid_format_2() {
+    let result = RawMoney::<EUR>::from_str_dot_thousands("EUR 1234.578396");
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), MoneyError::ParseStr);
 }
 
 // ==================== Real-world Use Case Tests ====================
