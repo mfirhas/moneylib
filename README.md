@@ -22,6 +22,8 @@ Here are some features supported:
   - Runtime check for overflowed/wrapped/truncated amount.
   - Prevents currencies mixing at compile-time.
 - Value type to represent money.
+  - `Money`: represents money in amount rounded to the currency's minor unit.
+  - `RawMoney`: represents money in raw amount keeping the precisions and choose when to round. 
 - Access to its amount and currency's metadata.
 - Arithmetics: (*,/,+,-), operator overloading supported.
 - Comparisons: (>,<,>=,<=,==,!=), operator overloading supported.
@@ -119,7 +121,7 @@ Monetary values are sensitive matter and their invariants must always hold true.
 ### Money
 - Always rounded to its currency's minor unit using bankers rounding after each creation and operation done on it.
 - Creating money from string only accepts currencies already defined in ISO 4217.
-- Comparisons: Currency type safety is enforced at compile time. Operations between different currencies won't compile.
+- Comparisons: Currency type-safety is enforced at compile time. Operations between different currencies won't compile.
 - Arithmetics:
   - *,+,-: will *PANIC* if overflowed. Currency mismatches are prevented at compile time.
   - /: will *PANIC* if overflowed or division by zero. Currency mismatches are prevented at compile time.
@@ -164,7 +166,7 @@ let final_money = result.finish();
 ```
 
 Where rounding happens:
-- `.round()`: rounds using currency's minor unit (bankers rounding). Returns `RawMoney`.
+- `.round()`: rounds to currency's minor unit using bankers rounding. Returns `RawMoney`.
 - `.round_with(...)`: rounds using custom decimal points and strategy. Returns `RawMoney`.
 - `.finish()`: rounds to currency's minor unit using bankers rounding back to `Money`.
 
