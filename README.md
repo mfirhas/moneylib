@@ -22,6 +22,8 @@ Here are some features supported:
   - Runtime check for overflowed/wrapped/truncated amount.
   - Prevents currencies mixing at compile-time.
 - Value type to represent money.
+  - `Money`: represents money in amount rounded to the currency's minor unit.
+  - `RawMoney`: represents money in raw amount keeping the precisions and choose when to round. 
 - Access to its amount and currency's metadata.
 - Arithmetics: (*,/,+,-), operator overloading supported.
 - Comparisons: (>,<,>=,<=,==,!=), operator overloading supported.
@@ -119,7 +121,7 @@ Monetary values are sensitive matter and their invariants must always hold true.
 ### Money
 - Always rounded to its currency's minor unit using bankers rounding after each creation and operation done on it.
 - Creating money from string only accepts currencies already defined in ISO 4217.
-- Comparisons: Currency type safety is enforced at compile time. Operations between different currencies won't compile.
+- Comparisons: Currency type-safety is enforced at compile time. Operations between different currencies won't compile.
 - Arithmetics:
   - *,+,-: will *PANIC* if overflowed. Currency mismatches are prevented at compile time.
   - /: will *PANIC* if overflowed or division by zero. Currency mismatches are prevented at compile time.
@@ -132,6 +134,41 @@ Monetary values are sensitive matter and their invariants must always hold true.
 - New/custom currency is supported by implementing `Currency` trait.
 
 This library maintains type-safety by preventing invalid state either by returning `Result` or going *PANIC*.
+
+## Feature Flags
+
+### `raw_money`
+
+Enables the `RawMoney<C>` type which doesn't do automatic rounding like `Money<C>` does.
+It keeps full decimal precision and lets callers decide when to round.
+
+```toml
+[dependencies]
+moneylib = { version = "0.4.0", features = ["raw_money"] }
+```
+
+```rust
+use moneylib::{BaseMoney, RawMoney, USD, Money, money_macros::dec};
+
+// RawMoney preserves all decimal precision
+let raw = RawMoney::<USD>::new(dec!(100.567)).unwrap();
+assert_eq!(raw.amount(), dec!(100.567)); // Not rounded!
+
+// Convert from Money using into_raw()
+let money = Money::<USD>::new(dec!(100.50)).unwrap();
+let raw = money.into_raw();
+
+// Perform precise calculations
+let result = raw * dec!(1.08875); // Apply tax
+
+// Convert back to Money with rounding using finish()
+let final_money = result.finish();
+```
+
+Where rounding happens:
+- `.round()`: rounds to currency's minor unit using bankers rounding. Returns `RawMoney`.
+- `.round_with(...)`: rounds using custom decimal points and strategy. Returns `RawMoney`.
+- `.finish()`: rounds to currency's minor unit using bankers rounding back to `Money`.
 
 ## Code Coverage
 
