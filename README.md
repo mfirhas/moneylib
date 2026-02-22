@@ -145,7 +145,8 @@ It keeps full decimal precision and lets callers decide when to round.
 moneylib = { version = "0.3.0", features = ["raw_money"] }
 ```
 
-```rust,ignore
+```rust
+use moneylib::{BaseMoney, RawMoney, USD, Money, money_macros::dec};
 
 // RawMoney preserves all decimal precision
 let raw = RawMoney::<USD>::new(dec!(100.567)).unwrap();
