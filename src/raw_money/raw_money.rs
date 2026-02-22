@@ -1,8 +1,4 @@
-use std::{
-    fmt::Display,
-    marker::PhantomData,
-    str::FromStr,
-};
+use std::{fmt::Display, marker::PhantomData, str::FromStr};
 
 use crate::{
     BaseMoney, BaseOps, Decimal, Money, MoneyError,
