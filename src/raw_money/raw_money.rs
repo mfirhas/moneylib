@@ -182,7 +182,7 @@ where
     /// ```
     #[inline]
     pub fn finish(self) -> Money<C> {
-        Money::from_decimal(BaseMoney::round(self).amount)
+        Money::from_decimal(self.amount())
     }
 
     /// Creates a new `RawMoney` from a string with dot as the thousands separator
