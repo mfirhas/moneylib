@@ -142,7 +142,7 @@ It keeps full decimal precision and lets callers decide when to round.
 
 ```toml
 [dependencies]
-moneylib = { version = "0.3.0", features = ["raw_money"] }
+moneylib = { version = "0.4.0", features = ["raw_money"] }
 ```
 
 ```rust
