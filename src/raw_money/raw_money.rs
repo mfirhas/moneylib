@@ -11,7 +11,7 @@ use crate::{
     parse::{parse_comma_thousands_separator, parse_dot_thousands_separator},
 };
 use crate::{Currency, CustomMoney};
-use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
+use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive};
 
 /// Represents a monetary value without automatic rounding.
 ///
@@ -35,7 +35,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 ///
 /// - [`BaseMoney::round`]: rounds using currency's minor unit (bankers rounding). Returns `RawMoney`.
 /// - [`CustomMoney::round_with`]: rounds using custom decimal points and strategy. Returns `RawMoney`.
-/// - [`RawMoney::finish`]: rounds using currency's rounding strategy and converts to `Money`.
+/// - [`RawMoney::finish`]: rounds to currency's minor unit using bankers rounding back to `Money`.
 ///
 /// # Examples
 ///
@@ -186,7 +186,7 @@ where
     /// ```
     #[inline]
     pub fn finish(self) -> Money<C> {
-        Money::from_decimal(self.amount)
+        Money::from_decimal(BaseMoney::round(self).amount)
     }
 
     /// Creates a new `RawMoney` from a string with dot as the thousands separator
@@ -359,12 +359,11 @@ where
     /// ```
     #[inline]
     fn minor_amount(&self) -> Result<i128, MoneyError> {
-        use rust_decimal::prelude::ToPrimitive;
         self.amount()
             .round_dp(C::MINOR_UNIT.into())
             .checked_mul(
                 dec!(10)
-                    .checked_powu(self.minor_unit().into())
+                    .checked_powu(C::MINOR_UNIT.into())
                     .ok_or(MoneyError::ArithmeticOverflow)?,
             )
             .ok_or(MoneyError::ArithmeticOverflow)?

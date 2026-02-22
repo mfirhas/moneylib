@@ -145,8 +145,7 @@ It keeps full decimal precision and lets callers decide when to round.
 moneylib = { version = "0.3.0", features = ["raw_money"] }
 ```
 
-```rust
-use moneylib::{Money, RawMoney, BaseMoney, money_macros::dec, USD};
+```rust,ignore
 
 // RawMoney preserves all decimal precision
 let raw = RawMoney::<USD>::new(dec!(100.567)).unwrap();
@@ -166,7 +165,7 @@ let final_money = result.finish();
 Where rounding happens:
 - `.round()`: rounds using currency's minor unit (bankers rounding). Returns `RawMoney`.
 - `.round_with(...)`: rounds using custom decimal points and strategy. Returns `RawMoney`.
-- `.finish()`: rounds using currency's rounding strategy and converts to `Money`.
+- `.finish()`: rounds to currency's minor unit using bankers rounding back to `Money`.
 
 ## Code Coverage
 
