@@ -33,7 +33,7 @@ mod raw_money;
 pub use raw_money::RawMoney;
 
 #[cfg(feature = "serde")]
-mod serde;
+pub mod serde;
 
 mod fmt;
 
