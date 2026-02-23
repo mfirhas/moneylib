@@ -13,8 +13,10 @@ categories = ["finance", "data-structures"]
 [features]
 default = []
 raw_money = []
+serde = ["dep:serde"]
 
 [dependencies]
 rust_decimal = { version = "1.40.0", default-features = false, features = ["maths", "macros"] }
 currencylib = "0.1.0"
+serde = { version = "1.0", default-features = false, optional = true }
 
