@@ -87,8 +87,7 @@ fn test_comma_str_code_serialize_negative() {
 
 #[test]
 fn test_comma_str_code_deserialize() {
-    let p: PaymentCommaCode =
-        serde_json::from_str(r#"{"amount":"USD 1,234.56789"}"#).unwrap();
+    let p: PaymentCommaCode = serde_json::from_str(r#"{"amount":"USD 1,234.56789"}"#).unwrap();
     assert_eq!(p.amount.amount(), dec!(1234.56789));
     assert_eq!(p.amount.code(), "USD");
 }
@@ -131,8 +130,7 @@ fn test_option_comma_str_code_serialize_none() {
 
 #[test]
 fn test_option_comma_str_code_deserialize_some() {
-    let p: PaymentOptCommaCode =
-        serde_json::from_str(r#"{"amount":"USD 1,234.56789"}"#).unwrap();
+    let p: PaymentOptCommaCode = serde_json::from_str(r#"{"amount":"USD 1,234.56789"}"#).unwrap();
     assert_eq!(p.amount.unwrap().amount(), dec!(1234.56789));
 }
 
@@ -172,16 +170,14 @@ fn test_comma_str_symbol_serialize_negative() {
 
 #[test]
 fn test_comma_str_symbol_deserialize() {
-    let p: PaymentCommaSymbol =
-        serde_json::from_str(r#"{"amount":"$1,234.56789"}"#).unwrap();
+    let p: PaymentCommaSymbol = serde_json::from_str(r#"{"amount":"$1,234.56789"}"#).unwrap();
     assert_eq!(p.amount.amount(), dec!(1234.56789));
     assert_eq!(p.amount.code(), "USD");
 }
 
 #[test]
 fn test_comma_str_symbol_deserialize_negative() {
-    let p: PaymentCommaSymbol =
-        serde_json::from_str(r#"{"amount":"-$1,234.56789"}"#).unwrap();
+    let p: PaymentCommaSymbol = serde_json::from_str(r#"{"amount":"-$1,234.56789"}"#).unwrap();
     assert_eq!(p.amount.amount(), dec!(-1234.56789));
 }
 
@@ -223,8 +219,7 @@ fn test_option_comma_str_symbol_serialize_none() {
 
 #[test]
 fn test_option_comma_str_symbol_deserialize_some() {
-    let p: PaymentOptCommaSymbol =
-        serde_json::from_str(r#"{"amount":"$1,234.56789"}"#).unwrap();
+    let p: PaymentOptCommaSymbol = serde_json::from_str(r#"{"amount":"$1,234.56789"}"#).unwrap();
     assert_eq!(p.amount.unwrap().amount(), dec!(1234.56789));
 }
 
@@ -264,8 +259,7 @@ fn test_dot_str_code_serialize_negative() {
 
 #[test]
 fn test_dot_str_code_deserialize() {
-    let p: PaymentDotCode =
-        serde_json::from_str(r#"{"amount":"EUR 1.234,56789"}"#).unwrap();
+    let p: PaymentDotCode = serde_json::from_str(r#"{"amount":"EUR 1.234,56789"}"#).unwrap();
     assert_eq!(p.amount.amount(), dec!(1234.56789));
     assert_eq!(p.amount.code(), "EUR");
 }
@@ -308,8 +302,7 @@ fn test_option_dot_str_code_serialize_none() {
 
 #[test]
 fn test_option_dot_str_code_deserialize_some() {
-    let p: PaymentOptDotCode =
-        serde_json::from_str(r#"{"amount":"EUR 1.234,56789"}"#).unwrap();
+    let p: PaymentOptDotCode = serde_json::from_str(r#"{"amount":"EUR 1.234,56789"}"#).unwrap();
     assert_eq!(p.amount.unwrap().amount(), dec!(1234.56789));
 }
 
@@ -349,16 +342,14 @@ fn test_dot_str_symbol_serialize_negative() {
 
 #[test]
 fn test_dot_str_symbol_deserialize() {
-    let p: PaymentDotSymbol =
-        serde_json::from_str(r#"{"amount":"€1.234,56789"}"#).unwrap();
+    let p: PaymentDotSymbol = serde_json::from_str(r#"{"amount":"€1.234,56789"}"#).unwrap();
     assert_eq!(p.amount.amount(), dec!(1234.56789));
     assert_eq!(p.amount.code(), "EUR");
 }
 
 #[test]
 fn test_dot_str_symbol_deserialize_negative() {
-    let p: PaymentDotSymbol =
-        serde_json::from_str(r#"{"amount":"-€1.234,56789"}"#).unwrap();
+    let p: PaymentDotSymbol = serde_json::from_str(r#"{"amount":"-€1.234,56789"}"#).unwrap();
     assert_eq!(p.amount.amount(), dec!(-1234.56789));
 }
 
@@ -400,8 +391,7 @@ fn test_option_dot_str_symbol_serialize_none() {
 
 #[test]
 fn test_option_dot_str_symbol_deserialize_some() {
-    let p: PaymentOptDotSymbol =
-        serde_json::from_str(r#"{"amount":"€1.234,56789"}"#).unwrap();
+    let p: PaymentOptDotSymbol = serde_json::from_str(r#"{"amount":"€1.234,56789"}"#).unwrap();
     assert_eq!(p.amount.unwrap().amount(), dec!(1234.56789));
 }
 
@@ -410,7 +400,6 @@ fn test_option_dot_str_symbol_deserialize_none() {
     let p: PaymentOptDotSymbol = serde_json::from_str(r#"{"amount":null}"#).unwrap();
     assert!(p.amount.is_none());
 }
-
 
 // ---------------------------------------------------------------------------
 // YAML serialize/deserialize (string modes)
@@ -423,7 +412,9 @@ fn test_yaml_comma_str_code_serialize() {
         #[serde(with = "crate::serde::raw_money::comma_str_code")]
         amount: RawMoney<USD>,
     }
-    let w = W { amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)) };
+    let w = W {
+        amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)),
+    };
     let yaml = serde_yaml::to_string(&w).unwrap();
     assert_eq!(yaml, "amount: USD 1,234.56789\n");
 }
@@ -447,7 +438,9 @@ fn test_yaml_comma_str_code_roundtrip() {
         #[serde(with = "crate::serde::raw_money::comma_str_code")]
         amount: RawMoney<USD>,
     }
-    let original = W { amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)) };
+    let original = W {
+        amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)),
+    };
     let yaml = serde_yaml::to_string(&original).unwrap();
     let result: W = serde_yaml::from_str(&yaml).unwrap();
     assert_eq!(original.amount, result.amount);
@@ -460,7 +453,9 @@ fn test_yaml_comma_str_symbol_serialize() {
         #[serde(with = "crate::serde::raw_money::comma_str_symbol")]
         amount: RawMoney<USD>,
     }
-    let w = W { amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)) };
+    let w = W {
+        amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)),
+    };
     let yaml = serde_yaml::to_string(&w).unwrap();
     assert_eq!(yaml, "amount: $1,234.56789\n");
 }
@@ -483,7 +478,9 @@ fn test_yaml_dot_str_code_serialize() {
         #[serde(with = "crate::serde::raw_money::dot_str_code")]
         amount: RawMoney<EUR>,
     }
-    let w = W { amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)) };
+    let w = W {
+        amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)),
+    };
     let yaml = serde_yaml::to_string(&w).unwrap();
     assert_eq!(yaml, "amount: EUR 1.234,56789\n");
 }
@@ -507,7 +504,9 @@ fn test_yaml_dot_str_symbol_serialize() {
         #[serde(with = "crate::serde::raw_money::dot_str_symbol")]
         amount: RawMoney<EUR>,
     }
-    let w = W { amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)) };
+    let w = W {
+        amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)),
+    };
     let yaml = serde_yaml::to_string(&w).unwrap();
     assert_eq!(yaml, "amount: €1.234,56789\n");
 }
@@ -530,7 +529,9 @@ fn test_yaml_option_comma_str_code_serialize_some() {
         #[serde(with = "crate::serde::raw_money::option_comma_str_code")]
         amount: Option<RawMoney<USD>>,
     }
-    let w = W { amount: Some(RawMoney::<USD>::from_decimal(dec!(1234.56789))) };
+    let w = W {
+        amount: Some(RawMoney::<USD>::from_decimal(dec!(1234.56789))),
+    };
     let yaml = serde_yaml::to_string(&w).unwrap();
     assert_eq!(yaml, "amount: USD 1,234.56789\n");
 }
@@ -580,7 +581,9 @@ fn test_toml_comma_str_code_serialize() {
         #[serde(with = "crate::serde::raw_money::comma_str_code")]
         amount: RawMoney<USD>,
     }
-    let w = W { amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)) };
+    let w = W {
+        amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)),
+    };
     let t = toml::to_string(&w).unwrap();
     assert_eq!(t, "amount = \"USD 1,234.56789\"\n");
 }
@@ -604,7 +607,9 @@ fn test_toml_comma_str_code_roundtrip() {
         #[serde(with = "crate::serde::raw_money::comma_str_code")]
         amount: RawMoney<USD>,
     }
-    let original = W { amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)) };
+    let original = W {
+        amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)),
+    };
     let t = toml::to_string(&original).unwrap();
     let result: W = toml::from_str(&t).unwrap();
     assert_eq!(original.amount, result.amount);
@@ -617,7 +622,9 @@ fn test_toml_comma_str_symbol_serialize() {
         #[serde(with = "crate::serde::raw_money::comma_str_symbol")]
         amount: RawMoney<USD>,
     }
-    let w = W { amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)) };
+    let w = W {
+        amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)),
+    };
     let t = toml::to_string(&w).unwrap();
     assert_eq!(t, "amount = \"$1,234.56789\"\n");
 }
@@ -640,7 +647,9 @@ fn test_toml_dot_str_code_serialize() {
         #[serde(with = "crate::serde::raw_money::dot_str_code")]
         amount: RawMoney<EUR>,
     }
-    let w = W { amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)) };
+    let w = W {
+        amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)),
+    };
     let t = toml::to_string(&w).unwrap();
     assert_eq!(t, "amount = \"EUR 1.234,56789\"\n");
 }
@@ -664,7 +673,9 @@ fn test_toml_dot_str_symbol_serialize() {
         #[serde(with = "crate::serde::raw_money::dot_str_symbol")]
         amount: RawMoney<EUR>,
     }
-    let w = W { amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)) };
+    let w = W {
+        amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)),
+    };
     let t = toml::to_string(&w).unwrap();
     assert_eq!(t, "amount = \"€1.234,56789\"\n");
 }
@@ -687,7 +698,9 @@ fn test_toml_option_comma_str_code_serialize_some() {
         #[serde(with = "crate::serde::raw_money::option_comma_str_code")]
         amount: Option<RawMoney<USD>>,
     }
-    let w = W { amount: Some(RawMoney::<USD>::from_decimal(dec!(1234.56789))) };
+    let w = W {
+        amount: Some(RawMoney::<USD>::from_decimal(dec!(1234.56789))),
+    };
     let t = toml::to_string(&w).unwrap();
     assert_eq!(t, "amount = \"USD 1,234.56789\"\n");
 }
