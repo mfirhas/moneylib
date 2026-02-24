@@ -1182,3 +1182,29 @@ fn test_toml_option_dot_str_symbol_deserialize_some() {
     let w: W = toml::from_str(r#"amount = "€1.234,56789""#).unwrap();
     assert_eq!(w.amount.unwrap().amount(), dec!(1234.56789));
 }
+
+// ---------------------------------------------------------------------------
+// RawMoneyVisitor: expecting and visit_f64
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_default_visitor_expecting_error_message() {
+    // Deserializing a boolean triggers visit_bool (not implemented), which uses
+    // `expecting` to generate the "invalid type" error message.
+    let result: Result<RawMoney<USD>, _> = serde_json::from_str("true");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("a number"));
+}
+
+#[test]
+fn test_default_visitor_visit_f64() {
+    // serde_json enables arbitrary_precision, which routes numbers through visit_map.
+    // Use serde's F64Deserializer to exercise visit_f64 directly.
+    use serde::Deserialize;
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::F64Deserializer<serde::de::value::Error> =
+        1234.56_f64.into_deserializer();
+    let raw = RawMoney::<USD>::deserialize(d).unwrap();
+    assert_eq!(raw.code(), "USD");
+    assert_eq!(raw.amount(), dec!(1234.56));
+}
