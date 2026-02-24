@@ -794,15 +794,13 @@ fn test_comma_str_symbol_deserialize_wrong_symbol() {
 
 #[test]
 fn test_dot_str_code_deserialize_wrong_currency() {
-    let result: Result<PaymentDotCode, _> =
-        serde_json::from_str(r#"{"amount":"USD 1.234,56789"}"#);
+    let result: Result<PaymentDotCode, _> = serde_json::from_str(r#"{"amount":"USD 1.234,56789"}"#);
     assert!(result.is_err());
 }
 
 #[test]
 fn test_dot_str_symbol_deserialize_wrong_symbol() {
-    let result: Result<PaymentDotSymbol, _> =
-        serde_json::from_str(r#"{"amount":"$1.234,56789"}"#);
+    let result: Result<PaymentDotSymbol, _> = serde_json::from_str(r#"{"amount":"$1.234,56789"}"#);
     assert!(result.is_err());
 }
 
