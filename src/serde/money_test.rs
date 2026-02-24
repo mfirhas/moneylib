@@ -1312,3 +1312,100 @@ fn test_deserialize_expecting_message() {
     assert!(w.is_err());
     println!("D: {:?}", w.err());
 }
+
+#[test]
+fn test_all() {
+    #[derive(Debug, ::serde::Serialize, ::serde::Deserialize)]
+    struct All {
+        amount_from_f64: Money<USD>,
+
+        amount_from_i64: Money<EUR>,
+
+        amount_from_u64: Money<USD>,
+
+        amount_from_i128: Money<USD>,
+
+        amount_from_u128: Money<USD>,
+
+        amount_from_str: Money<USD>,
+
+        #[serde(with = "crate::serde::money::comma_str_code")]
+        amount_from_str_comma_code: Money<USD>,
+
+        #[serde(with = "crate::serde::money::option_comma_str_code")]
+        amount_from_str_comma_code_some: Option<Money<USD>>,
+
+        #[serde(with = "crate::serde::money::option_comma_str_code")]
+        amount_from_str_comma_code_none: Option<Money<USD>>,
+
+        // `default` must be declared if you want to let users omit this field making it `None`.
+        #[serde(with = "crate::serde::money::option_comma_str_code", default)]
+        amount_from_str_comma_code_omit: Option<Money<USD>>,
+
+        #[serde(with = "crate::serde::money::comma_str_symbol")]
+        amount_from_str_comma_symbol: Money<USD>,
+
+        #[serde(with = "crate::serde::money::option_comma_str_symbol")]
+        amount_from_str_comma_symbol_some: Option<Money<USD>>,
+
+        #[serde(with = "crate::serde::money::option_comma_str_symbol")]
+        amount_from_str_comma_symbol_none: Option<Money<USD>>,
+
+        // `default` must be declared if you want to let users omit this field making it `None`.
+        #[serde(with = "crate::serde::money::option_comma_str_symbol", default)]
+        amount_from_str_comma_symbol_omit: Option<Money<USD>>,
+
+        // dot
+        #[serde(with = "crate::serde::money::dot_str_code")]
+        amount_from_str_dot_code: Money<EUR>,
+
+        #[serde(with = "crate::serde::money::option_dot_str_code")]
+        amount_from_str_dot_code_some: Option<Money<EUR>>,
+
+        #[serde(with = "crate::serde::money::option_dot_str_code")]
+        amount_from_str_dot_code_none: Option<Money<EUR>>,
+
+        // `default` must be declared if you want to let users omit this field making it `None`.
+        #[serde(with = "crate::serde::money::option_dot_str_code", default)]
+        amount_from_str_dot_code_omit: Option<Money<EUR>>,
+
+        #[serde(with = "crate::serde::money::dot_str_symbol")]
+        amount_from_str_dot_symbol: Money<EUR>,
+
+        #[serde(with = "crate::serde::money::option_dot_str_symbol")]
+        amount_from_str_dot_symbol_some: Option<Money<EUR>>,
+
+        #[serde(with = "crate::serde::money::option_dot_str_symbol")]
+        amount_from_str_dot_symbol_none: Option<Money<EUR>>,
+
+        // `default` must be declared if you want to let users omit this field making it `None`.
+        #[serde(with = "crate::serde::money::option_dot_str_symbol", default)]
+        amount_from_str_dot_symbol_omit: Option<Money<EUR>>,
+    }
+
+    let json_str = r#"
+        {
+          "amount_from_f64": 1234.56988,
+          "amount_from_i64": -1234,
+          "amount_from_u64": 18446744073709551615,
+          "amount_from_i128": -1844674407370955161588,
+          "amount_from_u128": 34028236692093846346337,
+          "amount_from_str": "1234.56",
+          "amount_from_str_comma_code": "USD 1,234.56",
+          "amount_from_str_comma_code_some": "USD 2,000.00",
+          "amount_from_str_comma_code_none": null,
+          "amount_from_str_comma_symbol": "$1,234.56",
+          "amount_from_str_comma_symbol_some": "$2,345.67",
+          "amount_from_str_comma_symbol_none": null,
+          "amount_from_str_dot_code": "EUR 1.234,56",
+          "amount_from_str_dot_code_some": "EUR 2.000,00",
+          "amount_from_str_dot_code_none": null,
+          "amount_from_str_dot_symbol": "€1.234,56",
+          "amount_from_str_dot_symbol_some": "€2.345,67",
+          "amount_from_str_dot_symbol_none": null
+        }
+    "#;
+    let all = serde_json::from_str::<All>(json_str);
+    assert!(all.is_ok());
+    println!("{:?}", all.unwrap());
+}
