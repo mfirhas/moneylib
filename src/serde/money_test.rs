@@ -1209,28 +1209,106 @@ fn test_toml_option_dot_str_symbol_deserialize_some() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn test_default_deserialize_visit_f64() {
-    // serde_yaml calls visit_f64 for floating-point values (unlike serde_json
-    // with arbitrary_precision which routes floats through visit_map)
+fn test_default_deserialize_visit_number_types() {
+    // f64
     let money: Money<USD> = serde_yaml::from_str("100.25").unwrap();
-    assert_eq!(money.amount(), Money::<USD>::new(100.25_f64).unwrap().amount());
+    assert_eq!(
+        money.amount(),
+        Money::<USD>::new(100.25_f64).unwrap().amount()
+    );
+
+    // f64 rounded
+    let money: Money<USD> = serde_yaml::from_str("100.25899").unwrap();
+    assert_eq!(
+        money.amount(),
+        Money::<USD>::new(100.26_f64).unwrap().amount()
+    );
+
+    // i64
+    let money: Money<USD> = serde_yaml::from_str("-123234").unwrap();
+    assert_eq!(
+        money.amount(),
+        Money::<USD>::new(-123234_i64).unwrap().amount()
+    );
+
+    // i128
+    let money: Money<USD> = serde_yaml::from_str("-9223372036854775809").unwrap();
+    assert_eq!(
+        money.amount(),
+        Money::<USD>::new(-9223372036854775809_i128)
+            .unwrap()
+            .amount()
+    );
+
+    // u128
+    let money: Money<USD> = serde_yaml::from_str("92233720368547758100").unwrap();
+    assert_eq!(
+        money.amount(),
+        Money::<USD>::new(92233720368547758100_i128)
+            .unwrap()
+            .amount()
+    );
+
+    // from str
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct A {
+        amount: Money<USD>,
+    }
+    let money = serde_yaml::from_str::<A>(r#"{"amount":"123"}"#).unwrap();
+    assert_eq!(money.amount, Money::<USD>::from_decimal(dec!(123)));
 }
 
 #[test]
 fn test_default_deserialize_visit_f64_negative() {
     let money: Money<USD> = serde_yaml::from_str("-50.5").unwrap();
-    assert_eq!(money.amount(), Money::<USD>::new(-50.5_f64).unwrap().amount());
+    assert_eq!(
+        money.amount(),
+        Money::<USD>::new(-50.5_f64).unwrap().amount()
+    );
 }
 
 #[test]
-fn test_default_deserialize_expecting_message() {
-    // Providing a boolean triggers the visitor's expecting() message in the
-    // error because visit_bool falls back to the serde default which uses
-    // the expecting() output: "invalid type: boolean `true`, expected a number"
+fn test_deserialize_expecting_message() {
     let err = serde_json::from_str::<Money<USD>>("true").unwrap_err();
     assert!(
         err.to_string().contains("a number"),
         "error message should contain 'a number', got: {}",
         err
     );
+
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct A {
+        #[serde(with = "crate::serde::money::comma_str_code")]
+        amount: Money<USD>,
+    }
+    let w = serde_json::from_str::<A>(r#"{"amount":123}"#);
+    assert!(w.is_err());
+    println!("A: {:?}", w.err());
+
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct B {
+        #[serde(with = "crate::serde::money::dot_str_code")]
+        amount: Money<EUR>,
+    }
+    let w = serde_json::from_str::<B>(r#"{"amount":234}"#);
+    assert!(w.is_err());
+    println!("B: {:?}", w.err());
+
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct C {
+        #[serde(with = "crate::serde::money::comma_str_symbol")]
+        amount: Money<USD>,
+    }
+    let w = serde_json::from_str::<C>(r#"{"amount":234}"#);
+    assert!(w.is_err());
+    println!("C: {:?}", w.err());
+
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct D {
+        #[serde(with = "crate::serde::money::dot_str_symbol")]
+        amount: Money<USD>,
+    }
+    let w = serde_json::from_str::<D>(r#"{"amount":234}"#);
+    assert!(w.is_err());
+    println!("D: {:?}", w.err());
 }

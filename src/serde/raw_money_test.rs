@@ -1188,23 +1188,106 @@ fn test_toml_option_dot_str_symbol_deserialize_some() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn test_default_visitor_expecting_error_message() {
-    // Deserializing a boolean triggers visit_bool (not implemented), which uses
-    // `expecting` to generate the "invalid type" error message.
-    let result: Result<RawMoney<USD>, _> = serde_json::from_str("true");
-    assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("a number"));
+fn test_default_deserialize_visit_number_types() {
+    // f64
+    let money: RawMoney<USD> = serde_yaml::from_str("100.25").unwrap();
+    assert_eq!(
+        money.amount(),
+        RawMoney::<USD>::new(100.25_f64).unwrap().amount()
+    );
+
+    // f64 rounded
+    let money: RawMoney<USD> = serde_yaml::from_str("100.25899").unwrap();
+    assert_eq!(
+        money.amount(),
+        RawMoney::<USD>::new(100.25899_f64).unwrap().amount()
+    );
+
+    // i64
+    let money: RawMoney<USD> = serde_yaml::from_str("-123234").unwrap();
+    assert_eq!(
+        money.amount(),
+        RawMoney::<USD>::new(-123234_i64).unwrap().amount()
+    );
+
+    // i128
+    let money: RawMoney<USD> = serde_yaml::from_str("-9223372036854775809").unwrap();
+    assert_eq!(
+        money.amount(),
+        RawMoney::<USD>::new(-9223372036854775809_i128)
+            .unwrap()
+            .amount()
+    );
+
+    // u128
+    let money: RawMoney<USD> = serde_yaml::from_str("92233720368547758100").unwrap();
+    assert_eq!(
+        money.amount(),
+        RawMoney::<USD>::new(92233720368547758100_i128)
+            .unwrap()
+            .amount()
+    );
+
+    // from str
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct A {
+        amount: RawMoney<USD>,
+    }
+    let money = serde_yaml::from_str::<A>(r#"{"amount":"123"}"#).unwrap();
+    assert_eq!(money.amount, RawMoney::<USD>::from_decimal(dec!(123)));
 }
 
 #[test]
-fn test_default_visitor_visit_f64() {
-    // serde_json enables arbitrary_precision, which routes numbers through visit_map.
-    // Use serde's F64Deserializer to exercise visit_f64 directly.
-    use serde::Deserialize;
-    use serde::de::IntoDeserializer;
-    let d: serde::de::value::F64Deserializer<serde::de::value::Error> =
-        1234.56_f64.into_deserializer();
-    let raw = RawMoney::<USD>::deserialize(d).unwrap();
-    assert_eq!(raw.code(), "USD");
-    assert_eq!(raw.amount(), dec!(1234.56));
+fn test_default_deserialize_visit_f64_negative() {
+    let money: RawMoney<USD> = serde_yaml::from_str("-50.5").unwrap();
+    assert_eq!(
+        money.amount(),
+        RawMoney::<USD>::new(-50.5_f64).unwrap().amount()
+    );
+}
+
+#[test]
+fn test_deserialize_expecting_message() {
+    let err = serde_json::from_str::<RawMoney<USD>>("true").unwrap_err();
+    assert!(
+        err.to_string().contains("a number"),
+        "error message should contain 'a number', got: {}",
+        err
+    );
+
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct A {
+        #[serde(with = "crate::serde::raw_money::comma_str_code")]
+        amount: RawMoney<USD>,
+    }
+    let w = serde_json::from_str::<A>(r#"{"amount":123}"#);
+    assert!(w.is_err());
+    println!("A: {:?}", w.err());
+
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct B {
+        #[serde(with = "crate::serde::raw_money::dot_str_code")]
+        amount: RawMoney<EUR>,
+    }
+    let w = serde_json::from_str::<B>(r#"{"amount":234}"#);
+    assert!(w.is_err());
+    println!("B: {:?}", w.err());
+
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct C {
+        #[serde(with = "crate::serde::raw_money::comma_str_symbol")]
+        amount: RawMoney<USD>,
+    }
+    let w = serde_json::from_str::<C>(r#"{"amount":234}"#);
+    assert!(w.is_err());
+    println!("C: {:?}", w.err());
+
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct D {
+        #[serde(with = "crate::serde::raw_money::dot_str_symbol")]
+        amount: RawMoney<USD>,
+    }
+    let w = serde_json::from_str::<D>(r#"{"amount":234}"#);
+    assert!(w.is_err());
+    println!("D: {:?}", w.err());
 }
