@@ -1,3 +1,5 @@
+use currencylib::IDR;
+
 use crate::money_macros::dec;
 use crate::{
     BHD, BaseMoney, BaseOps, CustomMoney, EUR, GBP, JPY, Money, MoneyError, RawMoney,
@@ -43,6 +45,12 @@ fn test_new_jpy_no_rounding() {
     // JPY has 0 decimal places but RawMoney should NOT round
     let raw = RawMoney::<JPY>::new(dec!(100.567)).unwrap();
     assert_eq!(raw.amount(), dec!(100.567));
+}
+
+#[test]
+fn test_raw_money_default() {
+    let money = RawMoney::<IDR>::default();
+    assert!(money.is_zero());
 }
 
 // ==================== RawMoney::from_decimal() Tests ====================

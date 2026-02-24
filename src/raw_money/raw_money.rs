@@ -214,6 +214,16 @@ where
     }
 }
 
+impl<C: Currency> Default for RawMoney<C> {
+    /// Returns money with zero amount.
+    fn default() -> Self {
+        Self {
+            amount: Decimal::default(),
+            _currency: PhantomData,
+        }
+    }
+}
+
 impl<C: Currency> Ord for RawMoney<C>
 where
     C: Currency + PartialEq + Eq,

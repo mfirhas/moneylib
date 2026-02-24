@@ -1,3 +1,5 @@
+use currencylib::IDR;
+
 use crate::money_macros::dec;
 use crate::{
     BHD, BaseMoney, BaseOps, CustomMoney, EUR, GBP, JPY, Money, MoneyError, RoundingStrategy, USD,
@@ -28,6 +30,12 @@ fn test_new_with_negative_amount() {
 fn test_new_with_large_amount() {
     let money = Money::<JPY>::new(dec!(999999999.99)).unwrap();
     assert_eq!(money.amount(), dec!(1000000000));
+}
+
+#[test]
+fn test_money_default() {
+    let money = Money::<IDR>::default();
+    assert!(money.is_zero());
 }
 
 // ==================== PartialEq Tests ====================
