@@ -1203,3 +1203,34 @@ fn test_toml_option_dot_str_symbol_deserialize_some() {
     let w: W = toml::from_str(r#"amount = "€1.234,56""#).unwrap();
     assert_eq!(w.amount.unwrap().amount(), dec!(1234.56));
 }
+
+// ---------------------------------------------------------------------------
+// MoneyVisitor: visit_f64 and expecting
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_default_deserialize_visit_f64() {
+    // serde_yaml calls visit_f64 for floating-point values (unlike serde_json
+    // with arbitrary_precision which routes floats through visit_map)
+    let money: Money<USD> = serde_yaml::from_str("100.25").unwrap();
+    assert_eq!(money.amount(), Money::<USD>::new(100.25_f64).unwrap().amount());
+}
+
+#[test]
+fn test_default_deserialize_visit_f64_negative() {
+    let money: Money<USD> = serde_yaml::from_str("-50.5").unwrap();
+    assert_eq!(money.amount(), Money::<USD>::new(-50.5_f64).unwrap().amount());
+}
+
+#[test]
+fn test_default_deserialize_expecting_message() {
+    // Providing a boolean triggers the visitor's expecting() message in the
+    // error because visit_bool falls back to the serde default which uses
+    // the expecting() output: "invalid type: boolean `true`, expected a number"
+    let err = serde_json::from_str::<Money<USD>>("true").unwrap_err();
+    assert!(
+        err.to_string().contains("a number"),
+        "error message should contain 'a number', got: {}",
+        err
+    );
+}
