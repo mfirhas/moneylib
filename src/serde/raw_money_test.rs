@@ -1,3 +1,5 @@
+use currencylib::{CAD, IDR};
+
 use crate::{BaseMoney, RawMoney, money_macros::dec};
 use crate::{EUR, GBP, JPY, USD};
 
@@ -1290,4 +1292,176 @@ fn test_deserialize_expecting_message() {
     let w = serde_json::from_str::<D>(r#"{"amount":234}"#);
     assert!(w.is_err());
     println!("D: {:?}", w.err());
+}
+
+#[test]
+fn test_all() {
+    #[derive(Debug, ::serde::Serialize, ::serde::Deserialize)]
+    struct All {
+        amount_from_f64: RawMoney<USD>,
+
+        // `default` must be declared if you want to let users omit this field giving it money with zero amount.
+        #[serde(default)]
+        amount_from_f64_omit: RawMoney<IDR>,
+
+        // `default` must be declared if you want to let users omit this field giving it money with zero amount.
+        #[serde(default)]
+        amount_from_str_omit: RawMoney<CAD>,
+
+        amount_from_i64: RawMoney<EUR>,
+
+        amount_from_u64: RawMoney<USD>,
+
+        amount_from_i128: RawMoney<USD>,
+
+        amount_from_u128: RawMoney<USD>,
+
+        amount_from_str: RawMoney<USD>,
+
+        #[serde(with = "crate::serde::raw_money::comma_str_code")]
+        amount_from_str_comma_code: RawMoney<USD>,
+
+        #[serde(with = "crate::serde::raw_money::option_comma_str_code")]
+        amount_from_str_comma_code_some: Option<RawMoney<USD>>,
+
+        #[serde(with = "crate::serde::raw_money::option_comma_str_code")]
+        amount_from_str_comma_code_none: Option<RawMoney<USD>>,
+
+        // `default` must be declared if you want to let users omit this field making it `None`.
+        #[serde(with = "crate::serde::raw_money::option_comma_str_code", default)]
+        amount_from_str_comma_code_omit: Option<RawMoney<USD>>,
+
+        #[serde(with = "crate::serde::raw_money::comma_str_symbol")]
+        amount_from_str_comma_symbol: RawMoney<USD>,
+
+        #[serde(with = "crate::serde::raw_money::option_comma_str_symbol")]
+        amount_from_str_comma_symbol_some: Option<RawMoney<USD>>,
+
+        #[serde(with = "crate::serde::raw_money::option_comma_str_symbol")]
+        amount_from_str_comma_symbol_none: Option<RawMoney<USD>>,
+
+        // `default` must be declared if you want to let users omit this field making it `None`.
+        #[serde(with = "crate::serde::raw_money::option_comma_str_symbol", default)]
+        amount_from_str_comma_symbol_omit: Option<RawMoney<USD>>,
+
+        // dot
+        #[serde(with = "crate::serde::raw_money::dot_str_code")]
+        amount_from_str_dot_code: RawMoney<EUR>,
+
+        #[serde(with = "crate::serde::raw_money::option_dot_str_code")]
+        amount_from_str_dot_code_some: Option<RawMoney<EUR>>,
+
+        #[serde(with = "crate::serde::raw_money::option_dot_str_code")]
+        amount_from_str_dot_code_none: Option<RawMoney<EUR>>,
+
+        // `default` must be declared if you want to let users omit this field making it `None`.
+        #[serde(with = "crate::serde::raw_money::option_dot_str_code", default)]
+        amount_from_str_dot_code_omit: Option<RawMoney<EUR>>,
+
+        #[serde(with = "crate::serde::raw_money::dot_str_symbol")]
+        amount_from_str_dot_symbol: RawMoney<EUR>,
+
+        #[serde(with = "crate::serde::raw_money::option_dot_str_symbol")]
+        amount_from_str_dot_symbol_some: Option<RawMoney<EUR>>,
+
+        #[serde(with = "crate::serde::raw_money::option_dot_str_symbol")]
+        amount_from_str_dot_symbol_none: Option<RawMoney<EUR>>,
+
+        // `default` must be declared if you want to let users omit this field making it `None`.
+        #[serde(with = "crate::serde::raw_money::option_dot_str_symbol", default)]
+        amount_from_str_dot_symbol_omit: Option<RawMoney<EUR>>,
+    }
+
+    let json_str = r#"
+        {
+          "amount_from_f64": 1234.56988,
+          "amount_from_i64": -1234,
+          "amount_from_u64": 18446744073709551615,
+          "amount_from_i128": -1844674407370955161588,
+          "amount_from_u128": 34028236692093846346337,
+          "amount_from_str": "1234.56",
+          "amount_from_str_comma_code": "USD 1,234.56",
+          "amount_from_str_comma_code_some": "USD 2,000.00",
+          "amount_from_str_comma_code_none": null,
+          "amount_from_str_comma_symbol": "$1,234.56",
+          "amount_from_str_comma_symbol_some": "$2,345.6799",
+          "amount_from_str_comma_symbol_none": null,
+          "amount_from_str_dot_code": "EUR 1.234,5634",
+          "amount_from_str_dot_code_some": "EUR 2.000,00",
+          "amount_from_str_dot_code_none": null,
+          "amount_from_str_dot_symbol": "€1.234,56",
+          "amount_from_str_dot_symbol_some": "€2.345,67",
+          "amount_from_str_dot_symbol_none": null
+        }
+    "#;
+    let all = serde_json::from_str::<All>(json_str);
+    assert!(all.is_ok());
+
+    let ret = all.unwrap();
+
+    // no rounding: expect exact decimal values parsed from inputs
+
+    // f64 keeps its fractional digits as provided
+    assert_eq!(ret.amount_from_f64.amount(), dec!(1234.56988));
+    assert_eq!(ret.amount_from_f64_omit.amount(), dec!(0));
+    assert_eq!(ret.amount_from_str_omit.amount(), dec!(0));
+
+    assert_eq!(ret.amount_from_i64.amount(), dec!(-1234));
+    assert_eq!(ret.amount_from_u64.amount(), dec!(18446744073709551615));
+
+    assert_eq!(ret.amount_from_i128.amount(), dec!(-1844674407370955161588));
+    assert_eq!(ret.amount_from_u128.amount(), dec!(34028236692093846346337));
+
+    assert_eq!(ret.amount_from_str.amount(), dec!(1234.56));
+
+    // comma + code
+    assert_eq!(ret.amount_from_str_comma_code.amount(), dec!(1234.56));
+    assert!(ret.amount_from_str_comma_code_some.is_some());
+    assert_eq!(
+        ret.amount_from_str_comma_code_some
+            .as_ref()
+            .unwrap()
+            .amount(),
+        dec!(2000.00)
+    );
+    assert!(ret.amount_from_str_comma_code_none.is_none());
+    assert!(ret.amount_from_str_comma_code_omit.is_none());
+
+    // comma + symbol
+    assert_eq!(ret.amount_from_str_comma_symbol.amount(), dec!(1234.56));
+    assert!(ret.amount_from_str_comma_symbol_some.is_some());
+    // "$2,345.6799" -> keep all fractional digits (no rounding)
+    assert_eq!(
+        ret.amount_from_str_comma_symbol_some
+            .as_ref()
+            .unwrap()
+            .amount(),
+        dec!(2345.6799)
+    );
+    assert!(ret.amount_from_str_comma_symbol_none.is_none());
+    assert!(ret.amount_from_str_comma_symbol_omit.is_none());
+
+    // dot + code (European formatting)
+    // "EUR 1.234,5634" -> 1234.5634 (no rounding)
+    assert_eq!(ret.amount_from_str_dot_code.amount(), dec!(1234.5634));
+    assert!(ret.amount_from_str_dot_code_some.is_some());
+    assert_eq!(
+        ret.amount_from_str_dot_code_some.as_ref().unwrap().amount(),
+        dec!(2000.00)
+    );
+    assert!(ret.amount_from_str_dot_code_none.is_none());
+    assert!(ret.amount_from_str_dot_code_omit.is_none());
+
+    // dot + symbol
+    assert_eq!(ret.amount_from_str_dot_symbol.amount(), dec!(1234.56));
+    assert!(ret.amount_from_str_dot_symbol_some.is_some());
+    assert_eq!(
+        ret.amount_from_str_dot_symbol_some
+            .as_ref()
+            .unwrap()
+            .amount(),
+        dec!(2345.67)
+    );
+    assert!(ret.amount_from_str_dot_symbol_none.is_none());
+    assert!(ret.amount_from_str_dot_symbol_omit.is_none());
 }

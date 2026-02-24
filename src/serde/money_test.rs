@@ -1,3 +1,5 @@
+use currencylib::{CAD, IDR};
+
 use crate::{BaseMoney, Money, money_macros::dec};
 use crate::{EUR, GBP, JPY, USD};
 
@@ -1319,6 +1321,14 @@ fn test_all() {
     struct All {
         amount_from_f64: Money<USD>,
 
+        // `default` must be declared if you want to let users omit this field giving it money with zero amount.
+        #[serde(default)]
+        amount_from_f64_omit: Money<IDR>,
+
+        // `default` must be declared if you want to let users omit this field giving it money with zero amount.
+        #[serde(default)]
+        amount_from_str_omit: Money<CAD>,
+
         amount_from_i64: Money<EUR>,
 
         amount_from_u64: Money<USD>,
@@ -1395,9 +1405,9 @@ fn test_all() {
           "amount_from_str_comma_code_some": "USD 2,000.00",
           "amount_from_str_comma_code_none": null,
           "amount_from_str_comma_symbol": "$1,234.56",
-          "amount_from_str_comma_symbol_some": "$2,345.67",
+          "amount_from_str_comma_symbol_some": "$2,345.6799",
           "amount_from_str_comma_symbol_none": null,
-          "amount_from_str_dot_code": "EUR 1.234,56",
+          "amount_from_str_dot_code": "EUR 1.234,5634",
           "amount_from_str_dot_code_some": "EUR 2.000,00",
           "amount_from_str_dot_code_none": null,
           "amount_from_str_dot_symbol": "€1.234,56",
@@ -1407,5 +1417,68 @@ fn test_all() {
     "#;
     let all = serde_json::from_str::<All>(json_str);
     assert!(all.is_ok());
-    println!("{:?}", all.unwrap());
+
+    let ret = all.unwrap();
+    assert_eq!(ret.amount_from_f64.amount(), dec!(1234.57));
+    assert_eq!(ret.amount_from_f64_omit.amount(), dec!(0));
+    assert_eq!(ret.amount_from_str_omit.amount(), dec!(0));
+
+    assert_eq!(ret.amount_from_i64.amount(), dec!(-1234));
+    assert_eq!(ret.amount_from_u64.amount(), dec!(18446744073709551615));
+
+    assert_eq!(ret.amount_from_i128.amount(), dec!(-1844674407370955161588));
+    assert_eq!(ret.amount_from_u128.amount(), dec!(34028236692093846346337));
+
+    assert_eq!(ret.amount_from_str.amount(), dec!(1234.56));
+
+    // comma + code
+    assert_eq!(ret.amount_from_str_comma_code.amount(), dec!(1234.56));
+    assert!(ret.amount_from_str_comma_code_some.is_some());
+    assert_eq!(
+        ret.amount_from_str_comma_code_some
+            .as_ref()
+            .unwrap()
+            .amount(),
+        dec!(2000.00)
+    );
+    assert!(ret.amount_from_str_comma_code_none.is_none());
+    assert!(ret.amount_from_str_comma_code_omit.is_none());
+
+    // comma + symbol
+    assert_eq!(ret.amount_from_str_comma_symbol.amount(), dec!(1234.56));
+    assert!(ret.amount_from_str_comma_symbol_some.is_some());
+    // "$2,345.6799" -> rounded to 2 decimal places -> 2345.68
+    assert_eq!(
+        ret.amount_from_str_comma_symbol_some
+            .as_ref()
+            .unwrap()
+            .amount(),
+        dec!(2345.68)
+    );
+    assert!(ret.amount_from_str_comma_symbol_none.is_none());
+    assert!(ret.amount_from_str_comma_symbol_omit.is_none());
+
+    // dot + code (European formatting)
+    // "EUR 1.234,5634" -> 1234.5634 -> rounded to 1234.56 (third decimal is 3 -> round down)
+    assert_eq!(ret.amount_from_str_dot_code.amount(), dec!(1234.56));
+    assert!(ret.amount_from_str_dot_code_some.is_some());
+    assert_eq!(
+        ret.amount_from_str_dot_code_some.as_ref().unwrap().amount(),
+        dec!(2000.00)
+    );
+    assert!(ret.amount_from_str_dot_code_none.is_none());
+    assert!(ret.amount_from_str_dot_code_omit.is_none());
+
+    // dot + symbol
+    assert_eq!(ret.amount_from_str_dot_symbol.amount(), dec!(1234.56));
+    assert!(ret.amount_from_str_dot_symbol_some.is_some());
+    assert_eq!(
+        ret.amount_from_str_dot_symbol_some
+            .as_ref()
+            .unwrap()
+            .amount(),
+        dec!(2345.67)
+    );
+    assert!(ret.amount_from_str_dot_symbol_none.is_none());
+    assert!(ret.amount_from_str_dot_symbol_omit.is_none());
 }
