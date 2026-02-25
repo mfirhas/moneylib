@@ -8,7 +8,10 @@ use crate::{
     BaseMoney, BaseOps, Decimal, MoneyError,
     base::Amount,
     money_macros::dec,
-    parse::{parse_comma_thousands_separator, parse_dot_thousands_separator},
+    parse::{
+        parse_comma_thousands_separator, parse_dot_thousands_separator,
+        parse_symbol_comma_thousands_separator, parse_symbol_dot_thousands_separator,
+    },
 };
 use crate::{Currency, CustomMoney};
 use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
@@ -204,6 +207,36 @@ where
 
         if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {
             if currency_code != C::CODE {
+                return Err(MoneyError::CurrencyMismatch);
+            }
+            return Ok(Self::from_decimal(
+                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
+            ));
+        }
+
+        Err(MoneyError::ParseStr)
+    }
+
+    pub fn from_symbol_comma_thousands(s: &str) -> Result<Self, MoneyError> {
+        let s = s.trim();
+
+        if let Some((symbol, amount_str)) = parse_symbol_comma_thousands_separator::<C>(s) {
+            if symbol != C::SYMBOL {
+                return Err(MoneyError::CurrencyMismatch);
+            }
+            return Ok(Self::from_decimal(
+                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
+            ));
+        }
+
+        Err(MoneyError::ParseStr)
+    }
+
+    pub fn from_symbol_dot_thousands(s: &str) -> Result<Self, MoneyError> {
+        let s = s.trim();
+
+        if let Some((symbol, amount_str)) = parse_symbol_dot_thousands_separator::<C>(s) {
+            if symbol != C::SYMBOL {
                 return Err(MoneyError::CurrencyMismatch);
             }
             return Ok(Self::from_decimal(

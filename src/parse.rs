@@ -178,3 +178,55 @@ pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
 
     validate_and_build_result(currency_code, integer_part, decimal_part, '.', is_positive)
 }
+
+pub fn parse_symbol_comma_thousands_separator<C: crate::Currency>(
+    s: &str,
+) -> Option<(&str, String)> {
+    let (stripped_money, is_positive) = if let Some(trimmed) = s.strip_prefix('-') {
+        (trimmed, false)
+    } else {
+        (s, true)
+    };
+    let amount_str = stripped_money.strip_prefix(C::SYMBOL)?;
+    if amount_str.is_empty() {
+        return None;
+    }
+
+    let decimal_parts: Vec<&str> = amount_str.split('.').collect();
+    if decimal_parts.len() > 2 {
+        return None;
+    }
+
+    let (integer_part, decimal_part) = if decimal_parts.len() == 2 {
+        (decimal_parts[0], Some(decimal_parts[1]))
+    } else {
+        (decimal_parts[0], None)
+    };
+
+    validate_and_build_result(C::SYMBOL, integer_part, decimal_part, ',', is_positive)
+}
+
+pub fn parse_symbol_dot_thousands_separator<C: crate::Currency>(s: &str) -> Option<(&str, String)> {
+    let (stripped_money, is_positive) = if let Some(trimmed) = s.strip_prefix('-') {
+        (trimmed, false)
+    } else {
+        (s, true)
+    };
+    let amount_str = stripped_money.strip_prefix(C::SYMBOL)?;
+    if amount_str.is_empty() {
+        return None;
+    }
+
+    let decimal_parts: Vec<&str> = amount_str.split(',').collect();
+    if decimal_parts.len() > 2 {
+        return None;
+    }
+
+    let (integer_part, decimal_part) = if decimal_parts.len() == 2 {
+        (decimal_parts[0], Some(decimal_parts[1]))
+    } else {
+        (decimal_parts[0], None)
+    };
+
+    validate_and_build_result(C::SYMBOL, integer_part, decimal_part, '.', is_positive)
+}
