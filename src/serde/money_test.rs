@@ -1,7 +1,5 @@
-use currencylib::{CAD, IDR};
-
 use crate::{BaseMoney, Money, money_macros::dec};
-use crate::{EUR, GBP, JPY, USD};
+use crate::{CAD, EUR, GBP, IDR, JPY, USD};
 
 // ---------------------------------------------------------------------------
 // Default (number) serialize/deserialize
