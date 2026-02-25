@@ -4,6 +4,7 @@ fn validate_and_build_result<'a>(
     integer_part: &'a str,
     decimal_part: Option<&'a str>,
     separator: char,
+    is_positive: bool,
 ) -> Option<(&'a str, String)> {
     if integer_part.is_empty() {
         return None;
@@ -40,6 +41,11 @@ fn validate_and_build_result<'a>(
             result.push_str(dec);
         }
 
+        // embed `-` if negative
+        if !is_positive {
+            result.insert(0, '-');
+        }
+
         Some((currency_code, result))
     } else {
         // No separators, just validate it's all digits
@@ -55,6 +61,11 @@ fn validate_and_build_result<'a>(
             }
             result.push('.');
             result.push_str(dec);
+        }
+
+        // embed `-` if negative
+        if !is_positive {
+            result.insert(0, '-');
         }
 
         Some((currency_code, result))
@@ -99,14 +110,19 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
         return None;
     }
 
-    let integer_part = decimal_parts[0];
+    let (integer_part, is_positive) = if let Some(neg_trimmed) = decimal_parts[0].strip_prefix("-")
+    {
+        (neg_trimmed, false)
+    } else {
+        (decimal_parts[0], true)
+    };
     let decimal_part = if decimal_parts.len() == 2 {
         Some(decimal_parts[1])
     } else {
         None
     };
 
-    validate_and_build_result(currency_code, integer_part, decimal_part, ',')
+    validate_and_build_result(currency_code, integer_part, decimal_part, ',', is_positive)
 }
 
 /// Parse money string with dot thousands separator and comma decimal separator
@@ -148,12 +164,17 @@ pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
         return None;
     }
 
-    let integer_part = decimal_parts[0];
+    let (integer_part, is_positive) = if let Some(neg_trimmed) = decimal_parts[0].strip_prefix("-")
+    {
+        (neg_trimmed, false)
+    } else {
+        (decimal_parts[0], true)
+    };
     let decimal_part = if decimal_parts.len() == 2 {
         Some(decimal_parts[1])
     } else {
         None
     };
 
-    validate_and_build_result(currency_code, integer_part, decimal_part, '.')
+    validate_and_build_result(currency_code, integer_part, decimal_part, '.', is_positive)
 }

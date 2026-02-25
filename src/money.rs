@@ -169,6 +169,8 @@ where
     ///
     /// Returns [`MoneyError::ParseStr`] if the string is not in the expected format.
     ///
+    /// Accepts negative amount CCC -amount
+    ///
     /// # Examples
     ///
     /// ```
@@ -297,6 +299,8 @@ where
     /// For strings that use dot as the thousands separator and comma as the decimal
     /// separator (e.g., `"EUR 1.234,56"`), use
     /// [`Money::from_str_dot_thousands`] instead.
+    ///
+    /// Accepts negative amount CCC -amount
     ///
     /// # Examples
     ///

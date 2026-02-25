@@ -546,6 +546,226 @@ fn test_from_str_dot_thousands_invalid_format_2() {
     assert_eq!(result.unwrap_err(), MoneyError::ParseStr);
 }
 
+#[test]
+fn test_parsing_all() {
+    //! from code comma thousands positive
+    let money: RawMoney<USD> = RawMoney::from_str("USD 12").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 12.2").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 12.23").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 12.239489").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1,234").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1,234.3").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1,234.38").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1,269.34983").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1234").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1234.3").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1234.38").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1269.34983").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1,234,000").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1,234,000.3").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1,234,111.38").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD 1,269,899.34983").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+
+    println!("----------------------------------------");
+
+    // from code comma thousands negative
+    let money: RawMoney<USD> = RawMoney::from_str("USD -12").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -12.2").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -12.23").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -12.239489").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1,234").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1,234.3").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1,234.38").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1,269.34983").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1234").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1234.3").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1234.38").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1269.34983").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1,234,000").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1,234,000.3").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1,234,111.38").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<USD> = RawMoney::from_str("USD -1,269,899.34983").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+
+    println!("----------------------------------------");
+
+    // from code dot thousands positive
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 12").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 12,2").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 12,23").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 12,239489").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1.234").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1.234,3").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1.234,38").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1.269,34983").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1234").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1234,3").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1234,38").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1269,34983").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1.234.000").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1.234.000,3").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1.234.111,38").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR 1.269.899,34983").unwrap();
+    assert!(money.is_positive());
+    println!("{} | {}", money, money.amount());
+
+    println!("----------------------------------------");
+
+    // from code dot thousands negative
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -12").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -12,2").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -12,23").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -12,239489").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1.234").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1.234,3").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1.234,38").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1.269,34983").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1234").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1234,3").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1234,38").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1269,34983").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1.234.000").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1.234.000,3").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1.234.111,38").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+    let money: RawMoney<EUR> = RawMoney::from_str_dot_thousands("EUR -1.269.899,34983").unwrap();
+    assert!(money.is_negative());
+    println!("{} | {}", money, money.amount());
+
+    println!("----------------------------------------");
+
+    // from symbol comma thousands positive
+    // from symbol comma thousands negative
+    // from symbol dot thousands positive
+    // from symbol dot thousands negative
+}
+
 // ==================== Real-world Use Case Tests ====================
 
 #[test]
