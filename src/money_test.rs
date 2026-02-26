@@ -1954,6 +1954,24 @@ fn test_currency_mismatch_in_parsing() {
 }
 
 #[test]
+fn test_parsing_negative_money_no_separator() {
+    let money = Money::<USD>::from_str("USD -1234567.89").unwrap();
+    assert_eq!(money.amount(), dec!(-1_234_567.89));
+}
+
+#[test]
+fn test_parsing_negative_money() {
+    let money = Money::<USD>::from_str("USD -1,234,567.89").unwrap();
+    assert_eq!(money.amount(), dec!(-1_234_567.89));
+}
+
+#[test]
+fn test_parsing_negative_dot_separator_money() {
+    let money = Money::<USD>::from_str_dot_thousands("USD -1.234.567,89").unwrap();
+    assert_eq!(money.amount(), dec!(-1_234_567.89));
+}
+
+#[test]
 fn test_parsing_all() {
     //! from code comma thousands positive
     let money: Money<USD> = Money::from_str("USD 12").unwrap();

@@ -547,6 +547,24 @@ fn test_from_str_dot_thousands_invalid_format_2() {
 }
 
 #[test]
+fn test_parsing_negative_money_no_separator() {
+    let money = RawMoney::<USD>::from_str("USD -1234567.8924").unwrap();
+    assert_eq!(money.amount(), dec!(-1_234_567.8924));
+}
+
+#[test]
+fn test_parsing_negative_money() {
+    let money = RawMoney::<USD>::from_str("USD -1,234,567.8999").unwrap();
+    assert_eq!(money.amount(), dec!(-1_234_567.8999));
+}
+
+#[test]
+fn test_parsing_negative_dot_separator_money() {
+    let money = RawMoney::<USD>::from_str_dot_thousands("USD -1.234.567,8942").unwrap();
+    assert_eq!(money.amount(), dec!(-1_234_567.8942));
+}
+
+#[test]
 fn test_parsing_all_raw() {
     //! from code comma thousands positive (NO rounding, keep full precision)
     let money: RawMoney<USD> = RawMoney::from_str("USD 12").unwrap();
