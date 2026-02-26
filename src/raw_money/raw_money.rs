@@ -216,6 +216,8 @@ where
         Err(MoneyError::ParseStr)
     }
 
+    /// Parse from string with symbol and comma-separated thousands, no rounding
+    /// Example: $1,234.2249 into USD 1234.2249
     pub fn from_symbol_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
@@ -231,6 +233,8 @@ where
         Err(MoneyError::ParseStr)
     }
 
+    /// Parse from string with symbol and dot-separated thousands, no rounding
+    /// Example: $1.234,2249 into USD 1234.2249
     pub fn from_symbol_dot_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
