@@ -571,6 +571,22 @@ fn test_from_symbol_comma_thousands_optional_separator_rounded() {
     assert_eq!(with_sep.amount(), dec!(1234.57));
 }
 
+#[test]
+fn test_from_symbol_comma_thousands_optional_separator_rounded_negative() {
+    let with_sep = Money::<USD>::from_symbol_comma_thousands("-$1,234.56988").unwrap();
+    let without_sep = Money::<USD>::from_symbol_comma_thousands("-$1234.56672").unwrap();
+    assert_eq!(with_sep.amount(), without_sep.amount());
+    assert_eq!(with_sep.amount(), dec!(-1234.57));
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_optional_separator_rounded_negative() {
+    let with_sep = Money::<USD>::from_symbol_dot_thousands("-$1.234,56988").unwrap();
+    let without_sep = Money::<USD>::from_symbol_dot_thousands("-$1234,56672").unwrap();
+    assert_eq!(with_sep.amount(), without_sep.amount());
+    assert_eq!(with_sep.amount(), dec!(-1234.57));
+}
+
 // ==================== from_symbol_dot_thousands Tests ====================
 
 #[test]
