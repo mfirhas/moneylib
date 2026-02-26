@@ -497,7 +497,7 @@ fn test_from_symbol_comma_thousands_basic() {
 
 #[test]
 fn test_from_symbol_comma_thousands_no_thousands_separator() {
-    let money = Money::<USD>::from_symbol_comma_thousands("$100.50").unwrap();
+    let money = Money::<crate::AUD>::from_symbol_comma_thousands("$100.50").unwrap();
     assert_eq!(money.amount(), dec!(100.50));
 }
 
@@ -515,6 +515,12 @@ fn test_from_symbol_comma_thousands_large_amount() {
 
 #[test]
 fn test_from_symbol_comma_thousands_zero() {
+    let money = Money::<USD>::from_symbol_comma_thousands("$0").unwrap();
+    assert_eq!(money.amount(), dec!(0.00));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_zero_point_zeros() {
     let money = Money::<USD>::from_symbol_comma_thousands("$0.00").unwrap();
     assert_eq!(money.amount(), dec!(0.00));
 }
