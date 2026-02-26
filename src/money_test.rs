@@ -634,6 +634,14 @@ fn test_from_symbol_dot_thousands_optional_separator() {
     assert_eq!(with_sep.amount(), dec!(1234.56));
 }
 
+#[test]
+fn test_from_symbol_dot_thousands_optional_separator_rounded() {
+    let with_sep = Money::<EUR>::from_symbol_dot_thousands("€1.234,56988").unwrap();
+    let without_sep = Money::<EUR>::from_symbol_dot_thousands("€1234,56672").unwrap();
+    assert_eq!(with_sep.amount(), without_sep.amount());
+    assert_eq!(with_sep.amount(), dec!(1234.57));
+}
+
 // ==================== Display Tests ====================
 
 #[test]
