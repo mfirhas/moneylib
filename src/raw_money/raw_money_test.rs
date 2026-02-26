@@ -830,6 +830,170 @@ fn test_parsing_all_raw() {
     // from symbol dot thousands negative
 }
 
+// ==================== from_symbol_comma_thousands Tests ====================
+
+#[test]
+fn test_from_symbol_comma_thousands_basic() {
+    let money = RawMoney::<USD>::from_symbol_comma_thousands("$1,234.56").unwrap();
+    assert_eq!(money.code(), "USD");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_no_thousands_separator() {
+    let money = RawMoney::<crate::AUD>::from_symbol_comma_thousands("$100.50").unwrap();
+    assert_eq!(money.amount(), dec!(100.50));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_integer_only() {
+    let money = RawMoney::<USD>::from_symbol_comma_thousands("$100").unwrap();
+    assert_eq!(money.amount(), dec!(100));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_large_amount() {
+    let money = RawMoney::<USD>::from_symbol_comma_thousands("$1,000,000.99").unwrap();
+    assert_eq!(money.amount(), dec!(1000000.99));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_zero() {
+    let money = RawMoney::<USD>::from_symbol_comma_thousands("$0").unwrap();
+    assert_eq!(money.amount(), dec!(0.00));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_zero_point_zeros() {
+    let money = RawMoney::<USD>::from_symbol_comma_thousands("$0.00").unwrap();
+    assert_eq!(money.amount(), dec!(0.00));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_negative() {
+    let money = RawMoney::<USD>::from_symbol_comma_thousands("-$1,234.56").unwrap();
+    assert_eq!(money.amount(), dec!(-1234.56));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_with_whitespace() {
+    let money = RawMoney::<USD>::from_symbol_comma_thousands("  $1,234.56  ").unwrap();
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_currency_mismatch() {
+    // EUR symbol (€) doesn't match USD parser ($), so it returns ParseStr
+    let result = RawMoney::<EUR>::from_symbol_comma_thousands("$1,234.56");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_invalid_empty() {
+    assert!(RawMoney::<USD>::from_symbol_comma_thousands("").is_err());
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_invalid_format() {
+    // dot-thousands / comma-decimal format is rejected
+    assert!(RawMoney::<EUR>::from_symbol_comma_thousands("€1.234,56").is_err());
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_optional_separator() {
+    let with_sep = RawMoney::<USD>::from_symbol_comma_thousands("$1,234.56").unwrap();
+    let without_sep = RawMoney::<USD>::from_symbol_comma_thousands("$1234.56").unwrap();
+    assert_eq!(with_sep.amount(), without_sep.amount());
+    assert_eq!(with_sep.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_from_symbol_comma_thousands_optional_separator_rounded() {
+    let with_sep = RawMoney::<USD>::from_symbol_comma_thousands("$1,234.56988").unwrap();
+    let without_sep = RawMoney::<USD>::from_symbol_comma_thousands("$1234.56672").unwrap();
+    assert_ne!(with_sep.amount(), without_sep.amount());
+    assert_eq!(with_sep.amount(), dec!(1_234.56988));
+}
+
+// ==================== from_symbol_dot_thousands Tests ====================
+
+#[test]
+fn test_from_symbol_dot_thousands_basic() {
+    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€1.234,56").unwrap();
+    assert_eq!(money.code(), "EUR");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_no_thousands_separator() {
+    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€100,50").unwrap();
+    assert_eq!(money.amount(), dec!(100.50));
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_integer_only() {
+    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€100").unwrap();
+    assert_eq!(money.amount(), dec!(100));
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_large_amount() {
+    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€1.000.000,99").unwrap();
+    assert_eq!(money.amount(), dec!(1000000.99));
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_zero() {
+    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€0,00").unwrap();
+    assert_eq!(money.amount(), dec!(0.00));
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_negative() {
+    let money = RawMoney::<EUR>::from_symbol_dot_thousands("-€1.234,56").unwrap();
+    assert_eq!(money.amount(), dec!(-1234.56));
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_with_whitespace() {
+    let money = RawMoney::<EUR>::from_symbol_dot_thousands("  €1.234,56  ").unwrap();
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_currency_mismatch() {
+    // USD symbol ($) doesn't match EUR parser (€), so it returns ParseStr
+    let result = RawMoney::<USD>::from_symbol_dot_thousands("€1.234,56");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_invalid_empty() {
+    assert!(RawMoney::<EUR>::from_symbol_dot_thousands("").is_err());
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_invalid_format() {
+    // comma-thousands / dot-decimal format is rejected
+    assert!(RawMoney::<USD>::from_symbol_dot_thousands("$1,234.56").is_err());
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_optional_separator() {
+    let with_sep = RawMoney::<EUR>::from_symbol_dot_thousands("€1.234,56").unwrap();
+    let without_sep = RawMoney::<EUR>::from_symbol_dot_thousands("€1234,56").unwrap();
+    assert_eq!(with_sep.amount(), without_sep.amount());
+    assert_eq!(with_sep.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_from_symbol_dot_thousands_optional_separator_rounded() {
+    let with_sep = RawMoney::<EUR>::from_symbol_dot_thousands("€1.234,56988").unwrap();
+    let without_sep = RawMoney::<EUR>::from_symbol_dot_thousands("€1234,56672").unwrap();
+    assert_ne!(with_sep.amount(), without_sep.amount());
+    assert_eq!(with_sep.amount(), dec!(1_234.56988));
+}
+
 // ==================== Real-world Use Case Tests ====================
 
 #[test]
