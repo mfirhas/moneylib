@@ -1370,6 +1370,18 @@ fn test_all() {
         // `default` must be declared if you want to let users omit this field making it `None`.
         #[serde(with = "crate::serde::raw_money::option_dot_str_symbol", default)]
         amount_from_str_dot_symbol_omit: Option<RawMoney<EUR>>,
+
+        #[serde(with = "crate::serde::raw_money::comma_str_code")]
+        neg_amount_from_code_comma: RawMoney<USD>,
+
+        #[serde(with = "crate::serde::raw_money::dot_str_code")]
+        neg_amount_from_code_dot: RawMoney<EUR>,
+
+        #[serde(with = "crate::serde::raw_money::comma_str_symbol")]
+        neg_amount_from_symbol_comma: RawMoney<USD>,
+
+        #[serde(with = "crate::serde::raw_money::dot_str_symbol")]
+        neg_amount_from_symbol_dot: RawMoney<EUR>,
     }
 
     let json_str = r#"
@@ -1391,7 +1403,12 @@ fn test_all() {
           "amount_from_str_dot_code_none": null,
           "amount_from_str_dot_symbol": "€1.234,56",
           "amount_from_str_dot_symbol_some": "€2.345,67",
-          "amount_from_str_dot_symbol_none": null
+          "amount_from_str_dot_symbol_none": null,
+
+          "neg_amount_from_code_comma": "USD -34345.5566",
+          "neg_amount_from_code_dot": "EUR -23.000,00",
+          "neg_amount_from_symbol_comma": "-$1.123",
+          "neg_amount_from_symbol_dot": "-€1,123"
         }
     "#;
     let all = serde_json::from_str::<All>(json_str);
@@ -1464,4 +1481,9 @@ fn test_all() {
     );
     assert!(ret.amount_from_str_dot_symbol_none.is_none());
     assert!(ret.amount_from_str_dot_symbol_omit.is_none());
+
+    assert_eq!(ret.neg_amount_from_code_comma.amount(), dec!(-34345.5566));
+    assert_eq!(ret.neg_amount_from_code_dot.amount(), dec!(-23_000.00));
+    assert_eq!(ret.neg_amount_from_symbol_comma.amount(), dec!(-1.123));
+    assert_eq!(ret.neg_amount_from_symbol_dot.amount(), dec!(-1.123));
 }
