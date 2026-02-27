@@ -208,32 +208,16 @@ pub mod option_comma_str_code {
 pub mod comma_str_symbol {
     use std::fmt;
     use std::marker::PhantomData;
-    use std::str::FromStr;
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, Decimal, Money};
+    use crate::{BaseMoney, Currency, Money};
 
     pub fn serialize<C: Currency + Clone, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&value.format_symbol())
-    }
-
-    fn parse<C: Currency + Clone, E: de::Error>(s: &str) -> Result<Money<C>, E> {
-        let (neg, rest) = if let Some(r) = s.strip_prefix('-') {
-            (true, r)
-        } else {
-            (false, s)
-        };
-        let rest = rest
-            .strip_prefix(C::SYMBOL)
-            .ok_or_else(|| E::custom(format!("expected currency symbol '{}'", C::SYMBOL)))?;
-        let amount_str = rest.replace(',', "");
-        Decimal::from_str(&amount_str)
-            .map(|d| Money::<C>::from_decimal(if neg { -d } else { d }))
-            .map_err(|_| E::custom(format!("invalid decimal: {}", amount_str)))
     }
 
     struct Visitor<C>(PhantomData<C>);
@@ -246,7 +230,7 @@ pub mod comma_str_symbol {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            parse::<C, E>(v)
+            Money::<C>::from_symbol_comma_thousands(v).map_err(|err| E::custom(err))
         }
     }
 
@@ -446,33 +430,16 @@ pub mod option_dot_str_code {
 pub mod dot_str_symbol {
     use std::fmt;
     use std::marker::PhantomData;
-    use std::str::FromStr;
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, Decimal, Money};
+    use crate::{BaseMoney, Currency, Money};
 
     pub fn serialize<C: Currency + Clone, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&value.format_symbol())
-    }
-
-    fn parse<C: Currency + Clone, E: de::Error>(s: &str) -> Result<Money<C>, E> {
-        let (neg, rest) = if let Some(r) = s.strip_prefix('-') {
-            (true, r)
-        } else {
-            (false, s)
-        };
-        let rest = rest
-            .strip_prefix(C::SYMBOL)
-            .ok_or_else(|| E::custom(format!("expected currency symbol '{}'", C::SYMBOL)))?;
-        // Remove dot thousands separators; replace comma decimal with dot
-        let amount_str = rest.replace('.', "").replace(',', ".");
-        Decimal::from_str(&amount_str)
-            .map(|d| Money::<C>::from_decimal(if neg { -d } else { d }))
-            .map_err(|_| E::custom(format!("invalid decimal: {}", amount_str)))
     }
 
     struct Visitor<C>(PhantomData<C>);
@@ -485,7 +452,7 @@ pub mod dot_str_symbol {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            parse::<C, E>(v)
+            Money::<C>::from_symbol_dot_thousands(v).map_err(|err| E::custom(err))
         }
     }
 
