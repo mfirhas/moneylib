@@ -1307,6 +1307,18 @@ fn test_from_symbol_dot_thousands_optional_separator_rounded_negative() {
     assert_eq!(with_sep.amount(), dec!(-1_234.56988));
 }
 
+#[test]
+fn test_from_symbol_comma_currency_mismatch() {
+    let money = RawMoney::<crate::SGD>::from_symbol_comma_thousands("$1,234.56");
+    assert!(money.is_err());
+}
+
+#[test]
+fn test_from_symbol_dot_currency_mismatch() {
+    let money = RawMoney::<crate::SGD>::from_symbol_comma_thousands("$1,234.56988");
+    assert!(money.is_err());
+}
+
 // ==================== from_symbol_dot_thousands Tests ====================
 
 #[test]
