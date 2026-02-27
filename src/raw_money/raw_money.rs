@@ -221,10 +221,9 @@ where
     pub fn from_symbol_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((symbol, amount_str)) = parse_symbol_comma_thousands_separator::<C>(s) {
-            if symbol != C::SYMBOL {
-                return Err(MoneyError::CurrencyMismatch);
-            }
+        if let Some((symbol, amount_str)) = parse_symbol_comma_thousands_separator::<C>(s)
+            && symbol == C::SYMBOL
+        {
             return Ok(Self::from_decimal(
                 Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
             ));
@@ -238,10 +237,9 @@ where
     pub fn from_symbol_dot_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((symbol, amount_str)) = parse_symbol_dot_thousands_separator::<C>(s) {
-            if symbol != C::SYMBOL {
-                return Err(MoneyError::CurrencyMismatch);
-            }
+        if let Some((symbol, amount_str)) = parse_symbol_dot_thousands_separator::<C>(s)
+            && symbol == C::SYMBOL
+        {
             return Ok(Self::from_decimal(
                 Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
             ));
