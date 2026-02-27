@@ -144,7 +144,7 @@ It keeps full decimal precision and lets callers decide when to round.
 
 ```toml
 [dependencies]
-moneylib = { version = "0.4.0", features = ["raw_money"] }
+moneylib = { version = "...", features = ["raw_money"] }
 ```
 
 ```rust
@@ -186,12 +186,12 @@ If you want to serialize/deserialize as string money format with code or symbol,
 
 ```toml
 [dependencies]
-moneylib = { version = "0.5.0", features = ["serde"] }
+moneylib = { version = "...", features = ["serde"] }
 ```
 or serde for `RawMoney`:
 ```toml
 [dependencies]
-moneylib = { version = "0.5.0", features = ["serde", "raw_money"] }
+moneylib = { version = "...", features = ["serde", "raw_money"] }
 ```
 
 ```rust
