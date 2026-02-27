@@ -13,8 +13,17 @@ categories = ["finance", "data-structures"]
 [features]
 default = []
 raw_money = []
+serde = ["dep:serde", "dep:serde_json"]
 
 [dependencies]
 rust_decimal = { version = "1.40.0", default-features = false, features = ["maths", "macros"] }
 currencylib = "0.1.0"
+serde = { version = "1.0", default-features = false, optional = true }
+serde_json = { version = "1.0", features = ["arbitrary_precision"], optional = true }
+
+[dev-dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+toml = "1.0"
 

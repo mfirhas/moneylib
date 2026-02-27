@@ -32,6 +32,9 @@ mod raw_money;
 #[cfg(feature = "raw_money")]
 pub use raw_money::RawMoney;
 
+#[cfg(feature = "serde")]
+pub mod serde;
+
 mod fmt;
 
 mod parse;

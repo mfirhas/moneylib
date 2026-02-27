@@ -371,6 +371,23 @@ fn test_div_checked() {
     assert_eq!(result.amount(), dec!(25));
 }
 
+#[test]
+fn test_multiple_arithmetics() {
+    let money1 = RawMoney::<USD>::from_decimal(dec!(12334.23444));
+    let money2 = RawMoney::<USD>::from_decimal(dec!(234.9044));
+    let money3 = RawMoney::<USD>::new(400).unwrap();
+
+    let ret = (money1.add(money2).unwrap())
+        .mul(dec!(1.2))
+        .unwrap()
+        .div(100_i128)
+        .unwrap()
+        .mul(money3)
+        .unwrap();
+
+    assert_eq!(ret.amount(), dec!(60331.86643200));
+}
+
 // ==================== Round Tests ====================
 
 #[test]
@@ -1288,6 +1305,18 @@ fn test_from_symbol_dot_thousands_optional_separator_rounded_negative() {
     let without_sep = RawMoney::<USD>::from_symbol_dot_thousands("-$1234,56672").unwrap();
     assert_ne!(with_sep.amount(), without_sep.amount());
     assert_eq!(with_sep.amount(), dec!(-1_234.56988));
+}
+
+#[test]
+fn test_from_symbol_comma_currency_mismatch() {
+    let money = RawMoney::<crate::SGD>::from_symbol_comma_thousands("$1,234.56");
+    assert!(money.is_err());
+}
+
+#[test]
+fn test_from_symbol_dot_currency_mismatch() {
+    let money = RawMoney::<crate::SGD>::from_symbol_comma_thousands("$1,234.56988");
+    assert!(money.is_err());
 }
 
 // ==================== from_symbol_dot_thousands Tests ====================
