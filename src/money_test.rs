@@ -1892,6 +1892,26 @@ fn test_minor_amount_with_three_decimal_currency() {
 }
 
 #[test]
+fn test_minor_amount_exponent_overflow() {
+    #[derive(Debug, Clone)]
+    struct TooBig;
+    impl crate::Currency for TooBig {
+        const CODE: &'static str = "BIG";
+        const SYMBOL: &'static str = "B";
+        const NAME: &'static str = "Too Big";
+        const NUMERIC: u16 = 69;
+        const MINOR_UNIT: u16 = 98;
+        const MINOR_UNIT_SYMBOL: &'static str = "*";
+        const THOUSAND_SEPARATOR: &'static str = ",";
+        const DECIMAL_SEPARATOR: &'static str = ".";
+    }
+
+    let toobig = Money::<TooBig>::from_decimal(dec!(123123));
+    let ret = toobig.minor_amount();
+    assert!(ret.is_err());
+}
+
+#[test]
 fn test_multiple_operations_maintain_precision() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let result = money.mul(dec!(1.1)).unwrap();
