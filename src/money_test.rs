@@ -38,6 +38,12 @@ fn test_money_default() {
     assert!(money.is_zero());
 }
 
+#[test]
+fn test_money_new_overflow() {
+    let money = Money::<USD>::new(i128::MAX);
+    assert!(money.is_err());
+}
+
 // ==================== PartialEq Tests ====================
 
 #[test]
@@ -596,6 +602,22 @@ fn test_from_symbol_comma_currency_mismatch() {
 #[test]
 fn test_from_symbol_dot_currency_mismatch() {
     let money = Money::<crate::SGD>::from_symbol_comma_thousands("$1,234.56988");
+    assert!(money.is_err());
+}
+
+#[test]
+fn test_overflow_parsing_symbol_comma_thousands() {
+    let money = Money::<USD>::from_symbol_comma_thousands(
+        format!("${}", i128::MAX.to_string().as_str()).as_str(),
+    );
+    assert!(money.is_err());
+}
+
+#[test]
+fn test_overflow_parsing_symbol_dot_thousands() {
+    let money = Money::<USD>::from_symbol_dot_thousands(
+        format!("${}", i128::MAX.to_string().as_str()).as_str(),
+    );
     assert!(money.is_err());
 }
 
@@ -1482,6 +1504,20 @@ fn test_base_ops_add_i128_negative() {
 }
 
 #[test]
+fn test_base_ops_add_i128_overflow_1() {
+    let money = Money::<USD>::new(123).unwrap();
+    let result = money.add(i128::MAX);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_base_ops_add_i128_overflow_2() {
+    let money = Money::<USD>::new(123).unwrap();
+    let result = money.add(crate::Decimal::MAX - dec!(1));
+    assert!(result.is_err());
+}
+
+#[test]
 fn test_base_ops_sub_i128() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let result = money.sub(50_i128).unwrap();
@@ -1493,6 +1529,20 @@ fn test_base_ops_sub_i128_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let result = money.sub(-50_i128).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
+}
+
+#[test]
+fn test_base_ops_sub_i128_overflow_1() {
+    let money = Money::<USD>::new(123).unwrap();
+    let result = money.sub(i128::MAX);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_base_ops_sub_i128_overflow_2() {
+    let money = Money::<USD>::new(crate::Decimal::MIN).unwrap();
+    let result = money.sub(1);
+    assert!(result.is_err());
 }
 
 #[test]
@@ -1510,6 +1560,20 @@ fn test_base_ops_mul_i128_negative() {
 }
 
 #[test]
+fn test_base_ops_mul_i128_overflow_1() {
+    let money = Money::<USD>::new(123).unwrap();
+    let result = money.mul(i128::MAX);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_base_ops_mul_i128_overflow_2() {
+    let money = Money::<USD>::new(123).unwrap();
+    let result = money.mul(crate::Decimal::MAX - dec!(1));
+    assert!(result.is_err());
+}
+
+#[test]
 fn test_base_ops_div_i128() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let result = money.div(2_i128).unwrap();
@@ -1521,6 +1585,20 @@ fn test_base_ops_div_i128_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let result = money.div(-2_i128).unwrap();
     assert_eq!(result.amount(), dec!(-50.00));
+}
+
+#[test]
+fn test_base_ops_div_i128_overflow_1() {
+    let money = Money::<USD>::new(123).unwrap();
+    let result = money.div(i128::MAX);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_base_ops_div_i128_overflow_2() {
+    let money = Money::<USD>::new(123).unwrap();
+    let result = money.div(0);
+    assert!(result.is_err());
 }
 
 #[test]
@@ -2017,6 +2095,20 @@ fn test_parsing_negative_money() {
 fn test_parsing_negative_dot_separator_money() {
     let money = Money::<USD>::from_str_dot_thousands("USD -1.234.567,89").unwrap();
     assert_eq!(money.amount(), dec!(-1_234_567.89));
+}
+
+#[test]
+fn test_overflow_parsing_str_comma_thousands() {
+    let money = Money::<USD>::from_str(format!("USD {}", i128::MAX.to_string().as_str()).as_str());
+    assert!(money.is_err());
+}
+
+#[test]
+fn test_overflow_parsing_str_dot_thousands() {
+    let money = Money::<USD>::from_str_dot_thousands(
+        format!("USD {}", i128::MAX.to_string().as_str()).as_str(),
+    );
+    assert!(money.is_err());
 }
 
 #[test]
@@ -3022,4 +3114,26 @@ fn test_from_minor_amount_large_value() {
 fn test_from_minor_amount_very_small() {
     let money = Money::<USD>::from_minor(1).unwrap();
     assert_eq!(money.amount(), dec!(0.01));
+}
+
+#[test]
+fn test_from_minor_error() {
+    let money = Money::<USD>::from_minor(i128::MAX);
+    assert!(money.is_err());
+
+    #[derive(Debug, Clone)]
+    struct TooBig;
+    impl crate::Currency for TooBig {
+        const CODE: &'static str = "BIG";
+        const SYMBOL: &'static str = "B";
+        const NAME: &'static str = "Too Big";
+        const NUMERIC: u16 = 69;
+        const MINOR_UNIT: u16 = 98;
+        const MINOR_UNIT_SYMBOL: &'static str = "*";
+        const THOUSAND_SEPARATOR: &'static str = ",";
+        const DECIMAL_SEPARATOR: &'static str = ".";
+    }
+
+    let toobig = Money::<TooBig>::from_minor(123123);
+    assert!(toobig.is_err());
 }
