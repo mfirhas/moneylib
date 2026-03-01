@@ -78,10 +78,16 @@ fn validate_and_build_result<'a>(
 ///
 /// Returns Some((currency_code, amount_without_separators)) on success
 /// Returns None if the format doesn't match
+/// Parse amount with comma thousands separator and optional dot decimal separator
+/// Valid formats:
+/// - digits only: "123", "1234"
+/// - with decimal: "123.45"
+/// - with thousands separator: "1,234", "1,234,567"
+/// - with both: "1,234.56", "1,000,000.99"
 pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
     // Split by space (handles multiple spaces automatically)
     let parts: Vec<&str> = s.split_whitespace().collect();
-    if parts.len() != 2 {
+    if parts.len() != 2 || parts[0].is_empty() || parts[1].is_empty() {
         return None;
     }
 
@@ -90,17 +96,6 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
 
     // Currency code must be exactly 3 alphabetic characters
     if currency_code.len() != 3 || !currency_code.chars().all(|c| c.is_ascii_alphabetic()) {
-        return None;
-    }
-
-    // Parse amount with comma thousands separator and optional dot decimal separator
-    // Valid formats:
-    // - digits only: "123", "1234"
-    // - with decimal: "123.45"
-    // - with thousands separator: "1,234", "1,234,567"
-    // - with both: "1,234.56", "1,000,000.99"
-
-    if amount_str.is_empty() {
         return None;
     }
 
@@ -132,10 +127,16 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
 /// Returns Some((currency_code, amount_converted_to_standard)) on success
 /// The returned amount has commas converted to dots for decimal separator
 /// Returns None if the format doesn't match
+/// Parse amount with dot thousands separator and optional comma decimal separator
+/// Valid formats:
+/// - digits only: "123", "1234"
+/// - with decimal: "123,45"
+/// - with thousands separator: "1.234", "1.234.567"
+/// - with both: "1.234,56", "1.000.000,99"
 pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
     // Split by space (handles multiple spaces automatically)
     let parts: Vec<&str> = s.split_whitespace().collect();
-    if parts.len() != 2 {
+    if parts.len() != 2 || parts[0].is_empty() || parts[1].is_empty() {
         return None;
     }
 
@@ -144,17 +145,6 @@ pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
 
     // Currency code must be exactly 3 alphabetic characters
     if currency_code.len() != 3 || !currency_code.chars().all(|c| c.is_ascii_alphabetic()) {
-        return None;
-    }
-
-    // Parse amount with dot thousands separator and optional comma decimal separator
-    // Valid formats:
-    // - digits only: "123", "1234"
-    // - with decimal: "123,45"
-    // - with thousands separator: "1.234", "1.234.567"
-    // - with both: "1.234,56", "1.000.000,99"
-
-    if amount_str.is_empty() {
         return None;
     }
 
