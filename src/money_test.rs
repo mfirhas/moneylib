@@ -621,6 +621,21 @@ fn test_overflow_parsing_symbol_dot_thousands() {
     assert!(money.is_err());
 }
 
+#[test]
+fn test_symbol_comma_invalids() {
+    let money = Money::<USD>::from_symbol_comma_thousands("$");
+    assert!(money.is_err());
+
+    let money = Money::<USD>::from_symbol_comma_thousands("$123,000.939.12");
+    assert!(money.is_err());
+
+    let money = Money::<USD>::from_symbol_dot_thousands("$");
+    assert!(money.is_err());
+
+    let money = Money::<USD>::from_symbol_dot_thousands("$123.000,939,12");
+    assert!(money.is_err());
+}
+
 // ==================== from_symbol_dot_thousands Tests ====================
 
 #[test]
@@ -2108,6 +2123,21 @@ fn test_overflow_parsing_str_dot_thousands() {
     let money = Money::<USD>::from_str_dot_thousands(
         format!("USD {}", i128::MAX.to_string().as_str()).as_str(),
     );
+    assert!(money.is_err());
+}
+
+#[test]
+fn test_from_str_comma_decimal_non_ascii_digit() {
+    let money = Money::<USD>::from_str("USD a,647.1434");
+    assert!(money.is_err());
+
+    let money = Money::<USD>::from_str("USD 1,555.1a34");
+    assert!(money.is_err());
+
+    let money = Money::<USD>::from_str("USD a67.1434");
+    assert!(money.is_err());
+
+    let money = Money::<USD>::from_str("USD 1.1a34");
     assert!(money.is_err());
 }
 
