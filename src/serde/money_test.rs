@@ -86,6 +86,12 @@ fn test_default_option_deserialize_some() {
     assert_eq!(money.unwrap().amount(), dec!(100.50));
 }
 
+#[test]
+fn test_default_deserialize_overflow() {
+    let money = serde_json::from_str::<Money<USD>>(u128::MAX.to_string().as_str());
+    assert!(money.is_err());
+}
+
 // ---------------------------------------------------------------------------
 // comma_str_code serialize/deserialize
 // ---------------------------------------------------------------------------
