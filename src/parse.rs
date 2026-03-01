@@ -6,10 +6,6 @@ fn validate_and_build_result<'a>(
     separator: char,
     is_positive: bool,
 ) -> Option<(&'a str, String)> {
-    if integer_part.is_empty() {
-        return None;
-    }
-
     // Check if there are separators
     if integer_part.contains(separator) {
         // Validate separator-separated format
