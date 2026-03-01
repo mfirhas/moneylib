@@ -57,16 +57,17 @@ impl<'de, C: Currency + Clone> de::Visitor<'de> for RawMoneyVisitor<C> {
 
     // Handles serde_json's arbitrary_precision number format
     fn visit_map<A: de::MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
-        let key: String = map
-            .next_key()?
-            .ok_or_else(|| de::Error::custom("expected number token, got empty map"))?;
-        if key == "$serde_json::private::Number" {
+        const ARBITRARY_NUMBER_KEY: &str = "$serde_json::private::Number";
+
+        if let Ok(Some(key)) = map.next_key::<String>()
+            && key == ARBITRARY_NUMBER_KEY
+        {
             let value: String = map.next_value()?;
             let d = Decimal::from_str(&value)
                 .map_err(|_| de::Error::custom(format!("invalid decimal: {}", value)))?;
             Ok(RawMoney::<C>::from_decimal(d))
         } else {
-            Err(de::Error::custom(format!("unexpected key in map: {}", key)))
+            Err(de::Error::custom("unexpected key"))
         }
     }
 }
