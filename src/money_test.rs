@@ -2142,6 +2142,12 @@ fn test_from_str_comma_decimal_non_ascii_digit() {
 }
 
 #[test]
+fn test_from_str_comma_empty_group0() {
+    let money = Money::<USD>::from_str("USD ,123,000.23");
+    assert!(money.is_err());
+}
+
+#[test]
 fn test_parsing_all() {
     //! from code comma thousands positive
     let money: Money<USD> = Money::from_str("USD 12").unwrap();
