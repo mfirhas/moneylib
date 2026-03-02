@@ -25,3 +25,10 @@ branch:
 	@echo "Generate coverage with branch coverage..."
 	@mkdir -p $(OUT_DIR)
 	@cargo +nightly llvm-cov test --all-features --ignore-filename-regex "_test\.rs$$" --output-dir $(OUT_DIR) --open --branch
+
+all:
+	@echo "Running all checks..."
+	@cargo check
+	@cargo fmt
+	@cargo clippy --all-features
+	@cargo test --all-features
