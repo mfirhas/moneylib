@@ -28,7 +28,14 @@ branch:
 
 all:
 	@echo "Running all checks..."
+	@echo "Running cargo check---------------------------------------------"
 	@cargo check
+	@sleep 2
+	@echo "Running formatting---------------------------------------------"
 	@cargo fmt
+	@sleep 2
+	@echo "Running clippy---------------------------------------------"
 	@cargo clippy --all-features
+	@sleep 2
+	@echo "Running tests---------------------------------------------"
 	@cargo test --all-features
