@@ -2,6 +2,7 @@ use crate::EUR;
 use crate::GBP;
 use crate::JPY;
 use crate::USD;
+use crate::fmt::format_with_separator;
 
 use crate::Decimal;
 use crate::Money;
@@ -472,4 +473,15 @@ fn test_format_escape_all_format_symbols_explicitly() {
     assert_eq!(format(money, "\\m"), "m");
     assert_eq!(format(money, "\\n"), "n");
     assert_eq!(format(money, "\\\\"), "\\");
+}
+
+#[test]
+fn test_format_with_separator() {
+    let money = Money::<USD>::from_decimal(dec!(93009.446688));
+    let ret = format_with_separator(money, "c na", "*", "#");
+    assert_eq!(ret, "USD 93*009#45");
+
+    let money = Money::<EUR>::from_decimal(dec!(93009.446688));
+    let ret = format_with_separator(money, "s na", " ", ",");
+    assert_eq!(ret, "€ 93 009,45");
 }

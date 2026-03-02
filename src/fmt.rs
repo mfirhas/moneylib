@@ -54,58 +54,12 @@ pub(crate) const SYMBOL_FORMAT_MINOR: &str = "nsa m"; // E.g. $100,023 cents or 
 /// * `money` - The Money value to format
 /// * `format_str` - The format string containing format symbols and optional literal text
 pub(crate) fn format<C: Currency>(money: impl BaseMoney<C>, format_str: &str) -> String {
-    let mut result = String::new();
-    let is_negative = money.is_negative();
-
-    // Use absolute value for display if negative
-    let display_amount = if format_str.contains(MINOR_FORMAT_SYMBOL) {
-        if let Ok(minor_amount) = money.minor_amount() {
-            format_128_abs(minor_amount, C::THOUSAND_SEPARATOR)
-        } else {
-            "OVERFLOWED_AMOUNT".into()
-        }
-    } else {
-        format_decimal_abs(
-            money.amount(),
-            C::THOUSAND_SEPARATOR,
-            C::DECIMAL_SEPARATOR,
-            C::MINOR_UNIT,
-        )
-    };
-
-    let mut chars = format_str.chars().peekable();
-
-    while let Some(ch) = chars.next() {
-        if ch == ESCAPE_SYMBOL {
-            if let Some(&next_ch) = chars.peek() {
-                if FORMAT_SYMBOLS.contains(&next_ch) || next_ch == ESCAPE_SYMBOL {
-                    chars.next();
-                    result.push(next_ch);
-                    continue;
-                } else {
-                    result.push(ch);
-                }
-            } else {
-                result.push(ch);
-            }
-        } else {
-            match ch {
-                AMOUNT_FORMAT_SYMBOL => result.push_str(&display_amount),
-                CODE_FORMAT_SYMBOL => result.push_str(C::CODE),
-                SYMBOL_FORMAT_SYMBOL => result.push_str(C::SYMBOL),
-                MINOR_FORMAT_SYMBOL => result.push_str(C::MINOR_UNIT_SYMBOL),
-                NEGATIVE_FORMAT_SYMBOL => {
-                    if is_negative {
-                        result.push('-');
-                    }
-                }
-                ' ' => result.push(' '),
-                _ => result.push(ch),
-            }
-        }
-    }
-
-    result
+    format_with_separator(
+        money,
+        format_str,
+        C::THOUSAND_SEPARATOR,
+        C::DECIMAL_SEPARATOR,
+    )
 }
 
 /// Formats an i128 with thousands separators (absolute value)
@@ -168,6 +122,66 @@ pub(crate) fn format_decimal_abs(
         // If no fractional part and minor_unit > 0, append decimal separator with zeros
         result.push_str(decimal_separator);
         result.push_str(&"0".repeat(minor_unit.into()));
+    }
+
+    result
+}
+
+pub(crate) fn format_with_separator<C: Currency>(
+    money: impl BaseMoney<C>,
+    format_str: &str,
+    thousand_separator: &str,
+    decimal_separator: &str,
+) -> String {
+    let mut result = String::new();
+    let is_negative = money.is_negative();
+
+    // Use absolute value for display if negative
+    let display_amount = if format_str.contains(MINOR_FORMAT_SYMBOL) {
+        if let Ok(minor_amount) = money.minor_amount() {
+            format_128_abs(minor_amount, thousand_separator)
+        } else {
+            "OVERFLOWED_AMOUNT".into()
+        }
+    } else {
+        format_decimal_abs(
+            money.amount(),
+            thousand_separator,
+            decimal_separator,
+            C::MINOR_UNIT,
+        )
+    };
+
+    let mut chars = format_str.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == ESCAPE_SYMBOL {
+            if let Some(&next_ch) = chars.peek() {
+                if FORMAT_SYMBOLS.contains(&next_ch) || next_ch == ESCAPE_SYMBOL {
+                    chars.next();
+                    result.push(next_ch);
+                    continue;
+                } else {
+                    result.push(ch);
+                }
+            } else {
+                result.push(ch);
+            }
+        } else {
+            match ch {
+                AMOUNT_FORMAT_SYMBOL => result.push_str(&display_amount),
+                CODE_FORMAT_SYMBOL => result.push_str(C::CODE),
+                SYMBOL_FORMAT_SYMBOL => result.push_str(C::SYMBOL),
+                MINOR_FORMAT_SYMBOL => result.push_str(C::MINOR_UNIT_SYMBOL),
+                NEGATIVE_FORMAT_SYMBOL => {
+                    if is_negative {
+                        result.push('-');
+                    }
+                }
+                ' ' => result.push(' '),
+                _ => result.push(ch),
+            }
+        }
     }
 
     result

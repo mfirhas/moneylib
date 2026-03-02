@@ -1511,3 +1511,14 @@ fn test_minor_amount_jpy() {
     let raw = RawMoney::<JPY>::new(dec!(1000)).unwrap();
     assert_eq!(raw.minor_amount().unwrap(), 1000_i128);
 }
+
+#[test]
+fn test_format_with_separator() {
+    let money = RawMoney::<USD>::from_decimal(dec!(93009.446688));
+    let ret = money.format_with_separator("c na", "*", "#");
+    assert_eq!(ret, "USD 93*009#446688");
+
+    let money = RawMoney::<EUR>::from_decimal(dec!(93009.446688));
+    let ret = money.format_with_separator("s na", " ", ",");
+    assert_eq!(ret, "€ 93 009,446688");
+}

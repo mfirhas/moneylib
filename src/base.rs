@@ -1,6 +1,7 @@
 use crate::Currency;
 use crate::Decimal;
 use crate::MoneyError;
+use crate::fmt::format_with_separator;
 use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format};
 use crate::money_macros::dec;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
@@ -833,7 +834,76 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     ///
     ///
     /// ```
-    fn format(&self, f: &str) -> String {
-        format(self.to_owned(), f)
+    fn format(&self, format_str: &str) -> String {
+        format(self.to_owned(), format_str)
+    }
+
+    /// Format money according to the provided format string `f`.
+    ///
+    /// Format symbols:
+    /// - 'a': amount (displayed as absolute value)
+    /// - 'c': currency code (e.g., "USD")
+    /// - 's': currency symbol (e.g., "$")
+    /// - 'm': minor symbol (e.g., "cents")
+    /// - 'n': negative sign (-), only displayed when amount is negative
+    ///
+    /// # Escaping Format Symbols
+    ///
+    /// To display format symbols as literal characters, prefix them with a backslash (\).
+    /// This allows you to:
+    /// 1. Insert literal format symbol characters (a, c, s, m, n) into the output
+    /// 2. Mix escaped symbols with actual format symbols in the same string
+    ///
+    /// Escape sequences:
+    /// - `\a` outputs literal "a"
+    /// - `\c` outputs literal "c"
+    /// - `\s` outputs literal "s"
+    /// - `\m` outputs literal "m"
+    /// - `\n` outputs literal "n"
+    /// - `\\` (double backslash in source) outputs literal "\"
+    /// - `\x` (where x is not a format symbol or backslash) outputs literal "\x"
+    ///
+    /// # Arguments
+    ///
+    /// * `money` - The Money value to format
+    /// * `format_str` - The format string containing format symbols and optional literal text
+    /// * `thousand_separator` - separator for thousands grouping
+    /// * `decimal_separator` - separator for decimal fractions
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use moneylib::{Money, RawMoney, Currency, USD, EUR};
+    /// use moneylib::money_macros::dec;
+    /// use moneylib::CustomMoney;
+    ///
+    /// let money = Money::<USD>::from_decimal(dec!(93009.446688));
+    /// let ret = money.format_with_separator("c na", "*", "#");
+    /// assert_eq!(ret, "USD 93*009#45");
+    ///
+    /// let money = Money::<EUR>::from_decimal(dec!(93009.446688));
+    /// let ret = money.format_with_separator("s na", " ", ",");
+    /// assert_eq!(ret, "€ 93 009,45");
+    ///
+    /// let money = RawMoney::<USD>::from_decimal(dec!(93009.446688));
+    /// let ret = money.format_with_separator("c na", "*", "#");
+    /// assert_eq!(ret, "USD 93*009#446688");
+    ///
+    /// let money = RawMoney::<EUR>::from_decimal(dec!(93009.446688));
+    /// let ret = money.format_with_separator("s na", " ", ",");
+    /// assert_eq!(ret, "€ 93 009,446688");
+    /// ```
+    fn format_with_separator(
+        &self,
+        format_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> String {
+        format_with_separator(
+            self.to_owned(),
+            format_str,
+            thousand_separator,
+            decimal_separator,
+        )
     }
 }
