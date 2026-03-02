@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod raw_money;
 pub use raw_money::RawMoney;
 
