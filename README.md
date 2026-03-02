@@ -34,6 +34,8 @@ Here are some features supported:
 - Some basic operations like absolute value, min, max, and clamp.
 - Support for all ISO 4217 currencies.
 - New/custom currency by implementing `Currency` trait.
+- Serde.
+- Exchange rates.(TODO)
 - Some accounting operations.(TODO)
 
 ## Example
