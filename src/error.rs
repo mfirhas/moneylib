@@ -9,6 +9,9 @@ pub enum MoneyError {
     DecimalConversion,
     ArithmeticOverflow,
     CurrencyMismatch,
+
+    #[cfg(feature = "locale")]
+    ParseLocale,
 }
 
 impl Display for MoneyError {
@@ -26,6 +29,9 @@ impl Display for MoneyError {
             MoneyError::CurrencyMismatch => {
                 write!(f, "{} currency mismatch", ERROR_PREFIX)
             }
+
+            #[cfg(feature = "locale")]
+            MoneyError::ParseLocale => write!(f, "{} error parsing locale", ERROR_PREFIX),
         }
     }
 }

@@ -133,7 +133,6 @@ pub(crate) fn format_with_separator<C: Currency>(
     thousand_separator: &str,
     decimal_separator: &str,
 ) -> String {
-    let mut result = String::new();
     let is_negative = money.is_negative();
 
     // Use absolute value for display if negative
@@ -152,8 +151,18 @@ pub(crate) fn format_with_separator<C: Currency>(
         )
     };
 
+    format_with_amount::<C>(&display_amount, is_negative, format_str)
+}
+
+/// format money with amount and format, the amount is in absolute form.
+pub(crate) fn format_with_amount<C: Currency>(
+    display_amount: &str,
+    is_negative: bool,
+    format_str: &str,
+) -> String {
     let mut chars = format_str.chars().peekable();
 
+    let mut result = String::new();
     while let Some(ch) = chars.next() {
         if ch == ESCAPE_SYMBOL {
             if let Some(&next_ch) = chars.peek() {
@@ -169,7 +178,7 @@ pub(crate) fn format_with_separator<C: Currency>(
             }
         } else {
             match ch {
-                AMOUNT_FORMAT_SYMBOL => result.push_str(&display_amount),
+                AMOUNT_FORMAT_SYMBOL => result.push_str(display_amount),
                 CODE_FORMAT_SYMBOL => result.push_str(C::CODE),
                 SYMBOL_FORMAT_SYMBOL => result.push_str(C::SYMBOL),
                 MINOR_FORMAT_SYMBOL => result.push_str(C::MINOR_UNIT_SYMBOL),

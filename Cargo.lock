@@ -564,6 +564,8 @@ name = "moneylib"
 version = "0.6.0"
 dependencies = [
  "currencylib",
+ "icu_decimal",
+ "icu_locale",
  "rust_decimal",
  "serde",
  "serde_json",

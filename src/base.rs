@@ -9,6 +9,9 @@ use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::{fmt::Debug, str::FromStr};
 
+#[cfg(feature = "locale")]
+use crate::fmt::format_with_amount;
+
 /// Base trait for all money types in the library.
 ///
 /// This trait provides the fundamental operations and properties for working with monetary values.
@@ -761,8 +764,9 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
 
     // PROVIDED
 
-    /// Format money according to the provided format string `f`.
+    /// Format money according to the provided format string `format_str`.
     ///
+    /// `format_str` contains these symbols as parts of money display.
     /// Format symbols:
     /// - 'a': amount (displayed as absolute value)
     /// - 'c': currency code (e.g., "USD")
@@ -790,6 +794,8 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     ///
     /// * `money` - The Money value to format
     /// * `format_str` - The format string containing format symbols and optional literal text
+    ///
+    /// *NOTE*: It's preferable to include `n` to avoid negative money printed as positive.
     ///
     /// # Examples
     ///
@@ -838,8 +844,9 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
         format(self.to_owned(), format_str)
     }
 
-    /// Format money according to the provided format string `f`.
+    /// Format money according to the provided format string `format_str`.
     ///
+    /// `format_str` contains these symbols as parts of money display.
     /// Format symbols:
     /// - 'a': amount (displayed as absolute value)
     /// - 'c': currency code (e.g., "USD")
@@ -869,6 +876,8 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// * `format_str` - The format string containing format symbols and optional literal text
     /// * `thousand_separator` - separator for thousands grouping
     /// * `decimal_separator` - separator for decimal fractions
+    ///
+    /// *NOTE*: It's preferable to include `n` to avoid negative money printed as positive.
     ///
     /// # Examples
     ///
@@ -905,5 +914,63 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
             thousand_separator,
             decimal_separator,
         )
+    }
+
+    #[cfg(feature = "locale")]
+    /// Format money's amount using locale standard with `format_str` format.
+    ///
+    /// `format_str` contains these symbols as parts of money display.
+    /// Format symbols:
+    /// - 'a': amount (displayed as absolute value)
+    /// - 'c': currency code (e.g., "USD")
+    /// - 's': currency symbol (e.g., "$")
+    /// - 'm': minor symbol (e.g., "cents")
+    /// - 'n': negative sign (-), only displayed when amount is negative
+    ///
+    /// # Escaping Format Symbols
+    ///
+    /// To display format symbols as literal characters, prefix them with a backslash (\).
+    /// This allows you to:
+    /// 1. Insert literal format symbol characters (a, c, s, m, n) into the output
+    /// 2. Mix escaped symbols with actual format symbols in the same string
+    ///
+    /// Escape sequences:
+    /// - `\a` outputs literal "a"
+    /// - `\c` outputs literal "c"
+    /// - `\s` outputs literal "s"
+    /// - `\m` outputs literal "m"
+    /// - `\n` outputs literal "n"
+    /// - `\\` (double backslash in source) outputs literal "\"
+    /// - `\x` (where x is not a format symbol or backslash) outputs literal "\x"
+    ///
+    /// # Arguments
+    ///
+    /// * `locale_str` - Locale code, e.g. en-US, en-GB, fr-FR, id-ID, ar-SA, ar-AE
+    /// * `format_str` - The format string containing format symbols and optional literal text
+    ///
+    /// *NOTE*: It's preferable to include `n` to avoid negative money printed as positive.
+    fn format_locale_amount(
+        &self,
+        locale_str: &str,
+        format_str: &str,
+    ) -> Result<String, MoneyError> {
+        use icu_decimal::{DecimalFormatter, input::Decimal as LocaleDecimal};
+        use icu_locale::Locale;
+
+        let loc: Locale = locale_str.parse().map_err(|_| MoneyError::ParseLocale)?;
+        let formatter = DecimalFormatter::try_new(loc.into(), Default::default())
+            .map_err(|_| MoneyError::ParseLocale)?;
+
+        let is_negative = self.is_negative();
+        let abs_amount = self.amount().abs().to_string();
+
+        let decimal =
+            LocaleDecimal::try_from_str(&abs_amount).map_err(|_| MoneyError::DecimalConversion)?;
+
+        let formatted_decimal = formatter.format(&decimal).to_string();
+
+        let ret = format_with_amount::<C>(&formatted_decimal, is_negative, format_str);
+
+        Ok(ret)
     }
 }
