@@ -919,6 +919,14 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     #[cfg(feature = "locale")]
     /// Format money's amount using locale standard with `format_str` format.
     ///
+    /// `locale_str` supports ISO 639 lowercase language code, ISO 639 with ISO 3166-1 alpha‑2 uppercase region code,
+    /// also support BCP 47 locale extensions. Such as:
+    /// - Languages code only: en, id, de, fr, zh etc.
+    /// - Languages code with region: en-US, id-ID, de-DE, fr-FR, ar-SA, zh-CN, etc.
+    /// - BCP 47 extension: zh-CN-u-nu-hanidec (Chinese locale with Chinese numbers).
+    ///
+    /// Some locales are default to latin numberings, some default to their own local numberings.
+    ///
     /// `format_str` contains these symbols as parts of money display.
     /// Format symbols:
     /// - 'a': amount (displayed as absolute value)
