@@ -3173,3 +3173,75 @@ fn test_from_minor_error() {
     let toobig = Money::<TooBig>::from_minor(123123);
     assert!(toobig.is_err());
 }
+
+// ==================== format_locale_amount() Tests ====================
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_en_us() {
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("en-US", "c na");
+    assert_eq!(result.unwrap(), "USD 1,234.56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_language_only() {
+    // Language code only (no region): should fall back to Latin numbering
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("en", "c na");
+    assert_eq!(result.unwrap(), "USD 1,234.56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_fr_fr() {
+    // French locale: narrow no-break space (U+202F) thousands separator, comma decimal
+    let money = Money::<EUR>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("fr-FR", "c na");
+    assert_eq!(result.unwrap(), "EUR 1\u{202f}234,56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_ar_sa() {
+    // Arabic (Saudi Arabia): Arabic-Indic numerals
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("ar-SA", "c na");
+    assert_eq!(result.unwrap(), "USD \u{0661}\u{066C}\u{0662}\u{0663}\u{0664}\u{066B}\u{0665}\u{0666}");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_id_id() {
+    // Indonesian locale: dot thousands separator, comma decimal (European style)
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("id-ID", "c na");
+    assert_eq!(result.unwrap(), "USD 1.234,56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_bcp47_extension() {
+    // BCP 47 extension: zh-CN with hanidec numbering system
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("zh-CN-u-nu-hanidec", "c na");
+    assert_eq!(result.unwrap(), "USD \u{4e00},\u{4e8c}\u{4e09}\u{56db}.\u{4e94}\u{516d}");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_negative() {
+    // Negative amount: 'n' in format_str controls display of the negative sign
+    let money = Money::<USD>::new(dec!(-1234.56)).unwrap();
+    let result = money.format_locale_amount("en-US", "c na");
+    assert_eq!(result.unwrap(), "USD -1,234.56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_invalid_locale() {
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("!!!invalid", "c na");
+    assert_eq!(result.unwrap_err(), MoneyError::ParseLocale);
+}
