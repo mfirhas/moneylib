@@ -50,6 +50,91 @@ fn test_raw_money_default() {
     assert!(money.is_zero());
 }
 
+#[test]
+fn test_raw_money_new_overflow() {
+    let money = RawMoney::<IDR>::new(i128::MAX);
+    assert!(money.is_err());
+
+    let money = RawMoney::<IDR>::from_minor(i128::MAX);
+    assert!(money.is_err());
+
+    let money = RawMoney::<IDR>::new(i128::MAX);
+    assert!(money.is_err());
+
+    #[derive(Debug, Clone)]
+    struct TooBig;
+    impl crate::Currency for TooBig {
+        const CODE: &'static str = "BIG";
+        const SYMBOL: &'static str = "B";
+        const NAME: &'static str = "Too Big";
+        const NUMERIC: u16 = 69;
+        const MINOR_UNIT: u16 = 98;
+        const MINOR_UNIT_SYMBOL: &'static str = "*";
+        const THOUSAND_SEPARATOR: &'static str = ",";
+        const DECIMAL_SEPARATOR: &'static str = ".";
+    }
+
+    let money = RawMoney::<TooBig>::from_minor(123);
+    assert!(money.is_err());
+
+    let money = RawMoney::<EUR>::from_str(format!("EUR {}", i128::MAX.to_string()).as_str());
+    assert!(money.is_err());
+
+    let money =
+        RawMoney::<EUR>::from_str_dot_thousands(format!("EUR {}", i128::MAX.to_string()).as_str());
+    assert!(money.is_err());
+
+    let money = RawMoney::<EUR>::from_symbol_comma_thousands(
+        format!("€{}", i128::MAX.to_string()).as_str(),
+    );
+    assert!(money.is_err());
+
+    let money =
+        RawMoney::<EUR>::from_symbol_dot_thousands(format!("€{}", i128::MAX.to_string()).as_str());
+    assert!(money.is_err());
+
+    let money = RawMoney::<TooBig>::from_decimal(dec!(123.2348));
+    let minor = money.minor_amount();
+    assert!(minor.is_err());
+
+    let money = RawMoney::<EUR>::from_decimal(crate::Decimal::MAX);
+    let minor = money.minor_amount();
+    assert!(minor.is_err());
+
+    let money = RawMoney::<SGD>::from_decimal(dec!(123234));
+    let ret = money.add(crate::Decimal::MAX);
+    assert!(ret.is_err());
+
+    let money = RawMoney::<SGD>::from_decimal(dec!(123234));
+    let ret = money.sub(crate::Decimal::MIN);
+    assert!(ret.is_err());
+
+    let money = RawMoney::<SGD>::from_decimal(dec!(123234));
+    let ret = money.mul(crate::Decimal::MAX);
+    assert!(ret.is_err());
+
+    let money = RawMoney::<SGD>::from_decimal(dec!(123234));
+    let ret = money.div(dec!(0));
+    assert!(ret.is_err());
+
+    // --
+    let money = RawMoney::<SGD>::from_decimal(dec!(123234));
+    let ret = money.add(i128::MAX);
+    assert!(ret.is_err());
+
+    let money = RawMoney::<SGD>::from_decimal(dec!(123234));
+    let ret = money.sub(i128::MAX);
+    assert!(ret.is_err());
+
+    let money = RawMoney::<SGD>::from_decimal(dec!(123234));
+    let ret = money.mul(i128::MAX);
+    assert!(ret.is_err());
+
+    let money = RawMoney::<SGD>::from_decimal(dec!(123234));
+    let ret = money.div(i128::MAX);
+    assert!(ret.is_err());
+}
+
 // ==================== RawMoney::from_decimal() Tests ====================
 
 #[test]
