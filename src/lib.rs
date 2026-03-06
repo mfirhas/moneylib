@@ -9,6 +9,8 @@
 #![forbid(clippy::unwrap_used)]
 
 pub use rust_decimal::Decimal;
+
+/// Contains helper macros.
 pub mod macros {
     pub use rust_decimal::dec;
 }
@@ -20,6 +22,8 @@ mod error;
 pub use error::MoneyError;
 
 pub use currencylib::Currency;
+
+/// Contains all ISO 4217 currencies.
 pub mod iso {
     pub use currencylib::*;
 }
