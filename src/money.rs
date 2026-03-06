@@ -287,36 +287,6 @@ where
     }
 }
 
-impl<C: Currency> Amount<C> for Decimal {
-    fn get_decimal(&self) -> Option<Decimal> {
-        Some(*self)
-    }
-}
-
-impl<C: Currency> Amount<C> for f64 {
-    fn get_decimal(&self) -> Option<Decimal> {
-        Decimal::from_f64(*self)
-    }
-}
-
-impl<C: Currency> Amount<C> for i32 {
-    fn get_decimal(&self) -> Option<Decimal> {
-        Decimal::from_i32(*self)
-    }
-}
-
-impl<C: Currency> Amount<C> for i64 {
-    fn get_decimal(&self) -> Option<Decimal> {
-        Decimal::from_i64(*self)
-    }
-}
-
-impl<C: Currency> Amount<C> for i128 {
-    fn get_decimal(&self) -> Option<Decimal> {
-        Decimal::from_i128(*self)
-    }
-}
-
 impl<C> FromStr for Money<C>
 where
     C: Currency + Clone,

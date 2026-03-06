@@ -5,7 +5,7 @@ use crate::fmt::format_with_separator;
 use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format};
 use crate::macros::dec;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
-use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
+use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::{fmt::Debug, str::FromStr};
 
@@ -567,6 +567,36 @@ pub trait Amount<C: Currency>: Sized {
     ///
     /// Returns `None` if Self cannot be converted into Decimal.
     fn get_decimal(&self) -> Option<Decimal>;
+}
+
+impl<C: Currency> Amount<C> for Decimal {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Some(*self)
+    }
+}
+
+impl<C: Currency> Amount<C> for f64 {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Decimal::from_f64(*self)
+    }
+}
+
+impl<C: Currency> Amount<C> for i32 {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Decimal::from_i32(*self)
+    }
+}
+
+impl<C: Currency> Amount<C> for i64 {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Decimal::from_i64(*self)
+    }
+}
+
+impl<C: Currency> Amount<C> for i128 {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Decimal::from_i128(*self)
+    }
 }
 
 /// Defines the strategy for rounding decimal money amounts.
