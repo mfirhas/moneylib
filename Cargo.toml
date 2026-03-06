@@ -9,6 +9,12 @@ repository = "https://github.com/mfirhas/moneylib"
 documentation = "https://docs.rs/moneylib"
 keywords = ["finance", "money", "currency", "decimal", "type-safe"]
 categories = ["finance", "data-structures"]
+exclude = [
+  "**/*_test.rs",
+  "tests/**",
+  "examples/**",
+  "Makefile",
+]
 
 [features]
 default = []
