@@ -44,6 +44,8 @@ fn test_all_errors_have_prefix() {
         MoneyError::DecimalConversion,
         MoneyError::ArithmeticOverflow,
         MoneyError::CurrencyMismatch,
+        #[cfg(feature = "locale")]
+        MoneyError::ParseLocale,
     ];
 
     for error in errors {
