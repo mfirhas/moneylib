@@ -971,11 +971,16 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     ///
     /// // Arabic (Saudi Arabia) locale: Arabic-Indic numerals
     /// let money = Money::<USD>::new(dec!(1234.56)).unwrap();
-    /// assert_eq!(money.format_locale_amount("ar-SA", "c na").unwrap(), "USD \u{0661}\u{066C}\u{0662}\u{0663}\u{0664}\u{066B}\u{0665}\u{0666}");
+    /// assert_eq!(money.format_locale_amount("ar-SA", "c na").unwrap(), "USD ١٬٢٣٤٫٥٦");
     ///
     /// // Negative amount: include `n` in format_str to show the negative sign
     /// let money = Money::<USD>::new(dec!(-1234.56)).unwrap();
     /// assert_eq!(money.format_locale_amount("en-US", "c na").unwrap(), "USD -1,234.56");
+    ///
+    /// // Indian numbers and group formatting.
+    /// let money = Money::<INR>::new(dec!(-1234012.52498)).unwrap();
+    /// let result = money.format_locale_amount("hi-IN-u-nu-deva", "s na");
+    /// assert_eq!(result.unwrap(), "₹ -१२,३४,०१२.५२");
     ///
     /// // Invalid locale returns an error
     /// let money = Money::<USD>::new(dec!(1234.56)).unwrap();
