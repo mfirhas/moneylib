@@ -21,8 +21,8 @@ use crate::fmt::format_with_amount;
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, USD};
-/// use moneylib::money_macros::dec;
+/// use moneylib::{Money, Currency, iso::USD};
+/// use moneylib::macros::dec;
 /// use moneylib::BaseMoney;
 ///
 /// let money = Money::<USD>::new(dec!(1234.56)).unwrap();
@@ -50,8 +50,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
@@ -64,8 +64,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(123.456)).unwrap();
@@ -82,8 +82,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(100)).unwrap();
@@ -99,8 +99,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, IDR, USD, EUR};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::{IDR, USD, EUR}};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<IDR>::new(dec!(1000000)).unwrap();
@@ -122,8 +122,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(100)).unwrap();
@@ -139,8 +139,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(100)).unwrap();
@@ -156,8 +156,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD, JPY, BHD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::{USD, JPY, BHD}};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let usd = Money::<USD>::new(dec!(100)).unwrap();
@@ -179,8 +179,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD, JPY};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::{USD, JPY}};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
@@ -212,8 +212,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD, EUR};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::{USD, EUR}};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(1000)).unwrap();
@@ -231,8 +231,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD, EUR};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::{USD, EUR}};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
@@ -251,8 +251,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let zero = Money::<USD>::new(dec!(0)).unwrap();
@@ -271,8 +271,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let positive = Money::<USD>::new(dec!(10)).unwrap();
@@ -291,8 +291,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let negative = Money::<USD>::new(dec!(-10)).unwrap();
@@ -311,8 +311,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
@@ -330,8 +330,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD, EUR};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::{USD, EUR}};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
@@ -352,8 +352,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
@@ -374,8 +374,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
@@ -393,8 +393,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::BaseMoney;
     ///
     /// let money = Money::<USD>::new(dec!(1234.45)).unwrap();
@@ -413,8 +413,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, USD};
-/// use moneylib::money_macros::dec;
+/// use moneylib::{Money, Currency, iso::USD};
+/// use moneylib::macros::dec;
 /// use moneylib::{BaseMoney, BaseOps};
 ///
 /// let m1 = Money::<USD>::new(dec!(100)).unwrap();
@@ -451,8 +451,8 @@ pub trait BaseOps<C: Currency>:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
     /// let negative = Money::<USD>::new(dec!(-100)).unwrap();
@@ -466,8 +466,8 @@ pub trait BaseOps<C: Currency>:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
     /// let m1 = Money::<USD>::new(dec!(100)).unwrap();
@@ -484,8 +484,8 @@ pub trait BaseOps<C: Currency>:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
     /// let m1 = Money::<USD>::new(dec!(100)).unwrap();
@@ -502,8 +502,8 @@ pub trait BaseOps<C: Currency>:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
     /// let money = Money::<USD>::new(dec!(10)).unwrap();
@@ -519,8 +519,8 @@ pub trait BaseOps<C: Currency>:
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, BaseOps};
     ///
     /// let money = Money::<USD>::new(dec!(100)).unwrap();
@@ -539,8 +539,8 @@ pub trait BaseOps<C: Currency>:
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, USD};
-/// use moneylib::money_macros::dec;
+/// use moneylib::{Money, Currency, iso::USD};
+/// use moneylib::macros::dec;
 /// use moneylib::{BaseMoney, BaseOps};
 ///
 /// let money = Money::<USD>::new(dec!(100)).unwrap();
@@ -577,8 +577,8 @@ pub trait Amount<C: Currency>: Sized {
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, RoundingStrategy, USD};
-/// use moneylib::money_macros::dec;
+/// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
+/// use moneylib::macros::dec;
 /// use moneylib::{BaseMoney, CustomMoney};
 ///
 /// // Note: Money values are rounded to currency minor unit on creation,
@@ -602,8 +602,8 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
     /// // 2.5 rounds to 2 (even)
@@ -627,8 +627,8 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
     /// // 2.5 rounds to 3
@@ -650,8 +650,8 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
     /// // 2.5 rounds to 2
@@ -673,8 +673,8 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
     /// // 2.1 rounds to 3
@@ -696,8 +696,8 @@ pub enum RoundingStrategy {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
     /// // 2.9 rounds to 2
@@ -732,8 +732,8 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, RoundingStrategy, USD};
-/// use moneylib::money_macros::dec;
+/// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
+/// use moneylib::macros::dec;
 /// use moneylib::{BaseMoney, CustomMoney};
 ///
 /// let mut money = Money::<USD>::new(dec!(1234.56)).unwrap();
@@ -751,8 +751,8 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::{BaseMoney, CustomMoney};
     ///
     /// let money = Money::<USD>::new(dec!(123.456)).unwrap();
@@ -800,8 +800,8 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
     /// use moneylib::CustomMoney;
     ///
     /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
@@ -882,8 +882,8 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// # Examples
     ///
     /// ```rust
-    /// use moneylib::{Money, RawMoney, Currency, USD, EUR};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, RawMoney, Currency, iso::{USD, EUR}};
+    /// use moneylib::macros::dec;
     /// use moneylib::CustomMoney;
     ///
     /// let money = Money::<USD>::from_decimal(dec!(93009.446688));
@@ -961,8 +961,8 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD, EUR, INR};
-    /// use moneylib::money_macros::dec;
+    /// use moneylib::{Money, Currency, iso::{USD, EUR, INR}};
+    /// use moneylib::macros::dec;
     /// use moneylib::CustomMoney;
     ///
     /// // English (US) locale: comma thousands separator, dot decimal separator
