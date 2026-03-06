@@ -3208,7 +3208,10 @@ fn test_format_locale_amount_ar_sa() {
     // Arabic (Saudi Arabia): Arabic-Indic numerals
     let money = Money::<USD>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("ar-SA", "c na");
-    assert_eq!(result.unwrap(), "USD \u{0661}\u{066C}\u{0662}\u{0663}\u{0664}\u{066B}\u{0665}\u{0666}");
+    assert_eq!(
+        result.unwrap(),
+        "USD \u{0661}\u{066C}\u{0662}\u{0663}\u{0664}\u{066B}\u{0665}\u{0666}"
+    );
 }
 
 #[cfg(feature = "locale")]
@@ -3217,7 +3220,10 @@ fn test_format_locale_amount_ar_sa_sar_symbol() {
     // Saudi riyal (SAR) with Arabic locale and currency symbol (ر.س)
     let money = Money::<SAR>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("ar-SA", "s na");
-    assert_eq!(result.unwrap(), "\u{0631}.\u{0633} \u{0661}\u{066C}\u{0662}\u{0663}\u{0664}\u{066B}\u{0665}\u{0666}");
+    assert_eq!(
+        result.unwrap(),
+        "\u{0631}.\u{0633} \u{0661}\u{066C}\u{0662}\u{0663}\u{0664}\u{066B}\u{0665}\u{0666}"
+    );
 }
 
 #[cfg(feature = "locale")]
@@ -3235,7 +3241,10 @@ fn test_format_locale_amount_bcp47_extension() {
     // BCP 47 extension: zh-CN with hanidec numbering system
     let money = Money::<USD>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("zh-CN-u-nu-hanidec", "c na");
-    assert_eq!(result.unwrap(), "USD \u{4e00},\u{4e8c}\u{4e09}\u{56db}.\u{4e94}\u{516d}");
+    assert_eq!(
+        result.unwrap(),
+        "USD \u{4e00},\u{4e8c}\u{4e09}\u{56db}.\u{4e94}\u{516d}"
+    );
 }
 
 #[cfg(feature = "locale")]
@@ -3275,11 +3284,34 @@ fn test_format_locale_amount_hi_in_latin_symbol() {
 
 #[cfg(feature = "locale")]
 #[test]
+fn test_format_locale_amount_hi_in_devanagari_symbol_inr_grouping() {
+    let money = Money::<INR>::new(dec!(123408.569)).unwrap();
+    let result = money.format_locale_amount("hi-IN", "s na");
+    assert_eq!(result.unwrap(), "\u{20B9} 1,23,408.57");
+
+    let money = Money::<INR>::new(dec!(123408.569)).unwrap();
+    let result = money.format_locale_amount("hi-IN-u-nu-deva", "s na");
+    assert_eq!(result.unwrap(), "\u{20B9} १,२३,४०८.५७");
+
+    let money = Money::<INR>::new(dec!(1234012.56)).unwrap();
+    let result = money.format_locale_amount("hi-IN", "s na");
+    assert_eq!(result.unwrap(), "\u{20B9} 12,34,012.56");
+
+    let money = Money::<INR>::new(dec!(-1234012.52498)).unwrap();
+    let result = money.format_locale_amount("hi-IN-u-nu-deva", "s na");
+    assert_eq!(result.unwrap(), "\u{20B9} -१२,३४,०१२.५२");
+}
+
+#[cfg(feature = "locale")]
+#[test]
 fn test_format_locale_amount_hi_in_devanagari() {
     // Indian locale with Devanagari numerals via BCP 47 extension (nu-deva)
     let money = Money::<INR>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("hi-IN-u-nu-deva", "c na");
-    assert_eq!(result.unwrap(), "INR \u{0967},\u{0968}\u{0969}\u{096A}.\u{096B}\u{096C}");
+    assert_eq!(
+        result.unwrap(),
+        "INR \u{0967},\u{0968}\u{0969}\u{096A}.\u{096B}\u{096C}"
+    );
 }
 
 #[cfg(feature = "locale")]
@@ -3288,7 +3320,10 @@ fn test_format_locale_amount_hi_in_devanagari_symbol() {
     // Indian locale with rupee symbol (₹) and Devanagari numerals
     let money = Money::<INR>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("hi-IN-u-nu-deva", "s na");
-    assert_eq!(result.unwrap(), "\u{20B9} \u{0967},\u{0968}\u{0969}\u{096A}.\u{096B}\u{096C}");
+    assert_eq!(
+        result.unwrap(),
+        "\u{20B9} \u{0967},\u{0968}\u{0969}\u{096A}.\u{096B}\u{096C}"
+    );
 }
 
 #[cfg(feature = "locale")]
@@ -3297,7 +3332,10 @@ fn test_format_locale_amount_bn_bd_bengali() {
     // Bengali locale (bn-BD) with Bengali numerals (default)
     let money = Money::<BDT>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("bn-BD", "c na");
-    assert_eq!(result.unwrap(), "BDT \u{09E7},\u{09E8}\u{09E9}\u{09EA}.\u{09EB}\u{09EC}");
+    assert_eq!(
+        result.unwrap(),
+        "BDT \u{09E7},\u{09E8}\u{09E9}\u{09EA}.\u{09EB}\u{09EC}"
+    );
 }
 
 #[cfg(feature = "locale")]
@@ -3306,7 +3344,10 @@ fn test_format_locale_amount_bn_bd_bengali_symbol() {
     // Bengali locale (bn-BD) with taka symbol (৳) and Bengali numerals
     let money = Money::<BDT>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("bn-BD", "s na");
-    assert_eq!(result.unwrap(), "\u{09F3} \u{09E7},\u{09E8}\u{09E9}\u{09EA}.\u{09EB}\u{09EC}");
+    assert_eq!(
+        result.unwrap(),
+        "\u{09F3} \u{09E7},\u{09E8}\u{09E9}\u{09EA}.\u{09EB}\u{09EC}"
+    );
 }
 
 #[cfg(feature = "locale")]
