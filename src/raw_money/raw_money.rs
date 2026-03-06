@@ -39,7 +39,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, RawMoney, BaseMoney, money_macros::dec, USD};
+/// use moneylib::{Money, RawMoney, BaseMoney, macros::dec, iso::USD};
 ///
 /// // Create RawMoney directly - no rounding
 /// let raw = RawMoney::<USD>::new(dec!(100.567)).unwrap();
@@ -84,7 +84,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{RawMoney, BaseMoney, money_macros::dec, USD, JPY};
+    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::{USD, JPY}};
     ///
     /// // Preserves all decimal places even for USD (2 decimal places)
     /// let raw = RawMoney::<USD>::new(dec!(100.567)).unwrap();
@@ -114,7 +114,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{RawMoney, BaseMoney, money_macros::dec, USD};
+    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
     ///
     /// let raw = RawMoney::<USD>::from_decimal(dec!(123.309));
     /// assert_eq!(raw.amount(), dec!(123.309));
@@ -132,7 +132,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{RawMoney, BaseMoney, money_macros::dec, USD, BHD, JPY};
+    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::{USD, BHD, JPY}};
     ///
     /// // USD has 2 decimal places, so 12302 cents = $123.02
     /// let raw = RawMoney::<USD>::from_minor(12302).unwrap();
@@ -169,7 +169,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{RawMoney, BaseMoney, money_macros::dec, USD, JPY, BHD};
+    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::{USD, JPY, BHD}};
     ///
     /// let raw = RawMoney::<USD>::new(dec!(100.567)).unwrap();
     /// let money = raw.finish();
@@ -194,7 +194,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{RawMoney, BaseMoney, EUR, USD};
+    /// use moneylib::{RawMoney, BaseMoney, iso::{EUR, USD}};
     ///
     /// let raw = RawMoney::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
     /// assert_eq!(raw.code(), "EUR");
@@ -300,7 +300,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{RawMoney, BaseMoney, money_macros::dec, USD};
+    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
     /// use std::str::FromStr;
     ///
     /// let raw = RawMoney::<USD>::from_str("USD 1,234.56789").unwrap();
@@ -330,7 +330,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use moneylib::{RawMoney, money_macros::dec, USD};
+/// use moneylib::{RawMoney, macros::dec, iso::USD};
 ///
 /// let raw = RawMoney::<USD>::from_decimal(dec!(1234.567));
 /// assert_eq!(format!("{}", raw), "USD 1,234.567");
@@ -363,7 +363,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{RawMoney, BaseMoney, money_macros::dec, USD};
+    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
     ///
     /// let raw = RawMoney::<USD>::from_decimal(dec!(100.567));
     /// let rounded = raw.round();
@@ -389,7 +389,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{RawMoney, BaseMoney, money_macros::dec, USD};
+    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
     ///
     /// let raw = RawMoney::<USD>::from_decimal(dec!(123.45));
     /// assert_eq!(raw.minor_amount().unwrap(), 12345_i128);

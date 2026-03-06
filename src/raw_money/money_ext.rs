@@ -14,7 +14,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, BaseMoney, money_macros::dec, USD};
+    /// use moneylib::{Money, BaseMoney, macros::dec, iso::USD};
     ///
     /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
     ///

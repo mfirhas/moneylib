@@ -33,7 +33,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, BaseMoney, money_macros::dec, USD};
+/// use moneylib::{Money, Currency, BaseMoney, macros::dec, iso::USD};
 /// use std::str::FromStr;
 ///
 /// // Create money from currency and amount
@@ -73,7 +73,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, money_macros::dec, BaseMoney, USD, JPY};
+    /// use moneylib::{Money, Currency, macros::dec, BaseMoney, iso::{USD, JPY}};
     ///
     /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
     /// assert_eq!(money.amount(), dec!(100.50));
@@ -114,7 +114,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, money_macros::dec, BaseMoney, USD};
+    /// use moneylib::{Money, Currency, macros::dec, BaseMoney, iso::USD};
     ///
     /// let money = Money::<USD>::from_decimal(dec!(123.309));
     /// assert_eq!(money.amount(), dec!(123.31));
@@ -133,7 +133,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, money_macros::dec, BaseMoney, USD};
+    /// use moneylib::{Money, Currency, macros::dec, BaseMoney, iso::USD};
     ///
     /// let money = Money::<USD>::from_minor(12302).unwrap();
     /// assert_eq!(money.amount(), dec!(123.02));
@@ -177,7 +177,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, money_macros::dec, BaseMoney, EUR, USD};
+    /// use moneylib::{Money, macros::dec, BaseMoney, iso::{EUR, USD}};
     ///
     /// // Dot as thousand separator, comma as decimal
     /// let money = Money::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
@@ -340,7 +340,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, money_macros::dec, BaseMoney, USD, GBP};
+    /// use moneylib::{Money, macros::dec, BaseMoney, iso::{USD, GBP}};
     /// use std::str::FromStr;
     ///
     /// // Comma as thousand separator, dot as decimal
@@ -389,7 +389,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, money_macros::dec, USD, JPY};
+/// use moneylib::{Money, Currency, macros::dec, iso::{USD, JPY}};
 ///
 /// let money = Money::<USD>::from_decimal(dec!(1234.56));
 /// assert_eq!(format!("{}", money), "USD 1,234.56");

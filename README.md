@@ -42,7 +42,7 @@ Here are some features supported:
 ## Example
 
 ```rust
-use moneylib::{Money, BaseMoney, BaseOps, CustomMoney, RoundingStrategy, USD, JPY, BHD, EUR, money_macros::dec};
+use moneylib::{Money, BaseMoney, BaseOps, CustomMoney, RoundingStrategy, iso::{USD, JPY, BHD, EUR}, macros::dec};
 use std::str::FromStr;
 
 // Creating money from string (supports thousand separators)
@@ -151,7 +151,7 @@ moneylib = { version = "...", features = ["raw_money"] }
 ```
 
 ```rust
-use moneylib::{BaseMoney, RawMoney, USD, Money, money_macros::dec};
+use moneylib::{BaseMoney, RawMoney, iso::USD, Money, macros::dec};
 
 // RawMoney preserves all decimal precision
 let raw = RawMoney::<USD>::new(dec!(100.567)).unwrap();
@@ -198,8 +198,8 @@ moneylib = { version = "...", features = ["serde", "raw_money"] }
 ```
 
 ```rust
-use moneylib::{BaseMoney, Money, RawMoney, money_macros::dec};
-use moneylib::{CAD, EUR, GBP, IDR, JPY, USD};
+use moneylib::{BaseMoney, Money, RawMoney, macros::dec};
+use moneylib::iso::{CAD, EUR, GBP, IDR, JPY, USD};
 
 #[derive(Debug, ::serde::Serialize, ::serde::Deserialize)]
     struct All {
@@ -402,8 +402,8 @@ moneylib = { version = "...", features = ["locale", "raw_money"] }
 ```
 
 ```rust
-use moneylib::{Money, Currency, USD, EUR, INR};
-use moneylib::money_macros::dec;
+use moneylib::{Money, Currency, iso::{USD, EUR, INR}};
+use moneylib::macros::dec;
 use moneylib::CustomMoney;
 
 // English (US) locale: comma thousands separator, dot decimal separator
