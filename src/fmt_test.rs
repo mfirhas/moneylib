@@ -1,13 +1,10 @@
-use crate::EUR;
-use crate::GBP;
-use crate::JPY;
-use crate::USD;
 use crate::fmt::format_with_separator;
+use crate::iso::{EUR, GBP, JPY, USD};
 
 use crate::Decimal;
 use crate::Money;
 use crate::fmt::{format, format_128_abs, format_decimal_abs};
-use crate::money_macros::dec;
+use crate::macros::dec;
 use std::str::FromStr;
 
 #[test]

@@ -1,6 +1,6 @@
-use crate::{EUR, IDR, USD};
+use crate::iso::{EUR, IDR, USD};
 
-use crate::money_macros::dec;
+use crate::macros::dec;
 use crate::{BaseMoney, Money};
 
 /// Test adding 2 moneys with same currencies

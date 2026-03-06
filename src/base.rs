@@ -3,7 +3,7 @@ use crate::Decimal;
 use crate::MoneyError;
 use crate::fmt::format_with_separator;
 use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format};
-use crate::money_macros::dec;
+use crate::macros::dec;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};

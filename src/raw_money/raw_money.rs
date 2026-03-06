@@ -3,7 +3,7 @@ use std::{fmt::Display, marker::PhantomData, str::FromStr};
 use crate::{
     BaseMoney, BaseOps, Decimal, Money, MoneyError,
     base::Amount,
-    money_macros::dec,
+    macros::dec,
     parse::{
         parse_comma_thousands_separator, parse_dot_thousands_separator,
         parse_symbol_comma_thousands_separator, parse_symbol_dot_thousands_separator,

@@ -1,7 +1,7 @@
-use crate::{BDT, BHD, EUR, GBP, IDR, INR, JPY, SAR};
+use crate::iso::{AUD, BDT, BHD, EUR, GBP, IDR, INR, JPY, SAR, SGD, USD};
 
-use crate::money_macros::dec;
-use crate::{BaseMoney, BaseOps, CustomMoney, Money, MoneyError, RoundingStrategy, USD};
+use crate::macros::dec;
+use crate::{BaseMoney, BaseOps, CustomMoney, Money, MoneyError, RoundingStrategy};
 use std::str::FromStr;
 
 // ==================== Money::new() Tests ====================
@@ -501,7 +501,7 @@ fn test_from_symbol_comma_thousands_basic() {
 
 #[test]
 fn test_from_symbol_comma_thousands_no_thousands_separator() {
-    let money = Money::<crate::AUD>::from_symbol_comma_thousands("$100.50").unwrap();
+    let money = Money::<AUD>::from_symbol_comma_thousands("$100.50").unwrap();
     assert_eq!(money.amount(), dec!(100.50));
 }
 
@@ -593,13 +593,13 @@ fn test_from_symbol_dot_thousands_optional_separator_rounded_negative() {
 
 #[test]
 fn test_from_symbol_comma_currency_mismatch() {
-    let money = Money::<crate::SGD>::from_symbol_comma_thousands("$1,234.56");
+    let money = Money::<SGD>::from_symbol_comma_thousands("$1,234.56");
     assert!(money.is_err());
 }
 
 #[test]
 fn test_from_symbol_dot_currency_mismatch() {
-    let money = Money::<crate::SGD>::from_symbol_comma_thousands("$1,234.56988");
+    let money = Money::<SGD>::from_symbol_comma_thousands("$1,234.56988");
     assert!(money.is_err());
 }
 

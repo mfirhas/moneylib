@@ -1,5 +1,5 @@
-use crate::{BaseMoney, Money, money_macros::dec};
-use crate::{CAD, EUR, GBP, IDR, JPY, USD};
+use crate::iso::{CAD, EUR, GBP, IDR, JPY, USD};
+use crate::{BaseMoney, Money, macros::dec};
 
 // ---------------------------------------------------------------------------
 // Default (number) serialize/deserialize

@@ -9,7 +9,7 @@
 #![forbid(clippy::unwrap_used)]
 
 pub use rust_decimal::Decimal;
-pub mod money_macros {
+pub mod macros {
     pub use rust_decimal::dec;
 }
 
@@ -19,7 +19,10 @@ pub use base::{BaseMoney, BaseOps, CustomMoney, RoundingStrategy};
 mod error;
 pub use error::MoneyError;
 
-pub use currencylib::*;
+pub use currencylib::Currency;
+pub mod iso {
+    pub use currencylib::*;
+}
 
 mod money;
 pub use money::Money;

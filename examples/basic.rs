@@ -3,8 +3,9 @@
 // handling currency, precision, rounding, and arithmetic operations.
 
 use moneylib::{
-    BHD, BaseMoney, BaseOps, Currency, CustomMoney, EUR, GBP, JPY, Money, RoundingStrategy, USD,
-    money_macros::dec,
+    BaseMoney, BaseOps, Currency, CustomMoney, Money, RoundingStrategy,
+    iso::{BHD, EUR, GBP, JPY, USD},
+    macros::dec,
 };
 use std::str::FromStr;
 
