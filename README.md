@@ -35,6 +35,7 @@ Here are some features supported:
 - Support for all ISO 4217 currencies.
 - New/custom currency by implementing `Currency` trait.
 - Serde.
+- Supports locale formatting.
 - Exchange rates.(TODO)
 - Some accounting operations.(TODO)
 
@@ -386,3 +387,44 @@ use moneylib::{CAD, EUR, GBP, IDR, JPY, USD};
     assert_eq!(ret.raw_amount_from_str_dot_symbol.amount(), dec!(-69.69696969));
 ```
 
+### `locale`
+
+Enable locale formatting using ISO 639 lowercase language code, ISO 639 with ISO 3166-1 alpha‑2 uppercase region code, and also supports BCP 47 locale extensions.
+
+```toml
+[dependencies]
+moneylib = { version = "...", features = ["locale"] }
+```
+or locale for `RawMoney`:
+```toml
+[dependencies]
+moneylib = { version = "...", features = ["locale", "raw_money"] }
+```
+
+```rust
+use moneylib::{Money, Currency, USD, EUR, INR};
+use moneylib::money_macros::dec;
+use moneylib::CustomMoney;
+
+// English (US) locale: comma thousands separator, dot decimal separator
+let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+assert_eq!(money.format_locale_amount("en-US", "c na").unwrap(), "USD 1,234.56");
+
+// Arabic (Saudi Arabia) locale: Arabic-Indic numerals
+let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+assert_eq!(money.format_locale_amount("ar-SA", "c na").unwrap(), "USD ١٬٢٣٤٫٥٦");
+
+// Negative amount: include `n` in format_str to show the negative sign
+let money = Money::<USD>::new(dec!(-1234.56)).unwrap();
+assert_eq!(money.format_locale_amount("en-US", "c na").unwrap(), "USD -1,234.56");
+
+// Indian numbers and group formatting.
+let money = -Money::<INR>::new(dec!(1234012.52498)).unwrap();
+let result = money.format_locale_amount("hi-IN-u-nu-deva", "s na");
+assert_eq!(result.unwrap(), "₹ -१२,३४,०१२.५२");
+
+// Invalid locale returns an error
+let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+assert!(money.format_locale_amount("!!!invalid", "c na").is_err());
+
+```
