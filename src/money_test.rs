@@ -1,9 +1,7 @@
-use currencylib::{BDT, IDR, INR, SAR};
+use crate::{BDT, BHD, EUR, GBP, IDR, INR, JPY, SAR};
 
 use crate::money_macros::dec;
-use crate::{
-    BHD, BaseMoney, BaseOps, CustomMoney, EUR, GBP, JPY, Money, MoneyError, RoundingStrategy, USD,
-};
+use crate::{BaseMoney, BaseOps, CustomMoney, Money, MoneyError, RoundingStrategy, USD};
 use std::str::FromStr;
 
 // ==================== Money::new() Tests ====================
