@@ -49,7 +49,7 @@ fn main() {
     println!("Parsed from string: {}", money_from_str);
 
     // Supports different thousand separator formats
-    let money_euro = Money::<EUR>::from_str("EUR 1.234,56").unwrap();
+    let money_euro = Money::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
     println!("European format: {}", money_euro);
 
     // Works without thousand separators too
