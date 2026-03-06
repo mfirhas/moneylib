@@ -961,7 +961,7 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, USD, EUR};
+    /// use moneylib::{Money, Currency, USD, EUR, INR};
     /// use moneylib::money_macros::dec;
     /// use moneylib::CustomMoney;
     ///
