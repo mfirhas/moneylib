@@ -957,6 +957,30 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// * `format_str` - The format string containing format symbols and optional literal text
     ///
     /// *NOTE*: It's preferable to include `n` to avoid negative money printed as positive.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency, USD, EUR};
+    /// use moneylib::money_macros::dec;
+    /// use moneylib::CustomMoney;
+    ///
+    /// // English (US) locale: comma thousands separator, dot decimal separator
+    /// let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    /// assert_eq!(money.format_locale_amount("en-US", "c na").unwrap(), "USD 1,234.56");
+    ///
+    /// // Arabic (Saudi Arabia) locale: Arabic-Indic numerals
+    /// let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    /// assert_eq!(money.format_locale_amount("ar-SA", "c na").unwrap(), "USD \u{0661}\u{066C}\u{0662}\u{0663}\u{0664}\u{066B}\u{0665}\u{0666}");
+    ///
+    /// // Negative amount: include `n` in format_str to show the negative sign
+    /// let money = Money::<USD>::new(dec!(-1234.56)).unwrap();
+    /// assert_eq!(money.format_locale_amount("en-US", "c na").unwrap(), "USD -1,234.56");
+    ///
+    /// // Invalid locale returns an error
+    /// let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    /// assert!(money.format_locale_amount("!!!invalid", "c na").is_err());
+    /// ```
     fn format_locale_amount(
         &self,
         locale_str: &str,

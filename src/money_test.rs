@@ -1,4 +1,4 @@
-use currencylib::IDR;
+use currencylib::{BDT, IDR, INR, SAR};
 
 use crate::money_macros::dec;
 use crate::{
@@ -3172,4 +3172,157 @@ fn test_from_minor_error() {
 
     let toobig = Money::<TooBig>::from_minor(123123);
     assert!(toobig.is_err());
+}
+
+// ==================== format_locale_amount() Tests ====================
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_en_us() {
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("en-US", "c na");
+    assert_eq!(result.unwrap(), "USD 1,234.56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_language_only() {
+    // Language code only (no region): should fall back to Latin numbering
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("en", "c na");
+    assert_eq!(result.unwrap(), "USD 1,234.56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_fr_fr() {
+    // French locale: narrow no-break space (U+202F) thousands separator, comma decimal
+    let money = Money::<EUR>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("fr-FR", "c na");
+    assert_eq!(result.unwrap(), "EUR 1\u{202f}234,56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_ar_sa() {
+    // Arabic (Saudi Arabia): Arabic-Indic numerals
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("ar-SA", "c na");
+    assert_eq!(result.unwrap(), "USD \u{0661}\u{066C}\u{0662}\u{0663}\u{0664}\u{066B}\u{0665}\u{0666}");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_ar_sa_sar_symbol() {
+    // Saudi riyal (SAR) with Arabic locale and currency symbol (ر.س)
+    let money = Money::<SAR>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("ar-SA", "s na");
+    assert_eq!(result.unwrap(), "\u{0631}.\u{0633} \u{0661}\u{066C}\u{0662}\u{0663}\u{0664}\u{066B}\u{0665}\u{0666}");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_id_id() {
+    // Indonesian locale: dot thousands separator, comma decimal (European style)
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("id-ID", "c na");
+    assert_eq!(result.unwrap(), "USD 1.234,56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_bcp47_extension() {
+    // BCP 47 extension: zh-CN with hanidec numbering system
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("zh-CN-u-nu-hanidec", "c na");
+    assert_eq!(result.unwrap(), "USD \u{4e00},\u{4e8c}\u{4e09}\u{56db}.\u{4e94}\u{516d}");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_negative() {
+    // Negative amount: 'n' in format_str controls display of the negative sign
+    let money = Money::<USD>::new(dec!(-1234.56)).unwrap();
+    let result = money.format_locale_amount("en-US", "c na");
+    assert_eq!(result.unwrap(), "USD -1,234.56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_invalid_locale() {
+    let money = Money::<USD>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("!!!invalid", "c na");
+    assert_eq!(result.unwrap_err(), MoneyError::ParseLocale);
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_hi_in_latin() {
+    // Indian locale (hi-IN) with Latin numerals (default for hi-IN)
+    let money = Money::<INR>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("hi-IN", "c na");
+    assert_eq!(result.unwrap(), "INR 1,234.56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_hi_in_latin_symbol() {
+    // Indian locale (hi-IN) with rupee symbol (₹) and Latin numerals
+    let money = Money::<INR>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("hi-IN", "s na");
+    assert_eq!(result.unwrap(), "\u{20B9} 1,234.56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_hi_in_devanagari() {
+    // Indian locale with Devanagari numerals via BCP 47 extension (nu-deva)
+    let money = Money::<INR>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("hi-IN-u-nu-deva", "c na");
+    assert_eq!(result.unwrap(), "INR \u{0967},\u{0968}\u{0969}\u{096A}.\u{096B}\u{096C}");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_hi_in_devanagari_symbol() {
+    // Indian locale with rupee symbol (₹) and Devanagari numerals
+    let money = Money::<INR>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("hi-IN-u-nu-deva", "s na");
+    assert_eq!(result.unwrap(), "\u{20B9} \u{0967},\u{0968}\u{0969}\u{096A}.\u{096B}\u{096C}");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_bn_bd_bengali() {
+    // Bengali locale (bn-BD) with Bengali numerals (default)
+    let money = Money::<BDT>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("bn-BD", "c na");
+    assert_eq!(result.unwrap(), "BDT \u{09E7},\u{09E8}\u{09E9}\u{09EA}.\u{09EB}\u{09EC}");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_bn_bd_bengali_symbol() {
+    // Bengali locale (bn-BD) with taka symbol (৳) and Bengali numerals
+    let money = Money::<BDT>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("bn-BD", "s na");
+    assert_eq!(result.unwrap(), "\u{09F3} \u{09E7},\u{09E8}\u{09E9}\u{09EA}.\u{09EB}\u{09EC}");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_bn_bd_latin() {
+    // Bengali locale with Latin numerals via BCP 47 extension (nu-latn)
+    let money = Money::<BDT>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("bn-BD-u-nu-latn", "c na");
+    assert_eq!(result.unwrap(), "BDT 1,234.56");
+}
+
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_bn_bd_latin_symbol() {
+    // Bengali locale with taka symbol (৳) and Latin numerals
+    let money = Money::<BDT>::new(dec!(1234.56)).unwrap();
+    let result = money.format_locale_amount("bn-BD-u-nu-latn", "s na");
+    assert_eq!(result.unwrap(), "\u{09F3} 1,234.56");
 }
