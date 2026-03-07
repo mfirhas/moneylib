@@ -482,3 +482,72 @@ fn test_format_with_separator() {
     let ret = format_with_separator(money, "s na", " ", ",");
     assert_eq!(ret, "€ 93 009,45");
 }
+
+#[test]
+fn test_format_literal_block_basic() {
+    let money = Money::<USD>::new(dec!(1000.23)).unwrap();
+
+    // Basic literal block from the issue example
+    assert_eq!(format(money, "\\{Total:} c na"), "Total: USD 1,000.23");
+
+    // Literal block with format symbols inside (not interpreted)
+    assert_eq!(format(money, "\\{a, c, s} a"), "a, c, s 1,000.23");
+
+    // Literal block at the end
+    assert_eq!(format(money, "c na\\{ USD}"), "USD 1,000.23 USD");
+
+    // Empty literal block
+    assert_eq!(format(money, "\\{}c a"), "USD 1,000.23");
+}
+
+#[test]
+fn test_format_literal_block_with_format_symbols_inside() {
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
+
+    // All format symbols inside a literal block are printed literally
+    assert_eq!(format(money, "\\{acsmn}"), "acsmn");
+    assert_eq!(format(money, "\\{Price (USD):} na"), "Price (USD): 100.50");
+
+    // Mix literal block with real format symbols
+    assert_eq!(format(money, "\\{Code:} c"), "Code: USD");
+    assert_eq!(format(money, "\\{Amount:} a"), "Amount: 100.50");
+}
+
+#[test]
+fn test_format_literal_block_negative_amount() {
+    let negative = Money::<USD>::new(dec!(-50.25)).unwrap();
+
+    assert_eq!(format(negative, "\\{Debt:} c na"), "Debt: USD -50.25");
+    assert_eq!(format(negative, "\\{Due:} nsa"), "Due: -$50.25");
+}
+
+#[test]
+fn test_format_literal_block_unclosed() {
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
+
+    // Unclosed literal block: content is still printed literally to end
+    assert_eq!(format(money, "\\{Total: c a"), "Total: c a");
+    assert_eq!(format(money, "c a \\{note"), "USD 100.50 note");
+}
+
+#[test]
+fn test_format_literal_block_multiple() {
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
+
+    // Multiple literal blocks
+    assert_eq!(
+        format(money, "\\{Label:} c \\{=} a"),
+        "Label: USD = 100.50"
+    );
+
+    // Literal blocks adjacent to each other
+    assert_eq!(format(money, "\\{Hello }\\{World}"), "Hello World");
+}
+
+#[test]
+fn test_format_literal_block_with_backslash_inside() {
+    let money = Money::<USD>::new(dec!(100.50)).unwrap();
+
+    // Backslash inside a literal block is treated as a literal character
+    assert_eq!(format(money, "\\{path\\to\\file} a"), "path\\to\\file 100.50");
+}

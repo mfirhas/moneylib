@@ -49,6 +49,19 @@ pub(crate) const SYMBOL_FORMAT_MINOR: &str = "nsa m"; // E.g. $100,023 cents or 
 /// - `\\` (double backslash in source) outputs literal "\"
 /// - `\x` (where x is not a format symbol or backslash) outputs literal "\x"
 ///
+/// # Literal Blocks
+///
+/// Use `\{...}` to print the contents of the curly braces literally, without any
+/// interpretation of format symbols inside. This is an alternative to escaping
+/// individual characters.
+///
+/// Examples:
+/// - `\{Total:} c na` outputs "Total: USD 1,000.23"
+/// - `\{Price (USD):} na` outputs "Price (USD): 1,000.23"
+/// - `\{a, c, s} a` outputs "a, c, s 100.50"
+///
+/// If the closing `}` is omitted, the contents are still printed literally to the end.
+///
 /// # Arguments
 ///
 /// * `money` - The Money value to format
@@ -136,7 +149,7 @@ pub(crate) fn format_with_separator<C: Currency>(
     let is_negative = money.is_negative();
 
     // Use absolute value for display if negative
-    let display_amount = if format_str.contains(MINOR_FORMAT_SYMBOL) {
+    let display_amount = if contains_active_format_symbol(format_str, MINOR_FORMAT_SYMBOL) {
         if let Ok(minor_amount) = money.minor_amount() {
             format_128_abs(minor_amount, thousand_separator)
         } else {
@@ -154,6 +167,33 @@ pub(crate) fn format_with_separator<C: Currency>(
     format_with_amount::<C>(&display_amount, is_negative, format_str)
 }
 
+/// Returns true if `symbol` appears as an active (non-escaped, non-literal-block) format symbol
+/// in `format_str`.
+fn contains_active_format_symbol(format_str: &str, symbol: char) -> bool {
+    let mut chars = format_str.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if ch == ESCAPE_SYMBOL {
+            if let Some(&next_ch) = chars.peek() {
+                if next_ch == '{' {
+                    chars.next(); // consume '{'
+                    // skip everything until '}'
+                    for inner_ch in chars.by_ref() {
+                        if inner_ch == '}' {
+                            break;
+                        }
+                    }
+                } else {
+                    // single-char escape: skip the next character
+                    chars.next();
+                }
+            }
+        } else if ch == symbol {
+            return true;
+        }
+    }
+    false
+}
+
 /// format money with amount and format, the amount is in absolute form.
 pub(crate) fn format_with_amount<C: Currency>(
     display_amount: &str,
@@ -166,7 +206,17 @@ pub(crate) fn format_with_amount<C: Currency>(
     while let Some(ch) = chars.next() {
         if ch == ESCAPE_SYMBOL {
             if let Some(&next_ch) = chars.peek() {
-                if FORMAT_SYMBOLS.contains(&next_ch) || next_ch == ESCAPE_SYMBOL {
+                if next_ch == '{' {
+                    chars.next(); // consume '{'
+                    // collect everything until closing '}', output literally
+                    for inner_ch in chars.by_ref() {
+                        if inner_ch == '}' {
+                            break;
+                        }
+                        result.push(inner_ch);
+                    }
+                    continue;
+                } else if FORMAT_SYMBOLS.contains(&next_ch) || next_ch == ESCAPE_SYMBOL {
                     chars.next();
                     result.push(next_ch);
                     continue;
