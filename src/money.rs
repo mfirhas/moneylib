@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     BaseMoney, BaseOps, Decimal, MoneyError,
-    base::Amount,
+    base::{Amount, DecimalNumber},
     macros::dec,
     parse::{
         parse_comma_thousands_separator, parse_dot_thousands_separator,
@@ -68,7 +68,7 @@ where
     ///
     /// # Arguments
     ///
-    /// * `amount` - The amount of money
+    /// * `amount: impl DecimalNumber` - The amount of money accepting `Decimal`, `f64`, `i32`, `i64`, `i128`
     ///
     /// # Examples
     ///
@@ -100,7 +100,7 @@ where
     #[inline]
     pub fn new<T>(amount: T) -> Result<Self, MoneyError>
     where
-        T: Amount<C>,
+        T: DecimalNumber,
     {
         Ok(Self {
             amount: amount.get_decimal().ok_or(MoneyError::DecimalConversion)?,
@@ -434,7 +434,7 @@ where
     #[inline]
     fn mul<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: Amount<C>,
+        RHS: DecimalNumber,
     {
         Ok(Self::from_decimal(
             self.amount
@@ -446,7 +446,7 @@ where
     #[inline]
     fn div<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: Amount<C>,
+        RHS: DecimalNumber,
     {
         Ok(Self::from_decimal(
             self.amount

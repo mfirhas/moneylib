@@ -457,17 +457,16 @@ fn test_div_checked() {
 fn test_multiple_arithmetics() {
     let money1 = RawMoney::<USD>::from_decimal(dec!(12334.23444));
     let money2 = RawMoney::<USD>::from_decimal(dec!(234.9044));
-    let money3 = RawMoney::<USD>::new(400).unwrap();
 
     let ret = (money1.add(money2).unwrap())
         .mul(dec!(1.2))
         .unwrap()
         .div(100_i128)
         .unwrap()
-        .mul(money3)
+        .mul(2)
         .unwrap();
 
-    assert_eq!(ret.amount(), dec!(60331.86643200));
+    assert_eq!(ret.amount(), dec!(301.65933216));
 }
 
 // ==================== Round Tests ====================

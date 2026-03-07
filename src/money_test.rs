@@ -1188,68 +1188,6 @@ fn test_base_ops_sub_money_rounds() {
     assert_eq!(result.amount(), dec!(100.00));
 }
 
-#[test]
-fn test_base_ops_mul_money() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(2.5)).unwrap();
-    let result = money1.mul(money2).unwrap();
-    assert_eq!(result.amount(), dec!(250.00));
-}
-
-#[test]
-fn test_base_ops_mul_money_negative() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(-2.0)).unwrap();
-    let result = money1.mul(money2).unwrap();
-    assert_eq!(result.amount(), dec!(-200.00));
-}
-
-#[test]
-fn test_base_ops_mul_money_rounds() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    // Money2 will be rounded to 1.00 when created because USD has 2 decimal places
-    let money2 = Money::<USD>::new(dec!(1.005)).unwrap();
-    let result = money1.mul(money2).unwrap();
-    // 100.00 * 1.00 = 100.00
-    assert_eq!(result.amount(), dec!(100.00));
-}
-
-#[test]
-fn test_base_ops_div_money() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(2.0)).unwrap();
-    let result = money1.div(money2).unwrap();
-    assert_eq!(result.amount(), dec!(50.00));
-}
-
-#[test]
-fn test_base_ops_div_money_negative() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(-2.0)).unwrap();
-    let result = money1.div(money2).unwrap();
-    assert_eq!(result.amount(), dec!(-50.00));
-}
-
-#[test]
-fn test_base_ops_div_money_rounds() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(3.0)).unwrap();
-    let result = money1.div(money2).unwrap();
-    assert_eq!(result.amount(), dec!(33.33));
-}
-
-#[test]
-fn test_base_ops_div_money_zero_error() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(0)).unwrap();
-    let result = money1.div(money2);
-    assert!(result.is_err());
-    assert!(matches!(
-        result.unwrap_err(),
-        MoneyError::ArithmeticOverflow
-    ));
-}
-
 // ==================== BaseOps with f64 Type Tests ====================
 
 #[test]
@@ -3037,14 +2975,6 @@ fn test_from_amount_with_i128() {
     let money = Money::<USD>::new(100_i128).unwrap();
     assert_eq!(money.code(), "USD");
     assert_eq!(money.amount(), dec!(100.00));
-}
-
-#[test]
-fn test_from_amount_with_money_same_currency() {
-    let existing_money = Money::<USD>::new(dec!(100.50)).unwrap();
-    let money = Money::<USD>::new(existing_money).unwrap();
-    assert_eq!(money.code(), "USD");
-    assert_eq!(money.amount(), dec!(100.50));
 }
 
 #[test]

@@ -512,7 +512,7 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn mul<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: Amount<C>;
+        RHS: DecimalNumber;
 
     /// Divides this money value by another value.
     ///
@@ -529,7 +529,7 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn div<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: Amount<C>;
+        RHS: DecimalNumber;
 }
 
 /// Trait for types that can represent a money amount.
@@ -544,7 +544,7 @@ pub trait BaseOps<C: Currency>:
 /// use moneylib::{BaseMoney, BaseOps};
 ///
 /// let money = Money::<USD>::new(dec!(100)).unwrap();
-/// let money2 = Money::<USD>::new(money).unwrap();
+/// let money2 = Money::<USD>::new(100.0_f64).unwrap();
 /// let money3 = Money::<USD>::new(123.000_f64).unwrap();
 /// let money4 = Money::<USD>::new(123_i32).unwrap();
 /// let money5 = Money::<USD>::new(123_i64).unwrap();
@@ -594,6 +594,43 @@ impl<C: Currency> Amount<C> for i64 {
 }
 
 impl<C: Currency> Amount<C> for i128 {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Decimal::from_i128(*self)
+    }
+}
+
+/// Trait to represents numbers to work with money amounts.
+///
+/// It supports Decimal, f64, i32, i64, i128.
+pub trait DecimalNumber: Sized {
+    fn get_decimal(&self) -> Option<Decimal>;
+}
+
+impl DecimalNumber for Decimal {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Some(*self)
+    }
+}
+
+impl DecimalNumber for f64 {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Decimal::from_f64(*self)
+    }
+}
+
+impl DecimalNumber for i32 {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Decimal::from_i32(*self)
+    }
+}
+
+impl DecimalNumber for i64 {
+    fn get_decimal(&self) -> Option<Decimal> {
+        Decimal::from_i64(*self)
+    }
+}
+
+impl DecimalNumber for i128 {
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i128(*self)
     }
