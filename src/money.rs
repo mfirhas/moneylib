@@ -157,7 +157,7 @@ where
     /// Creates a new `Money` instance by parsing a string that uses dot as the
     /// thousands separator and comma as the decimal separator.
     ///
-    /// The format is `"CCC amount"` where `CCC` is a 3-letter currency code and
+    /// The format is `"CCC amount"` where `CCC` is a currency code (1-15 letters) and
     /// `amount` uses dots for thousand grouping and an optional comma for the decimal
     /// separator (e.g., `"EUR 1.234,56"`).
     ///
@@ -296,7 +296,7 @@ where
     /// Implementation of string parsing for `Money` using comma as the thousands separator.
     ///
     /// Parses a string representation of money in the format `"CCC amount"` where
-    /// `CCC` is a 3-letter currency code and `amount` uses commas for thousand grouping
+    /// `CCC` is a currency code (1-15 letters) and `amount` uses commas for thousand grouping
     /// and an optional dot for the decimal separator (e.g., `"USD 1,234.56"`).
     ///
     /// The currency code must be a valid ISO 4217 alphabetic code.
