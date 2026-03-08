@@ -205,19 +205,19 @@ fn test_mode_all_same() {
 }
 
 #[test]
-fn test_mode_all_distinct_returns_first() {
-    // When all values are unique the first element is returned
+fn test_mode_all_distinct_returns_none() {
+    // When all values are unique (each appears once), there is no mode
     let moneys = vec![
         Money::<USD>::new(dec!(10.00)).unwrap(),
         Money::<USD>::new(dec!(20.00)).unwrap(),
         Money::<USD>::new(dec!(30.00)).unwrap(),
     ];
-    assert_eq!(moneys.mode().unwrap().amount(), dec!(10.00));
+    assert!(moneys.mode().is_none());
 }
 
 #[test]
-fn test_mode_multimodal_returns_first_occurring() {
-    // 10.00 and 20.00 both appear twice; 10.00 comes first
+fn test_mode_multimodal_returns_none() {
+    // 10.00 and 20.00 both appear twice – no single mode, so None
     let moneys = vec![
         Money::<USD>::new(dec!(10.00)).unwrap(),
         Money::<USD>::new(dec!(20.00)).unwrap(),
@@ -225,7 +225,7 @@ fn test_mode_multimodal_returns_first_occurring() {
         Money::<USD>::new(dec!(20.00)).unwrap(),
         Money::<USD>::new(dec!(30.00)).unwrap(),
     ];
-    assert_eq!(moneys.mode().unwrap().amount(), dec!(10.00));
+    assert!(moneys.mode().is_none());
 }
 
 #[test]

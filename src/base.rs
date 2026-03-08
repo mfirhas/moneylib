@@ -623,17 +623,18 @@ pub trait IterOps<C: Currency> {
     fn median(&self) -> Option<Self::Item>;
 
     /// Returns the most frequently occurring money value in the collection, or `None`
-    /// if the collection is empty.
+    /// if the collection is empty, if every value is distinct (no value occurs more
+    /// than once), or if multiple values share the highest frequency (multimodal).
     ///
-    /// When multiple values share the highest frequency (multi-modal), the value that
-    /// appears first in the original collection is returned. When every value is
-    /// distinct (all have frequency 1) the first element is returned.
+    /// A `Some(value)` is returned only when **exactly one** value has a strictly
+    /// higher occurrence count than all others.
     ///
     /// # Examples
     ///
     /// ```
     /// use moneylib::{Money, IterOps, BaseMoney, macros::dec, iso::USD};
     ///
+    /// // Single clear mode
     /// let moneys = vec![
     ///     Money::<USD>::new(dec!(10.00)).unwrap(),
     ///     Money::<USD>::new(dec!(20.00)).unwrap(),
@@ -645,6 +646,23 @@ pub trait IterOps<C: Currency> {
     /// // Empty collection returns None
     /// let empty: Vec<Money<USD>> = vec![];
     /// assert!(empty.mode().is_none());
+    ///
+    /// // All distinct values – no mode
+    /// let all_distinct = vec![
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(30.00)).unwrap(),
+    /// ];
+    /// assert!(all_distinct.mode().is_none());
+    ///
+    /// // Multimodal (tie) – no single mode
+    /// let multimodal = vec![
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
+    /// ];
+    /// assert!(multimodal.mode().is_none());
     /// ```
     fn mode(&self) -> Option<Self::Item>;
 }
@@ -706,8 +724,21 @@ where
         for item in &items {
             *counts.entry(item.amount()).or_insert(0) += 1;
         }
-        // Find the highest frequency
-        let max_count = counts.values().copied().max()?;
+        // In a single pass find the highest frequency and how many values share it
+        let mut max_count: usize = 0;
+        let mut mode_count: usize = 0;
+        for &c in counts.values() {
+            if c > max_count {
+                max_count = c;
+                mode_count = 1;
+            } else if c == max_count {
+                mode_count += 1;
+            }
+        }
+        // No mode: multiple distinct values each appearing only once, or a tie
+        if mode_count != 1 || (max_count == 1 && counts.len() > 1) {
+            return None;
+        }
         // Return the first element in the original order whose amount has that frequency
         items
             .into_iter()
