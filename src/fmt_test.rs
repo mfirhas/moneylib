@@ -535,10 +535,7 @@ fn test_format_literal_block_multiple() {
     let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     // Multiple literal blocks
-    assert_eq!(
-        format(money, "\\{Label:} c \\{=} a"),
-        "Label: USD = 100.50"
-    );
+    assert_eq!(format(money, "\\{Label:} c \\{=} a"), "Label: USD = 100.50");
 
     // Literal blocks adjacent to each other
     assert_eq!(format(money, "\\{Hello }\\{World}"), "Hello World");
@@ -549,5 +546,8 @@ fn test_format_literal_block_with_backslash_inside() {
     let money = Money::<USD>::new(dec!(100.50)).unwrap();
 
     // Backslash inside a literal block is treated as a literal character
-    assert_eq!(format(money, "\\{path\\to\\file} a"), "path\\to\\file 100.50");
+    assert_eq!(
+        format(money, "\\{path\\to\\file} a"),
+        "path\\to\\file 100.50"
+    );
 }
