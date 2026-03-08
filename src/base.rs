@@ -532,6 +532,46 @@ pub trait BaseOps<C: Currency>:
         RHS: DecimalNumber;
 }
 
+/// Trait for operations on iterable types.
+pub trait IterOps<C: Currency> {
+    type Item;
+
+    fn checked_sum(&self) -> Option<Self::Item>;
+
+    fn mean(&self) -> Option<Self::Item>;
+
+    fn median(&self) -> Option<Self::Item>;
+
+    fn mode(&self) -> Option<Self::Item>;
+}
+
+impl<I, T, C> IterOps<C> for I
+where
+    for<'a> &'a I: IntoIterator<Item = &'a T>,
+    T: BaseMoney<C> + BaseOps<C> + Amount<C> + Default,
+    C: Currency + Clone,
+{
+    type Item = T;
+
+    fn checked_sum(&self) -> Option<T> {
+        self.into_iter()
+            .try_fold(T::default(), |acc, b| BaseOps::add(&acc, b.amount()))
+            .ok()
+    }
+
+    fn mean(&self) -> Option<Self::Item> {
+        todo!()
+    }
+
+    fn median(&self) -> Option<Self::Item> {
+        todo!()
+    }
+
+    fn mode(&self) -> Option<Self::Item> {
+        todo!()
+    }
+}
+
 /// Trait for types that can represent a money amount.
 ///
 /// This trait allows for flexible input types in constructing and arithmetic operations.
