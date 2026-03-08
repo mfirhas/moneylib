@@ -91,7 +91,10 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
     let amount_str = parts[1];
 
     // Currency code must be 1-15 alphabetic characters
-    if currency_code.is_empty() || currency_code.len() > 15 || !currency_code.chars().all(|c| c.is_ascii_alphabetic()) {
+    if currency_code.is_empty()
+        || currency_code.len() > 15
+        || !currency_code.chars().all(|c| c.is_ascii_alphabetic())
+    {
         return None;
     }
 
@@ -140,7 +143,10 @@ pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
     let amount_str = parts[1];
 
     // Currency code must be 1-15 alphabetic characters
-    if currency_code.is_empty() || currency_code.len() > 15 || !currency_code.chars().all(|c| c.is_ascii_alphabetic()) {
+    if currency_code.is_empty()
+        || currency_code.len() > 15
+        || !currency_code.chars().all(|c| c.is_ascii_alphabetic())
+    {
         return None;
     }
 

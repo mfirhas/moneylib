@@ -191,6 +191,8 @@ where
     /// Creates a new `RawMoney` from a string with dot as the thousands separator
     /// and comma as the decimal separator (e.g., `"EUR 1.234,56"`).
     ///
+    /// The format is `"CCC amount"` where `CCC` is a currency code (1-15 letters) and
+    ///
     /// # Examples
     ///
     /// ```
@@ -293,6 +295,8 @@ where
     type Err = MoneyError;
 
     /// Parses a string in the format `"CCC amount"` (comma thousands separator).
+    ///
+    /// The format is `"CCC amount"` where `CCC` is a currency code (1-15 letters).
     ///
     /// For dot thousands separator format (e.g., `"EUR 1.234,56"`), use
     /// [`RawMoney::from_str_dot_thousands`] instead.
