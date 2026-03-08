@@ -69,8 +69,8 @@ fn validate_and_build_result<'a>(
 }
 
 /// Parse money string with comma thousands separator and dot decimal separator
-/// Format: "CCC amount" where CCC is 3-letter currency code
-/// Examples: "USD 1,234.56", "USD 100.50", "USD 1000000"
+/// Format: "CCC amount" where CCC is 1-15 letter currency code
+/// Examples: "USD 1,234.56", "USDT 100.50", "USD 1000000"
 ///
 /// Returns Some((currency_code, amount_without_separators)) on success
 /// Returns None if the format doesn't match
@@ -90,8 +90,8 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
     let currency_code = parts[0];
     let amount_str = parts[1];
 
-    // Currency code must be exactly 3 alphabetic characters
-    if currency_code.len() != 3 || !currency_code.chars().all(|c| c.is_ascii_alphabetic()) {
+    // Currency code must be 1-15 alphabetic characters
+    if currency_code.is_empty() || currency_code.len() > 15 || !currency_code.chars().all(|c| c.is_ascii_alphabetic()) {
         return None;
     }
 
@@ -117,8 +117,8 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
 }
 
 /// Parse money string with dot thousands separator and comma decimal separator
-/// Format: "CCC amount" where CCC is 3-letter currency code
-/// Examples: "EUR 1.234,56", "EUR 100,50", "EUR 1000000"
+/// Format: "CCC amount" where CCC is 1-15 letter currency code
+/// Examples: "EUR 1.234,56", "USDT 100,50", "EUR 1000000"
 ///
 /// Returns Some((currency_code, amount_converted_to_standard)) on success
 /// The returned amount has commas converted to dots for decimal separator
@@ -139,8 +139,8 @@ pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
     let currency_code = parts[0];
     let amount_str = parts[1];
 
-    // Currency code must be exactly 3 alphabetic characters
-    if currency_code.len() != 3 || !currency_code.chars().all(|c| c.is_ascii_alphabetic()) {
+    // Currency code must be 1-15 alphabetic characters
+    if currency_code.is_empty() || currency_code.len() > 15 || !currency_code.chars().all(|c| c.is_ascii_alphabetic()) {
         return None;
     }
 

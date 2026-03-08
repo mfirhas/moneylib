@@ -45,14 +45,23 @@ fn test_comma_mixed_case_currency() {
 }
 
 #[test]
-fn test_comma_invalid_currency_too_short() {
+fn test_comma_valid_currency_two_chars() {
+    // 2-char currency codes are now valid (1-15 chars allowed)
     let result = parse_comma_thousands_separator("US 100.50");
-    assert_eq!(result, None);
+    assert_eq!(result, Some(("US", "100.50".to_string())));
+}
+
+#[test]
+fn test_comma_valid_currency_four_chars() {
+    // 4-char currency codes (e.g. USDT) are now valid (1-15 chars allowed)
+    let result = parse_comma_thousands_separator("USDT 100.50");
+    assert_eq!(result, Some(("USDT", "100.50".to_string())));
 }
 
 #[test]
 fn test_comma_invalid_currency_too_long() {
-    let result = parse_comma_thousands_separator("USDA 100.50");
+    // 16-char currency codes exceed the 15-char limit
+    let result = parse_comma_thousands_separator("ABCDEFGHIJKLMNOP 100.50");
     assert_eq!(result, None);
 }
 
@@ -210,14 +219,23 @@ fn test_dot_mixed_case_currency() {
 }
 
 #[test]
-fn test_dot_invalid_currency_too_short() {
+fn test_dot_valid_currency_two_chars() {
+    // 2-char currency codes are now valid (1-15 chars allowed)
     let result = parse_dot_thousands_separator("EU 100,50");
-    assert_eq!(result, None);
+    assert_eq!(result, Some(("EU", "100.50".to_string())));
+}
+
+#[test]
+fn test_dot_valid_currency_four_chars() {
+    // 4-char currency codes (e.g. EURO) are now valid (1-15 chars allowed)
+    let result = parse_dot_thousands_separator("EURO 100,50");
+    assert_eq!(result, Some(("EURO", "100.50".to_string())));
 }
 
 #[test]
 fn test_dot_invalid_currency_too_long() {
-    let result = parse_dot_thousands_separator("EURO 100,50");
+    // 16-char currency codes exceed the 15-char limit
+    let result = parse_dot_thousands_separator("ABCDEFGHIJKLMNOP 100,50");
     assert_eq!(result, None);
 }
 
@@ -378,4 +396,58 @@ fn test_comma_many_decimal_places() {
 fn test_dot_many_decimal_places() {
     let result = parse_dot_thousands_separator("EUR 123,456789");
     assert_eq!(result, Some(("EUR", "123.456789".to_string())));
+}
+
+// Tests for extended currency code length (1-15 chars)
+
+#[test]
+fn test_comma_usdt_currency() {
+    let result = parse_comma_thousands_separator("USDT 1000");
+    assert_eq!(result, Some(("USDT", "1000".to_string())));
+}
+
+#[test]
+fn test_comma_usdt_with_decimal() {
+    let result = parse_comma_thousands_separator("USDT 1,234.56");
+    assert_eq!(result, Some(("USDT", "1234.56".to_string())));
+}
+
+#[test]
+fn test_comma_max_length_currency() {
+    // 15-char currency code is the maximum allowed
+    let result = parse_comma_thousands_separator("ABCDEFGHIJKLMNO 100.50");
+    assert_eq!(result, Some(("ABCDEFGHIJKLMNO", "100.50".to_string())));
+}
+
+#[test]
+fn test_comma_over_max_length_currency() {
+    // 16-char currency code exceeds the 15-char limit
+    let result = parse_comma_thousands_separator("ABCDEFGHIJKLMNOP 100.50");
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_dot_usdt_currency() {
+    let result = parse_dot_thousands_separator("USDT 1000");
+    assert_eq!(result, Some(("USDT", "1000".to_string())));
+}
+
+#[test]
+fn test_dot_usdt_with_decimal() {
+    let result = parse_dot_thousands_separator("USDT 1.234,56");
+    assert_eq!(result, Some(("USDT", "1234.56".to_string())));
+}
+
+#[test]
+fn test_dot_max_length_currency() {
+    // 15-char currency code is the maximum allowed
+    let result = parse_dot_thousands_separator("ABCDEFGHIJKLMNO 100,50");
+    assert_eq!(result, Some(("ABCDEFGHIJKLMNO", "100.50".to_string())));
+}
+
+#[test]
+fn test_dot_over_max_length_currency() {
+    // 16-char currency code exceeds the 15-char limit
+    let result = parse_dot_thousands_separator("ABCDEFGHIJKLMNOP 100,50");
+    assert_eq!(result, None);
 }
