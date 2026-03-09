@@ -622,12 +622,20 @@ pub trait IterOps<C: Currency> {
     /// ```
     fn median(&self) -> Option<Self::Item>;
 
-    /// Returns the most frequently occurring money value in the collection, or `None`
-    /// if the collection is empty, if every value is distinct (no value occurs more
-    /// than once), or if multiple values share the highest frequency (multimodal).
+    /// Returns the most frequently occurring money value(s) in the collection as a
+    /// `Vec`, or `None` if the collection is empty or if all distinct values share
+    /// the same frequency (no single dominant mode group).
     ///
-    /// A `Some(value)` is returned only when **exactly one** value has a strictly
-    /// higher occurrence count than all others.
+    /// # Behaviour
+    ///
+    /// - Empty collection → `None`
+    /// - Single element → `Some(vec![element])`
+    /// - All elements equal → `Some(vec![that element])`
+    /// - All distinct values have the same occurrence count → `None`
+    ///   (e.g. `[1,1,2,2,3,3]` → `None`)
+    /// - Some values occur more than others → `Some(vec![…values at max frequency…])`
+    ///   in the order they first appear in the collection
+    ///   (e.g. `[1,1,1,2,2,3,3,3]` → `Some(vec![1, 3])`)
     ///
     /// # Examples
     ///
@@ -641,30 +649,21 @@ pub trait IterOps<C: Currency> {
     ///     Money::<USD>::new(dec!(10.00)).unwrap(),
     ///     Money::<USD>::new(dec!(30.00)).unwrap(),
     /// ];
-    /// assert_eq!(moneys.mode().unwrap().amount(), dec!(10.00));
+    /// assert_eq!(moneys.mode().unwrap()[0].amount(), dec!(10.00));
     ///
     /// // Empty collection returns None
     /// let empty: Vec<Money<USD>> = vec![];
     /// assert!(empty.mode().is_none());
     ///
-    /// // All distinct values – no mode
+    /// // All distinct values with equal frequency – no mode
     /// let all_distinct = vec![
     ///     Money::<USD>::new(dec!(10.00)).unwrap(),
     ///     Money::<USD>::new(dec!(20.00)).unwrap(),
     ///     Money::<USD>::new(dec!(30.00)).unwrap(),
     /// ];
     /// assert!(all_distinct.mode().is_none());
-    ///
-    /// // Multimodal (tie) – no single mode
-    /// let multimodal = vec![
-    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
-    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
-    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
-    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
-    /// ];
-    /// assert!(multimodal.mode().is_none());
     /// ```
-    fn mode(&self) -> Option<Self::Item>;
+    fn mode(&self) -> Option<Vec<Self::Item>>;
 }
 
 impl<I, T, C> IterOps<C> for I
@@ -714,36 +713,38 @@ where
         }
     }
 
-    fn mode(&self) -> Option<Self::Item> {
+    fn mode(&self) -> Option<Vec<Self::Item>> {
         let items: Vec<&T> = self.into_iter().collect();
         if items.is_empty() {
             return None;
         }
-        // Count occurrences of each distinct amount value in O(n) using a HashMap
+        // Count occurrences of each distinct amount value in O(n)
         let mut counts = std::collections::HashMap::<Decimal, usize>::new();
         for item in &items {
             *counts.entry(item.amount()).or_insert(0) += 1;
         }
-        // In a single pass find the highest frequency and how many values share it
-        let mut max_count: usize = 0;
-        let mut mode_count: usize = 0;
-        for &c in counts.values() {
-            if c > max_count {
-                max_count = c;
-                mode_count = 1;
-            } else if c == max_count {
-                mode_count += 1;
-            }
-        }
-        // No mode: multiple distinct values each appearing only once, or a tie
-        if mode_count != 1 || (max_count == 1 && counts.len() > 1) {
+        // Find the maximum frequency
+        let max_count = *counts.values().max().unwrap();
+        // Collect all distinct amounts that appear at the maximum frequency
+        let mode_amounts: std::collections::HashSet<Decimal> = counts
+            .iter()
+            .filter(|(_, c)| **c == max_count)
+            .map(|(k, _)| *k)
+            .collect();
+        // If every distinct value is at max frequency and there is more than one
+        // distinct value, there is no dominant mode group → return None.
+        if mode_amounts.len() == counts.len() && counts.len() > 1 {
             return None;
         }
-        // Return the first element in the original order whose amount has that frequency
-        items
+        // Return one representative per mode amount, preserving first-occurrence order
+        let mut seen = std::collections::HashSet::<Decimal>::new();
+        let result: Vec<T> = items
             .into_iter()
-            .find(|item| counts.get(&item.amount()).copied().unwrap_or(0) == max_count)
-            .cloned()
+            .filter(|item| mode_amounts.contains(&item.amount()))
+            .filter(|item| seen.insert(item.amount()))
+            .map(|item| item.clone())
+            .collect();
+        Some(result)
     }
 }
 

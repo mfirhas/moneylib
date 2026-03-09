@@ -173,19 +173,25 @@ fn test_median_rounds_to_minor_unit_jpy() {
 
 #[test]
 fn test_mode_basic() {
+    // 10.00 appears twice, others once – mode is [10.00]
     let moneys = vec![
         Money::<USD>::new(dec!(10.00)).unwrap(),
         Money::<USD>::new(dec!(20.00)).unwrap(),
         Money::<USD>::new(dec!(10.00)).unwrap(),
         Money::<USD>::new(dec!(30.00)).unwrap(),
     ];
-    assert_eq!(moneys.mode().unwrap().amount(), dec!(10.00));
+    let result = moneys.mode().unwrap();
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].amount(), dec!(10.00));
 }
 
 #[test]
 fn test_mode_single_element() {
+    // Single element → Some(vec![element])
     let moneys = vec![Money::<USD>::new(dec!(42.00)).unwrap()];
-    assert_eq!(moneys.mode().unwrap().amount(), dec!(42.00));
+    let result = moneys.mode().unwrap();
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].amount(), dec!(42.00));
 }
 
 #[test]
@@ -196,17 +202,20 @@ fn test_mode_empty_returns_none() {
 
 #[test]
 fn test_mode_all_same() {
+    // All elements are equal → Some(vec![that element])
     let moneys = vec![
         Money::<USD>::new(dec!(5.00)).unwrap(),
         Money::<USD>::new(dec!(5.00)).unwrap(),
         Money::<USD>::new(dec!(5.00)).unwrap(),
     ];
-    assert_eq!(moneys.mode().unwrap().amount(), dec!(5.00));
+    let result = moneys.mode().unwrap();
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].amount(), dec!(5.00));
 }
 
 #[test]
 fn test_mode_all_distinct_returns_none() {
-    // When all values are unique (each appears once), there is no mode
+    // All distinct, each appears once → uniform frequency → None
     let moneys = vec![
         Money::<USD>::new(dec!(10.00)).unwrap(),
         Money::<USD>::new(dec!(20.00)).unwrap(),
@@ -216,20 +225,43 @@ fn test_mode_all_distinct_returns_none() {
 }
 
 #[test]
-fn test_mode_multimodal_returns_none() {
-    // 10.00 and 20.00 both appear twice – no single mode, so None
+fn test_mode_all_equal_occurrences_returns_none() {
+    // [1,1,2,2,3,3] – each value appears twice, no dominant group → None
     let moneys = vec![
-        Money::<USD>::new(dec!(10.00)).unwrap(),
-        Money::<USD>::new(dec!(20.00)).unwrap(),
-        Money::<USD>::new(dec!(10.00)).unwrap(),
-        Money::<USD>::new(dec!(20.00)).unwrap(),
-        Money::<USD>::new(dec!(30.00)).unwrap(),
+        Money::<USD>::new(dec!(1.00)).unwrap(),
+        Money::<USD>::new(dec!(1.00)).unwrap(),
+        Money::<USD>::new(dec!(2.00)).unwrap(),
+        Money::<USD>::new(dec!(2.00)).unwrap(),
+        Money::<USD>::new(dec!(3.00)).unwrap(),
+        Money::<USD>::new(dec!(3.00)).unwrap(),
     ];
     assert!(moneys.mode().is_none());
+}
+
+#[test]
+fn test_mode_multimodal_returns_modes() {
+    // [1,1,1,2,2,3,3,3] – 1 and 3 each appear 3 times, 2 appears twice
+    // → Some([1.00, 3.00]) in first-occurrence order
+    let moneys = vec![
+        Money::<USD>::new(dec!(1.00)).unwrap(),
+        Money::<USD>::new(dec!(1.00)).unwrap(),
+        Money::<USD>::new(dec!(1.00)).unwrap(),
+        Money::<USD>::new(dec!(2.00)).unwrap(),
+        Money::<USD>::new(dec!(2.00)).unwrap(),
+        Money::<USD>::new(dec!(3.00)).unwrap(),
+        Money::<USD>::new(dec!(3.00)).unwrap(),
+        Money::<USD>::new(dec!(3.00)).unwrap(),
+    ];
+    let mut result: Vec<_> = moneys.mode().unwrap();
+    result.sort_by(|a, b| a.amount().cmp(&b.amount()));
+    assert_eq!(result.len(), 2);
+    assert_eq!(result[0].amount(), dec!(1.00));
+    assert_eq!(result[1].amount(), dec!(3.00));
 }
 
 #[test]
 fn test_mode_highest_frequency_wins() {
+    // 20.00 appears three times, 10.00 appears twice → mode is [20.00]
     let moneys = vec![
         Money::<USD>::new(dec!(10.00)).unwrap(),
         Money::<USD>::new(dec!(20.00)).unwrap(),
@@ -237,7 +269,9 @@ fn test_mode_highest_frequency_wins() {
         Money::<USD>::new(dec!(20.00)).unwrap(),
         Money::<USD>::new(dec!(10.00)).unwrap(),
     ];
-    assert_eq!(moneys.mode().unwrap().amount(), dec!(20.00));
+    let result = moneys.mode().unwrap();
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].amount(), dec!(20.00));
 }
 
 #[test]
@@ -247,5 +281,7 @@ fn test_mode_slice() {
         Money::<USD>::new(dec!(10.00)).unwrap(),
         Money::<USD>::new(dec!(20.00)).unwrap(),
     ];
-    assert_eq!(moneys.mode().unwrap().amount(), dec!(10.00));
+    let result = moneys.mode().unwrap();
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].amount(), dec!(10.00));
 }
