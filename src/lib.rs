@@ -60,3 +60,6 @@ mod error_test;
 
 #[cfg(test)]
 mod ops_test;
+
+#[cfg(test)]
+mod iter_ops_test;
