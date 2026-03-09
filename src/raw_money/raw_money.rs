@@ -360,6 +360,15 @@ impl<C: Currency + Clone> Sum for RawMoney<C> {
     }
 }
 
+impl<'a, C: Currency + Clone> Sum<&'a RawMoney<C>> for RawMoney<C> {
+    /// Sum all moneys(borrowed)
+    ///
+    /// WARN: PANIC!!! if overflowed.
+    fn sum<I: Iterator<Item = &'a RawMoney<C>>>(iter: I) -> Self {
+        iter.fold(RawMoney::default(), |acc, b| acc + b.clone())
+    }
+}
+
 impl<C> BaseMoney<C> for RawMoney<C>
 where
     C: Currency + Clone,
