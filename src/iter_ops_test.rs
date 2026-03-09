@@ -58,8 +58,8 @@ fn test_checked_sum_empty_returns_zero() {
 fn test_checked_sum_with_negatives() {
     let moneys = vec![
         Money::<USD>::new(dec!(100.00)).unwrap(),
-        Money::<USD>::new(dec!(-30.00)).unwrap(),
-        Money::<USD>::new(dec!(20.00)).unwrap(),
+        -Money::new(dec!(30.00)).unwrap(),
+        Money::new(dec!(20.00)).unwrap(),
     ];
     assert_eq!(moneys.checked_sum().unwrap().amount(), dec!(90.00));
 }
@@ -69,9 +69,9 @@ fn test_checked_sum_with_negatives() {
 #[test]
 fn test_mean_basic() {
     let moneys = vec![
-        Money::<USD>::new(dec!(10.00)).unwrap(),
+        Money::new(dec!(10.00)).unwrap(),
         Money::<USD>::new(dec!(20.00)).unwrap(),
-        Money::<USD>::new(dec!(30.00)).unwrap(),
+        Money::new(dec!(30.00)).unwrap(),
     ];
     assert_eq!(moneys.mean().unwrap().amount(), dec!(20.00));
 }
