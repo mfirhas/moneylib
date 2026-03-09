@@ -16,7 +16,7 @@ pub mod macros {
 }
 
 mod base;
-pub use base::{BaseMoney, BaseOps, CustomMoney, RoundingStrategy};
+pub use base::{BaseMoney, BaseOps, CustomMoney, IterOps, RoundingStrategy};
 
 mod error;
 pub use error::MoneyError;
@@ -60,3 +60,6 @@ mod error_test;
 
 #[cfg(test)]
 mod ops_test;
+
+#[cfg(test)]
+mod iter_ops_test;

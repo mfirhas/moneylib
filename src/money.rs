@@ -1,5 +1,6 @@
 use std::{
     fmt::{Debug, Display},
+    iter::Sum,
     marker::PhantomData,
     str::FromStr,
 };
@@ -377,6 +378,24 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
+    }
+}
+
+impl<C: Currency + Clone> Sum for Money<C> {
+    /// Sum all moneys
+    ///
+    /// WARN: PANIC!!! if overflowed.
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Money::default(), |acc, b| acc + b)
+    }
+}
+
+impl<'a, C: Currency + Clone> Sum<&'a Money<C>> for Money<C> {
+    /// Sum all moneys(borrowed)
+    ///
+    /// WARN: PANIC!!! if overflowed.
+    fn sum<I: Iterator<Item = &'a Money<C>>>(iter: I) -> Self {
+        iter.fold(Money::default(), |acc, b| acc + b.clone())
     }
 }
 

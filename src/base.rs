@@ -532,6 +532,232 @@ pub trait BaseOps<C: Currency>:
         RHS: DecimalNumber;
 }
 
+/// Trait for statistical and aggregate operations on collections of money values.
+///
+/// This trait is automatically implemented for any type whose references implement
+/// [`IntoIterator`] over money values (e.g. `Vec<Money<C>>`, slices `&[Money<C>]`, etc.).
+///
+/// All methods return `None` when the collection is empty or when an arithmetic
+/// overflow occurs, making them safe to use without panicking.
+pub trait IterOps<C: Currency> {
+    type Item;
+
+    /// Returns the sum of all money values in the collection, or `None` if
+    /// arithmetic overflow occurs. Returns `Some(zero)` for an empty collection.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, IterOps, BaseMoney, macros::dec, iso::USD};
+    ///
+    /// let moneys = vec![
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(30.00)).unwrap(),
+    /// ];
+    /// assert_eq!(moneys.checked_sum().unwrap().amount(), dec!(60.00));
+    ///
+    /// // Empty collection returns Some(zero)
+    /// let empty: Vec<Money<USD>> = vec![];
+    /// assert!(empty.checked_sum().is_none());
+    /// ```
+    fn checked_sum(&self) -> Option<Self::Item>;
+
+    /// Returns the arithmetic mean (average) of all money values in the collection,
+    /// or `None` if the collection is empty or if arithmetic overflow occurs.
+    ///
+    /// The result is rounded to the currency's minor unit using bankers rounding.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, IterOps, BaseMoney, macros::dec, iso::USD};
+    ///
+    /// let moneys = vec![
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(30.00)).unwrap(),
+    /// ];
+    /// assert_eq!(moneys.mean().unwrap().amount(), dec!(20.00));
+    ///
+    /// // Empty collection returns None
+    /// let empty: Vec<Money<USD>> = vec![];
+    /// assert!(empty.mean().is_none());
+    /// ```
+    fn mean(&self) -> Option<Self::Item>;
+
+    /// Returns the median money value of the collection, or `None` if the collection
+    /// is empty or if arithmetic overflow occurs.
+    ///
+    /// The collection is sorted by amount in ascending order. For an odd-length
+    /// collection the middle element is returned. For an even-length collection the
+    /// arithmetic mean of the two middle elements is returned, rounded to the
+    /// currency's minor unit using bankers rounding.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, IterOps, BaseMoney, macros::dec, iso::USD};
+    ///
+    /// // Odd number of elements – returns the middle value
+    /// let moneys = vec![
+    ///     Money::<USD>::new(dec!(30.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
+    /// ];
+    /// assert_eq!(moneys.median().unwrap().amount(), dec!(20.00));
+    ///
+    /// // Even number of elements – returns average of the two middle values
+    /// let moneys = vec![
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(30.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(40.00)).unwrap(),
+    /// ];
+    /// assert_eq!(moneys.median().unwrap().amount(), dec!(25.00));
+    ///
+    /// // Empty collection returns None
+    /// let empty: Vec<Money<USD>> = vec![];
+    /// assert!(empty.median().is_none());
+    /// ```
+    fn median(&self) -> Option<Self::Item>;
+
+    /// Returns the most frequently occurring money value(s) in the collection as a
+    /// `Vec`, or `None` if the collection is empty or if all distinct values share
+    /// the same frequency (no single dominant mode group).
+    ///
+    /// # Behavior
+    ///
+    /// - Empty collection → `None`
+    /// - Single element → `Some(vec![element])`
+    /// - All elements equal → `Some(vec![that element])`
+    /// - All distinct values have the same occurrence count → `None`
+    ///   (e.g. `[1,1,2,2,3,3]` → `None`)
+    /// - Some values occur more than others → `Some(vec![…values at max frequency…])`
+    ///   in the order they first appear in the collection
+    ///   (e.g. `[1,1,1,2,2,3,3,3]` → `Some(vec![1, 3])`)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, IterOps, BaseMoney, macros::dec, iso::USD};
+    ///
+    /// // Single clear mode
+    /// let moneys = vec![
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(30.00)).unwrap(),
+    /// ];
+    /// assert_eq!(moneys.mode().unwrap()[0].amount(), dec!(10.00));
+    ///
+    /// // Empty collection returns None
+    /// let empty: Vec<Money<USD>> = vec![];
+    /// assert!(empty.mode().is_none());
+    ///
+    /// // All distinct values with equal frequency – no mode
+    /// let all_distinct = vec![
+    ///     Money::<USD>::new(dec!(10.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(20.00)).unwrap(),
+    ///     Money::<USD>::new(dec!(30.00)).unwrap(),
+    /// ];
+    /// assert!(all_distinct.mode().is_none());
+    /// ```
+    fn mode(&self) -> Option<Vec<Self::Item>>;
+}
+
+impl<I, T, C> IterOps<C> for I
+where
+    for<'a> &'a I: IntoIterator<Item = &'a T>,
+    T: BaseMoney<C> + BaseOps<C> + Amount<C> + Default,
+    C: Currency + Clone,
+{
+    type Item = T;
+
+    fn checked_sum(&self) -> Option<T> {
+        self.into_iter().next()?;
+        self.into_iter()
+            .try_fold(T::default(), |acc, b| BaseOps::add(&acc, b.amount()))
+            .ok()
+    }
+
+    fn mean(&self) -> Option<Self::Item> {
+        let items: Vec<&T> = self.into_iter().collect();
+        let count = items.len();
+        if count == 0 {
+            return None;
+        }
+        let sum = self.checked_sum()?;
+        let count_decimal = Decimal::from_usize(count)?;
+        BaseOps::div(&sum, count_decimal).ok()
+    }
+
+    fn median(&self) -> Option<Self::Item> {
+        let mut items: Vec<&T> = self.into_iter().collect();
+        if items.is_empty() {
+            return None;
+        }
+        items.sort_by_key(|a| a.amount());
+        let len = items.len();
+        if len % 2 == 1 {
+            Some(items[len / 2].clone())
+        } else {
+            let mid = len / 2;
+            let sum = items[mid - 1].add(items[mid].amount()).ok()?;
+            BaseOps::div(&sum, dec!(2)).ok()
+        }
+    }
+
+    fn mode(&self) -> Option<Vec<Self::Item>> {
+        let items: Vec<&T> = self.into_iter().collect();
+        //#1 If vector is empty, return none. vec![] -> None
+        if items.is_empty() {
+            return None;
+        }
+
+        //#2 If vector only has 1 element, return that element. vec![5] -> Some(vec![5])
+        if items.len() == 1 {
+            return Some(vec![items[0].clone()]);
+        }
+
+        // Count occurrences of each distinct amount value in O(n)
+        let mut counts = std::collections::HashMap::<Decimal, usize>::new();
+        for item in &items {
+            *counts.entry(item.amount()).or_insert(0) += 1;
+        }
+
+        //#3 If vector has multiple elements, and all elements are the same, return that elements. E.g. vec![5,5,5,5]; -> Some(vec![5]).
+        if counts.len() == 1 {
+            return Some(vec![items[0].clone()]);
+        }
+
+        // Find the maximum frequency
+        let max_count = *counts.values().max()?;
+        // Collect all distinct amounts that appear at the maximum frequency
+        let mode_amounts: std::collections::HashSet<Decimal> = counts
+            .iter()
+            .filter(|(_, c)| **c == max_count)
+            .map(|(k, _)| *k)
+            .collect();
+        // If every distinct value is at max frequency and there is more than one
+        // distinct value, there is no dominant mode group → return None.
+        //#4 If vector has multiple different elements, and ALL of them share the same occurrences, return none, meaning no modes. vec![1,1,2,2,3,3] -> None
+        if mode_amounts.len() == counts.len() && counts.len() > 1 {
+            return None;
+        }
+        // Return one representative per mode amount, preserving first-occurrence order
+        //#5 If vector has multiple different elements, only SOME elements share the same occurrences, return those elements as Vector vec![1,1,1,2,2,3,3,3] -> Some(vec![1,3])
+        let mut seen = std::collections::HashSet::<Decimal>::new();
+        let result: Vec<T> = items
+            .into_iter()
+            .filter(|item| mode_amounts.contains(&item.amount()))
+            .filter(|item| seen.insert(item.amount()))
+            .cloned()
+            .collect();
+        Some(result)
+    }
+}
+
 /// Trait for types that can represent a money amount.
 ///
 /// This trait allows for flexible input types in constructing and arithmetic operations.

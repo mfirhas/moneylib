@@ -1,4 +1,4 @@
-use std::{fmt::Display, marker::PhantomData, str::FromStr};
+use std::{fmt::Display, iter::Sum, marker::PhantomData, str::FromStr};
 
 use crate::{
     BaseMoney, BaseOps, Decimal, Money, MoneyError,
@@ -348,6 +348,24 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
+    }
+}
+
+impl<C: Currency + Clone> Sum for RawMoney<C> {
+    /// Sum all moneys
+    ///
+    /// WARN: PANIC! if overflowed.
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(RawMoney::default(), |acc, b| acc + b)
+    }
+}
+
+impl<'a, C: Currency + Clone> Sum<&'a RawMoney<C>> for RawMoney<C> {
+    /// Sum all moneys(borrowed)
+    ///
+    /// WARN: PANIC!!! if overflowed.
+    fn sum<I: Iterator<Item = &'a RawMoney<C>>>(iter: I) -> Self {
+        iter.fold(RawMoney::default(), |acc, b| acc + b.clone())
     }
 }
 
