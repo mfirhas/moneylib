@@ -559,7 +559,7 @@ pub trait IterOps<C: Currency> {
     ///
     /// // Empty collection returns Some(zero)
     /// let empty: Vec<Money<USD>> = vec![];
-    /// assert_eq!(empty.checked_sum().unwrap().amount(), dec!(0));
+    /// assert!(empty.checked_sum().is_none());
     /// ```
     fn checked_sum(&self) -> Option<Self::Item>;
 
@@ -675,6 +675,7 @@ where
     type Item = T;
 
     fn checked_sum(&self) -> Option<T> {
+        self.into_iter().next()?;
         self.into_iter()
             .try_fold(T::default(), |acc, b| BaseOps::add(&acc, b.amount()))
             .ok()

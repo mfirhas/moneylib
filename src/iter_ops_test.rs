@@ -50,8 +50,7 @@ fn test_checked_sum_single_element() {
 #[test]
 fn test_checked_sum_empty_returns_zero() {
     let empty: Vec<Money<USD>> = vec![];
-    // checked_sum on an empty collection returns Some(zero), not None
-    assert_eq!(empty.checked_sum().unwrap().amount(), dec!(0));
+    assert!(empty.checked_sum().is_none());
 }
 
 #[test]
