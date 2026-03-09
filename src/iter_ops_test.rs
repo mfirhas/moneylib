@@ -1,6 +1,33 @@
 use crate::iso::{JPY, USD};
 use crate::macros::dec;
-use crate::{BaseMoney, IterOps, Money};
+use crate::{BaseMoney, IterOps, Money, RawMoney};
+
+#[test]
+fn test_sum() {
+    let moneys = vec![
+        Money::<USD>::new(dec!(10.345)).unwrap(),
+        Money::<USD>::new(dec!(20.2849)).unwrap(),
+        Money::<USD>::new(dec!(30.20)).unwrap(),
+    ];
+    let sum_borrowed: Money<USD> = moneys.iter().sum();
+    println!("still accessible: {:?}", moneys);
+    assert_eq!(sum_borrowed.amount(), dec!(60.82));
+
+    let sum_owned: Money<USD> = moneys.into_iter().sum();
+    assert_eq!(sum_owned.amount(), dec!(60.82));
+
+    let moneys = vec![
+        RawMoney::<USD>::new(dec!(10.345)).unwrap(),
+        RawMoney::<USD>::new(dec!(20.2849)).unwrap(),
+        RawMoney::<USD>::new(dec!(30.20)).unwrap(),
+    ];
+    let sum_borrowed: RawMoney<USD> = moneys.iter().sum();
+    println!("still accessible: {:?}", moneys);
+    assert_eq!(sum_borrowed.amount(), dec!(60.8299));
+
+    let sum_owned: RawMoney<USD> = moneys.into_iter().sum();
+    assert_eq!(sum_owned.amount(), dec!(60.8299));
+}
 
 // ==================== checked_sum Tests ====================
 
@@ -101,6 +128,17 @@ fn test_mean_slice() {
     assert_eq!(moneys.mean().unwrap().amount(), dec!(20.00));
 }
 
+#[test]
+fn test_mean_failed_sum() {
+    let moneys = [
+        Money::<USD>::new(dec!(10.00)).unwrap(),
+        Money::<USD>::new(dec!(20.00)).unwrap(),
+        Money::<USD>::from_decimal(crate::Decimal::MAX),
+    ];
+
+    assert!(moneys.mean().is_none());
+}
+
 // ==================== median Tests ====================
 
 #[test]
@@ -167,6 +205,18 @@ fn test_median_rounds_to_minor_unit_jpy() {
         Money::<JPY>::new(dec!(11)).unwrap(),
     ];
     assert_eq!(moneys.median().unwrap().amount(), dec!(10));
+}
+
+#[test]
+fn test_median_failed() {
+    let moneys = [
+        Money::<USD>::new(dec!(10.00)).unwrap(),
+        Money::<USD>::from_decimal(dec!(20)),
+        Money::<USD>::from_decimal(crate::Decimal::MAX - dec!(2)),
+        Money::<USD>::from_decimal(crate::Decimal::MAX),
+    ];
+
+    assert!(moneys.median().is_none());
 }
 
 // ==================== mode Tests ====================
