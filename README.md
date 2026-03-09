@@ -107,6 +107,7 @@ This library provides these main components to work with money:
 - `Decimal`: 128 bit floating-point with fixed-precision decimal number. Re-export from [rust_decimal](https://crates.io/crates/rust_decimal) represents main type for money's amount.
 - `BaseMoney`: trait of money providing core operations and accessors.
 - `BaseOps`: trait for arithmetic and comparison operations on money.
+- `IterOps`: trait with blanket implementations for checked_sum, mean, median, and mode.
 - `CustomMoney`: trait for custom formatting and rounding operations on money.
 - `RoundingStrategy`: enum defining rounding strategies (BankersRounding, HalfUp, HalfDown, Ceil, Floor).
 - `MoneyError`: enum of possible errors that can occur in money operations.
