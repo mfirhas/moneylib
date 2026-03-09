@@ -626,7 +626,7 @@ pub trait IterOps<C: Currency> {
     /// `Vec`, or `None` if the collection is empty or if all distinct values share
     /// the same frequency (no single dominant mode group).
     ///
-    /// # Behaviour
+    /// # Behavior
     ///
     /// - Empty collection → `None`
     /// - Single element → `Some(vec![element])`

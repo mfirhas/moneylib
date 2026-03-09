@@ -275,6 +275,23 @@ fn test_mode_highest_frequency_wins() {
 }
 
 #[test]
+fn test_mode_multimodal_order_is_first_occurrence() {
+    // 3.00 appears first in the input, then 1.00; both are modes.
+    // The result must list 3.00 before 1.00 (first-occurrence order).
+    let moneys = vec![
+        Money::<USD>::new(dec!(3.00)).unwrap(),
+        Money::<USD>::new(dec!(3.00)).unwrap(),
+        Money::<USD>::new(dec!(2.00)).unwrap(),
+        Money::<USD>::new(dec!(1.00)).unwrap(),
+        Money::<USD>::new(dec!(1.00)).unwrap(),
+    ];
+    let result = moneys.mode().unwrap();
+    assert_eq!(result.len(), 2);
+    assert_eq!(result[0].amount(), dec!(3.00));
+    assert_eq!(result[1].amount(), dec!(1.00));
+}
+
+#[test]
 fn test_mode_slice() {
     let moneys = [
         Money::<USD>::new(dec!(10.00)).unwrap(),
