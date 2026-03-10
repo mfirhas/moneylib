@@ -72,43 +72,6 @@ impl<C> RawMoney<C>
 where
     C: Currency + Clone,
 {
-    /// Creates a new `RawMoney` instance without rounding.
-    ///
-    /// Unlike [`Money::new`], the amount is NOT rounded to the currency's minor unit.
-    /// All decimal precision is preserved exactly as provided.
-    ///
-    /// # Arguments
-    ///
-    /// * `amount` - The amount of money (not rounded)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::{USD, JPY}};
-    ///
-    /// // Preserves all decimal places even for USD (2 decimal places)
-    /// let raw = RawMoney::<USD>::new(dec!(100.567)).unwrap();
-    /// assert_eq!(raw.amount(), dec!(100.567));
-    ///
-    /// // No rounding even for currencies with limited minor units
-    /// let raw_jpy = RawMoney::<JPY>::new(dec!(100.567)).unwrap();
-    /// assert_eq!(raw_jpy.amount(), dec!(100.567));
-    ///
-    /// // Accepts i32, i64, i128 amounts
-    /// let raw = RawMoney::<USD>::new(300_i32).unwrap();
-    /// assert_eq!(raw.amount(), dec!(300));
-    /// ```
-    #[inline]
-    pub fn new<T>(amount: T) -> Result<Self, MoneyError>
-    where
-        T: DecimalNumber,
-    {
-        Ok(Self {
-            amount: amount.get_decimal().ok_or(MoneyError::DecimalConversion)?,
-            _currency: PhantomData,
-        })
-    }
-
     /// Creates a new `RawMoney` instance from Decimal without rounding.
     ///
     /// # Examples
@@ -373,6 +336,14 @@ impl<C> BaseMoney<C> for RawMoney<C>
 where
     C: Currency + Clone,
 {
+    #[inline]
+    fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
+        Ok(Self {
+            amount: amount.get_decimal().ok_or(MoneyError::DecimalConversion)?,
+            _currency: PhantomData,
+        })
+    }
+
     #[inline]
     fn amount(&self) -> Decimal {
         self.amount

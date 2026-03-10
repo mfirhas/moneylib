@@ -1,10 +1,10 @@
 use crate::fmt::format_with_separator;
 use crate::iso::{EUR, GBP, JPY, USD};
 
-use crate::Decimal;
 use crate::Money;
 use crate::fmt::{format, format_128_abs, format_decimal_abs};
 use crate::macros::dec;
+use crate::{BaseMoney, Decimal};
 use std::str::FromStr;
 
 #[test]

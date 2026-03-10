@@ -61,55 +61,6 @@ impl<C> Money<C>
 where
     C: Currency + Clone,
 {
-    /// Creates a new `Money` instance with amount of Decimal, f64, i32, i64, i128,
-    /// or taking amount from another instance of money of same currency.
-    ///
-    /// The amount is automatically rounded to the currency's minor unit precision
-    /// using the bankers rounding rule.
-    ///
-    /// # Arguments
-    ///
-    /// * `amount: impl DecimalNumber` - The amount of money accepting `Decimal`, `f64`, `i32`, `i64`, `i128`
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, macros::dec, BaseMoney, iso::{USD, JPY}};
-    ///
-    /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
-    /// assert_eq!(money.amount(), dec!(100.50));
-    ///
-    /// // Amount is rounded to currency's minor unit (2 decimal places for USD)
-    /// let money = Money::<USD>::new(100.567).unwrap();
-    /// assert_eq!(money.amount(), dec!(100.57));
-    ///
-    /// // JPY has 0 decimal places, so it rounds to whole numbers
-    /// let money = Money::<JPY>::new(dec!(100.5)).unwrap();
-    /// assert_eq!(money.amount(), dec!(100));
-    ///
-    /// // Amount is i32
-    /// let money = Money::<USD>::new(300).unwrap();
-    /// assert_eq!(money.amount(), dec!(300));
-    /// // Amount is i64
-    /// let money = Money::<USD>::new(300_i64).unwrap();
-    /// assert_eq!(money.amount(), dec!(300));
-    ///
-    /// // Amount is i128
-    /// let money = Money::<USD>::new(3000_i128).unwrap();
-    /// assert_eq!(money.amount(), dec!(3000));
-    /// ```
-    #[inline]
-    pub fn new<T>(amount: T) -> Result<Self, MoneyError>
-    where
-        T: DecimalNumber,
-    {
-        Ok(Self {
-            amount: amount.get_decimal().ok_or(MoneyError::DecimalConversion)?,
-            _currency: PhantomData,
-        }
-        .round())
-    }
-
     /// Creates a new `Money` instance from Decimal
     ///
     /// # Examples
@@ -360,7 +311,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, Currency, macros::dec, iso::{USD, JPY}};
+/// use moneylib::{BaseMoney, Money, Currency, macros::dec, iso::{USD, JPY}};
 ///
 /// let money = Money::<USD>::from_decimal(dec!(1234.56));
 /// assert_eq!(format!("{}", money), "USD 1,234.56");
@@ -403,6 +354,15 @@ impl<C> BaseMoney<C> for Money<C>
 where
     C: Currency + Clone,
 {
+    #[inline]
+    fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
+        Ok(Self {
+            amount: amount.get_decimal().ok_or(MoneyError::DecimalConversion)?,
+            _currency: PhantomData,
+        }
+        .round())
+    }
+
     #[inline]
     fn amount(&self) -> Decimal {
         self.amount

@@ -45,6 +45,48 @@ use crate::fmt::format_with_amount;
 pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     // REQUIRED
 
+    /// Creates a new `Money` instance with amount of Decimal, f64, i32, i64, i128,
+    /// or taking amount from another instance of money of same currency.
+    ///
+    /// The amount is automatically rounded to the currency's minor unit precision
+    /// using the bankers rounding rule.
+    ///
+    /// # Arguments
+    ///
+    /// * `amount: impl DecimalNumber` - The amount of money accepting `Decimal`, `f64`, `i32`, `i64`, `i128`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, RawMoney, Currency, macros::dec, BaseMoney, iso::{USD, EUR, JPY}};
+    ///
+    /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
+    /// assert_eq!(money.amount(), dec!(100.50));
+    ///
+    /// // Amount is rounded to currency's minor unit (2 decimal places for USD)
+    /// let money = Money::<USD>::new(100.567).unwrap();
+    /// assert_eq!(money.amount(), dec!(100.57));
+    ///
+    /// // JPY has 0 decimal places, so it rounds to whole numbers
+    /// let money = Money::<JPY>::new(dec!(100.5)).unwrap();
+    /// assert_eq!(money.amount(), dec!(100));
+    ///
+    /// // Amount is i32
+    /// let money = Money::<USD>::new(300).unwrap();
+    /// assert_eq!(money.amount(), dec!(300));
+    /// // Amount is i64
+    /// let money = Money::<USD>::new(300_i64).unwrap();
+    /// assert_eq!(money.amount(), dec!(300));
+    ///
+    /// // Amount is i128
+    /// let money = Money::<USD>::new(3000_i128).unwrap();
+    /// assert_eq!(money.amount(), dec!(3000));
+    ///
+    /// let raw_money = RawMoney::<EUR>::new(dec!(123.2323)).unwrap();
+    /// assert_eq!(raw_money.amount(), dec!(123.2323));
+    /// ```
+    fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError>;
+
     /// Returns the decimal amount of this money value.
     ///
     /// # Examples
@@ -1092,7 +1134,7 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::{BaseMoney, Money, Currency, iso::USD};
     /// use moneylib::macros::dec;
     /// use moneylib::CustomMoney;
     ///
@@ -1253,7 +1295,7 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, iso::{USD, EUR, INR}};
+    /// use moneylib::{BaseMoney, Money, Currency, iso::{USD, EUR, INR}};
     /// use moneylib::macros::dec;
     /// use moneylib::CustomMoney;
     ///

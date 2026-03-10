@@ -403,7 +403,7 @@ moneylib = { version = "...", features = ["locale", "raw_money"] }
 ```
 
 ```rust
-use moneylib::{Money, Currency, iso::{USD, EUR, INR}};
+use moneylib::{BaseMoney, Money, Currency, iso::{USD, EUR, INR}};
 use moneylib::macros::dec;
 use moneylib::CustomMoney;
 
