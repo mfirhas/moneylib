@@ -421,10 +421,10 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
 /// let m2 = Money::<USD>::new(dec!(50)).unwrap();
 ///
 /// // Arithmetic operations
-/// let sum = m1.add(m2).unwrap();
+/// let sum = m1.checked_add(m2).unwrap();
 /// assert_eq!(sum.amount(), dec!(150));
 ///
-/// let diff = m1.sub(m2).unwrap();
+/// let diff = m1.checked_sub(m2).unwrap();
 /// assert_eq!(diff.amount(), dec!(50));
 ///
 /// // Comparison operations
@@ -472,10 +472,10 @@ pub trait BaseOps<C: Currency>:
     ///
     /// let m1 = Money::<USD>::new(dec!(100)).unwrap();
     /// let m2 = Money::<USD>::new(dec!(50)).unwrap();
-    /// let sum = m1.add(m2).unwrap();
+    /// let sum = m1.checked_add(m2).unwrap();
     /// assert_eq!(sum.amount(), dec!(150));
     /// ```
-    fn add<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
+    fn checked_add<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: Amount<C>;
 
@@ -490,10 +490,10 @@ pub trait BaseOps<C: Currency>:
     ///
     /// let m1 = Money::<USD>::new(dec!(100)).unwrap();
     /// let m2 = Money::<USD>::new(dec!(30)).unwrap();
-    /// let diff = m1.sub(m2).unwrap();
+    /// let diff = m1.checked_sub(m2).unwrap();
     /// assert_eq!(diff.amount(), dec!(70));
     /// ```
-    fn sub<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
+    fn checked_sub<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: Amount<C>;
 
@@ -507,10 +507,10 @@ pub trait BaseOps<C: Currency>:
     /// use moneylib::{BaseMoney, BaseOps};
     ///
     /// let money = Money::<USD>::new(dec!(10)).unwrap();
-    /// let product = money.mul(dec!(3)).unwrap();
+    /// let product = money.checked_mul(dec!(3)).unwrap();
     /// assert_eq!(product.amount(), dec!(30));
     /// ```
-    fn mul<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
+    fn checked_mul<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: DecimalNumber;
 
@@ -524,10 +524,10 @@ pub trait BaseOps<C: Currency>:
     /// use moneylib::{BaseMoney, BaseOps};
     ///
     /// let money = Money::<USD>::new(dec!(100)).unwrap();
-    /// let quotient = money.div(dec!(4)).unwrap();
+    /// let quotient = money.checked_div(dec!(4)).unwrap();
     /// assert_eq!(quotient.amount(), dec!(25));
     /// ```
-    fn div<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
+    fn checked_div<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: DecimalNumber;
 }
@@ -677,8 +677,7 @@ where
     fn checked_sum(&self) -> Option<T> {
         self.into_iter().next()?;
         self.into_iter()
-            .try_fold(T::default(), |acc, b| BaseOps::add(&acc, b.amount()))
-            .ok()
+            .try_fold(T::default(), |acc, b| acc.checked_add(b.amount()))
     }
 
     fn mean(&self) -> Option<Self::Item> {
@@ -689,7 +688,7 @@ where
         }
         let sum = self.checked_sum()?;
         let count_decimal = Decimal::from_usize(count)?;
-        BaseOps::div(&sum, count_decimal).ok()
+        sum.checked_div(count_decimal)
     }
 
     fn median(&self) -> Option<Self::Item> {
@@ -703,8 +702,8 @@ where
             Some(items[len / 2].clone())
         } else {
             let mid = len / 2;
-            let sum = items[mid - 1].add(items[mid].amount()).ok()?;
-            BaseOps::div(&sum, dec!(2)).ok()
+            let sum = items[mid - 1].checked_add(items[mid].amount())?;
+            sum.checked_div(dec!(2))
         }
     }
 

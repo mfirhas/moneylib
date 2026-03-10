@@ -102,37 +102,37 @@ fn test_raw_money_new_overflow() {
     assert!(minor.is_err());
 
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
-    let ret = money.add(crate::Decimal::MAX);
-    assert!(ret.is_err());
+    let ret = money.checked_add(crate::Decimal::MAX);
+    assert!(ret.is_none());
 
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
-    let ret = money.sub(crate::Decimal::MIN);
-    assert!(ret.is_err());
+    let ret = money.checked_sub(crate::Decimal::MIN);
+    assert!(ret.is_none());
 
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
-    let ret = money.mul(crate::Decimal::MAX);
-    assert!(ret.is_err());
+    let ret = money.checked_mul(crate::Decimal::MAX);
+    assert!(ret.is_none());
 
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
-    let ret = money.div(dec!(0));
-    assert!(ret.is_err());
+    let ret = money.checked_div(dec!(0));
+    assert!(ret.is_none());
 
     // --
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
-    let ret = money.add(i128::MAX);
-    assert!(ret.is_err());
+    let ret = money.checked_add(i128::MAX);
+    assert!(ret.is_none());
 
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
-    let ret = money.sub(i128::MAX);
-    assert!(ret.is_err());
+    let ret = money.checked_sub(i128::MAX);
+    assert!(ret.is_none());
 
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
-    let ret = money.mul(i128::MAX);
-    assert!(ret.is_err());
+    let ret = money.checked_mul(i128::MAX);
+    assert!(ret.is_none());
 
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
-    let ret = money.div(i128::MAX);
-    assert!(ret.is_err());
+    let ret = money.checked_div(i128::MAX);
+    assert!(ret.is_none());
 }
 
 // ==================== RawMoney::from_decimal() Tests ====================
@@ -428,28 +428,28 @@ fn test_abs_negative() {
 #[test]
 fn test_add_checked() {
     let raw = RawMoney::<USD>::new(dec!(100.123)).unwrap();
-    let result = raw.add(dec!(50.456)).unwrap();
+    let result = raw.checked_add(dec!(50.456)).unwrap();
     assert_eq!(result.amount(), dec!(150.579));
 }
 
 #[test]
 fn test_sub_checked() {
     let raw = RawMoney::<USD>::new(dec!(100.456)).unwrap();
-    let result = raw.sub(dec!(50.123)).unwrap();
+    let result = raw.checked_sub(dec!(50.123)).unwrap();
     assert_eq!(result.amount(), dec!(50.333));
 }
 
 #[test]
 fn test_mul_checked() {
     let raw = RawMoney::<USD>::new(dec!(100.123)).unwrap();
-    let result = raw.mul(dec!(1.5)).unwrap();
+    let result = raw.checked_mul(dec!(1.5)).unwrap();
     assert_eq!(result.amount(), dec!(150.1845));
 }
 
 #[test]
 fn test_div_checked() {
     let raw = RawMoney::<USD>::new(dec!(100)).unwrap();
-    let result = raw.div(dec!(4)).unwrap();
+    let result = raw.checked_div(dec!(4)).unwrap();
     assert_eq!(result.amount(), dec!(25));
 }
 
@@ -458,12 +458,12 @@ fn test_multiple_arithmetics() {
     let money1 = RawMoney::<USD>::from_decimal(dec!(12334.23444));
     let money2 = RawMoney::<USD>::from_decimal(dec!(234.9044));
 
-    let ret = (money1.add(money2).unwrap())
-        .mul(dec!(1.2))
+    let ret = (money1.checked_add(money2).unwrap())
+        .checked_mul(dec!(1.2))
         .unwrap()
-        .div(100_i128)
+        .checked_div(100_i128)
         .unwrap()
-        .mul(2)
+        .checked_mul(2)
         .unwrap();
 
     assert_eq!(ret.amount(), dec!(301.65933216));

@@ -1044,21 +1044,21 @@ fn test_money_clamp() {
 #[test]
 fn test_base_ops_add_decimal() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(dec!(50.00)).unwrap();
+    let result = money.checked_add(dec!(50.00)).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_add_decimal_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(dec!(-50.00)).unwrap();
+    let result = money.checked_add(dec!(-50.00)).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_add_decimal_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(dec!(0.005)).unwrap();
+    let result = money.checked_add(dec!(0.005)).unwrap();
     // Banker's rounding: 0.005 rounds to 0.00 (rounds to nearest even)
     assert_eq!(result.amount(), dec!(100.00));
 }
@@ -1066,75 +1066,71 @@ fn test_base_ops_add_decimal_rounds() {
 #[test]
 fn test_base_ops_sub_decimal() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(dec!(50.00)).unwrap();
+    let result = money.checked_sub(dec!(50.00)).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_sub_decimal_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(dec!(-50.00)).unwrap();
+    let result = money.checked_sub(dec!(-50.00)).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_sub_decimal_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(dec!(0.005)).unwrap();
+    let result = money.checked_sub(dec!(0.005)).unwrap();
     assert_eq!(result.amount(), dec!(100.00));
 }
 
 #[test]
 fn test_base_ops_mul_decimal() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(dec!(2.5)).unwrap();
+    let result = money.checked_mul(dec!(2.5)).unwrap();
     assert_eq!(result.amount(), dec!(250.00));
 }
 
 #[test]
 fn test_base_ops_mul_decimal_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(dec!(-2.0)).unwrap();
+    let result = money.checked_mul(dec!(-2.0)).unwrap();
     assert_eq!(result.amount(), dec!(-200.00));
 }
 
 #[test]
 fn test_base_ops_mul_decimal_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(dec!(1.005)).unwrap();
+    let result = money.checked_mul(dec!(1.005)).unwrap();
     assert_eq!(result.amount(), dec!(100.50));
 }
 
 #[test]
 fn test_base_ops_div_decimal() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(dec!(2.0)).unwrap();
+    let result = money.checked_div(dec!(2.0)).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_div_decimal_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(dec!(-2.0)).unwrap();
+    let result = money.checked_div(dec!(-2.0)).unwrap();
     assert_eq!(result.amount(), dec!(-50.00));
 }
 
 #[test]
 fn test_base_ops_div_decimal_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(dec!(3.0)).unwrap();
+    let result = money.checked_div(dec!(3.0)).unwrap();
     assert_eq!(result.amount(), dec!(33.33));
 }
 
 #[test]
 fn test_base_ops_div_decimal_zero_error() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(dec!(0));
-    assert!(result.is_err());
-    assert!(matches!(
-        result.unwrap_err(),
-        MoneyError::ArithmeticOverflow
-    ));
+    let result = money.checked_div(dec!(0));
+    assert!(result.is_none());
 }
 
 // ==================== BaseOps with Money Type Tests ====================
@@ -1143,7 +1139,7 @@ fn test_base_ops_div_decimal_zero_error() {
 fn test_base_ops_add_money() {
     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
     let money2 = Money::<USD>::new(dec!(50.00)).unwrap();
-    let result = money1.add(money2).unwrap();
+    let result = money1.checked_add(money2).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
@@ -1151,7 +1147,7 @@ fn test_base_ops_add_money() {
 fn test_base_ops_add_money_negative() {
     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
     let money2 = Money::<USD>::new(dec!(-50.00)).unwrap();
-    let result = money1.add(money2).unwrap();
+    let result = money1.checked_add(money2).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
@@ -1159,7 +1155,7 @@ fn test_base_ops_add_money_negative() {
 fn test_base_ops_add_money_rounds() {
     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
     let money2 = Money::<USD>::new(dec!(0.005)).unwrap();
-    let result = money1.add(money2).unwrap();
+    let result = money1.checked_add(money2).unwrap();
     // Banker's rounding: 0.005 rounds to 0.00 (rounds to nearest even)
     assert_eq!(result.amount(), dec!(100.00));
 }
@@ -1168,7 +1164,7 @@ fn test_base_ops_add_money_rounds() {
 fn test_base_ops_sub_money() {
     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
     let money2 = Money::<USD>::new(dec!(50.00)).unwrap();
-    let result = money1.sub(money2).unwrap();
+    let result = money1.checked_sub(money2).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
@@ -1176,7 +1172,7 @@ fn test_base_ops_sub_money() {
 fn test_base_ops_sub_money_negative() {
     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
     let money2 = Money::<USD>::new(dec!(-50.00)).unwrap();
-    let result = money1.sub(money2).unwrap();
+    let result = money1.checked_sub(money2).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
@@ -1184,7 +1180,7 @@ fn test_base_ops_sub_money_negative() {
 fn test_base_ops_sub_money_rounds() {
     let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
     let money2 = Money::<USD>::new(dec!(0.005)).unwrap();
-    let result = money1.sub(money2).unwrap();
+    let result = money1.checked_sub(money2).unwrap();
     assert_eq!(result.amount(), dec!(100.00));
 }
 
@@ -1193,21 +1189,21 @@ fn test_base_ops_sub_money_rounds() {
 #[test]
 fn test_base_ops_add_f64() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(50.0_f64).unwrap();
+    let result = money.checked_add(50.0_f64).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_add_f64_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(-50.0_f64).unwrap();
+    let result = money.checked_add(-50.0_f64).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_add_f64_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(0.005_f64).unwrap();
+    let result = money.checked_add(0.005_f64).unwrap();
     // Banker's rounding: 0.005 rounds to 0.00 (rounds to nearest even)
     assert_eq!(result.amount(), dec!(100.00));
 }
@@ -1215,75 +1211,71 @@ fn test_base_ops_add_f64_rounds() {
 #[test]
 fn test_base_ops_sub_f64() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(50.0_f64).unwrap();
+    let result = money.checked_sub(50.0_f64).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_sub_f64_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(-50.0_f64).unwrap();
+    let result = money.checked_sub(-50.0_f64).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_sub_f64_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(0.005_f64).unwrap();
+    let result = money.checked_sub(0.005_f64).unwrap();
     assert_eq!(result.amount(), dec!(100.00));
 }
 
 #[test]
 fn test_base_ops_mul_f64() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(2.5_f64).unwrap();
+    let result = money.checked_mul(2.5_f64).unwrap();
     assert_eq!(result.amount(), dec!(250.00));
 }
 
 #[test]
 fn test_base_ops_mul_f64_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(-2.0_f64).unwrap();
+    let result = money.checked_mul(-2.0_f64).unwrap();
     assert_eq!(result.amount(), dec!(-200.00));
 }
 
 #[test]
 fn test_base_ops_mul_f64_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(1.005_f64).unwrap();
+    let result = money.checked_mul(1.005_f64).unwrap();
     assert_eq!(result.amount(), dec!(100.50));
 }
 
 #[test]
 fn test_base_ops_div_f64() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(2.0_f64).unwrap();
+    let result = money.checked_div(2.0_f64).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_div_f64_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(-2.0_f64).unwrap();
+    let result = money.checked_div(-2.0_f64).unwrap();
     assert_eq!(result.amount(), dec!(-50.00));
 }
 
 #[test]
 fn test_base_ops_div_f64_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(3.0_f64).unwrap();
+    let result = money.checked_div(3.0_f64).unwrap();
     assert_eq!(result.amount(), dec!(33.33));
 }
 
 #[test]
 fn test_base_ops_div_f64_zero_error() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(0.0_f64);
-    assert!(result.is_err());
-    assert!(matches!(
-        result.unwrap_err(),
-        MoneyError::ArithmeticOverflow
-    ));
+    let result = money.checked_div(0.0_f64);
+    assert!(result.is_none());
 }
 
 // ==================== BaseOps with i32 Type Tests ====================
@@ -1291,75 +1283,71 @@ fn test_base_ops_div_f64_zero_error() {
 #[test]
 fn test_base_ops_add_i32() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(50_i32).unwrap();
+    let result = money.checked_add(50_i32).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_add_i32_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(-50_i32).unwrap();
+    let result = money.checked_add(-50_i32).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_sub_i32() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(50_i32).unwrap();
+    let result = money.checked_sub(50_i32).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_sub_i32_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(-50_i32).unwrap();
+    let result = money.checked_sub(-50_i32).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_mul_i32() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(3_i32).unwrap();
+    let result = money.checked_mul(3_i32).unwrap();
     assert_eq!(result.amount(), dec!(300.00));
 }
 
 #[test]
 fn test_base_ops_mul_i32_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(-2_i32).unwrap();
+    let result = money.checked_mul(-2_i32).unwrap();
     assert_eq!(result.amount(), dec!(-200.00));
 }
 
 #[test]
 fn test_base_ops_div_i32() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(2_i32).unwrap();
+    let result = money.checked_div(2_i32).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_div_i32_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(-2_i32).unwrap();
+    let result = money.checked_div(-2_i32).unwrap();
     assert_eq!(result.amount(), dec!(-50.00));
 }
 
 #[test]
 fn test_base_ops_div_i32_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(3_i32).unwrap();
+    let result = money.checked_div(3_i32).unwrap();
     assert_eq!(result.amount(), dec!(33.33));
 }
 
 #[test]
 fn test_base_ops_div_i32_zero_error() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(0_i32);
-    assert!(result.is_err());
-    assert!(matches!(
-        result.unwrap_err(),
-        MoneyError::ArithmeticOverflow
-    ));
+    let result = money.checked_div(0_i32);
+    assert!(result.is_none());
 }
 
 // ==================== BaseOps with i64 Type Tests ====================
@@ -1367,75 +1355,71 @@ fn test_base_ops_div_i32_zero_error() {
 #[test]
 fn test_base_ops_add_i64() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(50_i64).unwrap();
+    let result = money.checked_add(50_i64).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_add_i64_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(-50_i64).unwrap();
+    let result = money.checked_add(-50_i64).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_sub_i64() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(50_i64).unwrap();
+    let result = money.checked_sub(50_i64).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_sub_i64_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(-50_i64).unwrap();
+    let result = money.checked_sub(-50_i64).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_mul_i64() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(3_i64).unwrap();
+    let result = money.checked_mul(3_i64).unwrap();
     assert_eq!(result.amount(), dec!(300.00));
 }
 
 #[test]
 fn test_base_ops_mul_i64_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(-2_i64).unwrap();
+    let result = money.checked_mul(-2_i64).unwrap();
     assert_eq!(result.amount(), dec!(-200.00));
 }
 
 #[test]
 fn test_base_ops_div_i64() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(2_i64).unwrap();
+    let result = money.checked_div(2_i64).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_div_i64_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(-2_i64).unwrap();
+    let result = money.checked_div(-2_i64).unwrap();
     assert_eq!(result.amount(), dec!(-50.00));
 }
 
 #[test]
 fn test_base_ops_div_i64_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(3_i64).unwrap();
+    let result = money.checked_div(3_i64).unwrap();
     assert_eq!(result.amount(), dec!(33.33));
 }
 
 #[test]
 fn test_base_ops_div_i64_zero_error() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(0_i64);
-    assert!(result.is_err());
-    assert!(matches!(
-        result.unwrap_err(),
-        MoneyError::ArithmeticOverflow
-    ));
+    let result = money.checked_div(0_i64);
+    assert!(result.is_none());
 }
 
 // ==================== BaseOps with i128 Type Tests ====================
@@ -1443,131 +1427,127 @@ fn test_base_ops_div_i64_zero_error() {
 #[test]
 fn test_base_ops_add_i128() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(50_i128).unwrap();
+    let result = money.checked_add(50_i128).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_add_i128_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.add(-50_i128).unwrap();
+    let result = money.checked_add(-50_i128).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_add_i128_overflow_1() {
     let money = Money::<USD>::new(123).unwrap();
-    let result = money.add(i128::MAX);
-    assert!(result.is_err());
+    let result = money.checked_add(i128::MAX);
+    assert!(result.is_none());
 }
 
 #[test]
 fn test_base_ops_add_i128_overflow_2() {
     let money = Money::<USD>::new(123).unwrap();
-    let result = money.add(crate::Decimal::MAX - dec!(1));
-    assert!(result.is_err());
+    let result = money.checked_add(crate::Decimal::MAX - dec!(1));
+    assert!(result.is_none());
 }
 
 #[test]
 fn test_base_ops_sub_i128() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(50_i128).unwrap();
+    let result = money.checked_sub(50_i128).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_sub_i128_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.sub(-50_i128).unwrap();
+    let result = money.checked_sub(-50_i128).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
 }
 
 #[test]
 fn test_base_ops_sub_i128_overflow_1() {
     let money = Money::<USD>::new(123).unwrap();
-    let result = money.sub(i128::MAX);
-    assert!(result.is_err());
+    let result = money.checked_sub(i128::MAX);
+    assert!(result.is_none());
 }
 
 #[test]
 fn test_base_ops_sub_i128_overflow_2() {
     let money = Money::<USD>::new(crate::Decimal::MIN).unwrap();
-    let result = money.sub(1);
-    assert!(result.is_err());
+    let result = money.checked_sub(1);
+    assert!(result.is_none());
 }
 
 #[test]
 fn test_base_ops_mul_i128() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(3_i128).unwrap();
+    let result = money.checked_mul(3_i128).unwrap();
     assert_eq!(result.amount(), dec!(300.00));
 }
 
 #[test]
 fn test_base_ops_mul_i128_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(-2_i128).unwrap();
+    let result = money.checked_mul(-2_i128).unwrap();
     assert_eq!(result.amount(), dec!(-200.00));
 }
 
 #[test]
 fn test_base_ops_mul_i128_overflow_1() {
     let money = Money::<USD>::new(123).unwrap();
-    let result = money.mul(i128::MAX);
-    assert!(result.is_err());
+    let result = money.checked_mul(i128::MAX);
+    assert!(result.is_none());
 }
 
 #[test]
 fn test_base_ops_mul_i128_overflow_2() {
     let money = Money::<USD>::new(123).unwrap();
-    let result = money.mul(crate::Decimal::MAX - dec!(1));
-    assert!(result.is_err());
+    let result = money.checked_mul(crate::Decimal::MAX - dec!(1));
+    assert!(result.is_none());
 }
 
 #[test]
 fn test_base_ops_div_i128() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(2_i128).unwrap();
+    let result = money.checked_div(2_i128).unwrap();
     assert_eq!(result.amount(), dec!(50.00));
 }
 
 #[test]
 fn test_base_ops_div_i128_negative() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(-2_i128).unwrap();
+    let result = money.checked_div(-2_i128).unwrap();
     assert_eq!(result.amount(), dec!(-50.00));
 }
 
 #[test]
 fn test_base_ops_div_i128_overflow_1() {
     let money = Money::<USD>::new(123).unwrap();
-    let result = money.div(i128::MAX);
-    assert!(result.is_err());
+    let result = money.checked_div(i128::MAX);
+    assert!(result.is_none());
 }
 
 #[test]
 fn test_base_ops_div_i128_overflow_2() {
     let money = Money::<USD>::new(123).unwrap();
-    let result = money.div(0);
-    assert!(result.is_err());
+    let result = money.checked_div(0);
+    assert!(result.is_none());
 }
 
 #[test]
 fn test_base_ops_div_i128_rounds() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(3_i128).unwrap();
+    let result = money.checked_div(3_i128).unwrap();
     assert_eq!(result.amount(), dec!(33.33));
 }
 
 #[test]
 fn test_base_ops_div_i128_zero_error() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.div(0_i128);
-    assert!(result.is_err());
-    assert!(matches!(
-        result.unwrap_err(),
-        MoneyError::ArithmeticOverflow
-    ));
+    let result = money.checked_div(0_i128);
+    assert!(result.is_none());
 }
 
 // ==================== CustomMoney Trait Tests ====================
@@ -1943,8 +1923,8 @@ fn test_minor_amount_exponent_overflow() {
 #[test]
 fn test_multiple_operations_maintain_precision() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
-    let result = money.mul(dec!(1.1)).unwrap();
-    let result = result.div(dec!(1.1)).unwrap();
+    let result = money.checked_mul(dec!(1.1)).unwrap();
+    let result = result.checked_div(dec!(1.1)).unwrap();
     assert_eq!(result.amount(), dec!(100.00));
 }
 

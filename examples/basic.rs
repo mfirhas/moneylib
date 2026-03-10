@@ -92,15 +92,15 @@ fn main() {
     println!("{} + {} = {}", money_a, money_b, sum_operator);
 
     // Add using the add() method (returns Result for error handling)
-    let sum_method = money_a.add(money_b).unwrap();
+    let sum_method = money_a.checked_add(money_b).unwrap();
     println!("Using add() method: {}", sum_method);
 
     // Can add Decimal values directly
-    let sum_decimal = money_a.add(dec!(25.50)).unwrap();
+    let sum_decimal = money_a.checked_add(dec!(25.50)).unwrap();
     println!("{} + dec!(25.50) = {}", money_a, sum_decimal);
 
     // Can add integer values directly
-    let sum_int = money_a.add(30_i32).unwrap();
+    let sum_int = money_a.checked_add(30_i32).unwrap();
     println!("{} + 30 = {}", money_a, sum_int);
     println!();
 
@@ -118,7 +118,7 @@ fn main() {
     println!("{} - {} = {}", money_x, money_y, diff_operator);
 
     // Subtract using the sub() method
-    let diff_method = money_x.sub(money_y).unwrap();
+    let diff_method = money_x.checked_sub(money_y).unwrap();
     println!("Using sub() method: {}", diff_method);
 
     // Subtraction can result in negative money
@@ -139,11 +139,11 @@ fn main() {
     println!("{} * 3 = {}", money_m, product_operator);
 
     // Multiply using the mul() method
-    let product_method = money_m.mul(dec!(2.5)).unwrap();
+    let product_method = money_m.checked_mul(dec!(2.5)).unwrap();
     println!("Using mul() method: {} * 2.5 = {}", money_m, product_method);
 
     // Can multiply by i32 or i64 values directly
-    let product_i32 = money_m.mul(3_i32).unwrap();
+    let product_i32 = money_m.checked_mul(3_i32).unwrap();
     println!("{} * 3 (i32) = {}", money_m, product_i32);
     println!();
 
@@ -160,7 +160,7 @@ fn main() {
     println!("{} / 4 = {}", money_d, quotient_operator);
 
     // Divide using the div() method
-    let quotient_method = money_d.div(dec!(2.5)).unwrap();
+    let quotient_method = money_d.checked_div(dec!(2.5)).unwrap();
     println!(
         "Using div() method: {} / 2.5 = {}",
         money_d, quotient_method
@@ -446,16 +446,16 @@ fn main() {
 
     // Division by zero
     let money_100 = Money::<USD>::new(dec!(100.00)).unwrap();
-    match money_100.div(dec!(0)) {
-        Ok(result) => println!("Division result: {}", result),
-        Err(e) => println!("Error in division: {:?}", e),
+    match money_100.checked_div(dec!(0)) {
+        Some(result) => println!("Division result: {}", result),
+        None => println!("overflowed"),
     }
 
     // Using the safe add() method which returns Result - useful for error handling
     let large_money = Money::<USD>::new(dec!(100.00)).unwrap();
-    match large_money.add(dec!(50.00)) {
-        Ok(result) => println!("Addition result: {}", result),
-        Err(e) => println!("Error in addition: {:?}", e),
+    match large_money.checked_add(dec!(50.00)) {
+        Some(result) => println!("Addition result: {}", result),
+        None => println!("overflowed"),
     }
     println!();
 

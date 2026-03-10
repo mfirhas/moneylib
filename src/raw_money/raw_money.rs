@@ -445,50 +445,42 @@ where
     }
 
     #[inline]
-    fn add<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
+    fn checked_add<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: Amount<C>,
     {
-        Ok(Self::from_decimal(
-            self.amount
-                .checked_add(rhs.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
-                .ok_or(MoneyError::ArithmeticOverflow)?,
+        Some(Self::from_decimal(
+            self.amount.checked_add(rhs.get_decimal()?)?,
         ))
     }
 
     #[inline]
-    fn sub<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
+    fn checked_sub<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: Amount<C>,
     {
-        Ok(Self::from_decimal(
-            self.amount
-                .checked_sub(rhs.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
-                .ok_or(MoneyError::ArithmeticOverflow)?,
+        Some(Self::from_decimal(
+            self.amount.checked_sub(rhs.get_decimal()?)?,
         ))
     }
 
     #[inline]
-    fn mul<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
+    fn checked_mul<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: DecimalNumber,
     {
-        Ok(Self::from_decimal(
-            self.amount
-                .checked_mul(rhs.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
-                .ok_or(MoneyError::ArithmeticOverflow)?,
+        Some(Self::from_decimal(
+            self.amount.checked_mul(rhs.get_decimal()?)?,
         ))
     }
 
     #[inline]
-    fn div<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
+    fn checked_div<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: DecimalNumber,
     {
-        Ok(Self::from_decimal(
-            self.amount
-                .checked_div(rhs.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
-                .ok_or(MoneyError::ArithmeticOverflow)?,
+        Some(Self::from_decimal(
+            self.amount.checked_div(rhs.get_decimal()?)?,
         ))
     }
 }

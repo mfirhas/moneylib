@@ -89,9 +89,9 @@ println!("{}", negative); // USD -50.00
 println!("{}", negative.abs()); // USD 50.00
 
 // Error handling with Result types
-match money_a.add(money_b) {
-    Ok(sum) => println!("Sum: {}", sum),
-    Err(e) => println!("Error: {:?}", e),
+match money_a.checked_add(money_b) {
+    Some(sum) => println!("Sum: {}", sum),
+    None => println!("overflowed"),
 }
 
 // Safe operations with different currencies (won't compile due to type safety)
