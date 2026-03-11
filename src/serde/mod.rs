@@ -1,6 +1,8 @@
+/// `Money<C>` serde implementations
 pub mod money;
 
 #[cfg(feature = "raw_money")]
+/// `RawMoney<C>` serde implementations
 pub mod raw_money;
 
 #[cfg(test)]

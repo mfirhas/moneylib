@@ -505,7 +505,7 @@ pub trait BaseOps<C: Currency>:
     /// Adds another money value to this one.
     ///
     /// # Argument
-    /// - rhs: Amount<C> accepts: BaseMoney<C>(Money<C>/RawMoney<C>), Decimal, f64, i32, i64, i128.
+    /// - `rhs: impl Amount<C>` accepts: `BaseMoney<C>`(`Money<C>`/`RawMoney<C>`), `Decimal`, `f64`, `i32`, `i64`, `i128`.
     ///
     /// # Examples
     ///
@@ -526,7 +526,7 @@ pub trait BaseOps<C: Currency>:
     /// Subtracts another money value from this one.
     ///
     /// # Argument
-    /// - rhs: Amount<C> accepts: BaseMoney<C>(Money<C>/RawMoney<C>), Decimal, f64, i32, i64, i128.
+    /// - `rhs: impl Amount<C>` accepts: `BaseMoney<C>`(`Money<C>`/`RawMoney<C>`), `Decimal`, `f64`, `i32`, `i64`, `i128`.
     ///
     /// # Examples
     ///
@@ -547,7 +547,7 @@ pub trait BaseOps<C: Currency>:
     /// Multiplies this money value by another value.
     ///
     /// # Argument
-    /// - rhs: DecimalNumber accepts: Decimal, f64, i32, i64, i128.
+    /// - `rhs: impl DecimalNumber` accepts: `Decimal`, `f64`, `i32`, `i64`, `i128`.
     ///
     /// # Examples
     ///
@@ -567,7 +567,7 @@ pub trait BaseOps<C: Currency>:
     /// Divides this money value by another value.
     ///
     /// # Argument
-    /// - rhs: DecimalNumber accepts: Decimal, f64, i32, i64, i128.
+    /// - `rhs: impl DecimalNumber` accepts: `Decimal`, `f64`, `i32`, `i64`, `i128`.
     ///
     /// # Examples
     ///
