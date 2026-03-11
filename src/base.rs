@@ -45,8 +45,7 @@ use crate::fmt::format_with_amount;
 pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     // REQUIRED
 
-    /// Creates a new `Money` instance with amount of Decimal, f64, i32, i64, i128,
-    /// or taking amount from another instance of money of same currency.
+    /// Creates a new `Money` instance with amount of `Decimal`, `f64`, `i32`, `i64`, `i128`.
     ///
     /// The amount is automatically rounded to the currency's minor unit precision
     /// using the bankers rounding rule.
@@ -505,6 +504,9 @@ pub trait BaseOps<C: Currency>:
 
     /// Adds another money value to this one.
     ///
+    /// # Argument
+    /// - rhs: Amount<C> accepts: BaseMoney<C>(Money<C>/RawMoney<C>), Decimal, f64, i32, i64, i128.
+    ///
     /// # Examples
     ///
     /// ```
@@ -522,6 +524,9 @@ pub trait BaseOps<C: Currency>:
         RHS: Amount<C>;
 
     /// Subtracts another money value from this one.
+    ///
+    /// # Argument
+    /// - rhs: Amount<C> accepts: BaseMoney<C>(Money<C>/RawMoney<C>), Decimal, f64, i32, i64, i128.
     ///
     /// # Examples
     ///
@@ -541,6 +546,9 @@ pub trait BaseOps<C: Currency>:
 
     /// Multiplies this money value by another value.
     ///
+    /// # Argument
+    /// - rhs: DecimalNumber accepts: Decimal, f64, i32, i64, i128.
+    ///
     /// # Examples
     ///
     /// ```
@@ -557,6 +565,9 @@ pub trait BaseOps<C: Currency>:
         RHS: DecimalNumber;
 
     /// Divides this money value by another value.
+    ///
+    /// # Argument
+    /// - rhs: DecimalNumber accepts: Decimal, f64, i32, i64, i128.
     ///
     /// # Examples
     ///
@@ -799,7 +810,7 @@ where
     }
 }
 
-/// Trait for types that can represent a money amount.
+/// Trait for types that can represent a money amount: BaseMoney<C>, Decimal, f64, i32, i64, i128.
 ///
 /// This trait allows for flexible input types in constructing and arithmetic operations.
 ///
