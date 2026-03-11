@@ -3309,3 +3309,29 @@ fn test_money_macro_equals_from_decimal() {
     let m2 = Money::<USD>::from_decimal(dec!(100.50));
     assert_eq!(m1, m2);
 }
+
+// Custom currency for path-form macro tests
+#[derive(Clone)]
+struct MyCurrency;
+impl crate::Currency for MyCurrency {
+    const CODE: &'static str = "MYC";
+    const SYMBOL: &'static str = "M";
+    const NAME: &'static str = "My Currency";
+    const NUMERIC: u16 = 999;
+    const MINOR_UNIT: u16 = 3;
+    const MINOR_UNIT_SYMBOL: &'static str = "m";
+    const THOUSAND_SEPARATOR: &'static str = ",";
+    const DECIMAL_SEPARATOR: &'static str = ".";
+}
+
+#[test]
+fn test_money_macro_custom_currency_path_form() {
+    let m = crate::money!(self::MyCurrency, 40.237);
+    assert_eq!(m.amount(), dec!(40.237)); // 3 decimal places for MyCurrency
+}
+
+#[test]
+fn test_money_macro_custom_currency_path_form_negative() {
+    let m = crate::money!(self::MyCurrency, -10.005);
+    assert_eq!(m.amount(), dec!(-10.005));
+}
