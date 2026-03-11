@@ -40,7 +40,13 @@ mod raw_money;
 pub use raw_money::RawMoney;
 
 #[cfg(feature = "serde")]
+/// Serde implementations
 pub mod serde;
+
+#[cfg(feature = "exchange")]
+mod exchange;
+#[cfg(feature = "exchange")]
+pub use exchange::{Exchange, ExchangeRates};
 
 mod fmt;
 
@@ -63,3 +69,6 @@ mod ops_test;
 
 #[cfg(test)]
 mod iter_ops_test;
+
+#[cfg(all(test, feature = "exchange"))]
+mod exchange_test;
