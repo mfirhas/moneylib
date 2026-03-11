@@ -1798,35 +1798,35 @@ fn test_format_locale_amount_bn_bd_latin_symbol() {
     assert_eq!(result.unwrap(), "\u{09F3} 1,234.56");
 }
 
-// ==================== raw_money! macro Tests ====================
+// ==================== raw! macro Tests ====================
 
 #[test]
 fn test_raw_money_macro_basic() {
-    let m = crate::raw_money!(USD, 40.237);
+    let m = crate::raw!(USD, 40.237);
     assert_eq!(m.amount(), dec!(40.237)); // no rounding for RawMoney
 }
 
 #[test]
 fn test_raw_money_macro_negative() {
-    let m = crate::raw_money!(USD, -10.005);
+    let m = crate::raw!(USD, -10.005);
     assert_eq!(m.amount(), dec!(-10.005));
 }
 
 #[test]
 fn test_raw_money_macro_integer() {
-    let m = crate::raw_money!(JPY, 1234);
+    let m = crate::raw!(JPY, 1234);
     assert_eq!(m.amount(), dec!(1234));
 }
 
 #[test]
 fn test_raw_money_macro_zero() {
-    let m = crate::raw_money!(EUR, 0);
+    let m = crate::raw!(EUR, 0);
     assert_eq!(m.amount(), dec!(0));
 }
 
 #[test]
 fn test_raw_money_macro_equals_from_decimal() {
-    let m1 = crate::raw_money!(USD, 100.567);
+    let m1 = crate::raw!(USD, 100.567);
     let m2 = RawMoney::<USD>::from_decimal(dec!(100.567));
     assert_eq!(m1, m2);
 }
