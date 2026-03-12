@@ -2,7 +2,9 @@
 
 ![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
 [![Crates.io](https://img.shields.io/crates/v/moneylib.svg)](https://crates.io/crates/moneylib)
+[![ci](https://github.com/mfirhas/moneylib/actions/workflows/ci.yml/badge.svg)](https://github.com/mfirhas/moneylib/actions/workflows/ci.yml)
 [![Documentation](https://docs.rs/moneylib/badge.svg)](https://docs.rs/moneylib)
+[![codecov](https://codecov.io/gh/mfirhas/moneylib/branch/master/graph/badge.svg)](https://codecov.io/gh/mfirhas/moneylib)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/mfirhas/moneylib/blob/master/LICENSE)
 
 A library to deal with money safely using floating-point fixed-precision decimal.
