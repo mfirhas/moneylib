@@ -88,6 +88,8 @@ macro_rules! raw {
 }
 
 pub use crate::money;
+
 #[cfg(feature = "raw_money")]
 pub use crate::raw;
+
 pub use rust_decimal::dec;
