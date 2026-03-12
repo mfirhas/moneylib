@@ -28,6 +28,7 @@ jobs:
           extra_args: --only-verified
 
       - name: Cache run data
+        id: cache-cargo
         uses: actions/cache@v4
         with:
           path: |
@@ -42,6 +43,10 @@ jobs:
           profile: minimal
           toolchain: ${{ env.RUST_VERSION }}
           override: true
+
+      - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
+        name: Install clippy
+        run: rustup component add clippy --toolchain ${{ env.RUST_VERSION }}
 
       - name: Run cargo check
         uses: actions-rs/cargo@v1
