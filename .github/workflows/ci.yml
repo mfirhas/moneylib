@@ -6,6 +6,17 @@ env:
 on:
   pull_request:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      run_coverage:
+        description: 'Run and Upload coverage to Codecov?'
+        required: false
+        default: 'false'
+        type: boolean
+
+concurrency:
+  group: moneylib-ci
+  cancel-in-progress: false
 
 jobs:
   check:
