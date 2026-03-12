@@ -509,34 +509,43 @@ pub trait BaseOps<C: Currency>:
     /// - tolerance: `impl DecimalNumber`, if return `None`, false returned.
     ///
     /// ```rust
-    /// let calculated = Money::<USD>::new(dec!(100.01));
-    /// let expected = Money::<USD>::new(dec!(100.00));
+    /// use moneylib::{Money, BaseOps, BaseMoney, iso::USD, macros::dec};
     ///
+    /// let calculated = Money::<USD>::from_decimal(dec!(100.01));
+    /// let expected = Money::<USD>::from_decimal(dec!(100.00));
     /// // Check within $0.05 tolerance
     /// let is_close = calculated.is_approx(expected, dec!(0.05));
+    /// assert!(is_close);
     /// // Result: true (difference is only $0.01)
     ///
     /// // Strict check within 1 cent
     /// let is_exact = calculated.is_approx(expected, dec!(0.01));
+    /// assert!(is_exact);
     /// // Result: true (difference is exactly $0.01, inclusive)
     ///
-    /// let converted1 = Money::<USD>::new(dec!(100.02));  // From source 1
-    /// let converted2 = Money::<USD>::new(dec!(100.05));  // From source 2
-    /// let matches = converted1.is_approx(converted2, dec!(0.02));
+    /// let converted1 = Money::<USD>::from_decimal(dec!(100.02));  // From source 1
+    /// let converted2 = Money::<USD>::from_decimal(dec!(100.05));  // From source 2
+    /// let matches = converted1.is_approx(converted2, 0.02);
+    /// assert!(!matches);
     /// // Result: false (different is 0.03, outside 0.02 tolerance)
     ///
     /// // Exchange rate reconciliation
-    /// let converted1 = Money::<USD>::new(dec!(100.89));  // From source 1
-    /// let converted2 = Money::<USD>::new(dec!(100.90));  // From source 2
+    /// let converted1 = Money::<USD>::from_decimal(dec!(100.89));  // From source 1
+    /// let converted2 = Money::<USD>::from_decimal(dec!(100.90));  // From source 2
     /// let matches = converted1.is_approx(converted2, dec!(0.02));
+    /// assert!(matches);
     /// // Result: true (within 2 cent tolerance)
     /// ```
     fn is_approx<M, T>(&self, m: M, tolerance: T) -> bool
     where
-        M: BaseMoney<C>,
+        M: BaseMoney<C> + BaseOps<C> + Amount<C>,
         T: DecimalNumber,
     {
-        todo!()
+        self.checked_sub(m).is_some_and(|diff| {
+            tolerance
+                .get_decimal()
+                .is_some_and(|tol| tol >= diff.abs().amount())
+        })
     }
 
     /// Adds another money value to this one.
