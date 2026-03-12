@@ -31,6 +31,7 @@ pub use money::Money;
 
 mod dec_ops;
 mod ops;
+mod percent_ops;
 
 #[cfg(feature = "raw_money")]
 mod raw_money;
