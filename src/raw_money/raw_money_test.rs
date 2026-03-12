@@ -1,7 +1,7 @@
 use crate::iso::{AUD, BDT, BHD, EUR, GBP, IDR, INR, JPY, SAR, SGD, USD};
 
 use crate::macros::dec;
-use crate::{BaseMoney, BaseOps, CustomMoney, Money, MoneyError, RawMoney, RoundingStrategy};
+use crate::{BaseMoney, BaseOps, CustomMoney, Money, MoneyError, RawMoney, RoundingStrategy, raw};
 use std::str::FromStr;
 
 // ==================== RawMoney::new() Tests ====================
@@ -1855,4 +1855,35 @@ fn test_raw_macro_custom_currency_path_form() {
 fn test_raw_macro_custom_currency_path_form_negative() {
     let m = crate::raw!(self::MyCurrency, -10.0050);
     assert_eq!(m.amount(), dec!(-10.0050));
+}
+
+#[test]
+fn test_raw_macro_operators() {
+    let ret = raw!(XAU, 12) + raw!(XAU, 5);
+    assert_eq!(ret.amount(), dec!(17));
+
+    let ret = raw!(CAD, 100) * raw!(CAD, 123.22222);
+    assert_eq!(ret.amount(), dec!(12322.222));
+
+    let ret = raw!(ZWG, 123_000_444) - raw!(ZWG, 400000);
+    assert_eq!(ret.amount(), dec!(122600444));
+
+    let ret = raw!(XAG, 50) / raw!(XAG, 4);
+    assert_eq!(ret.amount(), dec!(12.5));
+
+    let ret = -raw!(CNY, 40) * raw!(CNY, 2);
+    assert_eq!(ret.amount(), dec!(-80));
+
+    let ret = raw!(BHD, 20).checked_add(raw!(BHD, 2));
+    assert!(ret.is_some());
+    assert_eq!(ret.unwrap().amount(), dec!(22));
+
+    let ret = raw!(KWD, 50).checked_add(-raw!(KWD, 50)).unwrap();
+    assert!(ret.is_zero());
+
+    let ret = -raw!(KWD, 50).checked_add(raw!(KWD, 50)).unwrap();
+    assert_eq!(ret.amount(), dec!(-100));
+
+    let ret = (-raw!(KWD, 50)).checked_add(raw!(KWD, 50)).unwrap();
+    assert!(ret.is_zero());
 }
