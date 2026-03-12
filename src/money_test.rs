@@ -1042,6 +1042,48 @@ fn test_money_clamp() {
 }
 
 #[test]
+fn test_base_ops_is_approx_within_tolerance() {
+    let calculated = Money::<USD>::new(dec!(100.01)).unwrap();
+    let expected = Money::<USD>::new(dec!(100.00)).unwrap();
+    assert!(calculated.is_approx(expected, dec!(0.05)));
+}
+
+#[test]
+fn test_base_ops_is_approx_exactly_at_tolerance() {
+    let calculated = Money::<USD>::new(dec!(100.01)).unwrap();
+    let expected = Money::<USD>::new(dec!(100.00)).unwrap();
+    assert!(calculated.is_approx(expected, dec!(0.01)));
+}
+
+#[test]
+fn test_base_ops_is_approx_outside_tolerance() {
+    let converted1 = Money::<USD>::new(dec!(100.02)).unwrap();
+    let converted2 = Money::<USD>::new(dec!(100.05)).unwrap();
+    assert!(!converted1.is_approx(converted2, dec!(0.02)));
+}
+
+#[test]
+fn test_base_ops_is_approx_exchange_rate_reconciliation() {
+    let converted1 = Money::<USD>::new(dec!(100.89)).unwrap();
+    let converted2 = Money::<USD>::new(dec!(100.90)).unwrap();
+    assert!(converted1.is_approx(converted2, dec!(0.02)));
+}
+
+#[test]
+fn test_base_ops_is_approx_equal_amounts() {
+    let m1 = Money::<USD>::new(dec!(100.00)).unwrap();
+    let m2 = Money::<USD>::new(dec!(100.00)).unwrap();
+    assert!(m1.is_approx(m2, dec!(0.00)));
+}
+
+#[test]
+fn test_base_ops_is_approx_negative_difference() {
+    let m1 = Money::<USD>::new(dec!(100.00)).unwrap();
+    let m2 = Money::<USD>::new(dec!(100.01)).unwrap();
+    assert!(m1.is_approx(m2, dec!(0.01)));
+}
+
+#[test]
 fn test_base_ops_add_decimal() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let result = money.checked_add(dec!(50.00)).unwrap();

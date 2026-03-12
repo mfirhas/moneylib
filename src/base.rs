@@ -583,6 +583,40 @@ pub trait BaseOps<C: Currency>:
     fn checked_div<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: DecimalNumber;
+
+    /// Checks if two money amounts are approximately equal within a given tolerance (inclusive).
+    ///
+    /// Returns `true` if the absolute difference between the two amounts is less than or
+    /// equal to `tolerance`.
+    ///
+    /// # Arguments
+    /// - `other`: The money value to compare against.
+    /// - `tolerance`: The maximum allowed difference (as a `Decimal`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
+    /// use moneylib::{BaseMoney, BaseOps};
+    ///
+    /// let calculated = Money::<USD>::new(dec!(100.01)).unwrap();
+    /// let expected = Money::<USD>::new(dec!(100.00)).unwrap();
+    ///
+    /// // Within $0.05 tolerance
+    /// assert!(calculated.is_approx(expected, dec!(0.05)));
+    ///
+    /// // Inclusive: difference exactly equals tolerance
+    /// assert!(calculated.is_approx(expected, dec!(0.01)));
+    ///
+    /// // Outside tolerance
+    /// let other = Money::<USD>::new(dec!(100.05)).unwrap();
+    /// assert!(!calculated.is_approx(other, dec!(0.02)));
+    /// ```
+    fn is_approx(&self, other: Self, tolerance: Decimal) -> bool {
+        let diff = (self.amount() - other.amount()).abs();
+        diff <= tolerance
+    }
 }
 
 /// Trait for statistical and aggregate operations on collections of money values.
