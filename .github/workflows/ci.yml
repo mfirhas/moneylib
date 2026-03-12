@@ -118,9 +118,13 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           override: true
       
-      - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
-        name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov
+      - name: Install cargo-llvm-cov
+        run: |
+          if cargo llvm-cov --version &>/dev/null; then
+            echo "cargo-llvm-cov already installed, skipping."
+          else
+            cargo install cargo-llvm-cov --locked
+          fi
 
       - name: Run cargo llvm-cov
         run: make lcov
