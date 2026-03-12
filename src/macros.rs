@@ -1,4 +1,4 @@
-/// Creates a [`Money`] instance using a currency type and a decimal amount.
+/// Creates a [`Money`](crate::Money) instance using a currency type and a decimal amount.
 ///
 /// **Short form (ISO currencies):** pass a bare ISO 4217 currency code — it is resolved from
 /// [`crate::iso`] automatically, so no separate `use` import is required.
@@ -6,7 +6,7 @@
 /// **Long form (custom currencies):** pass any path that resolves to a type implementing
 /// [`Currency`](crate::Currency). The path is used directly, so the type must be in scope.
 ///
-/// The amount is passed to [`dec!`](rust_decimal::dec) and then wrapped in a [`Money`] value,
+/// The amount is passed to [`dec!`](rust_decimal::dec) and then wrapped in a [`Money`](crate::Money) value,
 /// applying the currency's rounding rules.
 ///
 /// # Examples
@@ -42,7 +42,7 @@ macro_rules! money {
     };
 }
 
-/// Creates a [`RawMoney`] instance using a currency type and a decimal amount.
+/// Creates a [`RawMoney`](crate::RawMoney) instance using a currency type and a decimal amount.
 ///
 /// **Short form (ISO currencies):** pass a bare ISO 4217 currency code — it is resolved from
 /// [`crate::iso`] automatically, so no separate `use` import is required.
