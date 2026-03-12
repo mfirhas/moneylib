@@ -485,22 +485,7 @@ pub trait BaseOps<C: Currency>:
     + DivAssign
     + Neg<Output = Self>
 {
-    // REQUIRED
-
-    /// Returns the absolute value of the money amount.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, iso::USD};
-    /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
-    /// let negative = Money::<USD>::new(dec!(-100)).unwrap();
-    /// let positive = negative.abs();
-    /// assert_eq!(positive.amount(), dec!(100));
-    /// ```
-    fn abs(&self) -> Self;
+    // PROVIDED
 
     /// Compare 2 moneys within tolerance(inclusive).
     ///
@@ -547,6 +532,23 @@ pub trait BaseOps<C: Currency>:
                 .is_some_and(|tol| tol >= diff.abs().amount())
         })
     }
+
+    // REQUIRED
+
+    /// Returns the absolute value of the money amount.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
+    /// use moneylib::{BaseMoney, BaseOps};
+    ///
+    /// let negative = Money::<USD>::new(dec!(-100)).unwrap();
+    /// let positive = negative.abs();
+    /// assert_eq!(positive.amount(), dec!(100));
+    /// ```
+    fn abs(&self) -> Self;
 
     /// Adds another money value to this one.
     ///
