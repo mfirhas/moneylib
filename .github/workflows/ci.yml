@@ -10,8 +10,6 @@ on:
     inputs:
       run_coverage:
         description: 'Run and Upload coverage to Codecov?'
-        required: false
-        default: 'false'
         type: boolean
 
 concurrency:
