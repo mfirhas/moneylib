@@ -44,9 +44,13 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           override: true
 
-      - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
-        name: Install clippy
-        run: rustup component add clippy --toolchain ${{ env.RUST_VERSION }}
+      - name: Install clippy
+        run: |
+          if cargo clippy --version &>/dev/null; then
+            echo "clippy already installed, skipping."
+          else
+            rustup component add clippy --toolchain ${{ env.RUST_VERSION }}
+          fi
 
       - name: Run cargo check
         uses: actions-rs/cargo@v1
