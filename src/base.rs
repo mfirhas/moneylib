@@ -502,6 +502,43 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn abs(&self) -> Self;
 
+    /// Compare 2 moneys within tolerance(inclusive).
+    ///
+    /// # Arguments
+    /// - m: `impl BaseMoney<C>`, applied for `Money<C>` and `RawMoney<C>`
+    /// - tolerance: `impl DecimalNumber`, if return `None`, false returned.
+    ///
+    /// ```rust
+    /// let calculated = Money::<USD>::new(dec!(100.01));
+    /// let expected = Money::<USD>::new(dec!(100.00));
+    ///
+    /// // Check within $0.05 tolerance
+    /// let is_close = calculated.is_approx(expected, dec!(0.05));
+    /// // Result: true (difference is only $0.01)
+    ///
+    /// // Strict check within 1 cent
+    /// let is_exact = calculated.is_approx(expected, dec!(0.01));
+    /// // Result: true (difference is exactly $0.01, inclusive)
+    ///
+    /// let converted1 = Money::<USD>::new(dec!(100.02));  // From source 1
+    /// let converted2 = Money::<USD>::new(dec!(100.05));  // From source 2
+    /// let matches = converted1.is_approx(converted2, dec!(0.02));
+    /// // Result: false (different is 0.03, outside 0.02 tolerance)
+    ///
+    /// // Exchange rate reconciliation
+    /// let converted1 = Money::<USD>::new(dec!(100.89));  // From source 1
+    /// let converted2 = Money::<USD>::new(dec!(100.90));  // From source 2
+    /// let matches = converted1.is_approx(converted2, dec!(0.02));
+    /// // Result: true (within 2 cent tolerance)
+    /// ```
+    fn is_approx<M, T>(&self, m: M, tolerance: T) -> bool
+    where
+        M: BaseMoney<C>,
+        T: DecimalNumber,
+    {
+        todo!()
+    }
+
     /// Adds another money value to this one.
     ///
     /// # Argument
