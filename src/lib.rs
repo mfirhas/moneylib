@@ -11,9 +11,7 @@
 pub use rust_decimal::Decimal;
 
 /// Contains helper macros.
-pub mod macros {
-    pub use rust_decimal::dec;
-}
+pub mod macros;
 
 mod base;
 pub use base::{BaseMoney, BaseOps, CustomMoney, IterOps, RoundingStrategy};
