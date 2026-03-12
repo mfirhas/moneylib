@@ -1135,6 +1135,19 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// - `\\` (double backslash in source) outputs literal "\"
     /// - `\x` (where x is not a format symbol or backslash) outputs literal "\x"
     ///
+    /// # Literal Blocks
+    ///
+    /// Use `\{...}` to print the contents of the curly braces literally, without any
+    /// interpretation of format symbols inside. This is an alternative to escaping
+    /// individual characters.
+    ///
+    /// Examples:
+    /// - `\{Total:} c na` outputs "Total: USD 1,000.23"
+    /// - `\{Price (USD):} na` outputs "Price (USD): 1,000.23"
+    /// - `\{a, c, s} a` outputs "a, c, s 100.50"
+    ///
+    /// If the closing `}` is omitted, the contents are still printed literally to the end.
+    ///
     /// # Arguments
     ///
     /// * `money` - The Money value to format
@@ -1214,6 +1227,19 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// - `\n` outputs literal "n"
     /// - `\\` (double backslash in source) outputs literal "\"
     /// - `\x` (where x is not a format symbol or backslash) outputs literal "\x"
+    ///
+    /// # Literal Blocks
+    ///
+    /// Use `\{...}` to print the contents of the curly braces literally, without any
+    /// interpretation of format symbols inside. This is an alternative to escaping
+    /// individual characters.
+    ///
+    /// Examples:
+    /// - `\{Total:} c na` outputs "Total: USD 1,000.23"
+    /// - `\{Price (USD):} na` outputs "Price (USD): 1,000.23"
+    /// - `\{a, c, s} a` outputs "a, c, s 100.50"
+    ///
+    /// If the closing `}` is omitted, the contents are still printed literally to the end.
     ///
     /// # Arguments
     ///
@@ -1295,6 +1321,19 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// - `\n` outputs literal "n"
     /// - `\\` (double backslash in source) outputs literal "\"
     /// - `\x` (where x is not a format symbol or backslash) outputs literal "\x"
+    ///
+    /// # Literal Blocks
+    ///
+    /// Use `\{...}` to print the contents of the curly braces literally, without any
+    /// interpretation of format symbols inside. This is an alternative to escaping
+    /// individual characters.
+    ///
+    /// Examples:
+    /// - `\{Total:} c na` outputs "Total: USD 1,000.23"
+    /// - `\{Price (USD):} na` outputs "Price (USD): 1,000.23"
+    /// - `\{a, c, s} a` outputs "a, c, s 100.50"
+    ///
+    /// If the closing `}` is omitted, the contents are still printed literally to the end.
     ///
     /// # Arguments
     ///
