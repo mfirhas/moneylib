@@ -16,6 +16,9 @@ exclude = [
   "Makefile",
 ]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [features]
 default = []
 raw_money = []
