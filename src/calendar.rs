@@ -71,6 +71,7 @@ pub(crate) fn days_in_year(year: u32) -> u32 {
     if is_leap_year(year) { 366 } else { 365 }
 }
 
+#[allow(dead_code)]
 pub(crate) trait MonthNext {
     /// Returns next year, next month index and number of days in that next month index.
     fn next_month(self, year: u32) -> Option<(u32, u32, u32)>;
@@ -166,15 +167,12 @@ pub(crate) fn get_years_months_days(
     start_day: u32,
     num_of_days: u32,
 ) -> Option<YearsMonthsDays> {
-    // validate month
     let days_in_start_month = days_in_month(start_year, start_month)?;
 
-    // validate day
     if start_day == 0 || start_day > days_in_start_month {
         return None;
     }
 
-    // nothing to collect
     if num_of_days == 0 {
         return Some(Vec::new());
     }
@@ -183,31 +181,22 @@ pub(crate) fn get_years_months_days(
     let mut current_year = start_year;
     let mut current_month = start_month;
     let mut current_day = start_day;
-    let mut days_remaining = num_of_days;
 
-    while days_remaining > 0 {
-        let days_in_current = days_in_month(current_year, current_month)?;
-
-        let mut month_days: Vec<u32> = Vec::new();
-        while days_remaining > 0 && current_day <= days_in_current {
-            month_days.push(current_day);
-            current_day += 1;
-            days_remaining -= 1;
+    for _ in 0..num_of_days {
+        // Insert current day into result
+        match result.iter_mut().find(|(y, _)| *y == current_year) {
+            Some((_, months)) => match months.iter_mut().find(|(m, _)| *m == current_month) {
+                Some((_, days)) => days.push(current_day),
+                None => months.push((current_month, vec![current_day])),
+            },
+            None => result.push((current_year, vec![(current_month, vec![current_day])])),
         }
 
-        if !month_days.is_empty() {
-            if let Some(year_entry) = result.iter_mut().find(|(y, _)| *y == current_year) {
-                year_entry.1.push((current_month, month_days));
-            } else {
-                result.push((current_year, vec![(current_month, month_days)]));
-            }
-        }
-
-        if days_remaining > 0 {
-            let (next_year, next_month, _) = current_month.next_month(current_year)?;
-            current_year = next_year;
-            current_month = next_month;
-            current_day = 1;
+        // Advance to next day using the DayNext trait
+        if let Some((ny, nm, nd, _)) = current_day.next_day(current_month, current_year) {
+            current_year = ny;
+            current_month = nm;
+            current_day = nd;
         }
     }
 
