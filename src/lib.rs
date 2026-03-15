@@ -31,6 +31,8 @@ pub use money::Money;
 
 mod dec_ops;
 mod ops;
+mod percent_ops;
+pub use percent_ops::PercentOps;
 
 #[cfg(feature = "raw_money")]
 mod raw_money;
@@ -49,6 +51,17 @@ pub use exchange::{Exchange, ExchangeRates};
 mod fmt;
 
 mod parse;
+
+#[cfg(feature = "accounting")]
+mod interest_ops;
+#[cfg(feature = "accounting")]
+/// Contains accounting operations.
+pub mod accounting {
+    pub use crate::interest_ops::{Interest, InterestOps};
+}
+
+#[cfg(feature = "accounting")]
+mod calendar;
 
 #[cfg(test)]
 mod parse_test;

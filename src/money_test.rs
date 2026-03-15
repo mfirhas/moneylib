@@ -3365,3 +3365,30 @@ fn test_money_macro_operators() {
     let ret = (-money!(KWD, 50)).checked_add(money!(KWD, 50)).unwrap();
     assert!(ret.is_zero());
 }
+
+#[test]
+fn test_is_approx() {
+    let calculated = Money::<USD>::from_decimal(dec!(100.01));
+    let expected = Money::<USD>::from_decimal(dec!(100.00));
+    // Check within $0.05 tolerance
+    let is_close = calculated.is_approx(expected, dec!(0.05));
+    assert!(is_close);
+    // Result: true (difference is only $0.01)
+
+    // Strict check within 1 cent
+    let is_exact = calculated.is_approx(expected, dec!(0.01));
+    assert!(is_exact);
+    // Result: true (difference is exactly $0.01, inclusive)
+
+    let converted1 = Money::<USD>::from_decimal(dec!(100.02)); // From source 1
+    let converted2 = Money::<USD>::from_decimal(dec!(100.05)); // From source 2
+    let matches = converted1.is_approx(converted2, 0.02);
+    assert!(!matches);
+    // Result: false (different is 0.03, outside 0.02 tolerance)
+
+    // Exchange rate reconciliation
+    let converted1 = Money::<USD>::from_decimal(dec!(100.89)); // From source 1
+    let converted2 = Money::<USD>::from_decimal(dec!(100.90)); // From source 2
+    let matches = converted1.is_approx(converted2, dec!(0.02));
+    assert!(matches);
+}
