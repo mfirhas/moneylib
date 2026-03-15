@@ -60,7 +60,7 @@ pub mod accounting {
     pub use crate::interest_ops::{Interest, InterestOps};
 }
 
-#[cfg(any(feature = "accounting"))]
+#[cfg(feature = "accounting")]
 mod calendar;
 
 #[cfg(test)]

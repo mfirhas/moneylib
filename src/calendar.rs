@@ -11,27 +11,27 @@ pub(crate) fn current_date() -> Option<(u32, u32, u32)> {
     // compute year
     let mut year = 1970u32;
     loop {
-        let days_in_current_year = days_in_year(year);
-        if days < days_in_current_year as u64 {
+        let days_in_current_year = days_in_year(year).into();
+        if days < days_in_current_year {
             break;
         }
-        days -= days_in_current_year as u64;
+        days -= days_in_current_year;
         year += 1;
     }
 
     // compute month
     let mut month = 1u32;
     loop {
-        let days_in_current_month = days_in_month(year, month).expect("invalid month");
-        if days < days_in_current_month as u64 {
+        let days_in_current_month = days_in_month(year, month)?.into();
+        if days < days_in_current_month {
             break;
         }
-        days -= days_in_current_month as u64;
+        days -= days_in_current_month;
         month += 1;
     }
 
     // remaining days is day index (0-based), +1 for 1-based
-    let day = days as u32 + 1;
+    let day: u32 = (days + 1).try_into().ok()?;
 
     Some((year, month, day))
 }
@@ -64,7 +64,7 @@ pub(crate) fn days_in_month(year: u32, month: u32) -> Option<u32> {
 }
 
 pub(crate) fn is_leap_year(year: u32) -> bool {
-    (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
+    (year.is_multiple_of(4) && !year.is_multiple_of(100)) || (year.is_multiple_of(400))
 }
 
 pub(crate) fn days_in_year(year: u32) -> u32 {
@@ -72,11 +72,11 @@ pub(crate) fn days_in_year(year: u32) -> u32 {
 }
 
 pub(crate) trait MonthNext {
+    /// Returns next year, next month index and number of days in that next month index.
     fn next_month(self, year: u32) -> Option<(u32, u32, u32)>;
 }
 
 impl MonthNext for u32 {
-    /// Returns next year, next month index and number of days in that next month index.
     fn next_month(self, year: u32) -> Option<(u32, u32, u32)> {
         let (next_year, next_month) = match self {
             1..=11 => (year, self + 1),
@@ -89,11 +89,11 @@ impl MonthNext for u32 {
 }
 
 pub(crate) trait DayNext {
+    /// Returns (year, month, day, num_of_days_in_that_month) of the next day.
     fn next_day(self, month: u32, year: u32) -> Option<(u32, u32, u32, u32)>;
 }
 
 impl DayNext for u32 {
-    /// Returns (year, month, day, num_of_days_in_that_month) of the next day.
     fn next_day(self, month: u32, year: u32) -> Option<(u32, u32, u32, u32)> {
         let days_in_current = days_in_month(year, month)?;
 
@@ -157,13 +157,15 @@ pub(crate) fn get_years_months(
     Some(result)
 }
 
+pub(crate) type YearsMonthsDays = Vec<(u32, Vec<(u32, Vec<u32>)>)>;
+
 /// Returns [years[months[days]]]
 pub(crate) fn get_years_months_days(
     start_year: u32,
     start_month: u32,
     start_day: u32,
     num_of_days: u32,
-) -> Option<Vec<(u32, Vec<(u32, Vec<u32>)>)>> {
+) -> Option<YearsMonthsDays> {
     // validate month
     let days_in_start_month = days_in_month(start_year, start_month)?;
 
@@ -177,7 +179,7 @@ pub(crate) fn get_years_months_days(
         return Some(Vec::new());
     }
 
-    let mut result: Vec<(u32, Vec<(u32, Vec<u32>)>)> = Vec::new();
+    let mut result: YearsMonthsDays = Vec::new();
     let mut current_year = start_year;
     let mut current_month = start_month;
     let mut current_day = start_day;
