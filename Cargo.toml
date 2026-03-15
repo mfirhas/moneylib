@@ -25,6 +25,7 @@ raw_money = []
 serde = ["dep:serde", "dep:serde_json"]
 locale = ["dep:icu_locale", "dep:icu_decimal"]
 exchange = []
+accounting = []
 
 [dependencies]
 rust_decimal = { version = "1.40.0", default-features = false, features = ["maths", "macros"] }
