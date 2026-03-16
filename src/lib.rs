@@ -48,17 +48,12 @@ mod exchange;
 #[cfg(feature = "exchange")]
 pub use exchange::{Exchange, ExchangeRates};
 
+#[cfg(feature = "accounting")]
+pub mod accounting;
+
 mod fmt;
 
 mod parse;
-
-#[cfg(feature = "accounting")]
-mod interest_ops;
-#[cfg(feature = "accounting")]
-/// Contains accounting operations.
-pub mod accounting {
-    pub use crate::interest_ops::{Interest, InterestOps};
-}
 
 #[cfg(feature = "accounting")]
 mod calendar;
