@@ -18,6 +18,8 @@ pub trait InterestOps<C> {
     /// # Return
     /// It returns interest builder to set rate(daily, monthly, yearly) with periods(daily, monthly, yearly) of payment,
     /// along with day, month and year of calculations.
+    ///
+    /// The default rate is yearly and period is 12 months.
     fn interest_fixed<R>(&self, rate: R) -> Option<Self::InterestBuilder>
     where
         R: DecimalNumber;
@@ -30,6 +32,8 @@ pub trait InterestOps<C> {
     /// # Return
     /// It returns interest builder to set rate(daily, monthly, yearly) with periods(daily, monthly, yearly) of payment,
     /// along with day, month and year of calculations.
+    ///
+    /// The default rate is yearly and period is 12 months.
     fn interest_compound<R>(&self, rate: R) -> Option<Self::InterestBuilder>
     where
         R: DecimalNumber;
