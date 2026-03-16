@@ -326,11 +326,8 @@ where
         }
     }
 
-    /// Calculate the total of returns: Principal + Interests.
-    pub fn calculate(self) -> Option<M>
-    where
-        M: BaseMoney<C> + BaseOps<C> + Amount<C>,
-    {
+    /// Calculate the returns(total interests)
+    pub fn returns(&self) -> Option<M> {
         match self.interest_type {
             InterestType::Fixed => {
                 let fixed_ret = match (self.rate_percent, self.total_period) {
@@ -338,86 +335,84 @@ where
                     (RatePercent::Yearly(_), Period::Years(t)) => self
                         .principal
                         .checked_mul(self.rate_percent.get_yearly_rate(self.year)?)?
-                        .checked_mul(Decimal::from_u32(t)?)?
-                        .checked_add(self.principal), // P * r * t
+                        .checked_mul(Decimal::from_u32(t)?), // P * r * t
                     (RatePercent::Yearly(_), Period::Months(t)) => self
                         .principal
                         .checked_mul(self.rate_percent.get_monthly_rate(self.month, self.year)?)?
-                        .checked_mul(Decimal::from_u32(t)?)?
-                        .checked_add(self.principal), // P * (r/12) * t
+                        .checked_mul(Decimal::from_u32(t)?), // P * (r/12) * t
                     (RatePercent::Yearly(_), Period::Days(t)) => {
                         let years_months_days =
                             get_years_months_days(self.year, self.month, self.day, t)?;
-                        let mut result = dec!(0);
+                        let mut interest_total = dec!(0);
                         for year in years_months_days {
                             for month in year.1 {
                                 for _day in month.1 {
-                                    result = result.checked_add(self.principal.checked_mul(
-                                        self.rate_percent.get_daily_rate(month.0, year.0)?,
-                                    )?)?;
+                                    interest_total =
+                                        interest_total.checked_add(self.principal.checked_mul(
+                                            self.rate_percent.get_daily_rate(month.0, year.0)?,
+                                        )?)?;
                                 }
                             }
                         }
-                        result.checked_add(self.principal)
+                        Some(interest_total)
                     } // P * (r/365) * t --> loop
 
                     // r is monthly
                     (RatePercent::Monthly(_), Period::Years(t)) => self
                         .principal
                         .checked_mul(self.rate_percent.get_yearly_rate(self.year)?)?
-                        .checked_mul(Decimal::from_u32(t)?)?
-                        .checked_add(self.principal), // P * (r*12) * t
+                        .checked_mul(Decimal::from_u32(t)?), // P * (r*12) * t
                     (RatePercent::Monthly(_), Period::Months(t)) => self
                         .principal
                         .checked_mul(self.rate_percent.get_monthly_rate(self.month, self.year)?)?
-                        .checked_mul(Decimal::from_u32(t)?)?
-                        .checked_add(self.principal), // P * r * t
+                        .checked_mul(Decimal::from_u32(t)?), // P * r * t
                     (RatePercent::Monthly(_), Period::Days(t)) => {
                         let years_months_days =
                             get_years_months_days(self.year, self.month, self.day, t)?;
-                        let mut result = dec!(0);
+                        let mut total_interest = dec!(0);
                         for year in years_months_days {
                             for month in year.1 {
                                 for _day in month.1 {
-                                    result = result.checked_add(self.principal.checked_mul(
-                                        self.rate_percent.get_daily_rate(month.0, year.0)?,
-                                    )?)?;
+                                    total_interest =
+                                        total_interest.checked_add(self.principal.checked_mul(
+                                            self.rate_percent.get_daily_rate(month.0, year.0)?,
+                                        )?)?;
                                 }
                             }
                         }
-                        result.checked_add(self.principal)
+                        Some(total_interest)
                     } // P * (r/30) * t  — loop
 
                     // r is daily
                     (RatePercent::Daily(_), Period::Years(t)) => {
-                        let mut result = dec!(0);
+                        let mut interest_total = dec!(0);
                         let mut current_year = self.year;
                         for _y in 0..t {
-                            result =
-                                result.checked_add(self.principal.checked_mul(
+                            interest_total =
+                                interest_total.checked_add(self.principal.checked_mul(
                                     self.rate_percent.get_yearly_rate(current_year)?,
                                 )?)?;
                             current_year = current_year.checked_add(1)?;
                         }
-                        result.checked_add(self.principal)
+                        Some(interest_total)
                     } // P * (r*365) * t --> loop
                     (RatePercent::Daily(_), Period::Months(t)) => {
                         let year_months = get_years_months(self.year, self.month, t)?;
-                        let mut result = dec!(0);
+                        let mut total_interest = dec!(0);
                         for (year, months) in year_months {
                             for month in months {
-                                result = result.checked_add(self.principal.checked_mul(
-                                    self.rate_percent.get_monthly_rate(month, year)?,
-                                )?)?;
+                                total_interest =
+                                    total_interest.checked_add(self.principal.checked_mul(
+                                        self.rate_percent.get_monthly_rate(month, year)?,
+                                    )?)?;
                             }
                         }
-                        result.checked_add(self.principal)
+                        Some(total_interest)
                     } // P * (r*30) * t   — loop
                     (RatePercent::Daily(_), Period::Days(t)) => self
                         .principal
                         .checked_mul(self.rate_percent.get_daily_rate(self.month, self.year)?)?
-                        .checked_mul(Decimal::from_u32(t)?)?
-                        .checked_add(self.principal), // P * r * t
+                        .checked_mul(Decimal::from_u32(t)?), // P * r * t
                 };
 
                 M::new(fixed_ret?).ok()
@@ -437,7 +432,7 @@ where
                             current_principal = self.principal.checked_add(total_interest)?;
                             current_year = current_year.checked_add(1)?;
                         }
-                        self.principal.checked_add(total_interest)
+                        Some(total_interest)
                     } // P * r * t
                     (RatePercent::Yearly(_), Period::Months(t)) => {
                         let years_months = get_years_months(self.year, self.month, t)?;
@@ -452,7 +447,7 @@ where
                                 current_principal = self.principal.checked_add(total_interest)?;
                             }
                         }
-                        self.principal.checked_add(total_interest)
+                        Some(total_interest)
                     } // P * (r/12) * t
                     (RatePercent::Yearly(_), Period::Days(t)) => {
                         let years_months_days =
@@ -472,7 +467,7 @@ where
                                 }
                             }
                         }
-                        self.principal.checked_add(total_interest)
+                        Some(total_interest)
                     } // P * (r/365) * t --> loop
 
                     // r is monthly
@@ -487,7 +482,7 @@ where
                             current_principal = self.principal.checked_add(total_interest)?;
                             current_year = current_year.checked_add(1)?;
                         }
-                        self.principal.checked_add(total_interest)
+                        Some(total_interest)
                     } // P * (r*12) * t
                     (RatePercent::Monthly(_), Period::Months(t)) => {
                         let years_months = get_years_months(self.year, self.month, t)?;
@@ -502,7 +497,7 @@ where
                                 current_principal = self.principal.checked_add(total_interest)?;
                             }
                         }
-                        self.principal.checked_add(total_interest)
+                        Some(total_interest)
                     } // P * r * t
                     (RatePercent::Monthly(_), Period::Days(t)) => {
                         let years_months_days =
@@ -522,7 +517,7 @@ where
                                 }
                             }
                         }
-                        self.principal.checked_add(total_interest)
+                        Some(total_interest)
                     } // P * (r/30) * t  — loop
 
                     // r is daily
@@ -537,7 +532,7 @@ where
                             current_principal = self.principal.checked_add(total_interest)?;
                             current_year = current_year.checked_add(1)?;
                         }
-                        self.principal.checked_add(total_interest)
+                        Some(total_interest)
                     } // P * (r*365) * t --> loop
                     (RatePercent::Daily(_), Period::Months(t)) => {
                         let years_months = get_years_months(self.year, self.month, t)?;
@@ -552,7 +547,7 @@ where
                                 current_principal = self.principal.checked_add(total_interest)?;
                             }
                         }
-                        self.principal.checked_add(total_interest)
+                        Some(total_interest)
                     } // P * (r*30) * t   — loop
                     (RatePercent::Daily(_), Period::Days(t)) => {
                         let years_months_days =
@@ -572,12 +567,20 @@ where
                                 }
                             }
                         }
-                        self.principal.checked_add(total_interest)
+                        Some(total_interest)
                     } // P * r * t
                 };
 
                 M::new(compounding_ret?).ok()
             }
         }
+    }
+
+    /// Calculate the total of returns: Principal + Interests.
+    pub fn total(&self) -> Option<M>
+    where
+        M: BaseMoney<C> + BaseOps<C> + Amount<C>,
+    {
+        M::new(self.principal.checked_add(self.returns()?.amount())?).ok()
     }
 }
