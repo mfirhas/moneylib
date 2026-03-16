@@ -6,13 +6,30 @@ use crate::base::DecimalNumber;
 use crate::calendar::*;
 use crate::{BaseMoney, BaseOps, Currency, Decimal, base::Amount, macros::dec};
 
+/// Trait defining interest calculation operations for fixed and compounding interest.
 pub trait InterestOps<C> {
     type InterestBuilder;
 
+    /// Calculate fixed-interest on loan.
+    ///
+    /// # Argument
+    /// rate: impl DecimalNumber, supports Decimal, f64, i32, i64, i128.
+    ///
+    /// # Return
+    /// It returns interest builder to set rate(daily, monthly, yearly) with periods(daily, monthly, yearly) of payment,
+    /// along with day, month and year of calculations.
     fn interest_fixed<R>(&self, rate: R) -> Option<Self::InterestBuilder>
     where
         R: DecimalNumber;
 
+    /// Calculate compounding-interest on loan.
+    ///
+    /// # Argument
+    /// rate: impl DecimalNumber, supports Decimal, f64, i32, i64, i128.
+    ///
+    /// # Return
+    /// It returns interest builder to set rate(daily, monthly, yearly) with periods(daily, monthly, yearly) of payment,
+    /// along with day, month and year of calculations.
     fn interest_compound<R>(&self, rate: R) -> Option<Self::InterestBuilder>
     where
         R: DecimalNumber;
@@ -62,15 +79,16 @@ where
     }
 }
 
+/// Builder for interest calculations. Built through `self::InterestOps` trait.
 #[derive(Debug, Clone, Copy)]
 pub struct Interest<M, C> {
     /// principal amount
     principal: Decimal,
 
-    /// percentage of interest rate
+    /// percentage of interest rate(daily, monthly, yearly)
     rate_percent: RatePercent,
 
-    /// total of period to be calculated(daily, monthly, yearly)
+    /// period of payment, including compounding points(daily, monthly, yearly)
     total_period: Period,
 
     /// interest type
@@ -103,6 +121,11 @@ impl RatePercent {
         }
     }
 
+    /// Get the actual rate relative to daily payment period.
+    ///
+    /// - if rate is daily then r = r
+    /// - if rate is monthly then r = r / number of days in that month
+    /// - if rate is yearly/annual then r = r / number of days in that year
     fn get_daily_rate(&self, month: u32, year: u32) -> Option<Decimal> {
         match self {
             Self::Daily(v) => v.checked_div(dec!(100)),
@@ -115,6 +138,11 @@ impl RatePercent {
         }
     }
 
+    /// Get the actual rate relative to monthly payment period.
+    ///
+    /// - if rate is daily then r = r * number of days in that month
+    /// - if rate is monthly then r = r
+    /// - if rate is yearly then r = r / 12
     fn get_monthly_rate(&self, month: u32, year: u32) -> Option<Decimal> {
         match self {
             Self::Daily(v) => v
@@ -127,6 +155,11 @@ impl RatePercent {
         }
     }
 
+    /// Get the actual rate relative to yearly/annual payment period.
+    ///
+    /// - if rate is daily then r = r * number of days in that year
+    /// - if rate is monthly then r = r * 12
+    /// - if rate is yearly then r = r
     fn get_yearly_rate(&self, year: u32) -> Option<Decimal> {
         match self {
             Self::Daily(v) => v
@@ -158,6 +191,7 @@ where
     M: BaseMoney<C>,
     C: Currency,
 {
+    /// Sets the interest rate to daily.
     pub const fn daily(self) -> Self {
         Self {
             principal: self.principal,
@@ -172,6 +206,7 @@ where
         }
     }
 
+    /// Sets the period of interest payments each day for n days.
     pub const fn days(self, n: u32) -> Self {
         Self {
             principal: self.principal,
@@ -186,6 +221,7 @@ where
         }
     }
 
+    /// Sets the interest rate to monthly.
     pub const fn monthly(self) -> Self {
         Self {
             principal: self.principal,
@@ -200,6 +236,7 @@ where
         }
     }
 
+    /// Sets the period of interest payments each month for n months.
     pub const fn months(self, n: u32) -> Self {
         Self {
             principal: self.principal,
@@ -214,6 +251,7 @@ where
         }
     }
 
+    /// Sets the interest rate to yearly/annual.
     pub const fn yearly(self) -> Self {
         Self {
             principal: self.principal,
@@ -228,6 +266,7 @@ where
         }
     }
 
+    /// Sets the period of interest payments each year for n years.
     pub const fn years(self, n: u32) -> Self {
         Self {
             principal: self.principal,
@@ -242,6 +281,7 @@ where
         }
     }
 
+    /// Sets start of the calculation year.
     pub const fn year(self, year: u32) -> Self {
         Self {
             principal: self.principal,
@@ -256,6 +296,7 @@ where
         }
     }
 
+    /// Sets start of the calculation month by index, January = 1.
     pub const fn month(self, month: u32) -> Self {
         Self {
             principal: self.principal,
@@ -270,6 +311,7 @@ where
         }
     }
 
+    /// Set start of the calculation day date.
     pub const fn day(self, day: u32) -> Self {
         Self {
             principal: self.principal,
@@ -284,6 +326,7 @@ where
         }
     }
 
+    /// Calculate the total of returns: Principal + Interests.
     pub fn calculate(self) -> Option<M>
     where
         M: BaseMoney<C> + BaseOps<C> + Amount<C>,
