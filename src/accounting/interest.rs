@@ -56,6 +56,7 @@ where
             rate_percent: RatePercent::Yearly(rate.get_decimal()?), // default to annual rate
             total_period: Period::Months(12),
             interest_type: InterestType::Fixed,
+            rate_days: Default::default(),
             year: current_date.0,
             month: current_date.1,
             day: current_date.2,
@@ -74,6 +75,7 @@ where
             rate_percent: RatePercent::Yearly(rate.get_decimal()?), // default to annual rate
             total_period: Period::Months(12),
             interest_type: InterestType::Compounding,
+            rate_days: Default::default(),
             year: current_date.0,
             month: current_date.1,
             day: current_date.2,
@@ -97,6 +99,9 @@ pub struct Interest<M, C> {
 
     /// interest type
     interest_type: InterestType,
+
+    /// rate days for calculating interest rate
+    rate_days: RateDays,
 
     /// year of the calculation
     year: u32,
@@ -130,14 +135,14 @@ impl RatePercent {
     /// - if rate is daily then r = r
     /// - if rate is monthly then r = r / number of days in that month
     /// - if rate is yearly/annual then r = r / number of days in that year
-    fn get_daily_rate(&self, month: u32, year: u32) -> Option<Decimal> {
+    fn get_daily_rate(&self, rate_days: RateDays, year: u32, month: u32) -> Option<Decimal> {
         match self {
             Self::Daily(v) => v.checked_div(dec!(100)),
             Self::Monthly(v) => v
-                .checked_div(Decimal::from_u32(days_in_month(year, month)?)?)?
+                .checked_div(Decimal::from_u32(rate_days.days_in_month(year, month)?)?)?
                 .checked_div(dec!(100)),
             Self::Yearly(v) => v
-                .checked_div(Decimal::from_u32(days_in_year(year))?)?
+                .checked_div(Decimal::from_u32(rate_days.days_in_year(year)?)?)?
                 .checked_div(dec!(100)),
         }
     }
@@ -147,10 +152,10 @@ impl RatePercent {
     /// - if rate is daily then r = r * number of days in that month
     /// - if rate is monthly then r = r
     /// - if rate is yearly then r = r / 12
-    fn get_monthly_rate(&self, month: u32, year: u32) -> Option<Decimal> {
+    fn get_monthly_rate(&self, rate_days: RateDays, year: u32, month: u32) -> Option<Decimal> {
         match self {
             Self::Daily(v) => v
-                .checked_mul(Decimal::from_u32(days_in_month(year, month)?)?)?
+                .checked_mul(Decimal::from_u32(rate_days.days_in_month(year, month)?)?)?
                 .checked_div(dec!(100)),
             Self::Monthly(v) => v.checked_div(dec!(100)),
             Self::Yearly(v) => v
@@ -164,10 +169,10 @@ impl RatePercent {
     /// - if rate is daily then r = r * number of days in that year
     /// - if rate is monthly then r = r * 12
     /// - if rate is yearly then r = r
-    fn get_yearly_rate(&self, year: u32) -> Option<Decimal> {
+    fn get_yearly_rate(&self, rate_days: RateDays, year: u32) -> Option<Decimal> {
         match self {
             Self::Daily(v) => v
-                .checked_mul(Decimal::from_u32(days_in_year(year))?)?
+                .checked_mul(Decimal::from_u32(rate_days.days_in_year(year)?)?)?
                 .checked_div(dec!(100)),
             Self::Monthly(v) => v
                 .checked_mul(Decimal::from_u32(12)?)?
@@ -190,6 +195,43 @@ enum Period {
     Years(u32),
 }
 
+/// Get number of days in a month and in a year according to ISO 15022 MT565: (16) Field 22F
+#[derive(Debug, Clone, Copy, Default)]
+pub enum RateDays {
+    /// 30 days per month / 360 days per year (Bond Basis)
+    Rate30360,
+    /// 30 days per month / 365 days per year
+    Rate30365,
+    /// 30 days per month / Actual days in the year (365 or 366)
+    Rate30Actual,
+    /// Actual days per month / 360 days per year (Money Market)
+    RateActual360,
+    /// Actual days per month / 365 days per year (Retail Banking)
+    RateActual365,
+    /// Actual days per month / Actual days in the year (Treasury)
+    #[default]
+    RateActualActual,
+}
+
+impl RateDays {
+    fn days_in_month(&self, year: u32, month: u32) -> Option<u32> {
+        match self {
+            Self::Rate30360 | Self::Rate30365 | Self::Rate30Actual => Some(30),
+            Self::RateActual360 | Self::RateActual365 | Self::RateActualActual => {
+                days_in_month(year, month)
+            }
+        }
+    }
+
+    fn days_in_year(&self, year: u32) -> Option<u32> {
+        match self {
+            Self::Rate30360 | Self::RateActual360 => Some(360),
+            Self::Rate30365 | Self::RateActual365 => Some(365),
+            Self::Rate30Actual | Self::RateActualActual => Some(days_in_year(year)),
+        }
+    }
+}
+
 impl<M, C> Interest<M, C>
 where
     M: BaseMoney<C>,
@@ -202,6 +244,7 @@ where
             rate_percent: RatePercent::Daily(self.rate_percent.get_rate_amount()),
             total_period: self.total_period,
             interest_type: self.interest_type,
+            rate_days: self.rate_days,
             year: self.year,
             month: self.month,
             day: self.day,
@@ -217,6 +260,7 @@ where
             rate_percent: self.rate_percent,
             total_period: Period::Days(n),
             interest_type: self.interest_type,
+            rate_days: self.rate_days,
             year: self.year,
             month: self.month,
             day: self.day,
@@ -232,6 +276,7 @@ where
             rate_percent: RatePercent::Monthly(self.rate_percent.get_rate_amount()),
             total_period: self.total_period,
             interest_type: self.interest_type,
+            rate_days: self.rate_days,
             year: self.year,
             month: self.month,
             day: self.day,
@@ -247,6 +292,7 @@ where
             rate_percent: self.rate_percent,
             total_period: Period::Months(n),
             interest_type: self.interest_type,
+            rate_days: self.rate_days,
             year: self.year,
             month: self.month,
             day: self.day,
@@ -262,6 +308,7 @@ where
             rate_percent: RatePercent::Yearly(self.rate_percent.get_rate_amount()),
             total_period: self.total_period,
             interest_type: self.interest_type,
+            rate_days: self.rate_days,
             year: self.year,
             month: self.month,
             day: self.day,
@@ -277,6 +324,7 @@ where
             rate_percent: self.rate_percent,
             total_period: Period::Years(n),
             interest_type: self.interest_type,
+            rate_days: self.rate_days,
             year: self.year,
             month: self.month,
             day: self.day,
@@ -292,6 +340,7 @@ where
             rate_percent: self.rate_percent,
             total_period: self.total_period,
             interest_type: self.interest_type,
+            rate_days: self.rate_days,
             year,
             month: self.month,
             day: self.day,
@@ -307,6 +356,7 @@ where
             rate_percent: self.rate_percent,
             total_period: self.total_period,
             interest_type: self.interest_type,
+            rate_days: self.rate_days,
             year: self.year,
             month,
             day: self.day,
@@ -322,9 +372,25 @@ where
             rate_percent: self.rate_percent,
             total_period: self.total_period,
             interest_type: self.interest_type,
+            rate_days: self.rate_days,
             year: self.year,
             month: self.month,
             day,
+            _output: PhantomData,
+            _currency: PhantomData,
+        }
+    }
+
+    pub const fn rate_days(self, rate_days: RateDays) -> Self {
+        Self {
+            principal: self.principal,
+            rate_percent: self.rate_percent,
+            total_period: self.total_period,
+            interest_type: self.interest_type,
+            rate_days,
+            year: self.year,
+            month: self.month,
+            day: self.day,
             _output: PhantomData,
             _currency: PhantomData,
         }
@@ -338,11 +404,18 @@ where
                     // r is yearly
                     (RatePercent::Yearly(_), Period::Years(t)) => self
                         .principal
-                        .checked_mul(self.rate_percent.get_yearly_rate(self.year)?)?
+                        .checked_mul(
+                            self.rate_percent
+                                .get_yearly_rate(self.rate_days, self.year)?,
+                        )?
                         .checked_mul(Decimal::from_u32(t)?), // P * r * t
                     (RatePercent::Yearly(_), Period::Months(t)) => self
                         .principal
-                        .checked_mul(self.rate_percent.get_monthly_rate(self.month, self.year)?)?
+                        .checked_mul(self.rate_percent.get_monthly_rate(
+                            self.rate_days,
+                            self.year,
+                            self.month,
+                        )?)?
                         .checked_mul(Decimal::from_u32(t)?), // P * (r/12) * t
                     (RatePercent::Yearly(_), Period::Days(t)) => {
                         let years_months_days =
@@ -353,7 +426,11 @@ where
                                 for _day in month.1 {
                                     interest_total =
                                         interest_total.checked_add(self.principal.checked_mul(
-                                            self.rate_percent.get_daily_rate(month.0, year.0)?,
+                                            self.rate_percent.get_daily_rate(
+                                                self.rate_days,
+                                                year.0,
+                                                month.0,
+                                            )?,
                                         )?)?;
                                 }
                             }
@@ -364,11 +441,18 @@ where
                     // r is monthly
                     (RatePercent::Monthly(_), Period::Years(t)) => self
                         .principal
-                        .checked_mul(self.rate_percent.get_yearly_rate(self.year)?)?
+                        .checked_mul(
+                            self.rate_percent
+                                .get_yearly_rate(self.rate_days, self.year)?,
+                        )?
                         .checked_mul(Decimal::from_u32(t)?), // P * (r*12) * t
                     (RatePercent::Monthly(_), Period::Months(t)) => self
                         .principal
-                        .checked_mul(self.rate_percent.get_monthly_rate(self.month, self.year)?)?
+                        .checked_mul(self.rate_percent.get_monthly_rate(
+                            self.rate_days,
+                            self.year,
+                            self.month,
+                        )?)?
                         .checked_mul(Decimal::from_u32(t)?), // P * r * t
                     (RatePercent::Monthly(_), Period::Days(t)) => {
                         let years_months_days =
@@ -379,7 +463,11 @@ where
                                 for _day in month.1 {
                                     total_interest =
                                         total_interest.checked_add(self.principal.checked_mul(
-                                            self.rate_percent.get_daily_rate(month.0, year.0)?,
+                                            self.rate_percent.get_daily_rate(
+                                                self.rate_days,
+                                                year.0,
+                                                month.0,
+                                            )?,
                                         )?)?;
                                 }
                             }
@@ -392,10 +480,12 @@ where
                         let mut interest_total = dec!(0);
                         let mut current_year = self.year;
                         for _y in 0..t {
-                            interest_total =
-                                interest_total.checked_add(self.principal.checked_mul(
-                                    self.rate_percent.get_yearly_rate(current_year)?,
-                                )?)?;
+                            interest_total = interest_total.checked_add(
+                                self.principal.checked_mul(
+                                    self.rate_percent
+                                        .get_yearly_rate(self.rate_days, current_year)?,
+                                )?,
+                            )?;
                             current_year = current_year.checked_add(1)?;
                         }
                         Some(interest_total)
@@ -407,7 +497,11 @@ where
                             for month in months {
                                 total_interest =
                                     total_interest.checked_add(self.principal.checked_mul(
-                                        self.rate_percent.get_monthly_rate(month, year)?,
+                                        self.rate_percent.get_monthly_rate(
+                                            self.rate_days,
+                                            year,
+                                            month,
+                                        )?,
                                     )?)?;
                             }
                         }
@@ -415,7 +509,11 @@ where
                     } // P * (r*30) * t   — loop
                     (RatePercent::Daily(_), Period::Days(t)) => self
                         .principal
-                        .checked_mul(self.rate_percent.get_daily_rate(self.month, self.year)?)?
+                        .checked_mul(self.rate_percent.get_daily_rate(
+                            self.rate_days,
+                            self.year,
+                            self.month,
+                        )?)?
                         .checked_mul(Decimal::from_u32(t)?), // P * r * t
                 };
 
@@ -430,8 +528,10 @@ where
                         let mut current_principal = self.principal;
                         let mut current_year = self.year;
                         for _y in 0..t {
-                            let current_interest = current_principal
-                                .checked_mul(self.rate_percent.get_yearly_rate(current_year)?)?;
+                            let current_interest = current_principal.checked_mul(
+                                self.rate_percent
+                                    .get_yearly_rate(self.rate_days, current_year)?,
+                            )?;
                             total_interest = total_interest.checked_add(current_interest)?;
                             current_principal = self.principal.checked_add(total_interest)?;
                             current_year = current_year.checked_add(1)?;
@@ -445,7 +545,11 @@ where
                         for year in years_months {
                             for month in year.1 {
                                 let current_interest = current_principal.checked_mul(
-                                    self.rate_percent.get_monthly_rate(month, year.0)?,
+                                    self.rate_percent.get_monthly_rate(
+                                        self.rate_days,
+                                        year.0,
+                                        month,
+                                    )?,
                                 )?;
                                 total_interest = total_interest.checked_add(current_interest)?;
                                 current_principal = self.principal.checked_add(total_interest)?;
@@ -462,7 +566,11 @@ where
                             for month in year.1 {
                                 for _day in month.1 {
                                     let current_interest = current_principal.checked_mul(
-                                        self.rate_percent.get_daily_rate(month.0, year.0)?,
+                                        self.rate_percent.get_daily_rate(
+                                            self.rate_days,
+                                            year.0,
+                                            month.0,
+                                        )?,
                                     )?;
                                     total_interest =
                                         total_interest.checked_add(current_interest)?;
@@ -480,8 +588,10 @@ where
                         let mut current_principal = self.principal;
                         let mut current_year = self.year;
                         for _y in 0..t {
-                            let current_interest = current_principal
-                                .checked_mul(self.rate_percent.get_yearly_rate(current_year)?)?;
+                            let current_interest = current_principal.checked_mul(
+                                self.rate_percent
+                                    .get_yearly_rate(self.rate_days, current_year)?,
+                            )?;
                             total_interest = total_interest.checked_add(current_interest)?;
                             current_principal = self.principal.checked_add(total_interest)?;
                             current_year = current_year.checked_add(1)?;
@@ -495,7 +605,11 @@ where
                         for year in years_months {
                             for month in year.1 {
                                 let current_interest = current_principal.checked_mul(
-                                    self.rate_percent.get_monthly_rate(month, year.0)?,
+                                    self.rate_percent.get_monthly_rate(
+                                        self.rate_days,
+                                        year.0,
+                                        month,
+                                    )?,
                                 )?;
                                 total_interest = total_interest.checked_add(current_interest)?;
                                 current_principal = self.principal.checked_add(total_interest)?;
@@ -512,7 +626,11 @@ where
                             for month in year.1 {
                                 for _day in month.1 {
                                     let current_interest = current_principal.checked_mul(
-                                        self.rate_percent.get_daily_rate(month.0, year.0)?,
+                                        self.rate_percent.get_daily_rate(
+                                            self.rate_days,
+                                            year.0,
+                                            month.0,
+                                        )?,
                                     )?;
                                     total_interest =
                                         total_interest.checked_add(current_interest)?;
@@ -530,8 +648,10 @@ where
                         let mut current_principal = self.principal;
                         let mut current_year = self.year;
                         for _y in 0..t {
-                            let current_interest = current_principal
-                                .checked_mul(self.rate_percent.get_yearly_rate(current_year)?)?;
+                            let current_interest = current_principal.checked_mul(
+                                self.rate_percent
+                                    .get_yearly_rate(self.rate_days, current_year)?,
+                            )?;
                             total_interest = total_interest.checked_add(current_interest)?;
                             current_principal = self.principal.checked_add(total_interest)?;
                             current_year = current_year.checked_add(1)?;
@@ -545,7 +665,11 @@ where
                         for year in years_months {
                             for month in year.1 {
                                 let current_interest = current_principal.checked_mul(
-                                    self.rate_percent.get_monthly_rate(month, year.0)?,
+                                    self.rate_percent.get_monthly_rate(
+                                        self.rate_days,
+                                        year.0,
+                                        month,
+                                    )?,
                                 )?;
                                 total_interest = total_interest.checked_add(current_interest)?;
                                 current_principal = self.principal.checked_add(total_interest)?;
@@ -562,7 +686,11 @@ where
                             for month in year.1 {
                                 for _day in month.1 {
                                     let current_interest = current_principal.checked_mul(
-                                        self.rate_percent.get_daily_rate(month.0, year.0)?,
+                                        self.rate_percent.get_daily_rate(
+                                            self.rate_days,
+                                            year.0,
+                                            month.0,
+                                        )?,
                                     )?;
                                     total_interest =
                                         total_interest.checked_add(current_interest)?;
