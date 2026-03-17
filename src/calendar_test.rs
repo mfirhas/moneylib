@@ -2,6 +2,19 @@
 mod get_years_months_tests {
     use crate::calendar::*;
 
+    #[test]
+    fn test_next_month() {
+        let dec = 12;
+        let ret = dec.next_month(2026).unwrap();
+        assert_eq!(ret.0, 2027);
+        assert_eq!(ret.1, 1);
+        assert_eq!(ret.2, 31);
+
+        let dec = 0;
+        let ret = dec.next_month(2026);
+        assert!(ret.is_none());
+    }
+
     fn total_months(result: &Vec<(u32, Vec<u32>)>) -> usize {
         result.iter().map(|(_, months)| months.len()).sum()
     }
@@ -124,6 +137,24 @@ mod get_years_months_tests {
 #[cfg(test)]
 mod get_years_months_days_tests {
     use crate::calendar::*;
+
+    #[test]
+    fn test_next_day() {
+        let day = 31;
+        let ret = day.next_day(2026, 12).unwrap();
+        assert_eq!(ret.0, 2027);
+        assert_eq!(ret.1, 1);
+        assert_eq!(ret.2, 1);
+        assert_eq!(ret.3, 31);
+
+        let dec = 0;
+        let ret = dec.next_day(2026, 12);
+        assert!(ret.is_none());
+
+        let dec = 2;
+        let ret = dec.next_day(2026, 0);
+        assert!(ret.is_none());
+    }
 
     // --- invalid inputs ---
 
@@ -312,7 +343,7 @@ mod get_years_months_days_tests {
             for (month, days) in months {
                 for day in days {
                     if let Some((py, pm, pd)) = prev {
-                        let _expected = pd.next_day(*month, *year).map(|(y, m, d, _)| (y, m, d));
+                        let _expected = pd.next_day(*year, *month).map(|(y, m, d, _)| (y, m, d));
                         // just check continuity within same month
                         if py == *year && pm == *month {
                             assert_eq!(*day, pd + 1);

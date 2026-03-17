@@ -90,11 +90,11 @@ impl MonthNext for u32 {
 
 pub(crate) trait DayNext {
     /// Returns (year, month, day, num_of_days_in_that_month) of the next day.
-    fn next_day(self, month: u32, year: u32) -> Option<(u32, u32, u32, u32)>;
+    fn next_day(self, year: u32, month: u32) -> Option<(u32, u32, u32, u32)>;
 }
 
 impl DayNext for u32 {
-    fn next_day(self, month: u32, year: u32) -> Option<(u32, u32, u32, u32)> {
+    fn next_day(self, year: u32, month: u32) -> Option<(u32, u32, u32, u32)> {
         let days_in_current = days_in_month(year, month)?;
 
         if self == 0 || self > days_in_current {
@@ -189,7 +189,7 @@ pub(crate) fn get_years_months_days(
         }
 
         // Advance to next day using the DayNext trait
-        if let Some((ny, nm, nd, _)) = current_day.next_day(current_month, current_year) {
+        if let Some((ny, nm, nd, _)) = current_day.next_day(current_year, current_month) {
             current_year = ny;
             current_month = nm;
             current_day = nd;
