@@ -4,12 +4,25 @@ use crate::accounting::interest::RateDays;
 use crate::macros::{dec, money};
 
 // ---- Fixed interest: daily rate ----
+//
+// Convention: the rate is adjusted to the payment period.
+// - daily rate × daily period  → effective daily rate   = r / 100
+// - daily rate × monthly period → effective monthly rate = r × days_in_month / 100
+// - daily rate × yearly period  → effective yearly rate  = r × days_in_year / 100
 
 #[test]
 fn test_fixed_daily_days() {
-    // P=5000, r=5% daily, 100 days: returns = P * r * t = 5000 * 0.05 * 100 = 25000
+    // P=5000, r=5% daily, 100 days: effective daily rate = r/100 = 0.05
+    // returns = P × (r/100) × t = 5000 × 0.05 × 100 = 25000
     let money = money!(USD, 5000);
-    let interest = money.interest_fixed(5).unwrap().daily().days(100);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(100);
     let returns = interest.returns().unwrap();
     let total = interest.total().unwrap();
 
@@ -19,10 +32,19 @@ fn test_fixed_daily_days() {
 
 #[test]
 fn test_fixed_daily_months() {
-    // P=5000, r=5% daily, 12 months starting 2026-03-16: each month = P * r * days_in_month
-    // Mar–Feb spans 365 days total: returns = 5000 * 0.05 * 365 = 91250
+    // P=5000, r=5% daily, 12 months from 2026-01-01:
+    // Rate adjusted to period: effective monthly rate = r × days_in_month / 100
+    // Jan(31)+Feb(28)+Mar(31)+Apr(30)+May(31)+Jun(30)+Jul(31)+Aug(31)+Sep(30)+Oct(31)+Nov(30)+Dec(31) = 365
+    // returns = P × Σ(r × days_in_month / 100) = 5000 × 5 × 365 / 100 = 91250
     let money = money!(USD, 5000);
-    let interest = money.interest_fixed(5).unwrap().daily().months(12);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(12);
     let returns = interest.returns().unwrap();
     let total = interest.total().unwrap();
 
@@ -32,10 +54,19 @@ fn test_fixed_daily_months() {
 
 #[test]
 fn test_fixed_daily_years() {
-    // P=5000, r=5% daily, 2 years starting 2026 (both non-leap, 365 days each):
-    // returns = 5000 * 0.05 * 365 * 2 = 182500
+    // P=5000, r=5% daily, 2 years from 2026 (both non-leap, 365 days each):
+    // Rate adjusted to period: effective yearly rate = r × days_in_year / 100
+    // Year 2026: 5 × 365 / 100 = 18.25; Year 2027: same
+    // returns = 5000 × 18.25 × 2 = 182500
     let money = money!(USD, 5000);
-    let interest = money.interest_fixed(5).unwrap().daily().years(2);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2);
     let returns = interest.returns().unwrap();
     let total = interest.total().unwrap();
 
@@ -47,14 +78,14 @@ fn test_fixed_daily_years() {
 
 #[test]
 fn test_fixed_daily_days_rate30360() {
-    // P=5000, r=5% daily, Rate30360, 100 days: returns = P * r * t = 5000 * 0.05 * 100 = 25000
-    // (daily rate is r/100, independent of rate_days convention)
+    // P=5000, r=5% daily, Rate30360, 100 days: effective daily rate = r/100 = 0.05
+    // returns = P × (r/100) × t = 5000 × 0.05 × 100 = 25000
     let money = money!(USD, 5000);
     let interest = money
         .interest_fixed(5)
         .unwrap()
         .daily()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -66,14 +97,15 @@ fn test_fixed_daily_days_rate30360() {
 
 #[test]
 fn test_fixed_daily_months_rate30360() {
-    // P=5000, r=5% daily, Rate30360, 12 months from 2024-01:
-    // each month = P * r * 30 / 100 = 5000 * 5 * 30 / 100 = 7500 per month * 12 = 90000
+    // P=5000, r=5% daily, Rate30360, 12 months from 2026-01-01:
+    // Rate adjusted to period: effective monthly rate = r × 30 / 100 = 1.5
+    // returns = P × (5 × 30 / 100) × 12 = 5000 × 1.5 × 12 = 90000
     let money = money!(USD, 5000);
     let interest = money
         .interest_fixed(5)
         .unwrap()
         .daily()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -85,14 +117,15 @@ fn test_fixed_daily_months_rate30360() {
 
 #[test]
 fn test_fixed_daily_years_rate30360() {
-    // P=5000, r=5% daily, Rate30360, 2 years: each year = P * r * 360 / 100 = 90000
-    // returns = 90000 * 2 = 180000
+    // P=5000, r=5% daily, Rate30360, 2 years from 2026-01-01:
+    // Rate adjusted to period: effective yearly rate = r × 360 / 100 = 18
+    // returns = P × 18 × 2 = 180000
     let money = money!(USD, 5000);
     let interest = money
         .interest_fixed(5)
         .unwrap()
         .daily()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -103,31 +136,46 @@ fn test_fixed_daily_years_rate30360() {
 }
 
 // ---- Fixed interest: monthly rate ----
+//
+// Convention: the rate is adjusted to the payment period.
+// - monthly rate × daily period  → effective daily rate   = r / days_in_month / 100
+// - monthly rate × monthly period → effective monthly rate = r / 100
+// - monthly rate × yearly period  → effective yearly rate  = r × 12 / 100
 
 #[test]
 fn test_fixed_monthly_days() {
-    // P=5000, r=5% monthly, 100 days starting 2026-03-16 (RateActualActual):
-    // each day = P * r / days_in_month / 100; total ≈ 820.70 (date-sensitive)
-    let money = money!(USD, 5000);
-    let interest = money.interest_fixed(5).unwrap().monthly().days(100);
-    let returns = interest.returns().unwrap();
-    let total = interest.total().unwrap();
-
-    assert_eq!(returns.amount(), dec!(820.70));
-    assert_eq!(total.amount(), dec!(5820.70));
-}
-
-#[test]
-fn test_fixed_monthly_days_rate30360() {
-    // P=5000, r=5% monthly, Rate30360, 100 days from 2024-01-01:
-    // each day = P * r / 30 / 100 = 5000 * 5 / 3000 = 8.333...
-    // 100 days: 8.333... * 100 = 833.33
+    // P=5000, r=5% monthly, 100 days from 2026-01-01 (RateActualActual):
+    // Rate adjusted to period: effective daily rate = r / days_in_month / 100
+    // Jan(31): 5000 × 5/31/100 × 31 = 250; Feb(28): 5000 × 5/28/100 × 28 = 250
+    // Mar(31): 5000 × 5/31/100 × 31 = 250; Apr(10): 5000 × 5/30/100 × 10 = 83.33
+    // returns = 250 + 250 + 250 + 83.33 = 833.33
     let money = money!(USD, 5000);
     let interest = money
         .interest_fixed(5)
         .unwrap()
         .monthly()
-        .year(2024)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(100);
+    let returns = interest.returns().unwrap();
+    let total = interest.total().unwrap();
+
+    assert_eq!(returns.amount(), dec!(833.33));
+    assert_eq!(total.amount(), dec!(5833.33));
+}
+
+#[test]
+fn test_fixed_monthly_days_rate30360() {
+    // P=5000, r=5% monthly, Rate30360, 100 days from 2026-01-01:
+    // Rate adjusted to period: effective daily rate = r / 30 / 100 = 5/3000
+    // returns = P × (5/3000) × 100 = 833.33
+    let money = money!(USD, 5000);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .monthly()
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -139,9 +187,17 @@ fn test_fixed_monthly_days_rate30360() {
 
 #[test]
 fn test_fixed_monthly_months() {
-    // P=5000, r=5% monthly, 12 months: returns = P * r * t = 5000 * 0.05 * 12 = 3000
+    // P=5000, r=5% monthly, 12 months: effective monthly rate = r/100 = 0.05
+    // returns = P × (r/100) × t = 5000 × 0.05 × 12 = 3000
     let money = money!(USD, 5000);
-    let interest = money.interest_fixed(5).unwrap().monthly().months(12);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(12);
     let returns = interest.returns().unwrap();
     let total = interest.total().unwrap();
 
@@ -151,10 +207,18 @@ fn test_fixed_monthly_months() {
 
 #[test]
 fn test_fixed_monthly_years() {
-    // P=5000, r=5% monthly, 2 years: yearly_rate = r * 12 / 100 = 60%
-    // returns = P * 0.60 * 2 = 6000
+    // P=5000, r=5% monthly, 2 years:
+    // Rate adjusted to period: effective yearly rate = r × 12 / 100 = 0.60
+    // returns = P × 0.60 × 2 = 6000
     let money = money!(USD, 5000);
-    let interest = money.interest_fixed(5).unwrap().monthly().years(2);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2);
     let returns = interest.returns().unwrap();
     let total = interest.total().unwrap();
 
@@ -163,12 +227,25 @@ fn test_fixed_monthly_years() {
 }
 
 // ---- Fixed interest: yearly rate ----
+//
+// Convention: the rate is adjusted to the payment period.
+// - yearly rate × daily period  → effective daily rate   = r / days_in_year / 100
+// - yearly rate × monthly period → effective monthly rate = r / 12 / 100
+// - yearly rate × yearly period  → effective yearly rate  = r / 100
 
 #[test]
 fn test_fixed_yearly_years() {
-    // P=5000, r=5% yearly, 2 years: returns = P * r * t = 5000 * 0.05 * 2 = 500
+    // P=5000, r=5% yearly, 2 years: effective yearly rate = r/100 = 0.05
+    // returns = P × (r/100) × t = 5000 × 0.05 × 2 = 500
     let money = money!(USD, 5000);
-    let interest = money.interest_fixed(5).unwrap().yearly().years(2);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(500.00));
     assert_eq!(interest.total().unwrap().amount(), dec!(5500.00));
@@ -176,10 +253,18 @@ fn test_fixed_yearly_years() {
 
 #[test]
 fn test_fixed_yearly_months() {
-    // P=5000, r=5% yearly, 12 months: monthly_rate = r/12/100
-    // returns = P * (r/12/100) * 12 = P * r/100 = 5000 * 0.05 = 250
+    // P=5000, r=5% yearly, 12 months:
+    // Rate adjusted to period: effective monthly rate = r / 12 / 100
+    // returns = P × (r/12/100) × 12 = P × r/100 = 5000 × 0.05 = 250
     let money = money!(USD, 5000);
-    let interest = money.interest_fixed(5).unwrap().yearly().months(12);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(12);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(250.00));
     assert_eq!(interest.total().unwrap().amount(), dec!(5250.00));
@@ -187,14 +272,15 @@ fn test_fixed_yearly_months() {
 
 #[test]
 fn test_fixed_yearly_days_rate30360() {
-    // P=5000, r=5% yearly, Rate30360, 360 days from 2024-01-01:
-    // daily_rate = r / 360 / 100; returns = P * (5/36000) * 360 = 5000 * 0.05 = 250
+    // P=5000, r=5% yearly, Rate30360, 360 days from 2026-01-01:
+    // Rate adjusted to period: effective daily rate = r / 360 / 100 = 5/36000
+    // returns = P × (5/36000) × 360 = 5000 × 0.05 = 250
     let money = money!(USD, 5000);
     let interest = money
         .interest_fixed(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -208,15 +294,15 @@ fn test_fixed_yearly_days_rate30360() {
 
 #[test]
 fn test_compound_daily_days() {
-    // P=5000, r=5% daily, 10 days from 2024-01-01:
-    // each day: current_interest = current_principal * 0.05, principal compounds
+    // P=5000, r=5% daily, 10 days from 2026-01-01:
+    // each day: current_interest = current_principal × (r/100), principal compounds
     // returns = 3144.47 (rounded to USD 2 decimals)
     let money = money!(USD, 5000);
     let interest = money
         .interest_compound(5)
         .unwrap()
         .daily()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .days(10);
@@ -227,15 +313,16 @@ fn test_compound_daily_days() {
 
 #[test]
 fn test_compound_daily_months_rate30360() {
-    // P=5000, r=5% daily, Rate30360, 12 months from 2024-01:
-    // monthly_rate = r * 30 / 100 = 150% per month; compounded monthly
-    // returns = 298018223.88 (large due to extreme daily rate compounding monthly)
+    // P=5000, r=5% daily, Rate30360, 12 months from 2026-01-01:
+    // Rate adjusted to period: effective monthly rate = r × 30 / 100 = 1.5 (150%)
+    // Each month compounds: current_interest = current_principal × 1.5
+    // returns = 298018223.88 (large due to extreme rate scaled up to monthly)
     let money = money!(USD, 5000);
     let interest = money
         .interest_compound(5)
         .unwrap()
         .daily()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -247,16 +334,16 @@ fn test_compound_daily_months_rate30360() {
 
 #[test]
 fn test_compound_daily_years_rate30360() {
-    // P=5000, r=5% daily, Rate30360, 2 years from 2024:
-    // yearly_rate = r * 360 / 100 = 1800% per year; compounded annually
-    // Year 1: 5000 * 18 = 90000, CP = 95000
-    // Year 2: 95000 * 18 = 1710000, CP = 1805000; returns = 1800000
+    // P=5000, r=5% daily, Rate30360, 2 years from 2026-01-01:
+    // Rate adjusted to period: effective yearly rate = r × 360 / 100 = 18 (1800%)
+    // Year 1: 5000 × 18 = 90000, CP = 95000
+    // Year 2: 95000 × 18 = 1710000; returns = 1800000
     let money = money!(USD, 5000);
     let interest = money
         .interest_compound(5)
         .unwrap()
         .daily()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -270,15 +357,15 @@ fn test_compound_daily_years_rate30360() {
 
 #[test]
 fn test_compound_monthly_days_rate30360() {
-    // P=5000, r=5% monthly, Rate30360, 10 days from 2024-01-01:
-    // daily_rate = r / 30 / 100 = 0.1667%; each day compounds
-    // returns = 83.96
+    // P=5000, r=5% monthly, Rate30360, 10 days from 2026-01-01:
+    // Rate adjusted to period: effective daily rate = r / 30 / 100 ≈ 0.1667%
+    // Each day compounds: returns = 83.96
     let money = money!(USD, 5000);
     let interest = money
         .interest_compound(5)
         .unwrap()
         .monthly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -290,14 +377,15 @@ fn test_compound_monthly_days_rate30360() {
 
 #[test]
 fn test_compound_monthly_months() {
-    // P=5000, r=5% monthly, 12 months: each month = current_principal * 0.05, compounds
+    // P=5000, r=5% monthly, 12 months from 2026-01-01:
+    // effective monthly rate = r/100 = 0.05; each month compounds
     // returns = 3979.28
     let money = money!(USD, 5000);
     let interest = money
         .interest_compound(5)
         .unwrap()
         .monthly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .months(12);
@@ -308,15 +396,16 @@ fn test_compound_monthly_months() {
 
 #[test]
 fn test_compound_monthly_years() {
-    // P=5000, r=5% monthly, 2 years: yearly_rate = r * 12 / 100 = 60% per year, compounds
-    // Year 1: 5000 * 0.60 = 3000, CP = 8000
-    // Year 2: 8000 * 0.60 = 4800, CP = 12800; returns = 7800
+    // P=5000, r=5% monthly, 2 years from 2026-01-01:
+    // Rate adjusted to period: effective yearly rate = r × 12 / 100 = 0.60 (60%)
+    // Year 1: 5000 × 0.60 = 3000, CP = 8000
+    // Year 2: 8000 × 0.60 = 4800; returns = 7800
     let money = money!(USD, 5000);
     let interest = money
         .interest_compound(5)
         .unwrap()
         .monthly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .years(2);
@@ -329,15 +418,15 @@ fn test_compound_monthly_years() {
 
 #[test]
 fn test_compound_yearly_days_rate30360() {
-    // P=5000, r=5% yearly, Rate30360, 10 days from 2024-01-01:
-    // daily_rate = r / 360 / 100 ≈ 0.01389%; each day compounds
-    // returns = 6.95
+    // P=5000, r=5% yearly, Rate30360, 10 days from 2026-01-01:
+    // Rate adjusted to period: effective daily rate = r / 360 / 100 ≈ 0.01389%
+    // Each day compounds: returns = 6.95
     let money = money!(USD, 5000);
     let interest = money
         .interest_compound(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -349,14 +438,15 @@ fn test_compound_yearly_days_rate30360() {
 
 #[test]
 fn test_compound_yearly_months() {
-    // P=5000, r=5% yearly, 12 months: each month = current_principal * (r/12/100), compounds
-    // returns = 255.81
+    // P=5000, r=5% yearly, 12 months from 2026-01-01:
+    // Rate adjusted to period: effective monthly rate = r / 12 / 100
+    // Each month compounds: returns = 255.81
     let money = money!(USD, 5000);
     let interest = money
         .interest_compound(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .months(12);
@@ -367,15 +457,16 @@ fn test_compound_yearly_months() {
 
 #[test]
 fn test_compound_yearly_years() {
-    // P=5000, r=5% yearly, 2 years: compounds annually at 5%
-    // Year 1: 5000 * 0.05 = 250, CP = 5250
-    // Year 2: 5250 * 0.05 = 262.50; returns = 512.50
+    // P=5000, r=5% yearly, 2 years from 2026-01-01:
+    // effective yearly rate = r/100 = 0.05; each year compounds
+    // Year 1: 5000 × 0.05 = 250, CP = 5250
+    // Year 2: 5250 × 0.05 = 262.50; returns = 512.50
     let money = money!(USD, 5000);
     let interest = money
         .interest_compound(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .years(2);
@@ -391,15 +482,36 @@ fn test_zero_rate_fixed() {
     // A 0% interest rate should yield zero returns
     let money = money!(USD, 5000);
 
-    let i = money.interest_fixed(0).unwrap().daily().days(100);
+    let i = money
+        .interest_fixed(0)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(100);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
     assert_eq!(i.total().unwrap().amount(), dec!(5000));
 
-    let i = money.interest_fixed(0).unwrap().monthly().months(12);
+    let i = money
+        .interest_fixed(0)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(12);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
     assert_eq!(i.total().unwrap().amount(), dec!(5000));
 
-    let i = money.interest_fixed(0).unwrap().yearly().years(2);
+    let i = money
+        .interest_fixed(0)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
     assert_eq!(i.total().unwrap().amount(), dec!(5000));
 }
@@ -409,33 +521,54 @@ fn test_zero_rate_compound() {
     // A 0% compounding rate should also yield zero returns
     let money = money!(USD, 5000);
 
-    let i = money.interest_compound(0).unwrap().daily().days(100);
+    let i = money
+        .interest_compound(0)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(100);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
     assert_eq!(i.total().unwrap().amount(), dec!(5000));
 
-    let i = money.interest_compound(0).unwrap().monthly().months(12);
+    let i = money
+        .interest_compound(0)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(12);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
     assert_eq!(i.total().unwrap().amount(), dec!(5000));
 
-    let i = money.interest_compound(0).unwrap().yearly().years(2);
+    let i = money
+        .interest_compound(0)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
     assert_eq!(i.total().unwrap().amount(), dec!(5000));
 }
 
 #[test]
 fn test_rate_days_rate30360_vs_actual_actual() {
-    // Rate30360 uses 30 days/month and 360 days/year, so:
-    //   yearly rate → daily: 5/360/100
-    // RateActualActual uses 366 days for 2024 (leap year), so:
-    //   yearly rate → daily: 5/366/100
-    // The two conventions should produce different results for the same inputs.
+    // Rate30360 uses a fixed 360 days/year, so:
+    //   yearly rate → daily: r / 360 / 100
+    // RateActualActual uses 365 days for 2026 (non-leap year), so:
+    //   yearly rate → daily: r / 365 / 100
+    // The two conventions produce different results for the same inputs.
     let money = money!(USD, 5000);
 
     let i_30360 = money
         .interest_fixed(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::Rate30360)
@@ -445,15 +578,15 @@ fn test_rate_days_rate30360_vs_actual_actual() {
         .interest_fixed(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::RateActualActual)
         .days(360);
 
-    // Rate30360: 5000 * (5/360/100) * 360 = 250.00
+    // Rate30360: 5000 × (5/360/100) × 360 = 250.00
     assert_eq!(i_30360.returns().unwrap().amount(), dec!(250.00));
-    // RateActualActual: 5000 * (5/366/100) * 360 ≠ 250 (2024 is leap, 366 days)
+    // RateActualActual: 5000 × (5/365/100) × 360 ≠ 250 (365-day year)
     assert_ne!(
         i_actual.returns().unwrap().amount(),
         i_30360.returns().unwrap().amount()
@@ -463,14 +596,14 @@ fn test_rate_days_rate30360_vs_actual_actual() {
 #[test]
 fn test_rate_days_rate_actual365() {
     // RateActual365 always uses 365 days/year regardless of leap year.
-    // For 2024 (leap year): fixed yearly days(365) with RateActual365
-    // daily_rate = 5/365/100; returns = 5000 * (5/365/100) * 365 = 250
+    // For 2026 (non-leap year): effective daily rate = r / 365 / 100
+    // returns = 5000 × (5/365/100) × 365 = 5000 × 0.05 = 250
     let money = money!(USD, 5000);
     let interest = money
         .interest_fixed(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::RateActual365)
@@ -482,16 +615,16 @@ fn test_rate_days_rate_actual365() {
 
 #[test]
 fn test_rate_days_rate_actual360() {
-    // RateActual360: actual days/month, 360 days/year.
-    // Yearly rate: daily_rate = 5/360/100 (fixed at 360 regardless of actual year length).
-    // For 60 days from 2024-01-01 (Jan 31 + Feb 29 = actual days used):
-    // returns = 5000 * (5/360/100) * 60 = 5000 * 5 * 60 / 36000 = 41.67
+    // RateActual360: actual days/month, fixed 360 days/year.
+    // Yearly rate: effective daily rate = r / 360 / 100 (denominator fixed at 360).
+    // For 60 days from 2026-01-01 (Jan 31 + Feb 28 = 59, plus 1 day of Mar = 60):
+    // returns = 5000 × (5/360/100) × 60 = 5000 × 5 × 60 / 36000 = 41.67
     let money = money!(USD, 5000);
     let interest = money
         .interest_fixed(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::RateActual360)
@@ -503,16 +636,17 @@ fn test_rate_days_rate_actual360() {
 
 #[test]
 fn test_year_month_day_setters() {
-    // Verify that the year/month/day builder setters affect date-sensitive calculations.
-    // Fixed yearly days from 2024-02-01 vs 2024-01-01 with RateActualActual:
-    // both have daily_rate = 5/366/100 (same leap year), but the months visited differ.
+    // Verify that the year/month/day builder setters are used in date-sensitive calculations.
+    // Fixed yearly days from 2026-01-01 vs 2026-02-01 with RateActualActual:
+    // both have the same daily rate = r / 365 / 100 (same non-leap year 2026),
+    // and the same number of days, so returns must be equal.
     let money = money!(USD, 5000);
 
     let i_jan = money
         .interest_fixed(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .rate_days(RateDays::RateActualActual)
@@ -522,13 +656,12 @@ fn test_year_month_day_setters() {
         .interest_fixed(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(2)
         .day(1)
         .rate_days(RateDays::RateActualActual)
         .days(30);
 
-    // Same rate (both in 2024 leap year), same number of days → same result
     assert_eq!(
         i_jan.returns().unwrap().amount(),
         i_feb.returns().unwrap().amount()
@@ -544,7 +677,7 @@ fn test_fixed_and_compound_returns_differ() {
         .interest_fixed(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .years(3);
@@ -552,7 +685,7 @@ fn test_fixed_and_compound_returns_differ() {
         .interest_compound(5)
         .unwrap()
         .yearly()
-        .year(2024)
+        .year(2026)
         .month(1)
         .day(1)
         .years(3);
@@ -567,14 +700,35 @@ fn test_total_equals_principal_plus_returns() {
     let money = money!(USD, 5000);
 
     let cases: &[_] = &[
-        money.interest_fixed(5).unwrap().daily().days(100),
-        money.interest_fixed(5).unwrap().monthly().months(6),
-        money.interest_fixed(5).unwrap().yearly().years(1),
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(100),
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(6),
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(1),
         money
             .interest_compound(5)
             .unwrap()
             .daily()
-            .year(2024)
+            .year(2026)
             .month(1)
             .day(1)
             .days(5),
@@ -582,7 +736,7 @@ fn test_total_equals_principal_plus_returns() {
             .interest_compound(5)
             .unwrap()
             .monthly()
-            .year(2024)
+            .year(2026)
             .month(1)
             .day(1)
             .months(6),
@@ -590,7 +744,7 @@ fn test_total_equals_principal_plus_returns() {
             .interest_compound(5)
             .unwrap()
             .yearly()
-            .year(2024)
+            .year(2026)
             .month(1)
             .day(1)
             .years(1),
