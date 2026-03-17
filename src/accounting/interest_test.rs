@@ -893,16 +893,18 @@ fn test_fixed_yearly_years_returns_none_on_overflow() {
     // yearly_rate = MAX / 100 ≈ 7.92e26
     // principal × yearly_rate = 5000 × 7.92e26 ≈ 3.96e30 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(Decimal::MAX)
-        .unwrap()
-        .yearly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .years(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -910,16 +912,18 @@ fn test_fixed_yearly_months_returns_none_on_overflow() {
     // monthly_rate = MAX / 12 / 100 ≈ 6.6e25
     // principal × monthly_rate = 5000 × 6.6e25 ≈ 3.3e29 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(Decimal::MAX)
-        .unwrap()
-        .yearly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .months(12)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(12)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -928,16 +932,18 @@ fn test_fixed_yearly_days_returns_none_on_overflow() {
     // With principal = 40000: 40000 × 2.17e24 ≈ 8.68e28 > Decimal::MAX → None
     // A larger principal is required here because daily_rate is reduced by /365/100.
     let money = money!(USD, 40000);
-    assert!(money
-        .interest_fixed(Decimal::MAX)
-        .unwrap()
-        .yearly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .days(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -946,16 +952,18 @@ fn test_fixed_monthly_years_returns_none_on_overflow() {
     // since 1e27 × 12 = 1.2e28 < Decimal::MAX).
     // principal × yearly_rate = 5000 × 1.2e26 = 6e29 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(dec!(1000000000000000000000000000))
-        .unwrap()
-        .monthly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .years(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(dec!(1000000000000000000000000000))
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -963,16 +971,18 @@ fn test_fixed_monthly_months_returns_none_on_overflow() {
     // monthly_rate = MAX / 100 ≈ 7.92e26
     // principal × monthly_rate = 5000 × 7.92e26 ≈ 3.96e30 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(Decimal::MAX)
-        .unwrap()
-        .monthly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .months(12)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(12)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -980,16 +990,18 @@ fn test_fixed_monthly_days_returns_none_on_overflow() {
     // get_daily_rate(Monthly(MAX)) = MAX / days_in_month / 100 ≈ 2.56e25 (succeeds; division).
     // principal × daily_rate = 5000 × 2.56e25 ≈ 1.28e29 > Decimal::MAX → checked_mul overflows → None.
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(Decimal::MAX)
-        .unwrap()
-        .monthly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .days(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -998,16 +1010,18 @@ fn test_fixed_daily_years_returns_none_on_overflow() {
     // since 1e25 × 365 = 3.65e27 < Decimal::MAX).
     // principal × yearly_rate = 5000 × 3.65e25 = 1.825e29 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(dec!(10000000000000000000000000))
-        .unwrap()
-        .daily()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .years(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(dec!(10000000000000000000000000))
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1016,16 +1030,18 @@ fn test_fixed_daily_months_returns_none_on_overflow() {
     // since 1e26 × 31 = 3.1e27 < Decimal::MAX).
     // principal × monthly_rate = 5000 × 3.1e25 = 1.55e29 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(dec!(100000000000000000000000000))
-        .unwrap()
-        .daily()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .months(12)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(dec!(100000000000000000000000000))
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(12)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1033,16 +1049,18 @@ fn test_fixed_daily_days_returns_none_on_overflow() {
     // daily_rate = MAX / 100 ≈ 7.92e26
     // principal × daily_rate = 5000 × 7.92e26 ≈ 3.96e30 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(Decimal::MAX)
-        .unwrap()
-        .daily()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .days(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(1)
+            .returns()
+            .is_none()
+    );
 }
 
 // ---- Compounding interest: None from arithmetic overflow in returns() ----
@@ -1051,32 +1069,36 @@ fn test_fixed_daily_days_returns_none_on_overflow() {
 fn test_compound_yearly_years_returns_none_on_overflow() {
     // Same logic as fixed: yearly_rate = MAX/100, 5000 × MAX/100 overflows.
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_compound(Decimal::MAX)
-        .unwrap()
-        .yearly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .years(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
 fn test_compound_yearly_months_returns_none_on_overflow() {
     // monthly_rate = MAX/12/100 ≈ 6.6e25; 5000 × 6.6e25 ≈ 3.3e29 > MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_compound(Decimal::MAX)
-        .unwrap()
-        .yearly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .months(12)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(12)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1084,16 +1106,18 @@ fn test_compound_yearly_days_returns_none_on_overflow() {
     // daily_rate = MAX/365/100 ≈ 2.17e24; with principal=40000:
     // 40000 × 2.17e24 ≈ 8.68e28 > Decimal::MAX → None
     let money = money!(USD, 40000);
-    assert!(money
-        .interest_compound(Decimal::MAX)
-        .unwrap()
-        .yearly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .days(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1101,32 +1125,36 @@ fn test_compound_monthly_years_returns_none_on_overflow() {
     // Rate = 1e27: get_yearly_rate(Monthly(1e27)) = 1e27 × 12 / 100 = 1.2e26 (succeeds).
     // 5000 × 1.2e26 = 6e29 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_compound(dec!(1000000000000000000000000000))
-        .unwrap()
-        .monthly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .years(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(dec!(1000000000000000000000000000))
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
 fn test_compound_monthly_months_returns_none_on_overflow() {
     // monthly_rate = MAX/100 ≈ 7.92e26; 5000 × 7.92e26 overflows → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_compound(Decimal::MAX)
-        .unwrap()
-        .monthly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .months(12)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(12)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1134,16 +1162,18 @@ fn test_compound_monthly_days_returns_none_on_overflow() {
     // get_daily_rate(Monthly(MAX)) = MAX / days_in_month / 100 ≈ 2.56e25 (succeeds; division).
     // current_principal × daily_rate = 5000 × 2.56e25 ≈ 1.28e29 > Decimal::MAX → checked_mul overflows → None.
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_compound(Decimal::MAX)
-        .unwrap()
-        .monthly()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .days(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1151,16 +1181,18 @@ fn test_compound_daily_years_returns_none_on_overflow() {
     // Rate = 1e25: get_yearly_rate(Daily(1e25)) = 1e25 × 365 / 100 = 3.65e25 (succeeds).
     // 5000 × 3.65e25 = 1.825e29 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_compound(dec!(10000000000000000000000000))
-        .unwrap()
-        .daily()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .years(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(dec!(10000000000000000000000000))
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1168,32 +1200,36 @@ fn test_compound_daily_months_returns_none_on_overflow() {
     // Rate = 1e26: get_monthly_rate(Daily(1e26)) = 1e26 × 31 / 100 = 3.1e25 (succeeds).
     // 5000 × 3.1e25 = 1.55e29 > Decimal::MAX → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_compound(dec!(100000000000000000000000000))
-        .unwrap()
-        .daily()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .months(12)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(dec!(100000000000000000000000000))
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(12)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
 fn test_compound_daily_days_returns_none_on_overflow() {
     // daily_rate = MAX/100 ≈ 7.92e26; 5000 × 7.92e26 overflows → None
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_compound(Decimal::MAX)
-        .unwrap()
-        .daily()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .days(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1203,17 +1239,19 @@ fn test_fixed_daily_years_checked_add_overflow() {
     // Per-year interest = 5000 × 3.65e24 = 1.825e28 < Decimal::MAX → checked_mul succeeds.
     // After 5 years the cumulative sum 5 × 1.825e28 = 9.125e28 > Decimal::MAX → checked_add overflows.
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(dec!(1000000000000000000000000))
-        .unwrap()
-        .daily()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .rate_days(RateDays::Rate30365)
-        .years(5)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(dec!(1000000000000000000000000))
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .rate_days(RateDays::Rate30365)
+            .years(5)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1222,16 +1260,18 @@ fn test_fixed_daily_months_get_monthly_rate_overflow() {
     // MAX × 31 overflows inside get_monthly_rate itself, so it returns None.
     // The ? on get_monthly_rate propagates None out of the loop.
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_fixed(Decimal::MAX)
-        .unwrap()
-        .daily()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .months(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(1)
+            .returns()
+            .is_none()
+    );
 }
 
 #[test]
@@ -1239,14 +1279,16 @@ fn test_compound_daily_months_get_monthly_rate_overflow() {
     // Same as the fixed case: get_monthly_rate(Daily(MAX)) overflows inside the function,
     // and the ? propagates None from the compounding loop.
     let money = money!(USD, 5000);
-    assert!(money
-        .interest_compound(Decimal::MAX)
-        .unwrap()
-        .daily()
-        .year(2026)
-        .month(1)
-        .day(1)
-        .months(1)
-        .returns()
-        .is_none());
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(1)
+            .returns()
+            .is_none()
+    );
 }
