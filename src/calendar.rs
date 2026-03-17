@@ -71,7 +71,6 @@ pub(crate) fn days_in_year(year: u32) -> u32 {
     if is_leap_year(year) { 366 } else { 365 }
 }
 
-#[allow(dead_code)]
 pub(crate) trait MonthNext {
     /// Returns next year, next month index and number of days in that next month index.
     fn next_month(self, year: u32) -> Option<(u32, u32, u32)>;
@@ -146,12 +145,9 @@ pub(crate) fn get_years_months(
         remaining -= 1;
 
         if remaining > 0 {
-            if month == 12 {
-                month = 1;
-                year += 1;
-            } else {
-                month += 1;
-            }
+            let (next_year, next_month, _days) = month.next_month(year)?;
+            year = next_year;
+            month = next_month;
         }
     }
 
