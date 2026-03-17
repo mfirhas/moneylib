@@ -101,20 +101,14 @@ impl DayNext for u32 {
             return None;
         }
 
-        let (next_year, next_month, next_day) = if self < days_in_current {
-            (year, month, self + 1)
+        if self < days_in_current {
+            let days_in_next = days_in_month(year, month)?;
+            Some((year, month, self + 1, days_in_next))
         } else {
             // self == days_in_current, overflow to next month
-            let (next_year, next_month) = match month {
-                1..=11 => (year, month + 1),
-                12 => (year + 1, 1),
-                _ => return None,
-            };
-            (next_year, next_month, 1)
-        };
-
-        let days_in_next = days_in_month(next_year, next_month)?;
-        Some((next_year, next_month, next_day, days_in_next))
+            let (next_year, next_month, days_in_next) = month.next_month(year)?;
+            Some((next_year, next_month, 1, days_in_next))
+        }
     }
 }
 
