@@ -78,3 +78,6 @@ mod iter_ops_test;
 
 #[cfg(all(test, feature = "exchange"))]
 mod exchange_test;
+
+#[cfg(all(test, feature = "accounting"))]
+mod calendar_test;
