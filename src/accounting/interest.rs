@@ -743,9 +743,9 @@ where
                             current_year = current_year.checked_add(1)?;
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Monthly(_), Period::Months(t)) => {
                         let years_months = get_years_months(self.year, self.month, t)?;
@@ -761,9 +761,9 @@ where
                             }
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Daily(_), Period::Days(t)) => {
                         let years_months_days =
@@ -782,9 +782,9 @@ where
                             }
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
 
                     (RatePercent::Yearly(_), Period::Months(t)) => {
@@ -801,9 +801,9 @@ where
                             }
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Yearly(_), Period::Days(t)) => {
                         let years_months_days =
@@ -829,9 +829,9 @@ where
 
                         let divisor = dec!(1).checked_add(actual_r)?;
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
 
                     (RatePercent::Monthly(_), Period::Years(t)) => {
@@ -845,9 +845,9 @@ where
                             current_year = current_year.checked_add(1)?;
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Monthly(_), Period::Days(t)) => {
                         let years_months_days =
@@ -873,9 +873,9 @@ where
 
                         let divisor = dec!(1).checked_add(actual_r)?;
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
 
                     (RatePercent::Daily(_), Period::Years(t)) => {
@@ -891,9 +891,9 @@ where
 
                         let divisor = dec!(1).checked_add(actual_r)?;
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Daily(_), Period::Months(t)) => {
                         let years_months = get_years_months(self.year, self.month, t)?;
@@ -912,9 +912,9 @@ where
 
                         let divisor = dec!(1).checked_add(actual_r)?;
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                 };
 
@@ -936,9 +936,9 @@ where
 
                             current_year = current_year.checked_add(1)?;
                         }
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Monthly(_), Period::Months(t)) => {
                         let years_months = get_years_months(self.year, self.month, t)?;
@@ -955,9 +955,9 @@ where
                             }
                         }
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Daily(_), Period::Days(t)) => {
                         let years_months_days =
@@ -976,9 +976,9 @@ where
                                 }
                             }
                         }
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
 
                     (RatePercent::Yearly(_), Period::Months(t)) => {
@@ -996,9 +996,9 @@ where
                             }
                         }
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Yearly(_), Period::Days(t)) => {
                         let years_months_days =
@@ -1018,9 +1018,9 @@ where
                             }
                         }
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
 
                     (RatePercent::Monthly(_), Period::Years(t)) => {
@@ -1035,9 +1035,9 @@ where
 
                             current_year = current_year.checked_add(1)?;
                         }
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Monthly(_), Period::Days(t)) => {
                         let years_months_days =
@@ -1057,9 +1057,9 @@ where
                             }
                         }
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
 
                     (RatePercent::Daily(_), Period::Years(t)) => {
@@ -1074,9 +1074,9 @@ where
                             current_year = current_year.checked_add(1)?;
                         }
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                     (RatePercent::Daily(_), Period::Months(t)) => {
                         let years_months = get_years_months(self.year, self.month, t)?;
@@ -1094,9 +1094,9 @@ where
                             }
                         }
 
-                        let ret = self.principal.checked_div(divisor);
+                        
 
-                        ret
+                        self.principal.checked_div(divisor)
                     }
                 };
 
