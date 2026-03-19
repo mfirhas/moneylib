@@ -743,7 +743,6 @@ where
                             current_year = current_year.checked_add(1)?;
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -761,7 +760,6 @@ where
                             }
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -782,7 +780,6 @@ where
                             }
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -801,7 +798,6 @@ where
                             }
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -829,8 +825,6 @@ where
 
                         let divisor = dec!(1).checked_add(actual_r)?;
 
-                        
-
                         self.principal.checked_div(divisor)
                     }
 
@@ -845,7 +839,6 @@ where
                             current_year = current_year.checked_add(1)?;
                         }
                         let divisor = dec!(1).checked_add(actual_r)?;
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -873,8 +866,6 @@ where
 
                         let divisor = dec!(1).checked_add(actual_r)?;
 
-                        
-
                         self.principal.checked_div(divisor)
                     }
 
@@ -890,8 +881,6 @@ where
                         }
 
                         let divisor = dec!(1).checked_add(actual_r)?;
-
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -911,8 +900,6 @@ where
                         }
 
                         let divisor = dec!(1).checked_add(actual_r)?;
-
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -936,7 +923,6 @@ where
 
                             current_year = current_year.checked_add(1)?;
                         }
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -954,8 +940,6 @@ where
                                 divisor = divisor.checked_mul(d)?;
                             }
                         }
-
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -976,7 +960,6 @@ where
                                 }
                             }
                         }
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -995,8 +978,6 @@ where
                                 divisor = divisor.checked_mul(d)?;
                             }
                         }
-
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -1018,8 +999,6 @@ where
                             }
                         }
 
-                        
-
                         self.principal.checked_div(divisor)
                     }
 
@@ -1035,7 +1014,6 @@ where
 
                             current_year = current_year.checked_add(1)?;
                         }
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -1057,8 +1035,6 @@ where
                             }
                         }
 
-                        
-
                         self.principal.checked_div(divisor)
                     }
 
@@ -1073,8 +1049,6 @@ where
                             divisor = divisor.checked_mul(d)?;
                             current_year = current_year.checked_add(1)?;
                         }
-
-                        
 
                         self.principal.checked_div(divisor)
                     }
@@ -1093,8 +1067,6 @@ where
                                 divisor = divisor.checked_mul(d)?;
                             }
                         }
-
-                        
 
                         self.principal.checked_div(divisor)
                     }
