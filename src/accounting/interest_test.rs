@@ -1297,6 +1297,849 @@ fn test_compound_daily_months_get_monthly_rate_overflow() {
 }
 
 // ---- Present value tests ----
+//
+// Round-trip invariant: present_value(future_value(P)) == P when using the same
+// rate/period/date parameters.  Every match arm in present_value() is exercised
+// by one or more of the tests below.
+
+// ---- Fixed present value: round-trip tests ----
+
+#[test]
+fn test_pv_fixed_yearly_years() {
+    // P=5000, r=5% yearly, 2 years.
+    // yearly_rate = 5/100 = 0.05; actual_r = 0.05 + 0.05 = 0.10; divisor = 1.10
+    // FV = 5500; PV = 5500 / 1.10 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(5500.00));
+    let pv = fv
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_fixed_yearly_months() {
+    // P=5000, r=60% yearly, 2 months.
+    // monthly_rate = 60/12/100 = 0.05 per month (exact); actual_r = 0.10; divisor = 1.10
+    // FV = 5500; PV = 5500 / 1.10 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_fixed(60)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(2)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(5500.00));
+    let pv = fv
+        .interest_fixed(60)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(2)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_fixed_yearly_days() {
+    // P=5000, r=5% yearly, Rate30360, 360 days.
+    // daily_rate = 5/360/100; actual_r = 360 × (5/36000) = 0.05; divisor = 1.05
+    // FV = 5250; PV = 5250 / 1.05 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .days(360)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(5250.00));
+    let pv = fv
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .days(360)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_fixed_monthly_years() {
+    // P=5000, r=5% monthly, 2 years.
+    // yearly_rate = 5×12/100 = 0.6 per year; actual_r = 1.2; divisor = 2.2
+    // FV = 5000 + 5000 × 1.2 = 11000; PV = 11000 / 2.2 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_fixed(5)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(11000.00));
+    let pv = fv
+        .interest_fixed(5)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_fixed_monthly_days() {
+    // present_value for (Monthly, Days) accumulates get_monthly_rate (v/100) per day,
+    // not get_daily_rate.  So actual_r = days × (v/100), divisor = 1 + actual_r.
+    // Use FV=12500, rate=5% monthly, Rate30360, 30 days:
+    //   actual_r = 30 × (5/100) = 1.5; divisor = 2.5; PV = 12500 / 2.5 = 5000
+    let fv = money!(USD, 12500);
+    let expected_pv = money!(USD, 5000);
+    let pv = fv
+        .interest_fixed(5)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .days(30)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, expected_pv);
+}
+
+#[test]
+fn test_pv_fixed_daily_years() {
+    // P=5000, r=5% daily, Rate30360, 1 year.
+    // yearly_rate = 5×360/100 = 18; actual_r = 18; divisor = 19
+    // FV = 5000 + 5000×18 = 95000; PV = 95000 / 19 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_fixed(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .years(1)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(95000.00));
+    let pv = fv
+        .interest_fixed(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .years(1)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_fixed_daily_days() {
+    // P=5000, r=5% daily, 10 days.
+    // daily_rate = 5/100 = 0.05; actual_r = 0.5; divisor = 1.5
+    // FV = 5000 + 5000×0.5 = 7500; PV = 7500 / 1.5 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_fixed(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(10)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(7500.00));
+    let pv = fv
+        .interest_fixed(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(10)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_fixed_daily_months() {
+    // P=5000, r=5% daily, Rate30360, 12 months.
+    // monthly_rate = 5×30/100 = 1.5 per month; actual_r = 18; divisor = 19
+    // FV = 5000 + 5000×18 = 95000; PV = 95000 / 19 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_fixed(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .months(12)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(95000.00));
+    let pv = fv
+        .interest_fixed(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .months(12)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+// ---- Compound present value: round-trip tests ----
+
+#[test]
+fn test_pv_compound_yearly_years() {
+    // P=5000, r=5% yearly, 2 years.
+    // divisor = (1.05)^2 = 1.1025; FV = 5512.50; PV = 5512.50 / 1.1025 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_compound(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(5512.50));
+    let pv = fv
+        .interest_compound(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_compound_yearly_months() {
+    // P=5000, r=60% yearly, 2 months.
+    // monthly_rate = 60/12/100 = 0.05 per month (exact)
+    // divisor = (1.05)^2 = 1.1025; FV = 5512.50; PV = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_compound(60)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(2)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(5512.50));
+    let pv = fv
+        .interest_compound(60)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(2)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_compound_yearly_days() {
+    // P=5000, r=720% yearly, Rate30360, 1 day.
+    // daily_rate = 720/360/100 = 0.02; divisor = 1.02
+    // FV = 5000 × 1.02 = 5100; PV = 5100 / 1.02 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_compound(720)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .days(1)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(5100.00));
+    let pv = fv
+        .interest_compound(720)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .days(1)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_compound_monthly_years() {
+    // P=5000, r=5% monthly, 2 years.
+    // yearly_rate = 5×12/100 = 0.6; divisor = (1.6)^2 = 2.56
+    // FV = 12800; PV = 12800 / 2.56 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_compound(5)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(12800.00));
+    let pv = fv
+        .interest_compound(5)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_compound_monthly_days() {
+    // P=5000, r=300% monthly, Rate30360, 1 day.
+    // present_value compound (Monthly, Days) uses get_daily_rate per day:
+    //   daily_rate = 300/30/100 = 0.1; d = 1.1; divisor = 1.1
+    //   FV = 5000 × 1.1 = 5500; PV = 5500 / 1.1 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_compound(300)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .days(1)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(5500.00));
+    let pv = fv
+        .interest_compound(300)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .days(1)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_compound_daily_years() {
+    // P=5000, r=5% daily, Rate30360, 1 year.
+    // yearly_rate = 5×360/100 = 18; divisor = 1+18 = 19
+    // FV = 5000 × 19 = 95000; PV = 95000 / 19 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_compound(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .years(1)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(95000.00));
+    let pv = fv
+        .interest_compound(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .years(1)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_compound_daily_days() {
+    // P=5000, r=5% daily, 2 days.
+    // daily_rate = 0.05; divisor = (1.05)^2 = 1.1025
+    // FV = 5512.50; PV = 5512.50 / 1.1025 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_compound(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(2)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(5512.50));
+    let pv = fv
+        .interest_compound(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(2)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_compound_daily_months() {
+    // P=5000, r=5% daily, Rate30360, 1 month.
+    // monthly_rate = 5×30/100 = 1.5; divisor = 1+1.5 = 2.5
+    // FV = 5000 × (1+1.5) = 12500; PV = 12500 / 2.5 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_compound(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .months(1)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(12500.00));
+    let pv = fv
+        .interest_compound(5)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .months(1)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+// ---- Present value: None-propagation tests ----
+//
+// Each test exercises a specific `?` operator inside present_value().
+// Inputs are chosen to trigger the failure point with the minimum
+// setup required.
+
+// --- Fixed: Yearly/Years ---
+#[test]
+fn test_pv_fixed_yearly_years_none_on_year_overflow() {
+    // year = u32::MAX: after computing the first year's rate, current_year.checked_add(1)
+    // returns None, propagating None out of the loop.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .yearly()
+            .year(u32::MAX)
+            .month(1)
+            .day(1)
+            .years(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Fixed: Yearly/Months ---
+#[test]
+fn test_pv_fixed_yearly_months_none_on_zero_months() {
+    // months=0: get_years_months returns None for num_of_months==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(0)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Fixed: Yearly/Days ---
+#[test]
+fn test_pv_fixed_yearly_days_none_on_invalid_day() {
+    // day=0: get_years_months_days returns None for start_day==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(0)
+            .days(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Fixed: Monthly/Years ---
+#[test]
+fn test_pv_fixed_monthly_years_none_on_year_overflow() {
+    // year = u32::MAX: current_year.checked_add(1) overflows after the first iteration.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .monthly()
+            .year(u32::MAX)
+            .month(1)
+            .day(1)
+            .years(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Fixed: Monthly/Months ---
+#[test]
+fn test_pv_fixed_monthly_months_none_on_zero_months() {
+    // months=0: get_years_months returns None for num_of_months==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(0)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Fixed: Monthly/Days ---
+#[test]
+fn test_pv_fixed_monthly_days_none_on_invalid_day() {
+    // day=0: get_years_months_days returns None for start_day==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(0)
+            .days(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Fixed: Daily/Years ---
+#[test]
+fn test_pv_fixed_daily_years_none_on_rate_overflow() {
+    // Rate = Decimal::MAX: get_yearly_rate(Daily) = MAX × 365 overflows → None.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Fixed: Daily/Months ---
+#[test]
+fn test_pv_fixed_daily_months_none_on_rate_overflow() {
+    // Rate = Decimal::MAX: get_monthly_rate(Daily) = MAX × days_in_month overflows → None.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Fixed: Daily/Days ---
+#[test]
+fn test_pv_fixed_daily_days_none_on_invalid_day() {
+    // day=0: get_years_months_days returns None for start_day==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_fixed(5)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(0)
+            .days(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Compound: Yearly/Years ---
+#[test]
+fn test_pv_compound_yearly_years_none_on_year_overflow() {
+    // year = u32::MAX: current_year.checked_add(1) overflows after the first iteration.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_compound(5)
+            .unwrap()
+            .yearly()
+            .year(u32::MAX)
+            .month(1)
+            .day(1)
+            .years(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Compound: Yearly/Months ---
+#[test]
+fn test_pv_compound_yearly_months_none_on_zero_months() {
+    // months=0: get_years_months returns None for num_of_months==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_compound(5)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(0)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Compound: Yearly/Days ---
+#[test]
+fn test_pv_compound_yearly_days_none_on_invalid_day() {
+    // day=0: get_years_months_days returns None for start_day==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_compound(5)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(0)
+            .days(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Compound: Monthly/Years ---
+#[test]
+fn test_pv_compound_monthly_years_none_on_year_overflow() {
+    // year = u32::MAX: current_year.checked_add(1) overflows after the first iteration.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_compound(5)
+            .unwrap()
+            .monthly()
+            .year(u32::MAX)
+            .month(1)
+            .day(1)
+            .years(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Compound: Monthly/Months ---
+#[test]
+fn test_pv_compound_monthly_months_none_on_zero_months() {
+    // months=0: get_years_months returns None for num_of_months==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_compound(5)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(0)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Compound: Monthly/Days ---
+#[test]
+fn test_pv_compound_monthly_days_none_on_invalid_day() {
+    // day=0: get_years_months_days returns None for start_day==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_compound(5)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(0)
+            .days(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Compound: Daily/Years ---
+#[test]
+fn test_pv_compound_daily_years_none_on_rate_overflow() {
+    // Rate = Decimal::MAX: get_yearly_rate(Daily) = MAX × 365 overflows → None.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Compound: Daily/Months ---
+#[test]
+fn test_pv_compound_daily_months_none_on_rate_overflow() {
+    // Rate = Decimal::MAX: get_monthly_rate(Daily) = MAX × days_in_month overflows → None.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// --- Compound: Daily/Days ---
+#[test]
+fn test_pv_compound_daily_days_none_on_invalid_day() {
+    // day=0: get_years_months_days returns None for start_day==0.
+    let money = money!(USD, 5000);
+    assert!(
+        money
+            .interest_compound(5)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(0)
+            .days(1)
+            .present_value()
+            .is_none()
+    );
+}
 
 #[test]
 fn test_present() {
