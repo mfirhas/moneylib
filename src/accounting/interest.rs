@@ -12,6 +12,10 @@ pub trait InterestOps<C> {
 
     /// Calculate fixed-interest on loan.
     ///
+    /// # Formula
+    /// FV = PV * (1 + (r * t))
+    /// PV = FV / (1 + (r * t))
+    ///
     /// # Argument
     /// rate: impl DecimalNumber, supports Decimal, f64, i32, i64, i128.
     ///
@@ -25,6 +29,10 @@ pub trait InterestOps<C> {
         R: DecimalNumber;
 
     /// Calculate compounding-interest on loan.
+    ///
+    /// # Formula
+    /// FV = PV * (1 + r)^t
+    /// PV = FV / (1 + r)^t
     ///
     /// # Argument
     /// rate: impl DecimalNumber, supports Decimal, f64, i32, i64, i128.
@@ -714,5 +722,386 @@ where
         M: BaseMoney<C> + BaseOps<C> + Amount<C>,
     {
         M::new(self.principal.checked_add(self.returns()?.amount())?).ok()
+    }
+
+    pub fn present_value(&self) -> Option<M>
+    where
+        M: BaseMoney<C> + BaseOps<C> + Amount<C>,
+    {
+        match self.interest_type {
+            // PV = FV / (1 + (r * t))
+            InterestType::Fixed => {
+                let fixed_ret = match (self.rate_percent, self.total_period) {
+                    (RatePercent::Yearly(_), Period::Years(t)) => {
+                        let mut actual_r = dec!(0);
+                        let mut current_year = self.year;
+                        for _y in 0..t {
+                            actual_r = actual_r.checked_add(
+                                self.rate_percent
+                                    .get_yearly_rate(self.rate_days, current_year)?,
+                            )?;
+                            current_year = current_year.checked_add(1)?;
+                        }
+                        let divisor = dec!(1).checked_add(actual_r)?;
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Monthly(_), Period::Months(t)) => {
+                        let years_months = get_years_months(self.year, self.month, t)?;
+                        let mut actual_r = dec!(0);
+                        for year in years_months {
+                            for month in year.1 {
+                                actual_r =
+                                    actual_r.checked_add(self.rate_percent.get_monthly_rate(
+                                        self.rate_days,
+                                        year.0,
+                                        month,
+                                    )?)?;
+                            }
+                        }
+                        let divisor = dec!(1).checked_add(actual_r)?;
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Daily(_), Period::Days(t)) => {
+                        let years_months_days =
+                            get_years_months_days(self.year, self.month, self.day, t)?;
+                        let mut actual_r = dec!(0);
+                        for year in years_months_days {
+                            for month in year.1 {
+                                for _day in month.1 {
+                                    actual_r =
+                                        actual_r.checked_add(self.rate_percent.get_daily_rate(
+                                            self.rate_days,
+                                            year.0,
+                                            month.0,
+                                        )?)?;
+                                }
+                            }
+                        }
+                        let divisor = dec!(1).checked_add(actual_r)?;
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+
+                    (RatePercent::Yearly(_), Period::Months(t)) => {
+                        let years_months = get_years_months(self.year, self.month, t)?;
+                        let mut actual_r = dec!(0);
+                        for year in years_months {
+                            for month in year.1 {
+                                actual_r =
+                                    actual_r.checked_add(self.rate_percent.get_monthly_rate(
+                                        self.rate_days,
+                                        year.0,
+                                        month,
+                                    )?)?;
+                            }
+                        }
+                        let divisor = dec!(1).checked_add(actual_r)?;
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Yearly(_), Period::Days(t)) => {
+                        let years_months_days =
+                            get_years_months_days(self.year, self.month, self.day, t)?;
+
+                        let actual_r = {
+                            let mut total_r = dec!(0);
+                            for year in years_months_days {
+                                for month in year.1 {
+                                    for _day in month.1 {
+                                        total_r = total_r.checked_add(
+                                            self.rate_percent.get_daily_rate(
+                                                self.rate_days,
+                                                year.0,
+                                                month.0,
+                                            )?,
+                                        )?;
+                                    }
+                                }
+                            }
+                            total_r
+                        };
+
+                        let divisor = dec!(1).checked_add(actual_r)?;
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+
+                    (RatePercent::Monthly(_), Period::Years(t)) => {
+                        let mut actual_r = dec!(0);
+                        let mut current_year = self.year;
+                        for _y in 0..t {
+                            actual_r = actual_r.checked_add(
+                                self.rate_percent
+                                    .get_yearly_rate(self.rate_days, current_year)?,
+                            )?;
+                            current_year = current_year.checked_add(1)?;
+                        }
+                        let divisor = dec!(1).checked_add(actual_r)?;
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Monthly(_), Period::Days(t)) => {
+                        let years_months_days =
+                            get_years_months_days(self.year, self.month, self.day, t)?;
+
+                        let actual_r = {
+                            let mut total_r = dec!(0);
+                            for year in years_months_days {
+                                for month in year.1 {
+                                    for _day in month.1 {
+                                        total_r = total_r.checked_add(
+                                            self.rate_percent.get_monthly_rate(
+                                                self.rate_days,
+                                                year.0,
+                                                month.0,
+                                            )?,
+                                        )?;
+                                    }
+                                }
+                            }
+                            total_r
+                        };
+
+                        let divisor = dec!(1).checked_add(actual_r)?;
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+
+                    (RatePercent::Daily(_), Period::Years(t)) => {
+                        let mut current_year = self.year;
+                        let mut actual_r = dec!(0);
+                        for _y in 0..t {
+                            actual_r = actual_r.checked_add(
+                                self.rate_percent
+                                    .get_yearly_rate(self.rate_days, current_year)?,
+                            )?;
+                            current_year = current_year.checked_add(1)?;
+                        }
+
+                        let divisor = dec!(1).checked_add(actual_r)?;
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Daily(_), Period::Months(t)) => {
+                        let years_months = get_years_months(self.year, self.month, t)?;
+
+                        let mut actual_r = dec!(0);
+                        for year in years_months {
+                            for month in year.1 {
+                                actual_r =
+                                    actual_r.checked_add(self.rate_percent.get_monthly_rate(
+                                        self.rate_days,
+                                        year.0,
+                                        month,
+                                    )?)?;
+                            }
+                        }
+
+                        let divisor = dec!(1).checked_add(actual_r)?;
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                };
+
+                M::new(fixed_ret?).ok()
+            }
+
+            // PV = FV / (1 + r)^t
+            InterestType::Compounding => {
+                let compound_ret = match (self.rate_percent, self.total_period) {
+                    (RatePercent::Yearly(_), Period::Years(t)) => {
+                        let mut current_year = self.year;
+                        let mut divisor = dec!(1);
+                        for _y in 0..t {
+                            let d = dec!(1).checked_add(
+                                self.rate_percent
+                                    .get_yearly_rate(self.rate_days, current_year)?,
+                            )?;
+                            divisor = divisor.checked_mul(d)?;
+
+                            current_year = current_year.checked_add(1)?;
+                        }
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Monthly(_), Period::Months(t)) => {
+                        let years_months = get_years_months(self.year, self.month, t)?;
+                        let mut divisor = dec!(1);
+                        for year in years_months {
+                            for month in year.1 {
+                                let d =
+                                    dec!(1).checked_add(self.rate_percent.get_monthly_rate(
+                                        self.rate_days,
+                                        year.0,
+                                        month,
+                                    )?)?;
+                                divisor = divisor.checked_mul(d)?;
+                            }
+                        }
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Daily(_), Period::Days(t)) => {
+                        let years_months_days =
+                            get_years_months_days(self.year, self.month, self.day, t)?;
+                        let mut divisor = dec!(1);
+                        for year in years_months_days {
+                            for month in year.1 {
+                                for _day in month.1 {
+                                    let d =
+                                        dec!(1).checked_add(self.rate_percent.get_daily_rate(
+                                            self.rate_days,
+                                            year.0,
+                                            month.0,
+                                        )?)?;
+                                    divisor = divisor.checked_mul(d)?;
+                                }
+                            }
+                        }
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+
+                    (RatePercent::Yearly(_), Period::Months(t)) => {
+                        let years_months = get_years_months(self.year, self.month, t)?;
+                        let mut divisor = dec!(1);
+                        for year in years_months {
+                            for month in year.1 {
+                                let d =
+                                    dec!(1).checked_add(self.rate_percent.get_monthly_rate(
+                                        self.rate_days,
+                                        year.0,
+                                        month,
+                                    )?)?;
+                                divisor = divisor.checked_mul(d)?;
+                            }
+                        }
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Yearly(_), Period::Days(t)) => {
+                        let years_months_days =
+                            get_years_months_days(self.year, self.month, self.day, t)?;
+                        let mut divisor = dec!(1);
+                        for year in years_months_days {
+                            for month in year.1 {
+                                for _day in month.1 {
+                                    let d =
+                                        dec!(1).checked_add(self.rate_percent.get_daily_rate(
+                                            self.rate_days,
+                                            year.0,
+                                            month.0,
+                                        )?)?;
+                                    divisor = divisor.checked_mul(d)?;
+                                }
+                            }
+                        }
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+
+                    (RatePercent::Monthly(_), Period::Years(t)) => {
+                        let mut current_year = self.year;
+                        let mut divisor = dec!(1);
+                        for _y in 0..t {
+                            let d = dec!(1).checked_add(
+                                self.rate_percent
+                                    .get_yearly_rate(self.rate_days, current_year)?,
+                            )?;
+                            divisor = divisor.checked_mul(d)?;
+
+                            current_year = current_year.checked_add(1)?;
+                        }
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Monthly(_), Period::Days(t)) => {
+                        let years_months_days =
+                            get_years_months_days(self.year, self.month, self.day, t)?;
+                        let mut divisor = dec!(1);
+                        for year in years_months_days {
+                            for month in year.1 {
+                                for _day in month.1 {
+                                    let d =
+                                        dec!(1).checked_add(self.rate_percent.get_daily_rate(
+                                            self.rate_days,
+                                            year.0,
+                                            month.0,
+                                        )?)?;
+                                    divisor = divisor.checked_mul(d)?;
+                                }
+                            }
+                        }
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+
+                    (RatePercent::Daily(_), Period::Years(t)) => {
+                        let mut current_year = self.year;
+                        let mut divisor = dec!(1);
+                        for _y in 0..t {
+                            let d = dec!(1).checked_add(
+                                self.rate_percent
+                                    .get_yearly_rate(self.rate_days, current_year)?,
+                            )?;
+                            divisor = divisor.checked_mul(d)?;
+                            current_year = current_year.checked_add(1)?;
+                        }
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                    (RatePercent::Daily(_), Period::Months(t)) => {
+                        let years_months = get_years_months(self.year, self.month, t)?;
+
+                        let mut divisor = dec!(1);
+                        for year in years_months {
+                            for month in year.1 {
+                                let d =
+                                    dec!(1).checked_add(self.rate_percent.get_monthly_rate(
+                                        self.rate_days,
+                                        year.0,
+                                        month,
+                                    )?)?;
+                                divisor = divisor.checked_mul(d)?;
+                            }
+                        }
+
+                        let ret = self.principal.checked_div(divisor);
+
+                        ret
+                    }
+                };
+
+                M::new(compound_ret?).ok()
+            }
+        }
     }
 }

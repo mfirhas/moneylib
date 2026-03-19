@@ -1292,3 +1292,52 @@ fn test_compound_daily_months_get_monthly_rate_overflow() {
             .is_none()
     );
 }
+
+// ---- Present value tests ----
+
+#[test]
+fn test_present() {
+    let money = money!(USD, 1000);
+    println!("Original: {money}");
+    let fv = money
+        .interest_fixed(5)
+        .unwrap()
+        .monthly()
+        .months(2)
+        .total()
+        .unwrap();
+
+    println!("fv: {fv}");
+
+    let pv = fv
+        .interest_fixed(5)
+        .unwrap()
+        .monthly()
+        .months(2)
+        .present_value()
+        .unwrap();
+    println!("pv: {pv}");
+    assert_eq!(money, pv);
+
+    let money = money!(USD, 1000);
+    println!("Original: {money}");
+    let fv = money
+        .interest_compound(5)
+        .unwrap()
+        .monthly()
+        .months(2)
+        .total()
+        .unwrap();
+
+    println!("fv: {fv}");
+
+    let pv = fv
+        .interest_compound(5)
+        .unwrap()
+        .monthly()
+        .months(2)
+        .present_value()
+        .unwrap();
+    println!("pv: {pv}");
+    assert_eq!(money, pv);
+}
