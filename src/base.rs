@@ -644,7 +644,7 @@ pub trait IterOps<C: Currency> {
     type Item;
 
     /// Returns the sum of all money values in the collection, or `None` if
-    /// arithmetic overflow occurs. Returns `Some(zero)` for an empty collection.
+    /// arithmetic overflow occurs. Returns `None` for an empty collection.
     ///
     /// # Examples
     ///
