@@ -18,12 +18,15 @@ pub trait InterestOps<C> {
     ///
     /// # Argument
     /// rate: impl DecimalNumber, supports Decimal, f64, i32, i64, i128.
+    /// Rate is the percentage number only, e.g. 25% -> rate = 25.
     ///
     /// # Return
     /// It returns interest builder to set rate(daily, monthly, yearly) with periods(daily, monthly, yearly) of payment,
     /// along with day, month and year of calculations.
     ///
     /// The default rate is yearly and period is 12 months.
+    /// The default year, month and day of calculation is current date.
+    /// The default of rate days is Actual/Actual.
     fn interest_fixed<R>(&self, rate: R) -> Option<Self::InterestBuilder>
     where
         R: DecimalNumber;
@@ -36,12 +39,15 @@ pub trait InterestOps<C> {
     ///
     /// # Argument
     /// rate: impl DecimalNumber, supports Decimal, f64, i32, i64, i128.
+    /// Rate is the percentage number only, e.g. 25% -> rate = 25.
     ///
     /// # Return
     /// It returns interest builder to set rate(daily, monthly, yearly) with periods(daily, monthly, yearly) of payment,
     /// along with day, month and year of calculations.
     ///
     /// The default rate is yearly and period is 12 months.
+    /// The default year, month and day of calculation is current date.
+    /// The default of rate days is Actual/Actual.
     fn interest_compound<R>(&self, rate: R) -> Option<Self::InterestBuilder>
     where
         R: DecimalNumber;
