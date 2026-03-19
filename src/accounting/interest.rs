@@ -716,8 +716,8 @@ where
         }
     }
 
-    /// Calculate the total of returns: Principal + Interests.
-    pub fn total(&self) -> Option<M>
+    /// Calculate the future value of a money: Principal + Interests.
+    pub fn future_value(&self) -> Option<M>
     where
         M: BaseMoney<C> + BaseOps<C> + Amount<C>,
     {

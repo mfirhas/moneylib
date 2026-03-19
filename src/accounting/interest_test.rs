@@ -25,7 +25,7 @@ fn test_fixed_daily_days() {
         .day(1)
         .days(100);
     let returns = interest.returns().unwrap();
-    let total = interest.total().unwrap();
+    let total = interest.future_value().unwrap();
 
     assert_eq!(returns.amount(), dec!(25_000));
     assert_eq!(total.amount(), dec!(30_000));
@@ -47,7 +47,7 @@ fn test_fixed_daily_months() {
         .day(1)
         .months(12);
     let returns = interest.returns().unwrap();
-    let total = interest.total().unwrap();
+    let total = interest.future_value().unwrap();
 
     assert_eq!(returns.amount(), dec!(91250.00));
     assert_eq!(total.amount(), dec!(96250.00));
@@ -69,7 +69,7 @@ fn test_fixed_daily_years() {
         .day(1)
         .years(2);
     let returns = interest.returns().unwrap();
-    let total = interest.total().unwrap();
+    let total = interest.future_value().unwrap();
 
     assert_eq!(returns.amount(), dec!(182500.00));
     assert_eq!(total.amount(), dec!(187500.00));
@@ -93,7 +93,7 @@ fn test_fixed_daily_days_rate30360() {
         .days(100);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(25_000));
-    assert_eq!(interest.total().unwrap().amount(), dec!(30_000));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(30_000));
 }
 
 #[test]
@@ -113,7 +113,7 @@ fn test_fixed_daily_months_rate30360() {
         .months(12);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(90000));
-    assert_eq!(interest.total().unwrap().amount(), dec!(95000));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(95000));
 }
 
 #[test]
@@ -133,7 +133,7 @@ fn test_fixed_daily_years_rate30360() {
         .years(2);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(180000));
-    assert_eq!(interest.total().unwrap().amount(), dec!(185000));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(185000));
 }
 
 // ---- Fixed interest: monthly rate ----
@@ -160,7 +160,7 @@ fn test_fixed_monthly_days() {
         .day(1)
         .days(100);
     let returns = interest.returns().unwrap();
-    let total = interest.total().unwrap();
+    let total = interest.future_value().unwrap();
 
     assert_eq!(returns.amount(), dec!(833.33));
     assert_eq!(total.amount(), dec!(5833.33));
@@ -183,7 +183,7 @@ fn test_fixed_monthly_days_rate30360() {
         .days(100);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(833.33));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5833.33));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5833.33));
 }
 
 #[test]
@@ -200,7 +200,7 @@ fn test_fixed_monthly_months() {
         .day(1)
         .months(12);
     let returns = interest.returns().unwrap();
-    let total = interest.total().unwrap();
+    let total = interest.future_value().unwrap();
 
     assert_eq!(returns.amount(), dec!(3000));
     assert_eq!(total.amount(), dec!(8000));
@@ -221,7 +221,7 @@ fn test_fixed_monthly_years() {
         .day(1)
         .years(2);
     let returns = interest.returns().unwrap();
-    let total = interest.total().unwrap();
+    let total = interest.future_value().unwrap();
 
     assert_eq!(returns.amount(), dec!(6000));
     assert_eq!(total.amount(), dec!(11000));
@@ -249,7 +249,7 @@ fn test_fixed_yearly_years() {
         .years(2);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(500.00));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5500.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5500.00));
 }
 
 #[test]
@@ -268,7 +268,7 @@ fn test_fixed_yearly_months() {
         .months(12);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(250.00));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5250.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5250.00));
 }
 
 #[test]
@@ -288,7 +288,7 @@ fn test_fixed_yearly_days_rate30360() {
         .days(360);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(250.00));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5250.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5250.00));
 }
 
 // ---- Compounding interest: daily rate ----
@@ -309,7 +309,7 @@ fn test_compound_daily_days() {
         .days(10);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(3144.47));
-    assert_eq!(interest.total().unwrap().amount(), dec!(8144.47));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(8144.47));
 }
 
 #[test]
@@ -330,7 +330,10 @@ fn test_compound_daily_months_rate30360() {
         .months(12);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(298018223.88));
-    assert_eq!(interest.total().unwrap().amount(), dec!(298023223.88));
+    assert_eq!(
+        interest.future_value().unwrap().amount(),
+        dec!(298023223.88)
+    );
 }
 
 #[test]
@@ -351,7 +354,7 @@ fn test_compound_daily_years_rate30360() {
         .years(2);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(1800000));
-    assert_eq!(interest.total().unwrap().amount(), dec!(1805000));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1805000));
 }
 
 // ---- Compounding interest: monthly rate ----
@@ -373,7 +376,7 @@ fn test_compound_monthly_days_rate30360() {
         .days(10);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(83.96));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5083.96));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5083.96));
 }
 
 #[test]
@@ -392,7 +395,7 @@ fn test_compound_monthly_months() {
         .months(12);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(3979.28));
-    assert_eq!(interest.total().unwrap().amount(), dec!(8979.28));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(8979.28));
 }
 
 #[test]
@@ -412,7 +415,7 @@ fn test_compound_monthly_years() {
         .years(2);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(7800.00));
-    assert_eq!(interest.total().unwrap().amount(), dec!(12800.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(12800.00));
 }
 
 // ---- Compounding interest: yearly rate ----
@@ -434,7 +437,7 @@ fn test_compound_yearly_days_rate30360() {
         .days(10);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(6.95));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5006.95));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5006.95));
 }
 
 #[test]
@@ -453,7 +456,7 @@ fn test_compound_yearly_months() {
         .months(12);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(255.81));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5255.81));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5255.81));
 }
 
 #[test]
@@ -473,7 +476,7 @@ fn test_compound_yearly_years() {
         .years(2);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(512.50));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5512.50));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5512.50));
 }
 
 // ---- Edge cases ----
@@ -492,7 +495,7 @@ fn test_zero_rate_fixed() {
         .day(1)
         .days(100);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
-    assert_eq!(i.total().unwrap().amount(), dec!(5000));
+    assert_eq!(i.future_value().unwrap().amount(), dec!(5000));
 
     let i = money
         .interest_fixed(0)
@@ -503,7 +506,7 @@ fn test_zero_rate_fixed() {
         .day(1)
         .months(12);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
-    assert_eq!(i.total().unwrap().amount(), dec!(5000));
+    assert_eq!(i.future_value().unwrap().amount(), dec!(5000));
 
     let i = money
         .interest_fixed(0)
@@ -514,7 +517,7 @@ fn test_zero_rate_fixed() {
         .day(1)
         .years(2);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
-    assert_eq!(i.total().unwrap().amount(), dec!(5000));
+    assert_eq!(i.future_value().unwrap().amount(), dec!(5000));
 }
 
 #[test]
@@ -531,7 +534,7 @@ fn test_zero_rate_compound() {
         .day(1)
         .days(100);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
-    assert_eq!(i.total().unwrap().amount(), dec!(5000));
+    assert_eq!(i.future_value().unwrap().amount(), dec!(5000));
 
     let i = money
         .interest_compound(0)
@@ -542,7 +545,7 @@ fn test_zero_rate_compound() {
         .day(1)
         .months(12);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
-    assert_eq!(i.total().unwrap().amount(), dec!(5000));
+    assert_eq!(i.future_value().unwrap().amount(), dec!(5000));
 
     let i = money
         .interest_compound(0)
@@ -553,7 +556,7 @@ fn test_zero_rate_compound() {
         .day(1)
         .years(2);
     assert_eq!(i.returns().unwrap().amount(), dec!(0));
-    assert_eq!(i.total().unwrap().amount(), dec!(5000));
+    assert_eq!(i.future_value().unwrap().amount(), dec!(5000));
 }
 
 #[test]
@@ -611,7 +614,7 @@ fn test_rate_days_rate_actual365() {
         .days(365);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(250.00));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5250.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5250.00));
 }
 
 #[test]
@@ -632,7 +635,7 @@ fn test_rate_days_rate_actual360() {
         .days(60);
 
     assert_eq!(interest.returns().unwrap().amount(), dec!(41.67));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5041.67));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5041.67));
 }
 
 #[test]
@@ -692,7 +695,7 @@ fn test_fixed_and_compound_returns_differ() {
         .years(3);
 
     assert!(compound.returns().unwrap().amount() > fixed.returns().unwrap().amount());
-    assert!(compound.total().unwrap().amount() > fixed.total().unwrap().amount());
+    assert!(compound.future_value().unwrap().amount() > fixed.future_value().unwrap().amount());
 }
 
 #[test]
@@ -753,7 +756,7 @@ fn test_total_equals_principal_plus_returns() {
 
     for interest in cases {
         let returns = interest.returns().unwrap().amount();
-        let total = interest.total().unwrap().amount();
+        let total = interest.future_value().unwrap().amount();
         let expected_total = money.amount() + returns;
         // Allow for ±1 cent rounding difference due to USD rounding applied independently
         let diff = (total - expected_total).abs();
@@ -785,7 +788,7 @@ fn test_fixed_daily_years_rate30365() {
         .rate_days(RateDays::Rate30365)
         .years(2);
     assert_eq!(interest.returns().unwrap().amount(), dec!(182500.00));
-    assert_eq!(interest.total().unwrap().amount(), dec!(187500.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(187500.00));
 }
 
 #[test]
@@ -806,7 +809,7 @@ fn test_fixed_daily_years_rate30actual() {
         .rate_days(RateDays::Rate30Actual)
         .years(1);
     assert_eq!(interest.returns().unwrap().amount(), dec!(91250.00));
-    assert_eq!(interest.total().unwrap().amount(), dec!(96250.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(96250.00));
 }
 
 #[test]
@@ -826,7 +829,7 @@ fn test_fixed_monthly_days_rate30actual() {
         .rate_days(RateDays::Rate30Actual)
         .days(100);
     assert_eq!(interest.returns().unwrap().amount(), dec!(833.33));
-    assert_eq!(interest.total().unwrap().amount(), dec!(5833.33));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5833.33));
 }
 
 #[test]
@@ -847,7 +850,7 @@ fn test_compound_daily_years_rate30365() {
         .rate_days(RateDays::Rate30365)
         .years(2);
     assert_eq!(interest.returns().unwrap().amount(), dec!(1847812.50));
-    assert_eq!(interest.total().unwrap().amount(), dec!(1852812.50));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1852812.50));
 }
 
 #[test]
@@ -866,7 +869,7 @@ fn test_compound_daily_years_rate30actual() {
         .rate_days(RateDays::Rate30Actual)
         .years(1);
     assert_eq!(interest.returns().unwrap().amount(), dec!(91250.00));
-    assert_eq!(interest.total().unwrap().amount(), dec!(96250.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(96250.00));
 }
 
 // ---- Tests for inputs that cause returns() or the builder to return None ----
@@ -1304,7 +1307,7 @@ fn test_present() {
         .unwrap()
         .monthly()
         .months(2)
-        .total()
+        .future_value()
         .unwrap();
 
     println!("fv: {fv}");
@@ -1326,7 +1329,7 @@ fn test_present() {
         .unwrap()
         .monthly()
         .months(2)
-        .total()
+        .future_value()
         .unwrap();
 
     println!("fv: {fv}");
