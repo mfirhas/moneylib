@@ -852,7 +852,7 @@ where
                                 for month in year.1 {
                                     for _day in month.1 {
                                         total_r = total_r.checked_add(
-                                            self.rate_percent.get_monthly_rate(
+                                            self.rate_percent.get_daily_rate(
                                                 self.rate_days,
                                                 year.0,
                                                 month.0,
