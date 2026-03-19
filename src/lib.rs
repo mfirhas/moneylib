@@ -30,6 +30,7 @@ mod money;
 pub use money::Money;
 
 mod dec_ops;
+mod iter_ops;
 mod ops;
 mod percent_ops;
 pub use percent_ops::PercentOps;
@@ -75,6 +76,9 @@ mod ops_test;
 
 #[cfg(test)]
 mod iter_ops_test;
+
+#[cfg(test)]
+mod percent_ops_test;
 
 #[cfg(all(test, feature = "exchange"))]
 mod exchange_test;
