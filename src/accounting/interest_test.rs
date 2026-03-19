@@ -1428,12 +1428,23 @@ fn test_pv_fixed_monthly_years() {
 
 #[test]
 fn test_pv_fixed_monthly_days() {
-    // present_value for (Monthly, Days) accumulates get_monthly_rate (v/100) per day,
-    // not get_daily_rate.  So actual_r = days × (v/100), divisor = 1 + actual_r.
-    // Use FV=12500, rate=5% monthly, Rate30360, 30 days:
-    //   actual_r = 30 × (5/100) = 1.5; divisor = 2.5; PV = 12500 / 2.5 = 5000
-    let fv = money!(USD, 12500);
-    let expected_pv = money!(USD, 5000);
+    // P=5000, r=5% monthly, Rate30360, 30 days.
+    // get_daily_rate(Monthly(5)) = 5 / 30 / 100 = 1/600 per day
+    // actual_r = 30 × (1/600) = 0.05; divisor = 1.05
+    // FV = 5000 × 1.05 = 5250; PV = 5250 / 1.05 = 5000
+    let money = money!(USD, 5000);
+    let fv = money
+        .interest_fixed(5)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .rate_days(RateDays::Rate30360)
+        .days(30)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(5250.00));
     let pv = fv
         .interest_fixed(5)
         .unwrap()
@@ -1445,7 +1456,7 @@ fn test_pv_fixed_monthly_days() {
         .days(30)
         .present_value()
         .unwrap();
-    assert_eq!(pv, expected_pv);
+    assert_eq!(pv, money);
 }
 
 #[test]
