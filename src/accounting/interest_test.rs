@@ -2199,20 +2199,196 @@ fn test_present() {
     assert_eq!(money, pv);
 }
 
+// ---- PMT (amortized payment) tests ----
+//
+// PMT = P × r × (1+r)ⁿ / [(1+r)ⁿ − 1]
+// where r is the period rate and n is the total number of periods.
+
 #[test]
-fn test_pmt() {
-    // 30-year mortgage: $300,000 at 4% annual
+fn test_pmt_months_yearly_rate() {
+    // 30-year mortgage: $300,000 at 4% annual, Rate30360 (default)
+    // monthly rate r = 4/12/100 = 0.003333...
+    // c = (1 + r)^360, PMT = P × r × c / (c − 1) ≈ 1432.25
     let total = money!(USD, 300000.00);
-    let pmt_b = total
+    let pmt = total
         .interest_fixed(4)
         .unwrap()
         .yearly()
         .months(360)
         .year(2026)
         .month(1)
-        .day(1);
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(1432.25));
+}
 
-    let pmt = pmt_b.payment();
+#[test]
+fn test_pmt_months_short_yearly_rate() {
+    // 3-month loan: $1,000 at 12% annual
+    // monthly rate r = 12/12/100 = 0.01
+    // c = (1.01)^3, PMT = 1000 × 0.01 × c / (c − 1) ≈ 340.02
+    let total = money!(USD, 1000);
+    let pmt = total
+        .interest_fixed(12)
+        .unwrap()
+        .yearly()
+        .months(3)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(340.02));
+}
 
-    println!("{:?}", pmt);
+#[test]
+fn test_pmt_years_yearly_rate() {
+    // 5-year loan: $10,000 at 6% annual
+    // yearly rate r = 6/100 = 0.06
+    // c = (1.06)^5, PMT = 10000 × 0.06 × c / (c − 1) ≈ 2373.96
+    let total = money!(USD, 10000);
+    let pmt = total
+        .interest_fixed(6)
+        .unwrap()
+        .yearly()
+        .years(5)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(2373.96));
+}
+
+#[test]
+fn test_pmt_years_short_yearly_rate() {
+    // 3-year loan: $5,000 at 5% annual
+    // yearly rate r = 5/100 = 0.05
+    // c = (1.05)^3, PMT = 5000 × 0.05 × c / (c − 1) ≈ 1836.04
+    let total = money!(USD, 5000);
+    let pmt = total
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .years(3)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(1836.04));
+}
+
+#[test]
+fn test_pmt_days_yearly_rate() {
+    // 30-day loan: $1,000 at 12% annual, Rate30360
+    // daily rate r = 12/360/100 = 0.000333...
+    // c = (1 + r)^30, PMT ≈ 33.51
+    let total = money!(USD, 1000);
+    let pmt = total
+        .interest_fixed(12)
+        .unwrap()
+        .yearly()
+        .days(30)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(33.50));
+}
+
+#[test]
+fn test_pmt_days_short_yearly_rate() {
+    // 90-day loan: $1,000 at 3.6% annual, Rate30360
+    // daily rate r = 3.6/360/100 = 0.0001
+    // c = (1.0001)^90, PMT ≈ 11.16
+    let total = money!(USD, 1000);
+    let pmt = total
+        .interest_fixed(dec!(3.6))
+        .unwrap()
+        .yearly()
+        .days(90)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(11.16));
+}
+
+#[test]
+fn test_pmt_months_returns_none_on_overflow() {
+    // With Decimal::MAX as yearly rate, r = MAX/12/100 ≈ 6.6e25.
+    // After 2 months c = (1 + r)^2 ≈ (6.6e25)^2 > Decimal::MAX → checked_mul overflows → None.
+    let total = money!(USD, 1000);
+    assert!(
+        total
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .months(2)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .payment()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_pmt_years_returns_none_on_overflow() {
+    // With Decimal::MAX as yearly rate, r = MAX/100.
+    // After 2 years c = (1 + r)^2 > Decimal::MAX → checked_mul overflows → None.
+    let total = money!(USD, 1000);
+    assert!(
+        total
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .years(2)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .payment()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_pmt_days_returns_none_on_overflow() {
+    // With Decimal::MAX as yearly rate, r = MAX/360/100.
+    // After 2 days c = (1 + r)^2 > Decimal::MAX → checked_mul overflows → None.
+    let total = money!(USD, 1000);
+    assert!(
+        total
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .days(2)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .payment()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_pmt_returns_none_on_zero_rate() {
+    // With rate 0: r = 0, c = 1, c-1 = 0 → checked_div returns None (division by zero).
+    let total = money!(USD, 1000);
+    assert!(
+        total
+            .interest_fixed(0)
+            .unwrap()
+            .yearly()
+            .months(12)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .payment()
+            .is_none()
+    );
 }
