@@ -730,6 +730,7 @@ where
         M::new(self.principal.checked_add(self.returns()?.amount())?).ok()
     }
 
+    /// Calculate the present value of future goal.
     pub fn present_value(&self) -> Option<M>
     where
         M: BaseMoney<C> + BaseOps<C> + Amount<C>,
@@ -1079,6 +1080,135 @@ where
                 };
 
                 M::new(compound_ret?).ok()
+            }
+        }
+    }
+
+    /// Calculate amortized payment(PMT)
+    /// PMT = P × [r(1+r)ⁿ] / [(1+r)ⁿ − 1];
+    /// Equals to:
+    /// PMT = P x [r(1+r)]ⁿ / [rⁿ⁻¹ * [(1+r)ⁿ − 1]]
+    pub fn payment(&self) -> Option<M> {
+        match self.total_period {
+            Period::Years(t) => {
+                let mut a = dec!(1);
+                let mut b = dec!(1);
+                let mut c = dec!(1);
+                let mut current_year = self.year;
+                for y in 0..t {
+                    let r = self
+                        .rate_percent
+                        .get_yearly_rate(self.rate_days, current_year)?;
+                    // r(1+r)
+                    let a1 = r.checked_mul(dec!(1).checked_add(r)?)?;
+                    // [r(1+r)]ⁿ
+                    a = a.checked_mul(a1)?;
+
+                    // rⁿ⁻¹
+                    if y < t - 1 {
+                        b = b.checked_mul(r)?;
+                    }
+
+                    // (1+r)ⁿ
+                    c = c.checked_mul(dec!(1).checked_add(r)?)?;
+
+                    current_year = current_year.checked_add(1)?;
+                }
+
+                c = c.checked_sub(dec!(1))?;
+
+                // [r(1+r)]ⁿ / [rⁿ⁻¹ * [(1+r)ⁿ − 1]]
+                let d = a.checked_div(b.checked_mul(c)?)?;
+
+                let ret = self.principal.checked_mul(d)?;
+
+                M::new(ret).ok()
+            }
+            Period::Months(t) => {
+                let mut a = dec!(1);
+                let mut b = dec!(1);
+                let mut c = dec!(1);
+                let years_months = get_years_months(self.year, self.month, t)?;
+                let total_months: usize = years_months
+                    .iter()
+                    .map(|(_, inner_vec)| inner_vec.len())
+                    .sum();
+                for year in years_months {
+                    for (m, month) in year.1.iter().enumerate() {
+                        let r =
+                            self.rate_percent
+                                .get_monthly_rate(self.rate_days, year.0, *month)?;
+                        // r(1+r)
+                        let a1 = r.checked_mul(dec!(1).checked_add(r)?)?;
+                        // [r(1+r)]ⁿ
+                        a = a.checked_mul(a1)?;
+
+                        // rⁿ⁻¹
+                        if m < total_months - 1 {
+                            b = b.checked_mul(r)?;
+                        }
+
+                        // (1+r)ⁿ
+                        c = c.checked_mul(dec!(1).checked_add(r)?)?;
+                    }
+                }
+
+                c = c.checked_sub(dec!(1))?;
+
+                // [r(1+r)]ⁿ / [rⁿ⁻¹ * [(1+r)ⁿ − 1]]
+                let d = a.checked_div(b.checked_mul(c)?)?;
+
+                let ret = self.principal.checked_mul(d)?;
+
+                M::new(ret).ok()
+            }
+            Period::Days(t) => {
+                let mut a = dec!(1);
+                let mut b = dec!(1);
+                let mut c = dec!(1);
+                let years_months_days = get_years_months_days(self.year, self.month, self.day, t)?;
+                let total_days: usize = years_months_days
+                    .iter()
+                    .map(|(_, inner_list)| {
+                        inner_list
+                            .iter()
+                            .map(|(_, deepest_vec)| deepest_vec.len())
+                            .sum::<usize>()
+                    })
+                    .sum();
+
+                for year in years_months_days {
+                    for month in year.1 {
+                        for (d, _day) in month.1.iter().enumerate() {
+                            let r = self.rate_percent.get_daily_rate(
+                                self.rate_days,
+                                year.0,
+                                month.0,
+                            )?;
+                            // r(1+r)
+                            let a1 = r.checked_mul(dec!(1).checked_add(r)?)?;
+                            // [r(1+r)]ⁿ
+                            a = a.checked_mul(a1)?;
+
+                            // rⁿ⁻¹
+                            if d < total_days - 1 {
+                                b = b.checked_mul(r)?;
+                            }
+
+                            // (1+r)ⁿ
+                            c = c.checked_mul(dec!(1).checked_add(r)?)?;
+                        }
+                    }
+                }
+
+                c = c.checked_sub(dec!(1))?;
+
+                // [r(1+r)]ⁿ / [rⁿ⁻¹ * [(1+r)ⁿ − 1]]
+                let d = a.checked_div(b.checked_mul(c)?)?;
+
+                let ret = self.principal.checked_mul(d)?;
+
+                M::new(ret).ok()
             }
         }
     }

@@ -2198,3 +2198,21 @@ fn test_present() {
     println!("pv: {pv}");
     assert_eq!(money, pv);
 }
+
+#[test]
+fn test_pmt() {
+    // 30-year mortgage: $300,000 at 4% annual
+    let total = money!(USD, 300000.00);
+    let pmt_b = total
+        .interest_fixed(4)
+        .unwrap()
+        .yearly()
+        .months(360)
+        .year(2026)
+        .month(1)
+        .day(1);
+
+    let pmt = pmt_b.payment();
+
+    println!("{:?}", pmt);
+}
