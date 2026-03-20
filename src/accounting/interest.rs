@@ -1087,6 +1087,7 @@ where
     /// Calculate amortized payment(PMT)
     /// PMT = P × r × (1+r)ⁿ / [(1+r)ⁿ − 1]
     /// where r is the period rate and n is the total number of periods.
+    /// PMT is amortized against fixed-rate loan.
     pub fn payment(&self) -> Option<M> {
         match self.total_period {
             Period::Years(t) => {
