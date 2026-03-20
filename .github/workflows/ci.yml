@@ -6,6 +6,7 @@ env:
 on:
   pull_request:
     branches: [master]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch: {}
 
 concurrency:

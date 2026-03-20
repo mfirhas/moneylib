@@ -30,7 +30,10 @@ mod money;
 pub use money::Money;
 
 mod dec_ops;
+mod iter_ops;
 mod ops;
+mod percent_ops;
+pub use percent_ops::PercentOps;
 
 #[cfg(feature = "raw_money")]
 mod raw_money;
@@ -46,9 +49,16 @@ mod exchange;
 #[cfg(feature = "exchange")]
 pub use exchange::{Exchange, ExchangeRates};
 
+#[cfg(feature = "accounting")]
+/// Accounting module
+pub mod accounting;
+
 mod fmt;
 
 mod parse;
+
+#[cfg(feature = "accounting")]
+mod calendar;
 
 #[cfg(test)]
 mod parse_test;
@@ -68,5 +78,11 @@ mod ops_test;
 #[cfg(test)]
 mod iter_ops_test;
 
+#[cfg(test)]
+mod percent_ops_test;
+
 #[cfg(all(test, feature = "exchange"))]
 mod exchange_test;
+
+#[cfg(all(test, feature = "accounting"))]
+mod calendar_test;
