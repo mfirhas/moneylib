@@ -43,7 +43,10 @@ Here are some features supported:
 - Serde.
 - Supports locale formatting.
 - Exchange rates for conversions.
-- Some accounting operations.(TODO)
+- Some accounting operations:
+    - Percentage calculations.
+    - Interest calculations.
+    - etc.
 
 ## Example
 
@@ -513,3 +516,14 @@ assert_eq!(
     dec!(17_000_000)
 );
 ```
+
+### `accounting`
+
+Contains several features:
+- Interest calculations(FV, PV, PMT).
+
+```toml
+[dependencies]
+moneylib = { version = "...", features = ["accounting"] }
+```
+
