@@ -50,6 +50,7 @@ mod exchange;
 pub use exchange::{Exchange, ExchangeRates};
 
 #[cfg(feature = "accounting")]
+/// Accounting module
 pub mod accounting;
 
 mod fmt;
