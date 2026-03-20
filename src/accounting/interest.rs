@@ -395,6 +395,7 @@ where
         }
     }
 
+    /// Set rate days
     pub const fn rate_days(self, rate_days: RateDays) -> Self {
         Self {
             principal: self.principal,
