@@ -194,6 +194,71 @@ impl RatePercent {
             Self::Yearly(v) => v.checked_div(dec!(100)),
         }
     }
+
+    fn get_quarterly_rate(&self, rate_days: RateDays, year: u32, month: u32) -> Option<Decimal> {
+        match self {
+            Self::Daily(v) => {
+                let (first_month_year, first_month) = (year, month);
+                let (second_month_year, second_month, _) =
+                    first_month.next_month(first_month_year)?;
+                let (third_month_year, third_month, _) =
+                    second_month.next_month(second_month_year)?;
+
+                let total_days = rate_days
+                    .days_in_month(year, first_month)?
+                    .checked_add(rate_days.days_in_month(second_month_year, second_month)?)?
+                    .checked_add(rate_days.days_in_month(third_month_year, third_month)?)?;
+
+                v.checked_mul(Decimal::from_u32(total_days)?)?
+                    .checked_div(dec!(100))
+            }
+            Self::Monthly(v) => {
+                let quarter_rate = v.checked_mul(dec!(3))?;
+                quarter_rate.checked_div(dec!(100))
+            }
+            Self::Yearly(v) => {
+                let quarter_rate = v.checked_div(dec!(4))?;
+                quarter_rate.checked_div(dec!(100))
+            }
+        }
+    }
+
+    fn get_semi_annualy_rate(&self, rate_days: RateDays, year: u32, month: u32) -> Option<Decimal> {
+        match self {
+            Self::Daily(v) => {
+                let (first_month_year, first_month) = (year, month);
+                let (second_month_year, second_month, _) =
+                    first_month.next_month(first_month_year)?;
+                let (third_month_year, third_month, _) =
+                    second_month.next_month(second_month_year)?;
+                let (fourth_month_year, fourth_month, _) =
+                    third_month.next_month(third_month_year)?;
+                let (fifth_month_year, fifth_month, _) =
+                    fourth_month.next_month(fourth_month_year)?;
+                let (sixth_month_year, sixth_month, _) =
+                    fifth_month.next_month(fifth_month_year)?;
+
+                let total_days = rate_days
+                    .days_in_month(first_month_year, first_month)?
+                    .checked_add(rate_days.days_in_month(second_month_year, second_month)?)?
+                    .checked_add(rate_days.days_in_month(third_month_year, third_month)?)?
+                    .checked_add(rate_days.days_in_month(fourth_month_year, fourth_month)?)?
+                    .checked_add(rate_days.days_in_month(fifth_month_year, fifth_month)?)?
+                    .checked_add(rate_days.days_in_month(sixth_month_year, sixth_month)?)?;
+
+                v.checked_mul(Decimal::from_u32(total_days)?)?
+                    .checked_div(dec!(100))
+            }
+            Self::Monthly(v) => {
+                let quarter_rate = v.checked_mul(dec!(6))?;
+                quarter_rate.checked_div(dec!(100))
+            }
+            Self::Yearly(v) => {
+                let quarter_rate = v.checked_div(dec!(2))?;
+                quarter_rate.checked_div(dec!(100))
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -207,6 +272,8 @@ enum Period {
     Days(u32),
     Months(u32),
     Years(u32),
+    Quarters(u32),
+    SemiAnnuals(u32),
 }
 
 /// Get number of days in a month and in a year according to ISO 15022 MT565: (16) Field 22F
@@ -337,6 +404,36 @@ where
             principal: self.principal,
             rate_percent: self.rate_percent,
             total_period: Period::Years(n),
+            interest_type: self.interest_type,
+            rate_days: self.rate_days,
+            year: self.year,
+            month: self.month,
+            day: self.day,
+            _output: PhantomData,
+            _currency: PhantomData,
+        }
+    }
+
+    pub const fn quarters(self, n: u32) -> Self {
+        Self {
+            principal: self.principal,
+            rate_percent: self.rate_percent,
+            total_period: Period::Quarters(n),
+            interest_type: self.interest_type,
+            rate_days: self.rate_days,
+            year: self.year,
+            month: self.month,
+            day: self.day,
+            _output: PhantomData,
+            _currency: PhantomData,
+        }
+    }
+
+    pub const fn semi_annuals(self, n: u32) -> Self {
+        Self {
+            principal: self.principal,
+            rate_percent: self.rate_percent,
+            total_period: Period::SemiAnnuals(n),
             interest_type: self.interest_type,
             rate_days: self.rate_days,
             year: self.year,
@@ -530,6 +627,49 @@ where
                             self.month,
                         )?)?
                         .checked_mul(Decimal::from_u32(t)?), // P * r * t
+
+                    (_, Period::Quarters(t)) => {
+                        let mut total_interest = dec!(0);
+                        let mut current_year = self.year;
+                        let mut current_month = self.month;
+                        for _q in 0..t {
+                            total_interest =
+                                total_interest.checked_add(self.principal.checked_mul(
+                                    self.rate_percent.get_quarterly_rate(
+                                        self.rate_days,
+                                        current_year,
+                                        current_month,
+                                    )?,
+                                )?)?;
+                            let (next_quarter_year, next_quarter_month, _) =
+                                current_month.add_months(current_year, 3)?;
+                            current_year = next_quarter_year;
+                            current_month = next_quarter_month;
+                        }
+
+                        Some(total_interest)
+                    }
+                    (_, Period::SemiAnnuals(t)) => {
+                        let mut total_interest = dec!(0);
+                        let mut current_year = self.year;
+                        let mut current_month = self.month;
+                        for _q in 0..t {
+                            total_interest =
+                                total_interest.checked_add(self.principal.checked_mul(
+                                    self.rate_percent.get_semi_annualy_rate(
+                                        self.rate_days,
+                                        current_year,
+                                        current_month,
+                                    )?,
+                                )?)?;
+                            let (next_halfyear_year, next_halfyear_month, _) =
+                                current_month.add_months(current_year, 6)?;
+                            current_year = next_halfyear_year;
+                            current_month = next_halfyear_month;
+                        }
+
+                        Some(total_interest)
+                    }
                 };
 
                 M::new(fixed_ret?).ok()
@@ -716,6 +856,55 @@ where
                         }
                         Some(total_interest)
                     } // P * r * t
+
+                    (_, Period::Quarters(t)) => {
+                        let mut current_principal = self.principal;
+                        let mut total_interest = dec!(0);
+                        let mut current_year = self.year;
+                        let mut current_month = self.month;
+                        for _q in 0..t {
+                            let current_interest = current_principal.checked_mul(
+                                self.rate_percent.get_quarterly_rate(
+                                    self.rate_days,
+                                    current_year,
+                                    current_month,
+                                )?,
+                            )?;
+                            total_interest = total_interest.checked_add(current_interest)?;
+                            current_principal = self.principal.checked_add(total_interest)?;
+
+                            let (next_quarter_year, next_quarter_month, _) =
+                                current_month.add_months(current_year, 3)?;
+                            current_year = next_quarter_year;
+                            current_month = next_quarter_month;
+                        }
+
+                        Some(total_interest)
+                    }
+                    (_, Period::SemiAnnuals(t)) => {
+                        let mut current_principal = self.principal;
+                        let mut total_interest = dec!(1);
+                        let mut current_year = self.year;
+                        let mut current_month = self.month;
+                        for _q in 0..t {
+                            let current_interest = current_principal.checked_mul(
+                                self.rate_percent.get_semi_annualy_rate(
+                                    self.rate_days,
+                                    current_year,
+                                    current_month,
+                                )?,
+                            )?;
+                            total_interest = total_interest.checked_add(current_interest)?;
+                            current_principal = self.principal.checked_add(total_interest)?;
+
+                            let (next_halfyear_year, next_halfyear_month, _) =
+                                current_month.add_months(current_year, 6)?;
+                            current_year = next_halfyear_year;
+                            current_month = next_halfyear_month;
+                        }
+
+                        Some(total_interest)
+                    }
                 };
 
                 M::new(compounding_ret?).ok()
@@ -911,6 +1100,54 @@ where
 
                         self.principal.checked_div(divisor)
                     }
+
+                    // PV = FV / (1 + (r * t))
+                    (_, Period::Quarters(t)) => {
+                        let mut actual_r = dec!(0);
+                        let mut current_year = self.year;
+                        let mut current_month = self.month;
+
+                        for _q in 0..t {
+                            actual_r =
+                                actual_r.checked_add(self.rate_percent.get_quarterly_rate(
+                                    self.rate_days,
+                                    current_year,
+                                    current_month,
+                                )?)?;
+
+                            let (next_quarter_year, next_quarter_month, _) =
+                                current_month.add_months(current_year, 3)?;
+                            current_year = next_quarter_year;
+                            current_month = next_quarter_month;
+                        }
+
+                        let divisor = dec!(1).checked_add(actual_r)?;
+
+                        self.principal.checked_div(divisor)
+                    }
+                    (_, Period::SemiAnnuals(t)) => {
+                        let mut actual_r = dec!(0);
+                        let mut current_year = self.year;
+                        let mut current_month = self.month;
+
+                        for _q in 0..t {
+                            actual_r =
+                                actual_r.checked_add(self.rate_percent.get_semi_annualy_rate(
+                                    self.rate_days,
+                                    current_year,
+                                    current_month,
+                                )?)?;
+
+                            let (next_halfyear_year, next_halfyear_month, _) =
+                                current_month.add_months(current_year, 6)?;
+                            current_year = next_halfyear_year;
+                            current_month = next_halfyear_month;
+                        }
+
+                        let divisor = dec!(1).checked_add(actual_r)?;
+
+                        self.principal.checked_div(divisor)
+                    }
                 };
 
                 M::new(fixed_ret?).ok()
@@ -1078,6 +1315,51 @@ where
 
                         self.principal.checked_div(divisor)
                     }
+
+                    // PV = FV / (1 + r)^t
+                    (_, Period::Quarters(t)) => {
+                        let mut divisor = dec!(1);
+                        let mut current_year = self.year;
+                        let mut current_month = self.month;
+
+                        for _q in 0..t {
+                            let d = dec!(1).checked_add(self.rate_percent.get_quarterly_rate(
+                                self.rate_days,
+                                current_year,
+                                current_month,
+                            )?)?;
+                            divisor = divisor.checked_mul(d)?;
+
+                            let (next_quarter_year, next_quarter_month, _) =
+                                current_month.add_months(current_year, 3)?;
+                            current_year = next_quarter_year;
+                            current_month = next_quarter_month;
+                        }
+
+                        self.principal.checked_div(divisor)
+                    }
+                    (_, Period::SemiAnnuals(t)) => {
+                        let mut divisor = dec!(1);
+                        let mut current_year = self.year;
+                        let mut current_month = self.month;
+
+                        for _q in 0..t {
+                            let d =
+                                dec!(1).checked_add(self.rate_percent.get_semi_annualy_rate(
+                                    self.rate_days,
+                                    current_year,
+                                    current_month,
+                                )?)?;
+                            divisor = divisor.checked_mul(d)?;
+
+                            let (next_halfyear_year, next_halfyear_month, _) =
+                                current_month.add_months(current_year, 6)?;
+                            current_year = next_halfyear_year;
+                            current_month = next_halfyear_month;
+                        }
+
+                        self.principal.checked_div(divisor)
+                    }
                 };
 
                 M::new(compound_ret?).ok()
@@ -1162,6 +1444,9 @@ where
 
                 M::new(ret).ok()
             }
+
+            Period::Quarters(t) => todo!(),
+            Period::SemiAnnuals(t) => todo!(),
         }
     }
 }
