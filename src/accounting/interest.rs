@@ -1459,8 +1459,7 @@ where
                     )?;
                     r_period = r;
                     c = c.checked_mul(dec!(1).checked_add(r)?)?;
-                    let (next_year, next_month, _) =
-                        current_month.add_months(current_year, 3)?;
+                    let (next_year, next_month, _) = current_month.add_months(current_year, 3)?;
                     current_year = next_year;
                     current_month = next_month;
                 }
@@ -1486,8 +1485,7 @@ where
                     )?;
                     r_period = r;
                     c = c.checked_mul(dec!(1).checked_add(r)?)?;
-                    let (next_year, next_month, _) =
-                        current_month.add_months(current_year, 6)?;
+                    let (next_year, next_month, _) = current_month.add_months(current_year, 6)?;
                     current_year = next_year;
                     current_month = next_month;
                 }
