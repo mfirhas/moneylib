@@ -2504,3 +2504,509 @@ fn test_pmt_semi_annuals_returns_none_on_overflow() {
             .is_none()
     );
 }
+
+// ---- Fixed interest: quarterly period ----
+
+#[test]
+fn test_fixed_quarterly_returns_yearly_rate() {
+    // P=1000, r=8% yearly, 4 quarters from 2026-01-01.
+    // quarterly_rate = 8/4/100 = 0.02 (constant across all quarters for yearly rate).
+    // returns = 4 × 1000 × 0.02 = 80.00
+    let money = money!(USD, 1000);
+    let interest = money
+        .interest_fixed(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(80.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1080.00));
+}
+
+#[test]
+fn test_fixed_quarterly_returns_monthly_rate() {
+    // P=1000, r=1% monthly, 4 quarters from 2026-01-01.
+    // get_quarterly_rate(Monthly(1)) = 1 × 3 / 100 = 0.03 per quarter.
+    // returns = 4 × 1000 × 0.03 = 120.00
+    let money = money!(USD, 1000);
+    let interest = money
+        .interest_fixed(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(120.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1120.00));
+}
+
+#[test]
+fn test_fixed_quarterly_returns_daily_rate() {
+    // P=1000, r=1% daily, Rate30360, 4 quarters from 2026-01-01.
+    // get_quarterly_rate(Daily(1)) with Rate30360 = 1 × (3×30) / 100 = 0.9 per quarter.
+    // returns = 4 × 1000 × 0.9 = 3600.00
+    let money = money!(USD, 1000);
+    let interest = money
+        .interest_fixed(1)
+        .unwrap()
+        .daily()
+        .rate_days(RateDays::Rate30360)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(3600.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(4600.00));
+}
+
+#[test]
+fn test_fixed_quarterly_returns_none_on_overflow() {
+    // Decimal::MAX as rate: P × (MAX/400) overflows checked_mul → None.
+    let money = money!(USD, 1000);
+    assert!(money
+        .interest_fixed(Decimal::MAX)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(2)
+        .returns()
+        .is_none());
+}
+
+// ---- Fixed interest: semi-annual period ----
+
+#[test]
+fn test_fixed_semi_annual_returns_yearly_rate() {
+    // P=1000, r=8% yearly, 2 semi-annuals from 2026-01-01.
+    // semi_annual_rate = 8/2/100 = 0.04 per period.
+    // returns = 2 × 1000 × 0.04 = 80.00
+    let money = money!(USD, 1000);
+    let interest = money
+        .interest_fixed(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(80.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1080.00));
+}
+
+#[test]
+fn test_fixed_semi_annual_returns_monthly_rate() {
+    // P=1000, r=1% monthly, 2 semi-annuals from 2026-01-01.
+    // get_semi_annualy_rate(Monthly(1)) = 1 × 6 / 100 = 0.06 per period.
+    // returns = 2 × 1000 × 0.06 = 120.00
+    let money = money!(USD, 1000);
+    let interest = money
+        .interest_fixed(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(120.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1120.00));
+}
+
+#[test]
+fn test_fixed_semi_annual_returns_daily_rate() {
+    // P=100, r=1% daily, Rate30360, 2 semi-annuals from 2026-01-01.
+    // get_semi_annualy_rate(Daily(1)) with Rate30360 = 1 × (6×30) / 100 = 1.8 per period.
+    // returns = 2 × 100 × 1.8 = 360.00
+    let money = money!(USD, 100);
+    let interest = money
+        .interest_fixed(1)
+        .unwrap()
+        .daily()
+        .rate_days(RateDays::Rate30360)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(360.00));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(460.00));
+}
+
+#[test]
+fn test_fixed_semi_annual_returns_none_on_overflow() {
+    // Decimal::MAX as rate: P × (MAX/200) overflows checked_mul → None.
+    let money = money!(USD, 1000);
+    assert!(money
+        .interest_fixed(Decimal::MAX)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .returns()
+        .is_none());
+}
+
+// ---- Compound interest: quarterly period ----
+
+#[test]
+fn test_compound_quarterly_returns_yearly_rate() {
+    // P=1000, r=8% yearly, 4 quarters from 2026-01-01.
+    // quarterly_rate = 0.02.
+    // Q1: 1000×0.02=20, total=20, principal=1020
+    // Q2: 1020×0.02=20.4, total=40.4, principal=1040.4
+    // Q3: 1040.4×0.02=20.808, total=61.208, principal=1061.208
+    // Q4: 1061.208×0.02=21.22416, total=82.43216 → rounded to 82.43 (USD 2 dp)
+    let money = money!(USD, 1000);
+    let interest = money
+        .interest_compound(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(82.43));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1082.43));
+}
+
+#[test]
+fn test_compound_quarterly_returns_monthly_rate() {
+    // P=1000, r=1% monthly, 4 quarters from 2026-01-01.
+    // quarterly_rate = 1×3/100 = 0.03.
+    // Q1: 1000×0.03=30, total=30, principal=1030
+    // Q2: 1030×0.03=30.9, total=60.9, principal=1060.9
+    // Q3: 1060.9×0.03=31.827, total=92.727, principal=1092.727
+    // Q4: 1092.727×0.03=32.78181, total=125.50881 → rounded to 125.51 (USD 2 dp)
+    let money = money!(USD, 1000);
+    let interest = money
+        .interest_compound(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(125.51));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1125.51));
+}
+
+#[test]
+fn test_compound_quarterly_returns_daily_rate() {
+    // P=10, r=1% daily, Rate30360, 4 quarters from 2026-01-01.
+    // quarterly_rate = 1×90/100 = 0.9.
+    // Q1: 10×0.9=9, total=9, principal=19
+    // Q2: 19×0.9=17.1, total=26.1, principal=36.1
+    // Q3: 36.1×0.9=32.49, total=58.59, principal=68.59
+    // Q4: 68.59×0.9=61.731, total=120.321 → rounded to 120.32 (USD 2 dp)
+    let money = money!(USD, 10);
+    let interest = money
+        .interest_compound(1)
+        .unwrap()
+        .daily()
+        .rate_days(RateDays::Rate30360)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(120.32));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(130.32));
+}
+
+#[test]
+fn test_compound_quarterly_returns_none_on_overflow() {
+    // Decimal::MAX as rate overflows compound multiplication → None.
+    let money = money!(USD, 1000);
+    assert!(money
+        .interest_compound(Decimal::MAX)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(2)
+        .returns()
+        .is_none());
+}
+
+// ---- Compound interest: semi-annual period ----
+
+#[test]
+fn test_compound_semi_annual_returns_yearly_rate() {
+    // P=1000, r=8% yearly, 2 semi-annuals from 2026-01-01.
+    // semi_annual_rate = 0.04.
+    // S1: 1000×0.04=40, total=40, principal=1040
+    // S2: 1040×0.04=41.6, total=81.6
+    let money = money!(USD, 1000);
+    let interest = money
+        .interest_compound(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(81.6));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1081.6));
+}
+
+#[test]
+fn test_compound_semi_annual_returns_monthly_rate() {
+    // P=1000, r=1% monthly, 2 semi-annuals from 2026-01-01.
+    // semi_annual_rate = 1×6/100 = 0.06.
+    // S1: 1000×0.06=60, total=60, principal=1060
+    // S2: 1060×0.06=63.6, total=123.6
+    let money = money!(USD, 1000);
+    let interest = money
+        .interest_compound(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(123.6));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1123.6));
+}
+
+#[test]
+fn test_compound_semi_annual_returns_daily_rate() {
+    // P=100, r=1% daily, Rate30360, 2 semi-annuals from 2026-01-01.
+    // semi_annual_rate = 1×180/100 = 1.8.
+    // S1: 100×1.8=180, total=180, principal=280
+    // S2: 280×1.8=504, total=684
+    let money = money!(USD, 100);
+    let interest = money
+        .interest_compound(1)
+        .unwrap()
+        .daily()
+        .rate_days(RateDays::Rate30360)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2);
+
+    assert_eq!(interest.returns().unwrap().amount(), dec!(684));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(784));
+}
+
+#[test]
+fn test_compound_semi_annual_returns_none_on_overflow() {
+    // Decimal::MAX as rate overflows compound multiplication → None.
+    let money = money!(USD, 1000);
+    assert!(money
+        .interest_compound(Decimal::MAX)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .returns()
+        .is_none());
+}
+
+// ---- Present value: fixed quarterly (round-trip) ----
+
+#[test]
+fn test_pv_fixed_quarterly_yearly_rate() {
+    // P=1000, r=8% yearly, 4 quarters: FV=1080.00.
+    // PV: actual_r = 4×0.02 = 0.08; divisor = 1.08; PV = 1080/1.08 = 1000.
+    let money = money!(USD, 1000);
+    let fv = money
+        .interest_fixed(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(1080.00));
+    let pv = fv
+        .interest_fixed(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_fixed_quarterly_none_on_overflow() {
+    // Daily rate Decimal::MAX: get_quarterly_rate computes MAX × 90 which overflows → None.
+    let money = money!(USD, 1000);
+    assert!(money
+        .interest_fixed(Decimal::MAX)
+        .unwrap()
+        .daily()
+        .rate_days(RateDays::Rate30360)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(2)
+        .present_value()
+        .is_none());
+}
+
+// ---- Present value: fixed semi-annual (round-trip) ----
+
+#[test]
+fn test_pv_fixed_semi_annual_yearly_rate() {
+    // P=1000, r=8% yearly, 2 semi-annuals: FV=1080.00.
+    // PV: actual_r = 2×0.04 = 0.08; divisor = 1.08; PV = 1080/1.08 = 1000.
+    let money = money!(USD, 1000);
+    let fv = money
+        .interest_fixed(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(1080.00));
+    let pv = fv
+        .interest_fixed(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_fixed_semi_annual_none_on_overflow() {
+    // Daily rate Decimal::MAX: get_semi_annualy_rate computes MAX × 180 which overflows → None.
+    let money = money!(USD, 1000);
+    assert!(money
+        .interest_fixed(Decimal::MAX)
+        .unwrap()
+        .daily()
+        .rate_days(RateDays::Rate30360)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .present_value()
+        .is_none());
+}
+
+// ---- Present value: compound quarterly (round-trip) ----
+
+#[test]
+fn test_pv_compound_quarterly_yearly_rate() {
+    // P=1000, r=8% yearly, 4 quarters: FV=1082.43 (rounds to 2 dp).
+    // PV: divisor = (1.02)^4 = 1.08243216; PV = 1082.43/1.08243216 ≈ 999.9997 → rounds to 1000.00.
+    let money = money!(USD, 1000);
+    let fv = money
+        .interest_compound(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(1082.43));
+    let pv = fv
+        .interest_compound(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(4)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_compound_quarterly_none_on_overflow() {
+    // Decimal::MAX causes overflow → None.
+    let money = money!(USD, 1000);
+    assert!(money
+        .interest_compound(Decimal::MAX)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(2)
+        .present_value()
+        .is_none());
+}
+
+// ---- Present value: compound semi-annual (round-trip) ----
+
+#[test]
+fn test_pv_compound_semi_annual_yearly_rate() {
+    // P=1000, r=8% yearly, 2 semi-annuals: FV=1081.6.
+    // PV: divisor = (1.04)^2 = 1.0816; PV = 1081.6/1.0816 = 1000.
+    let money = money!(USD, 1000);
+    let fv = money
+        .interest_compound(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .future_value()
+        .unwrap();
+    assert_eq!(fv.amount(), dec!(1081.6));
+    let pv = fv
+        .interest_compound(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .present_value()
+        .unwrap();
+    assert_eq!(pv, money);
+}
+
+#[test]
+fn test_pv_compound_semi_annual_none_on_overflow() {
+    // Decimal::MAX causes overflow → None.
+    let money = money!(USD, 1000);
+    assert!(money
+        .interest_compound(Decimal::MAX)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .present_value()
+        .is_none());
+}
