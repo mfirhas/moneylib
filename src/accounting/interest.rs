@@ -883,7 +883,7 @@ where
                     }
                     (_, Period::SemiAnnuals(t)) => {
                         let mut current_principal = self.principal;
-                        let mut total_interest = dec!(1);
+                        let mut total_interest = dec!(0);
                         let mut current_year = self.year;
                         let mut current_month = self.month;
                         for _q in 0..t {
@@ -1445,8 +1445,60 @@ where
                 M::new(ret).ok()
             }
 
-            Period::Quarters(t) => todo!(),
-            Period::SemiAnnuals(t) => todo!(),
+            Period::Quarters(t) => {
+                let mut c = dec!(1);
+                let mut r_period = dec!(0);
+                let mut current_year = self.year;
+                let mut current_month = self.month;
+
+                for _ in 0..t {
+                    let r = self.rate_percent.get_quarterly_rate(
+                        self.rate_days,
+                        current_year,
+                        current_month,
+                    )?;
+                    r_period = r;
+                    c = c.checked_mul(dec!(1).checked_add(r)?)?;
+                    let (next_year, next_month, _) =
+                        current_month.add_months(current_year, 3)?;
+                    current_year = next_year;
+                    current_month = next_month;
+                }
+
+                // PMT = P × r × (1+r)ⁿ / [(1+r)ⁿ − 1]
+                let c_minus_1 = c.checked_sub(dec!(1))?;
+                let d = r_period.checked_mul(c)?.checked_div(c_minus_1)?;
+                let ret = self.principal.checked_mul(d)?;
+
+                M::new(ret).ok()
+            }
+            Period::SemiAnnuals(t) => {
+                let mut c = dec!(1);
+                let mut r_period = dec!(0);
+                let mut current_year = self.year;
+                let mut current_month = self.month;
+
+                for _ in 0..t {
+                    let r = self.rate_percent.get_semi_annualy_rate(
+                        self.rate_days,
+                        current_year,
+                        current_month,
+                    )?;
+                    r_period = r;
+                    c = c.checked_mul(dec!(1).checked_add(r)?)?;
+                    let (next_year, next_month, _) =
+                        current_month.add_months(current_year, 6)?;
+                    current_year = next_year;
+                    current_month = next_month;
+                }
+
+                // PMT = P × r × (1+r)ⁿ / [(1+r)ⁿ − 1]
+                let c_minus_1 = c.checked_sub(dec!(1))?;
+                let d = r_period.checked_mul(c)?.checked_div(c_minus_1)?;
+                let ret = self.principal.checked_mul(d)?;
+
+                M::new(ret).ok()
+            }
         }
     }
 }

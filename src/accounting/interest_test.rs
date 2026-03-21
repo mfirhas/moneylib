@@ -2392,3 +2392,115 @@ fn test_pmt_returns_none_on_zero_rate() {
             .is_none()
     );
 }
+
+#[test]
+fn test_pmt_quarters_yearly_rate() {
+    // 4-quarter loan (1 year): $10,000 at 6% annual
+    // quarterly rate r = 6/4/100 = 0.015
+    // c = (1.015)^4, PMT = 10000 × 0.015 × c / (c − 1) ≈ 2594.45
+    let total = money!(USD, 10000);
+    let pmt = total
+        .interest_fixed(6)
+        .unwrap()
+        .yearly()
+        .quarters(4)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(2594.45));
+}
+
+#[test]
+fn test_pmt_quarters_short_yearly_rate() {
+    // 8-quarter loan (2 years): $5,000 at 12% annual
+    // quarterly rate r = 12/4/100 = 0.03
+    // c = (1.03)^8, PMT = 5000 × 0.03 × c / (c − 1) ≈ 712.28
+    let total = money!(USD, 5000);
+    let pmt = total
+        .interest_fixed(12)
+        .unwrap()
+        .yearly()
+        .quarters(8)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(712.28));
+}
+
+#[test]
+fn test_pmt_semi_annuals_yearly_rate() {
+    // 4 semi-annual periods (2 years): $10,000 at 6% annual
+    // semi-annual rate r = 6/2/100 = 0.03
+    // c = (1.03)^4, PMT = 10000 × 0.03 × c / (c − 1) ≈ 2690.27
+    let total = money!(USD, 10000);
+    let pmt = total
+        .interest_fixed(6)
+        .unwrap()
+        .yearly()
+        .semi_annuals(4)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(2690.27));
+}
+
+#[test]
+fn test_pmt_semi_annuals_short_yearly_rate() {
+    // 2 semi-annual periods (1 year): $5,000 at 8% annual
+    // semi-annual rate r = 8/2/100 = 0.04
+    // c = (1.04)^2, PMT = 5000 × 0.04 × c / (c − 1) ≈ 2650.98
+    let total = money!(USD, 5000);
+    let pmt = total
+        .interest_fixed(8)
+        .unwrap()
+        .yearly()
+        .semi_annuals(2)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .payment()
+        .unwrap();
+    assert_eq!(pmt.amount(), dec!(2650.98));
+}
+
+#[test]
+fn test_pmt_quarters_returns_none_on_overflow() {
+    // With Decimal::MAX as yearly rate, the quarterly rate overflows after 2 quarters → None.
+    let total = money!(USD, 1000);
+    assert!(
+        total
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .quarters(2)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .payment()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_pmt_semi_annuals_returns_none_on_overflow() {
+    // With Decimal::MAX as yearly rate, the semi-annual rate overflows after 2 periods → None.
+    let total = money!(USD, 1000);
+    assert!(
+        total
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .semi_annuals(2)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .payment()
+            .is_none()
+    );
+}
