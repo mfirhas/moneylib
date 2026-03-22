@@ -112,6 +112,29 @@ impl DayNext for u32 {
     }
 }
 
+pub(crate) trait AddMonths {
+    /// Add n months returning the (year, month, num_of_days_in_that_month) after adding n months.
+    fn add_months(self, year: u32, n: u32) -> Option<(u32, u32, u32)>;
+}
+
+impl AddMonths for u32 {
+    fn add_months(self, year: u32, n: u32) -> Option<(u32, u32, u32)> {
+        let (mut cur_year, mut cur_month) = (year, self);
+
+        // Validate the starting month
+        if cur_month == 0 || cur_month > 12 {
+            return None;
+        }
+
+        for _ in 0..n {
+            (cur_year, cur_month, _) = cur_month.next_month(cur_year)?;
+        }
+
+        let days = days_in_month(cur_year, cur_month)?;
+        Some((cur_year, cur_month, days))
+    }
+}
+
 /// Returns [years[months]]
 pub(crate) fn get_years_months(
     start_year: u32,

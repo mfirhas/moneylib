@@ -400,3 +400,96 @@ mod get_years_months_days_tests {
         }
     }
 }
+
+// --- add months tests
+use crate::calendar::AddMonths;
+
+#[test]
+fn test_add_zero_months_mid_year() {
+    // June 2025 + 0 = June 2025 (30 days)
+    assert_eq!(6u32.add_months(2025, 0), Some((2025, 6, 30)));
+}
+
+#[test]
+fn test_add_zero_months_january() {
+    // Jan 2025 + 0 = Jan 2025 (31 days)
+    assert_eq!(1u32.add_months(2025, 0), Some((2025, 1, 31)));
+}
+
+#[test]
+fn test_add_zero_months_december() {
+    // Dec 2025 + 0 = Dec 2025 (31 days)
+    assert_eq!(12u32.add_months(2025, 0), Some((2025, 12, 31)));
+}
+
+// --- single year, no rollover ---
+
+#[test]
+fn test_add_months_within_year() {
+    // Jan 2025 + 5 = June 2025 (30 days)
+    assert_eq!(1u32.add_months(2025, 5), Some((2025, 6, 30)));
+}
+
+#[test]
+fn test_add_months_to_december() {
+    // Jan 2025 + 11 = Dec 2025 (31 days)
+    assert_eq!(1u32.add_months(2025, 11), Some((2025, 12, 31)));
+}
+
+// --- year rollover ---
+
+#[test]
+fn test_add_months_single_year_rollover() {
+    // Nov 2025 + 3 = Feb 2026 (28 days)
+    assert_eq!(11u32.add_months(2025, 3), Some((2026, 2, 28)));
+}
+
+#[test]
+fn test_add_months_exactly_one_year() {
+    // Jan 2025 + 12 = Jan 2026 (31 days)
+    assert_eq!(1u32.add_months(2025, 12), Some((2026, 1, 31)));
+}
+
+#[test]
+fn test_add_months_multi_year_rollover() {
+    // Jan 2025 + 25 = Feb 2027 (28 days)
+    assert_eq!(1u32.add_months(2025, 25), Some((2027, 2, 28)));
+}
+
+#[test]
+fn test_add_months_december_plus_one() {
+    // Dec 2025 + 1 = Jan 2026 (31 days)
+    assert_eq!(12u32.add_months(2025, 1), Some((2026, 1, 31)));
+}
+
+// --- leap year awareness ---
+
+#[test]
+fn test_add_months_lands_on_leap_february() {
+    // June 2023 + 20 = Feb 2025 (28 days, non-leap)
+    assert_eq!(6u32.add_months(2023, 20), Some((2025, 2, 28)));
+}
+
+#[test]
+fn test_add_months_lands_on_non_leap_february() {
+    // June 2021 + 20 = Feb 2023 (28 days)
+    assert_eq!(6u32.add_months(2021, 20), Some((2023, 2, 28)));
+}
+
+#[test]
+fn test_add_months_into_leap_february() {
+    // Feb 2024 is a leap year (29 days)
+    assert_eq!(1u32.add_months(2024, 1), Some((2024, 2, 29)));
+}
+
+// --- invalid inputs ---
+
+#[test]
+fn test_invalid_month_zero() {
+    assert_eq!(0u32.add_months(2025, 1), None);
+}
+
+#[test]
+fn test_invalid_month_thirteen() {
+    assert_eq!(13u32.add_months(2025, 1), None);
+}
