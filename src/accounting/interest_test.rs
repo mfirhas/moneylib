@@ -3026,3 +3026,389 @@ fn test_pv_compound_semi_annual_none_on_overflow() {
             .is_none()
     );
 }
+
+// ============================================================================
+// ============================= Contributions =================================
+// ============================================================================
+//
+// Convention for contribs:
+// - contribs.len() <= period - 1 (contribution starts from the second period).
+// - Positive value  → add capital.
+// - Negative value  → withdraw capital.
+// - Zero value      → no-op (same result as no contribution).
+//
+// future_value() = principal + sum(contribs) + returns()
+
+// ---- with_contribs validation ----
+
+#[test]
+fn test_with_contribs_too_many_returns_none() {
+    // 3 months → max contribs length = 2; passing 3 contribs → None.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 100), money!(USD, 100), money!(USD, 100)];
+    assert!(
+        money
+            .interest_fixed(10)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(3)
+            .with_contribs(&contribs)
+            .is_none()
+    );
+}
+
+#[test]
+fn test_with_contribs_exactly_max_length_ok() {
+    // 3 months → max contribs length = 2; passing exactly 2 contribs → Some.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 100), money!(USD, 100)];
+    assert!(
+        money
+            .interest_fixed(10)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(3)
+            .with_contribs(&contribs)
+            .is_some()
+    );
+}
+
+#[test]
+fn test_with_contribs_empty_slice_same_as_no_contribs() {
+    // Empty contribs slice → same result as calling no with_contribs.
+    // P=1000, r=10%/month, 3 months: returns = 300, FV = 1300.
+    let money = money!(USD, 1000);
+    let contribs: [crate::Money<crate::iso::USD>; 0] = [];
+    let interest_with_empty = money
+        .interest_fixed(10)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    let interest_no_contribs = money
+        .interest_fixed(10)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3);
+    assert_eq!(
+        interest_with_empty.returns().unwrap().amount(),
+        interest_no_contribs.returns().unwrap().amount()
+    );
+    assert_eq!(
+        interest_with_empty.future_value().unwrap().amount(),
+        interest_no_contribs.future_value().unwrap().amount()
+    );
+}
+
+// ---- Fixed rate with contributions ----
+
+#[test]
+fn test_fixed_monthly_rate_months_with_positive_contrib() {
+    // P=1000, r=10%/month, 3 months, contribs=[100].
+    // Month 1: interest = 1000 × 0.10 = 100, principal → 1100 (after contrib)
+    // Month 2: interest = 1100 × 0.10 = 110
+    // Month 3: interest = 1100 × 0.10 = 110
+    // returns = 320, contribs_sum = 100, FV = 1420.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 100)];
+    let interest = money
+        .interest_fixed(10)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(320));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1420));
+}
+
+#[test]
+fn test_fixed_yearly_rate_years_with_multiple_contribs() {
+    // P=1000, r=10%/year, 3 years, contribs=[200, 300].
+    // Year 1: interest = 1000 × 0.10 = 100, principal → 1200 (after 200 contrib)
+    // Year 2: interest = 1200 × 0.10 = 120, principal → 1500 (after 300 contrib)
+    // Year 3: interest = 1500 × 0.10 = 150
+    // returns = 370, contribs_sum = 500, FV = 1870.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 200), money!(USD, 300)];
+    let interest = money
+        .interest_fixed(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(370));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1870));
+}
+
+#[test]
+fn test_fixed_daily_rate_days_with_contrib() {
+    // P=1000, r=1%/day, 3 days from 2026-01-01, contribs=[100].
+    // Day 1: interest = 1000 × 0.01 = 10, principal → 1100 (after contrib)
+    // Day 2: interest = 1100 × 0.01 = 11
+    // Day 3: interest = 1100 × 0.01 = 11
+    // returns = 32, contribs_sum = 100, FV = 1132.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 100)];
+    let interest = money
+        .interest_fixed(1)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(32));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1132));
+}
+
+#[test]
+fn test_fixed_yearly_rate_quarters_with_contrib() {
+    // P=1000, r=10%/year → quarterly rate = 2.5%, 3 quarters, contribs=[200].
+    // Q1: interest = 1000 × 0.025 = 25, principal → 1200 (after contrib)
+    // Q2: interest = 1200 × 0.025 = 30
+    // Q3: interest = 1200 × 0.025 = 30
+    // returns = 85, contribs_sum = 200, FV = 1285.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 200)];
+    let interest = money
+        .interest_fixed(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(85));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1285));
+}
+
+#[test]
+fn test_fixed_yearly_rate_semi_annuals_with_contrib() {
+    // P=1000, r=10%/year → semi-annual rate = 5%, 3 semi-annuals, contribs=[300].
+    // S1: interest = 1000 × 0.05 = 50, principal → 1300 (after contrib)
+    // S2: interest = 1300 × 0.05 = 65
+    // S3: interest = 1300 × 0.05 = 65
+    // returns = 180, contribs_sum = 300, FV = 1480.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 300)];
+    let interest = money
+        .interest_fixed(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(180));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1480));
+}
+
+#[test]
+fn test_fixed_with_negative_contrib_withdrawal() {
+    // P=1000, r=10%/month, 3 months, contribs=[-100] (withdrawal).
+    // Month 1: interest = 1000 × 0.10 = 100, principal → 900 (after withdrawal)
+    // Month 2: interest = 900 × 0.10 = 90
+    // Month 3: interest = 900 × 0.10 = 90
+    // returns = 280, contribs_sum = -100, FV = 1180.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -100)];
+    let interest = money
+        .interest_fixed(10)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(280));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1180));
+}
+
+#[test]
+fn test_fixed_with_zero_contrib_same_as_no_contrib() {
+    // P=1000, r=10%/month, 3 months, contribs=[0] → same as no contribution.
+    // returns = 300, FV = 1300.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 0)];
+    let interest = money
+        .interest_fixed(10)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(300));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1300));
+}
+
+// ---- Compounding rate with contributions ----
+
+#[test]
+fn test_compound_monthly_rate_months_with_positive_contrib() {
+    // P=1000, r=10%/month, 3 months, contribs=[100].
+    // Month 1: interest = 1000 × 0.10 = 100, balance = 1100, +100 → 1200
+    // Month 2: interest = 1200 × 0.10 = 120, balance = 1320
+    // Month 3: interest = 1320 × 0.10 = 132, balance = 1452
+    // returns = 352, contribs_sum = 100, FV = 1452.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 100)];
+    let interest = money
+        .interest_compound(10)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(352));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1452));
+}
+
+#[test]
+fn test_compound_yearly_rate_years_with_multiple_contribs() {
+    // P=1000, r=10%/year, 3 years, contribs=[200, 300].
+    // Year 1: interest = 1000 × 0.10 = 100, balance = 1100, +200 → 1300
+    // Year 2: interest = 1300 × 0.10 = 130, balance = 1430, +300 → 1730
+    // Year 3: interest = 1730 × 0.10 = 173, balance = 1903
+    // returns = 403, contribs_sum = 500, FV = 1903.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 200), money!(USD, 300)];
+    let interest = money
+        .interest_compound(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(403));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1903));
+}
+
+#[test]
+fn test_compound_daily_rate_days_with_contrib() {
+    // P=1000, r=10%/day, 3 days from 2026-01-01, contribs=[100].
+    // Day 1: interest = 1000 × 0.10 = 100, balance = 1100, +100 → 1200
+    // Day 2: interest = 1200 × 0.10 = 120, balance = 1320
+    // Day 3: interest = 1320 × 0.10 = 132, balance = 1452
+    // returns = 352, contribs_sum = 100, FV = 1452.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 100)];
+    let interest = money
+        .interest_compound(10)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(352));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1452));
+}
+
+#[test]
+fn test_compound_yearly_rate_quarters_with_contrib() {
+    // P=1000, r=8%/year → quarterly rate = 2%, 3 quarters, contribs=[200].
+    // Q1: interest = 1000 × 0.02 = 20, balance = 1020, +200 → 1220
+    // Q2: interest = 1220 × 0.02 = 24.4, balance = 1244.4
+    // Q3: interest = 1244.4 × 0.02 = 24.888, balance = 1269.288
+    // returns = 69.29 (USD), contribs_sum = 200, FV = 1269.29.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 200)];
+    let interest = money
+        .interest_compound(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(69.29));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1269.29));
+}
+
+#[test]
+fn test_compound_yearly_rate_semi_annuals_with_contrib() {
+    // P=1000, r=8%/year → semi-annual rate = 4%, 3 semi-annuals, contribs=[300].
+    // S1: interest = 1000 × 0.04 = 40, balance = 1040, +300 → 1340
+    // S2: interest = 1340 × 0.04 = 53.6, balance = 1393.6
+    // S3: interest = 1393.6 × 0.04 = 55.744, balance = 1449.344
+    // returns = 149.34 (USD), contribs_sum = 300, FV = 1449.34.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, 300)];
+    let interest = money
+        .interest_compound(8)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(149.34));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1449.34));
+}
+
+#[test]
+fn test_compound_with_negative_contrib_withdrawal() {
+    // P=1000, r=10%/month, 3 months, contribs=[-100] (withdrawal).
+    // Month 1: interest = 1000 × 0.10 = 100, balance = 1100, -100 → 1000
+    // Month 2: interest = 1000 × 0.10 = 100, balance = 1100
+    // Month 3: interest = 1100 × 0.10 = 110, balance = 1210
+    // returns = 310, contribs_sum = -100, FV = 1210.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -100)];
+    let interest = money
+        .interest_compound(10)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(310));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(1210));
+}
