@@ -1500,3 +1500,231 @@ where
         }
     }
 }
+
+// ============================= Implementations =============================
+
+mod interest_implementations {
+    use crate::{
+        BaseMoney, BaseOps, Currency, Decimal,
+        accounting::{
+            Interest,
+            interest::{Period, RateDays, RatePercent},
+        },
+        calendar::{AddMonths, get_years_months, get_years_months_days},
+        macros::dec,
+    };
+
+    fn get_returns_fixed<M, C>(bld: Interest<M, C>) -> Option<M>
+    where
+        M: BaseMoney<C> + BaseOps<C>,
+        C: Currency + Clone,
+    {
+        let total_interest = match bld.total_period {
+            Period::Days(t) => {
+                let years_months_days = get_years_months_days(bld.year, bld.month, bld.day, t)?;
+                let mut interest_total = dec!(0);
+                for year in years_months_days {
+                    for month in year.1 {
+                        for _day in month.1 {
+                            interest_total = interest_total.checked_add(
+                                bld.principal.checked_mul(bld.rate_percent.get_daily_rate(
+                                    bld.rate_days,
+                                    year.0,
+                                    month.0,
+                                )?)?,
+                            )?;
+                        }
+                    }
+                }
+
+                Some(interest_total)
+            }
+            Period::Months(t) => {
+                let year_months = get_years_months(bld.year, bld.month, t)?;
+                let mut total_interest = dec!(0);
+                for (year, months) in year_months {
+                    for month in months {
+                        total_interest = total_interest.checked_add(
+                            bld.principal
+                                .checked_mul(bld.rate_percent.get_monthly_rate(
+                                    bld.rate_days,
+                                    year,
+                                    month,
+                                )?)?,
+                        )?;
+                    }
+                }
+                Some(total_interest)
+            }
+            Period::Years(t) => {
+                let mut interest_total = dec!(0);
+                let mut current_year = bld.year;
+                for _y in 0..t {
+                    interest_total = interest_total.checked_add(
+                        bld.principal.checked_mul(
+                            bld.rate_percent
+                                .get_yearly_rate(bld.rate_days, current_year)?,
+                        )?,
+                    )?;
+                    current_year = current_year.checked_add(1)?;
+                }
+                Some(interest_total)
+            }
+            Period::Quarters(t) => {
+                let mut total_interest = dec!(0);
+                let mut current_year = bld.year;
+                let mut current_month = bld.month;
+                for _q in 0..t {
+                    total_interest = total_interest.checked_add(bld.principal.checked_mul(
+                        bld.rate_percent.get_quarterly_rate(
+                            bld.rate_days,
+                            current_year,
+                            current_month,
+                        )?,
+                    )?)?;
+                    let (next_quarter_year, next_quarter_month, _) =
+                        current_month.add_months(current_year, 3)?;
+                    current_year = next_quarter_year;
+                    current_month = next_quarter_month;
+                }
+
+                Some(total_interest)
+            }
+            Period::SemiAnnuals(t) => {
+                let mut total_interest = dec!(0);
+                let mut current_year = bld.year;
+                let mut current_month = bld.month;
+                for _s in 0..t {
+                    total_interest = total_interest.checked_add(bld.principal.checked_mul(
+                        bld.rate_percent.get_semi_annualy_rate(
+                            bld.rate_days,
+                            current_year,
+                            current_month,
+                        )?,
+                    )?)?;
+                    let (next_halfyear_year, next_halfyear_month, _) =
+                        current_month.add_months(current_year, 6)?;
+                    current_year = next_halfyear_year;
+                    current_month = next_halfyear_month;
+                }
+
+                Some(total_interest)
+            }
+        };
+
+        M::new(total_interest?).ok()
+    }
+
+    /// Get future value on fixed-rate interest
+    /// FV = PV * (1 + (r * t))
+    fn get_future_value_fixed<C, M>(
+        principal: Decimal,
+        rate_percent: RatePercent,
+        period: Period,
+        rate_days: RateDays,
+        contribs: Option<Vec<M>>,
+    ) -> Option<M>
+    where
+        M: BaseMoney<C> + BaseOps<C>,
+        C: Currency + Clone,
+    {
+        match period {
+            Period::Days(t) => {
+                todo!()
+            }
+            Period::Months(t) => todo!(),
+            Period::Years(t) => todo!(),
+            Period::Quarters(t) => todo!(),
+            Period::SemiAnnuals(t) => todo!(),
+        }
+    }
+
+    /// Get future value on compounding-rate interest
+    /// FV = PV * (1 + r)^t
+    fn get_future_value_compounding<C, M>(
+        principal: Decimal,
+        rate_percent: RatePercent,
+        period: Period,
+        rate_days: RateDays,
+        contribs: Option<Vec<M>>,
+    ) -> Option<M>
+    where
+        M: BaseMoney<C> + BaseOps<C>,
+        C: Currency + Clone,
+    {
+        match period {
+            Period::Days(t) => todo!(),
+            Period::Months(t) => todo!(),
+            Period::Years(t) => todo!(),
+            Period::Quarters(t) => todo!(),
+            Period::SemiAnnuals(t) => todo!(),
+        }
+    }
+
+    /// Get present value on fixed-rate interest
+    /// PV = FV / (1 + (r * t))
+    fn get_present_value_fixed<C, M>(
+        fv: Decimal,
+        rate_percent: RatePercent,
+        period: Period,
+        rate_days: RateDays,
+        contribs: Option<Vec<M>>,
+    ) -> Option<M>
+    where
+        M: BaseMoney<C> + BaseOps<C>,
+        C: Currency + Clone,
+    {
+        match period {
+            Period::Days(t) => todo!(),
+            Period::Months(t) => todo!(),
+            Period::Years(t) => todo!(),
+            Period::Quarters(t) => todo!(),
+            Period::SemiAnnuals(t) => todo!(),
+        }
+    }
+
+    /// Get present value on compounding-rate interest
+    /// PV = FV / (1 + r)^t
+    fn get_present_value_compounding<C, M>(
+        fv: Decimal,
+        rate_percent: RatePercent,
+        period: Period,
+        rate_days: RateDays,
+        contribs: Option<Vec<M>>,
+    ) -> Option<M>
+    where
+        M: BaseMoney<C> + BaseOps<C>,
+        C: Currency + Clone,
+    {
+        match period {
+            Period::Days(t) => todo!(),
+            Period::Months(t) => todo!(),
+            Period::Years(t) => todo!(),
+            Period::Quarters(t) => todo!(),
+            Period::SemiAnnuals(t) => todo!(),
+        }
+    }
+
+    /// Get PMT payment on fixed-rate interest
+    /// PMT = P × r × (1+r)ⁿ / [(1+r)ⁿ − 1]
+    /// PMT is calculated against fixed-rate loan.
+    fn get_pmt<C, M>(
+        total: Decimal,
+        rate_percent: RatePercent,
+        period: Period,
+        rate_days: RateDays,
+        contribs: Option<Vec<M>>,
+    ) -> Option<M>
+    where
+        M: BaseMoney<C> + BaseOps<C>,
+        C: Currency + Clone,
+    {
+        match period {
+            Period::Days(t) => todo!(),
+            Period::Months(t) => todo!(),
+            Period::Years(t) => todo!(),
+            Period::Quarters(t) => todo!(),
+            Period::SemiAnnuals(t) => todo!(),
+        }
+    }
+}
