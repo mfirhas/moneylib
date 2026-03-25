@@ -3981,5 +3981,3 @@ fn test_pmt_semi_annuals_none_on_inner_semi_annual_rate_overflow() {
             .is_none()
     );
 }
-
-
