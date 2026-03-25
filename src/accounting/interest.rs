@@ -147,7 +147,7 @@ impl<'a, M, C> Interest<'a, M, C> {
     /// Value can be positive or negative and can be skipped by adding zero.
     pub fn with_contribs(self, contribs: &'a [M]) -> Option<Self> {
         let period_length: usize = self.total_period.get_period_length().try_into().ok()?;
-        if contribs.len() > period_length - 1 {
+        if contribs.len() >= period_length {
             return None;
         }
         Some(Self {
@@ -673,7 +673,7 @@ mod interest_impl {
                                     .get_daily_rate(bld.rate_days, year.0, month.0)?,
                             )?;
                             total_interest = total_interest.checked_add(current_interest)?;
-                            current_principal = bld.principal.checked_add(total_interest)?;
+                            current_principal = current_principal.checked_add(current_interest)?;
 
                             if let Some(contribs) = bld.contribs {
                                 let contrib = if let Some(c) = contribs.get(contrib_index) {
@@ -701,7 +701,7 @@ mod interest_impl {
                                 .get_monthly_rate(bld.rate_days, year.0, month)?,
                         )?;
                         total_interest = total_interest.checked_add(current_interest)?;
-                        current_principal = bld.principal.checked_add(total_interest)?;
+                        current_principal = current_principal.checked_add(current_interest)?;
 
                         if let Some(contribs) = bld.contribs {
                             let contrib = if let Some(c) = contribs.get(contrib_index) {
@@ -727,7 +727,7 @@ mod interest_impl {
                             .get_yearly_rate(bld.rate_days, current_year)?,
                     )?;
                     total_interest = total_interest.checked_add(current_interest)?;
-                    current_principal = bld.principal.checked_add(total_interest)?;
+                    current_principal = current_principal.checked_add(current_interest)?;
                     current_year = current_year.checked_add(1)?;
 
                     if let Some(contribs) = bld.contribs {
@@ -756,7 +756,7 @@ mod interest_impl {
                             current_month,
                         )?)?;
                     total_interest = total_interest.checked_add(current_interest)?;
-                    current_principal = bld.principal.checked_add(total_interest)?;
+                    current_principal = current_principal.checked_add(current_interest)?;
 
                     let (next_quarter_year, next_quarter_month, _) =
                         current_month.add_months(current_year, 3)?;
@@ -790,7 +790,7 @@ mod interest_impl {
                             current_month,
                         )?)?;
                     total_interest = total_interest.checked_add(current_interest)?;
-                    current_principal = bld.principal.checked_add(total_interest)?;
+                    current_principal = current_principal.checked_add(current_interest)?;
 
                     let (next_halfyear_year, next_halfyear_month, _) =
                         current_month.add_months(current_year, 6)?;
@@ -815,22 +815,27 @@ mod interest_impl {
         M::new(total_interest?).ok()
     }
 
-    /// Get future value: principal + total interests
+    /// Get future value: principal + contributions + total interests
     /// FV = PV * (1 + (r * t))
     pub(crate) fn get_future_value<C, M>(bld: &Interest<M, C>) -> Option<M>
     where
         M: BaseMoney<C> + BaseOps<C> + Default,
         C: Currency,
     {
+        let total_contribs = bld.contribs.map_or(Some(dec!(0)), |cs| {
+            cs.iter().try_fold(dec!(0), |acc, c| acc.checked_add(c.amount()))
+        })?;
         match bld.interest_type {
             InterestType::Fixed => M::new(
                 bld.principal
-                    .checked_add(get_returns_fixed(bld)?.amount())?,
+                    .checked_add(get_returns_fixed(bld)?.amount())?
+                    .checked_add(total_contribs)?,
             )
             .ok(),
             InterestType::Compounding => M::new(
                 bld.principal
-                    .checked_add(get_returns_compounding(bld)?.amount())?,
+                    .checked_add(get_returns_compounding(bld)?.amount())?
+                    .checked_add(total_contribs)?,
             )
             .ok(),
         }
