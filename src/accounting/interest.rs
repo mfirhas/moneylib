@@ -481,11 +481,12 @@ where
 
 mod interest_impl {
     use crate::{
-        BaseMoney, BaseOps, Currency,
+        BaseMoney, BaseOps, Currency, IterOps,
         accounting::{
             Interest,
             interest::{InterestType, Period},
         },
+        base::Amount,
         calendar::{AddMonths, get_years_months, get_years_months_days},
         macros::dec,
     };
@@ -849,26 +850,29 @@ mod interest_impl {
     /// FV = PV * (1 + (r * t))
     pub(crate) fn get_future_value<C, M>(bld: &Interest<M, C>) -> Option<M>
     where
-        M: BaseMoney<C> + BaseOps<C> + Default,
+        M: BaseMoney<C> + BaseOps<C> + Amount<C> + Default,
         C: Currency,
     {
-        let total_contribs = bld.contribs.map_or(Some(dec!(0)), |cs| {
-            cs.iter().try_fold(dec!(0), |acc, c| acc.checked_add(c.amount()))
-        })?;
-        match bld.interest_type {
+        let mut ret = match bld.interest_type {
             InterestType::Fixed => M::new(
                 bld.principal
-                    .checked_add(get_returns_fixed(bld)?.amount())?
-                    .checked_add(total_contribs)?,
+                    .checked_add(get_returns_fixed(bld)?.amount())?,
             )
             .ok(),
             InterestType::Compounding => M::new(
                 bld.principal
-                    .checked_add(get_returns_compounding(bld)?.amount())?
-                    .checked_add(total_contribs)?,
+                    .checked_add(get_returns_compounding(bld)?.amount())?,
             )
             .ok(),
+        }?;
+
+        if let Some(contribs) = bld.contribs
+            && !contribs.is_empty()
+        {
+            ret = ret.checked_add(contribs.checked_sum()?)?;
         }
+
+        Some(ret)
     }
 
     /// Get present value on fixed-rate interest
