@@ -3412,3 +3412,60 @@ fn test_compound_with_negative_contrib_withdrawal() {
     assert_eq!(interest.returns().unwrap().amount(), dec!(310));
     assert_eq!(interest.future_value().unwrap().amount(), dec!(1210));
 }
+
+// ---- Many contributions (100) with mixed add/withdraw/zero ----
+
+#[test]
+fn test_fixed_monthly_rate_101months_100_mixed_contribs() {
+    // P=1000, r=1%/month, 101 months, 100 contribs cycling [+100, -50, 0].
+    // contribs_sum = (34 × 100) + (33 × -50) + (33 × 0) = 3400 - 1650 = 1750
+    // Each month: interest = current_principal × 0.01; after interest contrib is applied.
+    // Computed returns = 1885.50, FV = principal + contribs_sum + returns = 4635.50.
+    let money = money!(USD, 1000);
+    let contribs: Vec<crate::Money<crate::iso::USD>> = (0..100usize)
+        .map(|i| match i % 3 {
+            0 => money!(USD, 100),
+            1 => money!(USD, -50),
+            _ => money!(USD, 0),
+        })
+        .collect();
+    let interest = money
+        .interest_fixed(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(101)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(1885.50));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(4635.50));
+}
+
+#[test]
+fn test_compound_monthly_rate_101months_100_mixed_contribs() {
+    // P=1000, r=1%/month, 101 months, 100 contribs cycling [+100, -50, 0].
+    // contribs_sum = 1750, balance compounds each month then contrib applied.
+    // Computed returns ≈ 2992.76, FV = principal + contribs_sum + returns ≈ 5742.76.
+    let money = money!(USD, 1000);
+    let contribs: Vec<crate::Money<crate::iso::USD>> = (0..100usize)
+        .map(|i| match i % 3 {
+            0 => money!(USD, 100),
+            1 => money!(USD, -50),
+            _ => money!(USD, 0),
+        })
+        .collect();
+    let interest = money
+        .interest_compound(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(101)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(2992.76));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5742.76));
+}
