@@ -521,6 +521,9 @@ mod interest_impl {
                                     dec!(0)
                                 };
                                 current_principal = current_principal.checked_add(contrib)?;
+                                if current_principal <= dec!(0) {
+                                    return Some(M::default());
+                                }
                                 contrib_index = contrib_index.checked_add(1)?;
                             }
                         }
@@ -551,6 +554,9 @@ mod interest_impl {
                                 dec!(0)
                             };
                             current_principal = current_principal.checked_add(contrib)?;
+                            if current_principal <= dec!(0) {
+                                return Some(M::default());
+                            }
                             contrib_index = contrib_index.checked_add(1)?;
                         }
                     }
@@ -578,6 +584,9 @@ mod interest_impl {
                             dec!(0)
                         };
                         current_principal = current_principal.checked_add(contrib)?;
+                        if current_principal <= dec!(0) {
+                            return Some(M::default());
+                        }
                         contrib_index = contrib_index.checked_add(1)?;
                     }
                 }
@@ -609,6 +618,9 @@ mod interest_impl {
                             dec!(0)
                         };
                         current_principal = current_principal.checked_add(contrib)?;
+                        if current_principal <= dec!(0) {
+                            return Some(M::default());
+                        }
                         contrib_index = contrib_index.checked_add(1)?;
                     }
                 }
@@ -641,6 +653,9 @@ mod interest_impl {
                             dec!(0)
                         };
                         current_principal = current_principal.checked_add(contrib)?;
+                        if current_principal <= dec!(0) {
+                            return Some(M::default());
+                        }
                         contrib_index = contrib_index.checked_add(1)?;
                     }
                 }
@@ -682,6 +697,9 @@ mod interest_impl {
                                     dec!(0)
                                 };
                                 current_principal = current_principal.checked_add(contrib)?;
+                                if current_principal <= dec!(0) {
+                                    return Some(M::default());
+                                }
                                 contrib_index = contrib_index.checked_add(1)?;
                             }
                         }
@@ -710,6 +728,9 @@ mod interest_impl {
                                 dec!(0)
                             };
                             current_principal = current_principal.checked_add(contrib)?;
+                            if current_principal <= dec!(0) {
+                                return Some(M::default());
+                            }
                             contrib_index = contrib_index.checked_add(1)?;
                         }
                     }
@@ -737,6 +758,9 @@ mod interest_impl {
                             dec!(0)
                         };
                         current_principal = current_principal.checked_add(contrib)?;
+                        if current_principal <= dec!(0) {
+                            return Some(M::default());
+                        }
                         contrib_index = contrib_index.checked_add(1)?;
                     }
                 }
@@ -770,6 +794,9 @@ mod interest_impl {
                             dec!(0)
                         };
                         current_principal = current_principal.checked_add(contrib)?;
+                        if current_principal <= dec!(0) {
+                            return Some(M::default());
+                        }
                         contrib_index = contrib_index.checked_add(1)?;
                     }
                 }
@@ -804,6 +831,9 @@ mod interest_impl {
                             dec!(0)
                         };
                         current_principal = current_principal.checked_add(contrib)?;
+                        if current_principal <= dec!(0) {
+                            return Some(M::default());
+                        }
                         contrib_index = contrib_index.checked_add(1)?;
                     }
                 }

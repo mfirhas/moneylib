@@ -3472,18 +3472,15 @@ fn test_compound_monthly_rate_101months_100_mixed_contribs() {
 
 // ---- Overdraft / zero and negative balance via withdrawals ----
 //
-// The implementation does NOT prevent negative balances. When current_principal
-// goes negative, interest computed on it is negative (reducing total returns).
-// returns() and future_value() still return Some with the mathematically
-// correct result.
+// When a withdrawal brings current_principal to ≤ 0, both get_returns_fixed
+// and get_returns_compounding return Some(M::default()) (zero) immediately,
+// stopping further interest accumulation. future_value() will reflect
+// principal + all contribs + 0 returns.
 
 #[test]
 fn test_fixed_withdrawal_reduces_balance_to_zero() {
-    // P=1000, r=1%/month, 3 months, contrib=[-1000] → zero balance after month 1.
-    // Month 1: interest = 1000 × 0.01 = 10, principal → 0
-    // Month 2: interest = 0 × 0.01 = 0
-    // Month 3: interest = 0 × 0.01 = 0
-    // returns = 10, contribs_sum = -1000, FV = 1000 + (-1000) + 10 = 10.
+    // P=1000, r=1%/month, 3 months, contrib=[-1000] → balance hits 0 after month 1.
+    // Guard fires: returns = 0, FV = 1000 + (-1000) + 0 = 0.
     let money = money!(USD, 1000);
     let contribs = [money!(USD, -1000)];
     let interest = money
@@ -3496,17 +3493,14 @@ fn test_fixed_withdrawal_reduces_balance_to_zero() {
         .months(3)
         .with_contribs(&contribs)
         .unwrap();
-    assert_eq!(interest.returns().unwrap().amount(), dec!(10));
-    assert_eq!(interest.future_value().unwrap().amount(), dec!(10));
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(0));
 }
 
 #[test]
 fn test_fixed_withdrawal_drives_balance_negative() {
-    // P=1000, r=1%/month, 3 months, contrib=[-1500] → negative balance after month 1.
-    // Month 1: interest = 1000 × 0.01 = 10, principal → -500
-    // Month 2: interest = -500 × 0.01 = -5 (negative interest)
-    // Month 3: interest = -500 × 0.01 = -5
-    // returns = 10 - 5 - 5 = 0, contribs_sum = -1500, FV = 1000 + (-1500) + 0 = -500.
+    // P=1000, r=1%/month, 3 months, contrib=[-1500] → balance goes negative after month 1.
+    // Guard fires: returns = 0, FV = 1000 + (-1500) + 0 = -500.
     let money = money!(USD, 1000);
     let contribs = [money!(USD, -1500)];
     let interest = money
@@ -3525,11 +3519,9 @@ fn test_fixed_withdrawal_drives_balance_negative() {
 
 #[test]
 fn test_compound_withdrawal_reduces_balance_to_zero() {
-    // P=1000, r=1%/month, 3 months, contrib=[-1010] → zero balance after month 1.
-    // Month 1: interest = 1000 × 0.01 = 10, balance = 1010, -1010 → 0
-    // Month 2: interest = 0 × 0.01 = 0, balance = 0
-    // Month 3: interest = 0 × 0.01 = 0
-    // returns = 10, contribs_sum = -1010, FV = 1000 + (-1010) + 10 = 0.
+    // P=1000, r=1%/month, 3 months, contrib=[-1010] → balance hits 0 after month 1.
+    // Month 1: interest = 10, balance = 1010, -1010 → 0 → guard fires.
+    // returns = 0, FV = 1000 + (-1010) + 0 = -10.
     let money = money!(USD, 1000);
     let contribs = [money!(USD, -1010)];
     let interest = money
@@ -3542,17 +3534,15 @@ fn test_compound_withdrawal_reduces_balance_to_zero() {
         .months(3)
         .with_contribs(&contribs)
         .unwrap();
-    assert_eq!(interest.returns().unwrap().amount(), dec!(10));
-    assert_eq!(interest.future_value().unwrap().amount(), dec!(0));
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-10));
 }
 
 #[test]
 fn test_compound_withdrawal_drives_balance_negative() {
-    // P=1000, r=1%/month, 3 months, contrib=[-1100] → negative balance after month 1.
-    // Month 1: interest = 1000 × 0.01 = 10, balance = 1010, -1100 → -90
-    // Month 2: interest = -90 × 0.01 = -0.90, balance = -90.90
-    // Month 3: interest = -90.90 × 0.01 = -0.909, balance = -91.809
-    // returns = 10 - 0.90 - 0.909 = 8.191 → 8.19 (2dp), FV = 1000 + (-1100) + 8.19 = -91.81.
+    // P=1000, r=1%/month, 3 months, contrib=[-1100] → balance goes negative after month 1.
+    // Month 1: interest = 10, balance = 1010, -1100 → -90 → guard fires.
+    // returns = 0, FV = 1000 + (-1100) + 0 = -100.
     let money = money!(USD, 1000);
     let contribs = [money!(USD, -1100)];
     let interest = money
@@ -3565,6 +3555,6 @@ fn test_compound_withdrawal_drives_balance_negative() {
         .months(3)
         .with_contribs(&contribs)
         .unwrap();
-    assert_eq!(interest.returns().unwrap().amount(), dec!(8.19));
-    assert_eq!(interest.future_value().unwrap().amount(), dec!(-91.81));
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-100));
 }
