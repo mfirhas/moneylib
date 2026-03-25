@@ -3558,3 +3558,428 @@ fn test_compound_withdrawal_drives_balance_negative() {
     assert_eq!(interest.returns().unwrap().amount(), dec!(0));
     assert_eq!(interest.future_value().unwrap().amount(), dec!(-100));
 }
+
+// ============================================================================
+// ============ Additional branch-coverage tests ==============================
+// ============================================================================
+//
+// The tests below drive into execution paths that were not yet covered:
+//   • interest_total / divisor accumulation overflows inside each loop
+//   • overdraft guard (return M::default()) for Days/Years/Quarters/SemiAnnuals
+//   • PV Fixed / Compound None via daily-rate or accumulation overflow
+//   • PMT Quarters / SemiAnnuals None via inner get_*_rate overflow
+
+// ---- get_returns_fixed: interest_total.checked_add overflow ----
+
+#[test]
+fn test_fixed_daily_returns_none_on_interest_accumulation_overflow() {
+    // P=100, r=Decimal::MAX/day: daily_rate = MAX/100. P × daily_rate = MAX.
+    // Day 1: total=MAX. Day 2: MAX+MAX overflows → None.
+    let money = money!(USD, 100);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(2)
+            .returns()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_fixed_monthly_returns_none_on_interest_accumulation_overflow() {
+    // P=100, r=Decimal::MAX/month: monthly_rate = MAX/100. P × monthly_rate = MAX.
+    // Month 1: total=MAX. Month 2: MAX+MAX overflows → None.
+    let money = money!(USD, 100);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .months(2)
+            .returns()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_fixed_quarterly_returns_none_on_quarterly_rate_overflow() {
+    // Daily rate Decimal::MAX with Rate30360: get_quarterly_rate(Daily) = MAX × 90 / 100
+    // → MAX × 90 overflows → get_quarterly_rate returns None → inner ? fires.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .rate_days(RateDays::Rate30360)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .quarters(1)
+            .returns()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_fixed_semi_annuals_returns_none_on_semi_annual_rate_overflow() {
+    // Daily rate Decimal::MAX with Rate30360: semi-annual rate (get_semi_annualy_rate) for
+    // Daily type = MAX × 180 / 100 → MAX × 180 overflows → returns None → inner ? fires.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .rate_days(RateDays::Rate30360)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .semi_annuals(1)
+            .returns()
+            .is_none()
+    );
+}
+
+// ---- get_returns_fixed: overdraft guard for Days / Years / Quarters / SemiAnnuals ----
+
+#[test]
+fn test_fixed_days_overdraft_guard_fires() {
+    // P=1000, r=1%/day, 2 days, contribs=[-1100].
+    // Day 1: interest=10, principal=1000+(-1100)=-100 ≤ 0 → guard fires → returns=0.
+    // FV = 1000 + (-1100) + 0 = -100.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1100)];
+    let interest = money
+        .interest_fixed(1)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(2)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-100));
+}
+
+#[test]
+fn test_fixed_years_overdraft_guard_fires() {
+    // P=1000, r=10%/year, 2 years, contribs=[-1500].
+    // Year 1: interest=100, principal=1000+(-1500)=-500 ≤ 0 → guard fires → returns=0.
+    // FV = 1000 + (-1500) + 0 = -500.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1500)];
+    let interest = money
+        .interest_fixed(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-500));
+}
+
+#[test]
+fn test_fixed_quarters_overdraft_guard_fires() {
+    // P=1000, r=10%/year → quarterly_rate=2.5%, 2 quarters, contribs=[-1100].
+    // Q1: interest=25, principal=1000+(-1100)=-100 ≤ 0 → guard fires → returns=0.
+    // FV = 1000 + (-1100) + 0 = -100.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1100)];
+    let interest = money
+        .interest_fixed(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(2)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-100));
+}
+
+#[test]
+fn test_fixed_semi_annuals_overdraft_guard_fires() {
+    // P=1000, r=10%/year → semi_annual_rate=5%, 2 semi-annuals, contribs=[-1100].
+    // SA1: interest=50, principal=1000+(-1100)=-100 ≤ 0 → guard fires → returns=0.
+    // FV = 1000 + (-1100) + 0 = -100.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1100)];
+    let interest = money
+        .interest_fixed(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-100));
+}
+
+// ---- get_returns_compounding: overdraft guard for Days / Years / Quarters / SemiAnnuals ----
+
+#[test]
+fn test_compound_days_overdraft_guard_fires() {
+    // P=1000, r=1%/day, 2 days, contribs=[-1100].
+    // Day 1: interest=10, balance=1010, 1010+(-1100)=-90 ≤ 0 → guard fires → returns=0.
+    // FV = 1000 + (-1100) + 0 = -100.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1100)];
+    let interest = money
+        .interest_compound(1)
+        .unwrap()
+        .daily()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .days(2)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-100));
+}
+
+#[test]
+fn test_compound_years_overdraft_guard_fires() {
+    // P=1000, r=10%/year, 2 years, contribs=[-1500].
+    // Year 1: interest=100, balance=1100, 1100+(-1500)=-400 ≤ 0 → guard fires → returns=0.
+    // FV = 1000 + (-1500) + 0 = -500.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1500)];
+    let interest = money
+        .interest_compound(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-500));
+}
+
+#[test]
+fn test_compound_quarters_overdraft_guard_fires() {
+    // P=1000, r=10%/year → quarterly_rate=2.5%, 2 quarters, contribs=[-1100].
+    // Q1: interest=25, balance=1025, 1025+(-1100)=-75 ≤ 0 → guard fires → returns=0.
+    // FV = 1000 + (-1100) + 0 = -100.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1100)];
+    let interest = money
+        .interest_compound(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .quarters(2)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-100));
+}
+
+#[test]
+fn test_compound_semi_annuals_overdraft_guard_fires() {
+    // P=1000, r=10%/year → semi_annual_rate=5%, 2 semi-annuals, contribs=[-1100].
+    // SA1: interest=50, balance=1050, 1050+(-1100)=-50 ≤ 0 → guard fires → returns=0.
+    // FV = 1000 + (-1100) + 0 = -100.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1100)];
+    let interest = money
+        .interest_compound(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .semi_annuals(2)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-100));
+}
+
+// ---- PV Fixed: None via rate/accumulation overflow ----
+
+#[test]
+fn test_pv_fixed_daily_days_none_on_accumulation_overflow() {
+    // P=1000, r=Decimal::MAX daily: daily_rate = MAX/100.
+    // actual_r accumulates MAX/100 each day; after 100 days actual_r = MAX.
+    // Day 101: actual_r.checked_add(MAX/100) overflows → None.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(101)
+            .present_value()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_pv_fixed_yearly_years_none_on_accumulation_overflow() {
+    // r=Decimal::MAX yearly: yearly_rate = MAX/100. After 100 years actual_r ≈ MAX.
+    // Year 101: actual_r.checked_add(MAX/100) overflows → None.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(101)
+            .present_value()
+            .is_none()
+    );
+}
+
+// ---- PV Compound: None via divisor overflow ----
+
+#[test]
+fn test_pv_compound_daily_days_none_on_divisor_overflow() {
+    // r=Decimal::MAX daily: d = 1+MAX/100 ≈ MAX/100.
+    // Day 1: divisor = d. Day 2: divisor × d = (MAX/100)² >> MAX → overflow → None.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .days(2)
+            .present_value()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_pv_compound_yearly_years_none_on_divisor_overflow() {
+    // r=Decimal::MAX yearly: d = 1+MAX/100 ≈ MAX/100.
+    // Year 1: divisor = d. Year 2: divisor × d >> MAX → overflow → None.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .yearly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .years(2)
+            .present_value()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_pv_compound_monthly_quarters_none_on_quarterly_rate_overflow() {
+    // Monthly rate Decimal::MAX: get_quarterly_rate(Monthly) = MAX × 3 / 100
+    // → MAX × 3 overflows → get_quarterly_rate returns None → inner ? fires.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .quarters(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_pv_compound_monthly_semi_annuals_none_on_semi_annual_rate_overflow() {
+    // Monthly rate Decimal::MAX: semi-annual rate (get_semi_annualy_rate) for Monthly type
+    // = MAX × 6 / 100 → MAX × 6 overflows → returns None → inner ? fires.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_compound(Decimal::MAX)
+            .unwrap()
+            .monthly()
+            .year(2026)
+            .month(1)
+            .day(1)
+            .semi_annuals(1)
+            .present_value()
+            .is_none()
+    );
+}
+
+// ---- PMT: None via inner get_*_rate overflow for Quarters and SemiAnnuals ----
+
+#[test]
+fn test_pmt_quarters_none_on_inner_quarterly_rate_overflow() {
+    // Daily rate Decimal::MAX: get_quarterly_rate(Daily) = MAX × 90 overflows → None.
+    // This hits the inner `?` in the Quarters branch of get_pmt.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .rate_days(RateDays::Rate30360)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .quarters(1)
+            .payment()
+            .is_none()
+    );
+}
+
+#[test]
+fn test_pmt_semi_annuals_none_on_inner_semi_annual_rate_overflow() {
+    // Daily rate Decimal::MAX: semi-annual rate (get_semi_annualy_rate) = MAX × 180 overflows.
+    // This hits the inner `?` in the SemiAnnuals branch of get_pmt.
+    let money = money!(USD, 1000);
+    assert!(
+        money
+            .interest_fixed(Decimal::MAX)
+            .unwrap()
+            .daily()
+            .rate_days(RateDays::Rate30360)
+            .year(2026)
+            .month(1)
+            .day(1)
+            .semi_annuals(1)
+            .payment()
+            .is_none()
+    );
+}
+
+
