@@ -3469,3 +3469,102 @@ fn test_compound_monthly_rate_101months_100_mixed_contribs() {
     assert_eq!(interest.returns().unwrap().amount(), dec!(2992.76));
     assert_eq!(interest.future_value().unwrap().amount(), dec!(5742.76));
 }
+
+// ---- Overdraft / zero and negative balance via withdrawals ----
+//
+// The implementation does NOT prevent negative balances. When current_principal
+// goes negative, interest computed on it is negative (reducing total returns).
+// returns() and future_value() still return Some with the mathematically
+// correct result.
+
+#[test]
+fn test_fixed_withdrawal_reduces_balance_to_zero() {
+    // P=1000, r=1%/month, 3 months, contrib=[-1000] → zero balance after month 1.
+    // Month 1: interest = 1000 × 0.01 = 10, principal → 0
+    // Month 2: interest = 0 × 0.01 = 0
+    // Month 3: interest = 0 × 0.01 = 0
+    // returns = 10, contribs_sum = -1000, FV = 1000 + (-1000) + 10 = 10.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1000)];
+    let interest = money
+        .interest_fixed(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(10));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(10));
+}
+
+#[test]
+fn test_fixed_withdrawal_drives_balance_negative() {
+    // P=1000, r=1%/month, 3 months, contrib=[-1500] → negative balance after month 1.
+    // Month 1: interest = 1000 × 0.01 = 10, principal → -500
+    // Month 2: interest = -500 × 0.01 = -5 (negative interest)
+    // Month 3: interest = -500 × 0.01 = -5
+    // returns = 10 - 5 - 5 = 0, contribs_sum = -1500, FV = 1000 + (-1500) + 0 = -500.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1500)];
+    let interest = money
+        .interest_fixed(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(0));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-500));
+}
+
+#[test]
+fn test_compound_withdrawal_reduces_balance_to_zero() {
+    // P=1000, r=1%/month, 3 months, contrib=[-1010] → zero balance after month 1.
+    // Month 1: interest = 1000 × 0.01 = 10, balance = 1010, -1010 → 0
+    // Month 2: interest = 0 × 0.01 = 0, balance = 0
+    // Month 3: interest = 0 × 0.01 = 0
+    // returns = 10, contribs_sum = -1010, FV = 1000 + (-1010) + 10 = 0.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1010)];
+    let interest = money
+        .interest_compound(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(10));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(0));
+}
+
+#[test]
+fn test_compound_withdrawal_drives_balance_negative() {
+    // P=1000, r=1%/month, 3 months, contrib=[-1100] → negative balance after month 1.
+    // Month 1: interest = 1000 × 0.01 = 10, balance = 1010, -1100 → -90
+    // Month 2: interest = -90 × 0.01 = -0.90, balance = -90.90
+    // Month 3: interest = -90.90 × 0.01 = -0.909, balance = -91.809
+    // returns = 10 - 0.90 - 0.909 = 8.191 → 8.19 (2dp), FV = 1000 + (-1100) + 8.19 = -91.81.
+    let money = money!(USD, 1000);
+    let contribs = [money!(USD, -1100)];
+    let interest = money
+        .interest_compound(1)
+        .unwrap()
+        .monthly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .months(3)
+        .with_contribs(&contribs)
+        .unwrap();
+    assert_eq!(interest.returns().unwrap().amount(), dec!(8.19));
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(-91.81));
+}
