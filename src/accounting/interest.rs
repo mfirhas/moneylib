@@ -664,7 +664,6 @@ mod interest_impl {
                 let years_months_days = get_years_months_days(bld.year, bld.month, bld.day, t)?;
                 let mut total_interest = dec!(0);
                 let mut current_principal = bld.principal;
-                let mut total_contribs = dec!(0);
                 let mut contrib_index = 0;
                 for year in years_months_days {
                     for month in year.1 {
@@ -674,10 +673,7 @@ mod interest_impl {
                                     .get_daily_rate(bld.rate_days, year.0, month.0)?,
                             )?;
                             total_interest = total_interest.checked_add(current_interest)?;
-                            current_principal = bld
-                                .principal
-                                .checked_add(total_interest)?
-                                .checked_add(total_contribs)?;
+                            current_principal = current_principal.checked_add(current_interest)?;
 
                             if let Some(contribs) = bld.contribs {
                                 let contrib = if let Some(c) = contribs.get(contrib_index) {
@@ -686,7 +682,6 @@ mod interest_impl {
                                     dec!(0)
                                 };
                                 current_principal = current_principal.checked_add(contrib)?;
-                                total_contribs = total_contribs.checked_add(contrib)?;
                                 contrib_index = contrib_index.checked_add(1)?;
                             }
                         }
@@ -698,7 +693,6 @@ mod interest_impl {
                 let years_months = get_years_months(bld.year, bld.month, t)?;
                 let mut total_interest = dec!(0);
                 let mut current_principal = bld.principal;
-                let mut total_contribs = dec!(0);
                 let mut contrib_index = 0;
                 for year in years_months {
                     for month in year.1 {
@@ -707,10 +701,7 @@ mod interest_impl {
                                 .get_monthly_rate(bld.rate_days, year.0, month)?,
                         )?;
                         total_interest = total_interest.checked_add(current_interest)?;
-                        current_principal = bld
-                            .principal
-                            .checked_add(total_interest)?
-                            .checked_add(total_contribs)?;
+                        current_principal = current_principal.checked_add(current_interest)?;
 
                         if let Some(contribs) = bld.contribs {
                             let contrib = if let Some(c) = contribs.get(contrib_index) {
@@ -719,7 +710,6 @@ mod interest_impl {
                                 dec!(0)
                             };
                             current_principal = current_principal.checked_add(contrib)?;
-                            total_contribs = total_contribs.checked_add(contrib)?;
                             contrib_index = contrib_index.checked_add(1)?;
                         }
                     }
@@ -730,7 +720,6 @@ mod interest_impl {
                 let mut total_interest = dec!(0);
                 let mut current_principal = bld.principal;
                 let mut current_year = bld.year;
-                let mut total_contribs = dec!(0);
                 let mut contrib_index = 0;
                 for _y in 0..t {
                     let current_interest = current_principal.checked_mul(
@@ -738,10 +727,7 @@ mod interest_impl {
                             .get_yearly_rate(bld.rate_days, current_year)?,
                     )?;
                     total_interest = total_interest.checked_add(current_interest)?;
-                    current_principal = bld
-                        .principal
-                        .checked_add(total_interest)?
-                        .checked_add(total_contribs)?;
+                    current_principal = current_principal.checked_add(current_interest)?;
                     current_year = current_year.checked_add(1)?;
 
                     if let Some(contribs) = bld.contribs {
@@ -751,7 +737,6 @@ mod interest_impl {
                             dec!(0)
                         };
                         current_principal = current_principal.checked_add(contrib)?;
-                        total_contribs = total_contribs.checked_add(contrib)?;
                         contrib_index = contrib_index.checked_add(1)?;
                     }
                 }
@@ -762,7 +747,6 @@ mod interest_impl {
                 let mut total_interest = dec!(0);
                 let mut current_year = bld.year;
                 let mut current_month = bld.month;
-                let mut total_contribs = dec!(0);
                 let mut contrib_index = 0;
                 for _q in 0..t {
                     let current_interest =
@@ -772,10 +756,7 @@ mod interest_impl {
                             current_month,
                         )?)?;
                     total_interest = total_interest.checked_add(current_interest)?;
-                    current_principal = bld
-                        .principal
-                        .checked_add(total_interest)?
-                        .checked_add(total_contribs)?;
+                    current_principal = current_principal.checked_add(current_interest)?;
 
                     let (next_quarter_year, next_quarter_month, _) =
                         current_month.add_months(current_year, 3)?;
@@ -789,7 +770,6 @@ mod interest_impl {
                             dec!(0)
                         };
                         current_principal = current_principal.checked_add(contrib)?;
-                        total_contribs = total_contribs.checked_add(contrib)?;
                         contrib_index = contrib_index.checked_add(1)?;
                     }
                 }
@@ -801,7 +781,6 @@ mod interest_impl {
                 let mut total_interest = dec!(0);
                 let mut current_year = bld.year;
                 let mut current_month = bld.month;
-                let mut total_contribs = dec!(0);
                 let mut contrib_index = 0;
                 for _q in 0..t {
                     let current_interest =
@@ -811,10 +790,7 @@ mod interest_impl {
                             current_month,
                         )?)?;
                     total_interest = total_interest.checked_add(current_interest)?;
-                    current_principal = bld
-                        .principal
-                        .checked_add(total_interest)?
-                        .checked_add(total_contribs)?;
+                    current_principal = current_principal.checked_add(current_interest)?;
 
                     let (next_halfyear_year, next_halfyear_month, _) =
                         current_month.add_months(current_year, 6)?;
@@ -828,7 +804,6 @@ mod interest_impl {
                             dec!(0)
                         };
                         current_principal = current_principal.checked_add(contrib)?;
-                        total_contribs = total_contribs.checked_add(contrib)?;
                         contrib_index = contrib_index.checked_add(1)?;
                     }
                 }
