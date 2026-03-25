@@ -1,12 +1,12 @@
 use rust_decimal::prelude::FromPrimitive;
 
-use crate::{BaseMoney, BaseOps, Currency, Decimal, IterOps, base::Amount, macros::dec};
+use crate::{BaseMoney, BaseOps, Currency, Decimal, IterOps, macros::dec};
 
-impl<I, T, C> IterOps<C> for I
+impl<I: ?Sized, T, C> IterOps<C> for I
 where
     for<'a> &'a I: IntoIterator<Item = &'a T>,
-    T: BaseMoney<C> + BaseOps<C> + Amount<C> + Default,
-    C: Currency + Clone,
+    T: BaseMoney<C> + BaseOps<C> + Default,
+    C: Currency,
 {
     type Item = T;
 
