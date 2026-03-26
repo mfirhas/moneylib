@@ -567,6 +567,7 @@ dependencies = [
  "icu_decimal",
  "icu_locale",
  "rust_decimal",
+ "rust_decimal_macros",
  "serde",
  "serde_json",
  "serde_yaml",

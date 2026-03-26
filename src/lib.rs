@@ -10,17 +10,12 @@
 
 pub use rust_decimal::Decimal;
 
-/// Helper used by the `money!`, `raw!`, and `dec!` macros to construct a [`Decimal`] from a string
-/// without requiring `rust_decimal` to be a direct dependency of the caller's crate.
+/// Re-export of [`rust_decimal_macros::dec`] with the `reexportable` feature enabled.
 ///
-/// # Panics
-///
-/// Panics if `s` is not a valid decimal literal.  In practice this can only happen when the
-/// macro is invoked with something that is not a numeric literal.
+/// This is an implementation detail used by the `dec!` macro to emit compile-time
+/// `Decimal` construction without leaking `::rust_decimal` paths into the caller's crate.
 #[doc(hidden)]
-pub fn __parse_decimal(s: &str) -> Decimal {
-    s.trim().trim_end_matches(',').parse().expect("invalid decimal literal passed to money!/raw!/dec! macro")
-}
+pub use rust_decimal_macros::dec as __dec_inner;
 
 /// Contains helper macros.
 pub mod macros;

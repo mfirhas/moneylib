@@ -87,8 +87,10 @@ macro_rules! raw {
     };
 }
 
-/// Creates a [`Decimal`](crate::Decimal) value from a numeric literal without requiring
-/// `rust_decimal` to be a direct dependency of the caller's crate.
+/// Creates a [`Decimal`](crate::Decimal) value from a numeric literal.
+///
+/// This is a compile-time checked macro — invalid literals produce a compile error, not a panic.
+/// `rust_decimal` does not need to be a direct dependency of the caller's crate.
 ///
 /// # Examples
 ///
@@ -101,7 +103,10 @@ macro_rules! raw {
 #[macro_export]
 macro_rules! dec {
     ($($amount:tt)+) => {
-        $crate::__parse_decimal(concat!($(stringify!($amount)),+))
+        {
+            use $crate::Decimal;
+            $crate::__dec_inner!($($amount)+)
+        }
     };
 }
 
