@@ -10,6 +10,18 @@
 
 pub use rust_decimal::Decimal;
 
+/// Helper used by the `money!` and `raw!` macros to construct a [`Decimal`] from a string
+/// without requiring `rust_decimal` to be a direct dependency of the caller's crate.
+///
+/// # Panics
+///
+/// Panics if `s` is not a valid decimal literal.  In practice this can only happen when the
+/// macro is invoked with something that is not a numeric literal.
+#[doc(hidden)]
+pub fn __parse_decimal(s: &str) -> Decimal {
+    s.parse().expect("invalid decimal literal passed to money!/raw! macro")
+}
+
 /// Contains helper macros.
 pub mod macros;
 

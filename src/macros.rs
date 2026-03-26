@@ -6,7 +6,7 @@
 /// **Long form (custom currencies):** pass any path that resolves to a type implementing
 /// [`Currency`](crate::Currency). The path is used directly, so the type must be in scope.
 ///
-/// The amount is passed to [`dec!`](rust_decimal::dec) and then wrapped in a [`Money`](crate::Money) value,
+/// The amount is parsed as a decimal string at initialization time and then wrapped in a [`Money`](crate::Money) value,
 /// applying the currency's rounding rules.
 ///
 /// # Examples
@@ -34,11 +34,15 @@
 macro_rules! money {
     // Short form: bare ISO currency identifier, auto-resolved from crate::iso
     ($currency:ident, $($amount:tt)+) => {
-        $crate::Money::<$crate::iso::$currency>::from_decimal($crate::macros::dec!($($amount)+))
+        $crate::Money::<$crate::iso::$currency>::from_decimal(
+            $crate::__parse_decimal(concat!($(stringify!($amount)),+))
+        )
     };
     // Long form: explicit path for custom currency types (must be in scope)
     ($currency:path, $($amount:tt)+) => {
-        $crate::Money::<$currency>::from_decimal($crate::macros::dec!($($amount)+))
+        $crate::Money::<$currency>::from_decimal(
+            $crate::__parse_decimal(concat!($(stringify!($amount)),+))
+        )
     };
 }
 
@@ -50,7 +54,7 @@ macro_rules! money {
 /// **Long form (custom currencies):** pass any path that resolves to a type implementing
 /// [`Currency`](crate::Currency). The path is used directly, so the type must be in scope.
 ///
-/// The amount is passed to [`dec!`](rust_decimal::dec) without any rounding, preserving
+/// The amount is parsed as a decimal string at initialization time without any rounding, preserving
 /// the full decimal precision.
 ///
 /// # Examples
@@ -79,11 +83,15 @@ macro_rules! money {
 macro_rules! raw {
     // Short form: bare ISO currency identifier, auto-resolved from crate::iso
     ($currency:ident, $($amount:tt)+) => {
-        $crate::RawMoney::<$crate::iso::$currency>::from_decimal($crate::macros::dec!($($amount)+))
+        $crate::RawMoney::<$crate::iso::$currency>::from_decimal(
+            $crate::__parse_decimal(concat!($(stringify!($amount)),+))
+        )
     };
     // Long form: explicit path for custom currency types (must be in scope)
     ($currency:path, $($amount:tt)+) => {
-        $crate::RawMoney::<$currency>::from_decimal($crate::macros::dec!($($amount)+))
+        $crate::RawMoney::<$currency>::from_decimal(
+            $crate::__parse_decimal(concat!($(stringify!($amount)),+))
+        )
     };
 }
 
