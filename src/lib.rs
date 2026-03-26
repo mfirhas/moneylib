@@ -10,13 +10,6 @@
 
 pub use rust_decimal::Decimal;
 
-/// Re-export of [`rust_decimal_macros::dec`] with the `reexportable` feature enabled.
-///
-/// This is an implementation detail used by the `dec!` macro to emit compile-time
-/// `Decimal` construction without leaking `::rust_decimal` paths into the caller's crate.
-#[doc(hidden)]
-pub use rust_decimal_macros::dec as __dec_inner;
-
 /// Contains helper macros.
 pub mod macros;
 

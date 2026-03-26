@@ -87,6 +87,13 @@ macro_rules! raw {
     };
 }
 
+/// Re-export of [`rust_decimal_macros::dec`] with the `reexportable` feature enabled.
+///
+/// This is an implementation detail used by the `dec!` macro to emit compile-time
+/// `Decimal` construction without leaking `::rust_decimal` paths into the caller's crate.
+#[doc(hidden)]
+pub use rust_decimal_macros::dec as __dec_inner;
+
 /// Creates a [`Decimal`](crate::Decimal) value from a numeric literal.
 ///
 /// This is a compile-time checked macro — invalid literals produce a compile error, not a panic.
@@ -105,7 +112,7 @@ macro_rules! dec {
     ($($amount:tt)+) => {
         {
             use $crate::Decimal;
-            $crate::__dec_inner!($($amount)+)
+            $crate::macros::__dec_inner!($($amount)+)
         }
     };
 }
