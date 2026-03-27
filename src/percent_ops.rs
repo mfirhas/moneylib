@@ -67,7 +67,7 @@ pub trait PercentOps<C: Currency> {
 impl<M, C> PercentOps<C> for M
 where
     M: BaseMoney<C> + BaseOps<C> + Amount<C>,
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = M;
 

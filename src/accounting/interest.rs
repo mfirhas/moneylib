@@ -80,6 +80,7 @@ where
             month: current_date.1,
             day: current_date.2,
             contribs: None,
+            tax: None,
             _output: PhantomData,
             _currency: PhantomData,
         })
@@ -100,6 +101,7 @@ where
             month: current_date.1,
             day: current_date.2,
             contribs: None,
+            tax: None,
             _output: PhantomData,
             _currency: PhantomData,
         })
@@ -136,6 +138,9 @@ pub struct Interest<'a, M, C> {
     /// contributions each period(addition or negation)
     contribs: Option<&'a [M]>,
 
+    /// flat-rate tax applies to each period
+    tax: Option<Decimal>,
+
     _output: PhantomData<M>,
     _currency: PhantomData<C>,
 }
@@ -152,6 +157,24 @@ impl<'a, M, C> Interest<'a, M, C> {
         }
         Some(Self {
             contribs: Some(contribs),
+            ..self
+        })
+    }
+
+    /// Set tax flat-rate percentage applied to interest returns.
+    /// The tax is expressed as a percentage number, e.g. 20% -> tax = 20.
+    ///
+    /// The tax is flat-rate, meaning it applies no matter how much the return is.
+    ///
+    /// # Argument
+    /// D: impl DecimalNumber, supports Decimal, f64, i32, i64, i128.
+    ///
+    pub fn with_tax<D>(self, tax: D) -> Option<Self>
+    where
+        D: crate::base::DecimalNumber,
+    {
+        Some(Self {
+            tax: Some(tax.get_decimal()?),
             ..self
         })
     }
@@ -846,33 +869,38 @@ mod interest_impl {
         M::new(total_interest?).ok()
     }
 
+    use crate::PercentOps;
     /// Get future value: principal + contributions + total interests
     /// FV = PV * (1 + (r * t))
     pub(crate) fn get_future_value<C, M>(bld: &Interest<M, C>) -> Option<M>
     where
-        M: BaseMoney<C> + BaseOps<C> + Amount<C> + Default,
+        M: BaseMoney<C> + BaseOps<C> + Amount<C> + Default + PercentOps<C, Output = M>,
         C: Currency,
     {
-        let mut ret = match bld.interest_type {
-            InterestType::Fixed => M::new(
-                bld.principal
-                    .checked_add(get_returns_fixed(bld)?.amount())?,
-            )
-            .ok(),
-            InterestType::Compounding => M::new(
-                bld.principal
-                    .checked_add(get_returns_compounding(bld)?.amount())?,
-            )
-            .ok(),
-        }?;
+        let principal = bld.principal;
 
+        let returns = {
+            let mut returns = match bld.interest_type {
+                InterestType::Fixed => get_returns_fixed(bld)?,
+                InterestType::Compounding => get_returns_compounding(bld)?,
+            };
+
+            // apply tax if it exists
+            if let Some(tax) = bld.tax {
+                returns = returns.percent_sub(tax)?;
+            }
+
+            returns
+        };
+
+        let mut total_contribs = M::default();
         if let Some(contribs) = bld.contribs
             && !contribs.is_empty()
         {
-            ret = ret.checked_add(contribs.checked_sum()?)?;
+            total_contribs = total_contribs.checked_add(contribs.checked_sum()?)?;
         }
 
-        Some(ret)
+        returns.checked_add(principal)?.checked_add(total_contribs)
     }
 
     /// Get present value on fixed-rate interest
