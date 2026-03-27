@@ -631,6 +631,116 @@ pub trait BaseOps<C: Currency>:
     fn checked_div<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: DecimalNumber;
+
+    /// Split money into equal parts leaving a remainder.
+    ///
+    /// # Argument
+    /// n: u32, how many parts splitted.
+    ///
+    /// # Return
+    /// Option<(Self, Self)>, returns equal parts of split(0) and remainder(1) if any, if no remainder, it defaults to zero.
+    ///
+    /// # Example
+    /// ```rust
+    /// use moneylib::money;
+    /// use moneylib::dec;
+    /// use moneylib::{BaseMoney, BaseOps};
+    ///
+    /// let money = money!(USD, 100);
+    /// let split3 = money.split(3).unwrap();
+    /// assert_eq!(split3.0.amount(), dec!(33.33)); // all equal parts after split.
+    /// assert_eq!(split3.1.amount(), dec!(0.01)); // remainder 1 cent.
+    /// // result: 100 = 33.33 + 33.33 + 33.33 + 0.01
+    ///
+    /// let money = money!(USD, 500);
+    /// let split4 = money.split(4).unwrap();
+    /// assert_eq!(split4.0.amount(), dec!(125.00)); // all equal parts
+    /// assert!(split4.1.is_zero()); // no remainder
+    /// ```
+    fn split(&self, n: u32) -> Option<(Self, Self)> {
+        todo!()
+    }
+
+    /// Split money into equal parts and distribute the remainder equally into parts.
+    ///
+    /// # Argument
+    /// n: u32, how many parts splitted.
+    ///
+    /// # Return
+    /// Option<Vec<T>>, returns list of parts where remainder distribute among them(beginning from first).
+    ///
+    /// # Example
+    /// ```rust
+    /// use moneylib::money;
+    /// use moneylib::dec;
+    /// use moneylib::{BaseMoney, BaseOps};
+    ///
+    /// let money = money!(USD, 100);
+    /// let split3 = money.split_dist(3).unwrap();
+    /// assert_eq!(split3, vec![money!(33.34), money!(33.33), money!(33.33)]); // all equal parts after split and remainder distributed starting from first element.
+    /// assert_eq!(split3.len(), 3);
+    ///
+    /// let money = money!(USD, 500);
+    /// let split4 = money.split_dist(4).unwrap();
+    /// assert_eq!(split4, vec![money!(125), money!(125), money!(125), money!(125)]); // all equal parts after split and leave no remainder.
+    /// assert_eq!(split4.len(), 4);
+    /// ```
+    fn split_dist(&self, n: u32) -> Option<Vec<Self>> {
+        todo!()
+    }
+
+    /// Allocate money by percentages.
+    ///
+    /// # Argument
+    /// pcns: list of DecimalNumber: Decimal, f64, i32, i64, i128 -> denoting percentage, e.g. 20% -> 20.
+    ///
+    /// # Return
+    /// Return list of allocated money all summed back into original amount.
+    ///
+    /// # Example
+    /// ```rust
+    /// use moneylib::{Money, BaseMoney, BaseOps};
+    ///
+    /// // percentage ratios: 60%, 40%
+    /// let profit = Money::<USD>::new(dec!(10000.00)).unwrap();
+    /// let shares = profit.allocate(&[60, 40])?;  // 60/40 split
+    /// // Result: [USD 6000.00, USD 4000.00]
+    ///
+    /// // Budget allocation by priority weights
+    /// let budget = Money::<USD>::new(dec!(100000.00)).unwrap();
+    /// let depts = budget.allocate(&[35, 25, 20, 15, 5])?;
+    /// // Result: [USD 35000.00, USD 25000.00, USD 20000.00, USD 15000.00, USD 5000.00]
+    /// ```
+    fn allocate<D>(&self, pcns: &[D]) -> Option<Vec<Self>>
+    where
+        D: DecimalNumber,
+    {
+        todo!()
+    }
+
+    /// Allocate money by ratios.
+    ///
+    /// # Argument
+    /// ratios: list of DecimalNumber: Decimal, f64, i32, i64, i128 -> denoting ratios.
+    ///
+    /// # Return
+    /// Return list of allocated money all summed back into original amount.
+    ///
+    /// # Example
+    /// ```rust
+    /// use moneylib::{Money, BaseMoney, BaseOps};
+    ///
+    /// // Unequal ratios: 1:2:1 means 25%, 50%, 25%
+    /// let amount = Money::<USD>::new(dec!(400.00)).unwrap();
+    /// let parts = amount.allocate_by_ratios(&[1, 2, 1])?;
+    /// // Result: [USD 100.00, USD 200.00, USD 100.00]
+    /// ```
+    fn allocate_by_ratios<D>(&self, ratios: &[D]) -> Option<Vec<Self>>
+    where
+        D: DecimalNumber,
+    {
+        todo!()
+    }
 }
 
 /// Trait for statistical and aggregate operations on collections of money values.
