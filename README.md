@@ -43,6 +43,7 @@ Here are some features supported:
 - Serde.
 - Supports locale formatting.
 - Exchange rates for conversions.
+- Split and Allocation.
 - Some accounting operations:
     - Percentage calculations.
     - Interest calculations.
