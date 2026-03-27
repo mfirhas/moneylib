@@ -4024,3 +4024,49 @@ fn test_tax_on_compounding_interest() {
     let fv_after_tax = inv.with_tax(20).unwrap().future_value().unwrap();
     assert_eq!(fv_after_tax.amount(), dec!(5645.89));
 }
+
+#[test]
+fn test_tax_on_fixed_interest_with_contribs() {
+    let contribs = vec![money!(USD, 100); 35];
+    let money = money!(USD, 5000);
+    let inv = money
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .months(36)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .with_contribs(&contribs)
+        .unwrap();
+
+    let fv_before_tax = inv.future_value().unwrap();
+    assert_eq!(fv_before_tax.amount(), dec!(9512.50));
+
+    // apply 20% tax
+    let fv_after_tax = inv.with_tax(20).unwrap().future_value().unwrap();
+    assert_eq!(fv_after_tax.amount(), dec!(9310.00));
+}
+
+#[test]
+fn test_tax_on_compounding_interest_with_contribs() {
+    let contribs = vec![money!(USD, 100); 35];
+    let money = money!(USD, 5000);
+    let inv = money
+        .interest_compound(5)
+        .unwrap()
+        .yearly()
+        .months(36)
+        .year(2026)
+        .month(1)
+        .day(1)
+        .with_contribs(&contribs)
+        .unwrap();
+
+    let fv_before_tax = inv.future_value().unwrap();
+    assert_eq!(fv_before_tax.amount(), dec!(9582.69));
+
+    // apply 20% tax
+    let fv_after_tax = inv.with_tax(20).unwrap().future_value().unwrap();
+    assert_eq!(fv_after_tax.amount(), dec!(9366.15));
+}
