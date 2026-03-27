@@ -147,7 +147,7 @@ Monetary values are sensitive matter and their invariants must always hold true.
 - Currency information is available through trait methods: `code()`, `symbol()`, `name()`, `minor_unit()`.
 - New/custom currency is supported by implementing `Currency` trait.
 
-This library maintains type-safety by preventing invalid state either by returning `Result` or going *PANIC*.
+This library maintains type-safety by preventing invalid state either by returning `Result`/`Option` or going *PANIC*.
 
 ## Feature Flags
 
