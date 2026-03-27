@@ -101,6 +101,58 @@ pub use rust_decimal_macros::dec as __dec_inner;
 /// This is a compile-time checked macro — invalid literals produce a compile error, not a panic.
 /// `rust_decimal` does not need to be a direct dependency of the caller's crate.
 ///
+/// From [`rust_decimal_macros`](https://docs.rs/rust_decimal_macros/1.40.0/rust_decimal_macros/macro.dec.html):
+///
+/// Any Rust number format works, for example:
+///
+/// ```
+/// use moneylib::dec;
+///
+/// let _ = dec!(1);          // plain positive integer
+/// let _ = dec!(-1);         // plain negative integer
+/// let _ = dec!(1_999);      // underscore as digit separator (readability)
+/// let _ = dec!(- 1_999);    // negative with space before value
+///
+/// let _ = dec!(0b1);        // binary literal (base 2)
+/// let _ = dec!(-0b1_1111);  // negative binary with separator (= -31)
+/// let _ = dec!(0o1);        // octal literal (base 8)
+/// let _ = dec!(-0o1_777);   // negative octal with separator (= -1023)
+/// let _ = dec!(0x1);        // hexadecimal literal (base 16)
+/// let _ = dec!(-0x1_Ffff);  // negative hex with separator, mixed case digits (= -131071)
+///
+/// let _ = dec!(1.);         // decimal point with no fractional digits
+/// let _ = dec!(-1.111_009); // negative decimal with underscore separator in fraction
+/// let _ = dec!(1e6);        // scientific notation: 1 × 10⁶ = 1_000_000
+/// let _ = dec!(-1.2e+6);    // negative scientific notation with explicit '+' exponent
+/// let _ = dec!(12e-6);      // scientific notation with negative exponent: 0.000_012
+/// let _ = dec!(-1.2e-6);    // negative value with negative exponent: -0.000_001_2
+/// ```
+///
+/// ### Option `radix`
+///
+/// You can give it integers (not float-like) in any radix from 2 to 36 inclusive, using the letters too:
+///
+/// ```
+/// use moneylib::dec;
+///
+/// assert_eq!(dec!(100, radix 2),      dec!(4));      // "100" in base 2  = 1×4 = 4
+/// assert_eq!(dec!(-1_222, radix 3),   dec!(-53));    // "1222" in base 3 = 27+18+6+2 = 53
+/// assert_eq!(dec!(z1, radix 36),      dec!(1261));   // "z1"  in base 36 = 35×36+1 = 1261
+/// assert_eq!(dec!(-1_xyz, radix 36),  dec!(-90683)); // "1xyz" in base 36, letters count as digit values 10–35
+/// ```
+///
+/// ### Option `exp`
+///
+/// This is the same as the `e` 10's exponent in float syntax (except as a Rust expression it doesn't accept
+/// a unary `+`.) You need this for other radixes. Currently, it must be between -28 and +28 inclusive:
+///
+/// ```
+/// use moneylib::dec;
+///
+/// assert_eq!(dec!(10, radix 2, exp 5),        dec!(200_000)); // "10" in base 2 = 2, then ×10⁵ = 200_000
+/// assert_eq!(dec!(-1_777, exp -3, radix 8),   dec!(-1.023)); // "1777" in base 8 = 1023, then ×10⁻³ = -1.023
+/// ```
+///
 /// # Examples
 ///
 /// ```
