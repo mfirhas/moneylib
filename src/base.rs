@@ -704,7 +704,7 @@ pub trait BaseOps<C: Currency>:
             return None;
         }
         let (equal, remainder) = self.split(n)?;
-        let n_usize = n as usize;
+        let n_usize = n.try_into().ok()?;
         let minor_unit = self.minor_unit();
         let one_minor = one_minor_unit(minor_unit)?;
         let extra_count = if one_minor.is_zero() {
