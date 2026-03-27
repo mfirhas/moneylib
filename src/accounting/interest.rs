@@ -160,6 +160,18 @@ impl<'a, M, C> Interest<'a, M, C> {
             ..self
         })
     }
+
+    /// Set tax rate percentage applied to interest returns.
+    /// The tax is expressed as a percentage number, e.g. 20% -> tax = 20.
+    pub fn with_tax<D>(self, tax: D) -> Option<Self>
+    where
+        D: crate::base::DecimalNumber,
+    {
+        Some(Self {
+            tax: Some(tax.get_decimal()?),
+            ..self
+        })
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -851,25 +863,29 @@ mod interest_impl {
         M::new(total_interest?).ok()
     }
 
-    /// Get future value: principal + contributions + total interests
+    /// Get future value: principal + contributions + after-tax total interests
     /// FV = PV * (1 + (r * t))
     pub(crate) fn get_future_value<C, M>(bld: &Interest<M, C>) -> Option<M>
     where
         M: BaseMoney<C> + BaseOps<C> + Amount<C> + Default,
         C: Currency,
     {
-        let mut ret = match bld.interest_type {
-            InterestType::Fixed => M::new(
-                bld.principal
-                    .checked_add(get_returns_fixed(bld)?.amount())?,
-            )
-            .ok(),
-            InterestType::Compounding => M::new(
-                bld.principal
-                    .checked_add(get_returns_compounding(bld)?.amount())?,
-            )
-            .ok(),
-        }?;
+        let returns = match bld.interest_type {
+            InterestType::Fixed => get_returns_fixed(bld)?,
+            InterestType::Compounding => get_returns_compounding(bld)?,
+        };
+
+        let after_tax_returns = if let Some(tax) = bld.tax {
+            let tax_amount = returns
+                .amount()
+                .checked_mul(tax)?
+                .checked_div(dec!(100))?;
+            M::new(returns.amount().checked_sub(tax_amount)?).ok()?
+        } else {
+            returns
+        };
+
+        let mut ret = M::new(bld.principal.checked_add(after_tax_returns.amount())?).ok()?;
 
         if let Some(contribs) = bld.contribs
             && !contribs.is_empty()

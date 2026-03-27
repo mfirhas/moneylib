@@ -3981,3 +3981,82 @@ fn test_pmt_semi_annuals_none_on_inner_semi_annual_rate_overflow() {
             .is_none()
     );
 }
+
+// ---- Tax on future_value ----
+
+#[test]
+fn test_future_value_fixed_yearly_with_tax() {
+    // P=5000, r=5% yearly, 2 years, tax=20%
+    // returns (no tax) = 5000 × 0.05 × 2 = 500
+    // after-tax returns = 500 × (1 - 20/100) = 500 × 0.80 = 400
+    // FV = 5000 + 400 = 5400
+    let money = money!(USD, 5000);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .with_tax(20)
+        .unwrap();
+
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5400.00));
+}
+
+#[test]
+fn test_future_value_compound_yearly_with_tax() {
+    // P=5000, r=10% yearly, 1 year, tax=25%
+    // returns (no tax) = 5000 × 0.10 = 500
+    // after-tax returns = 500 × (1 - 25/100) = 500 × 0.75 = 375
+    // FV = 5000 + 375 = 5375
+    let money = money!(USD, 5000);
+    let interest = money
+        .interest_compound(10)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(1)
+        .with_tax(25)
+        .unwrap();
+
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5375.00));
+}
+
+#[test]
+fn test_future_value_no_tax_unchanged() {
+    // P=5000, r=5% yearly, 2 years, no tax
+    // FV = 5000 + 500 = 5500
+    let money = money!(USD, 5000);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2);
+
+    assert_eq!(interest.future_value().unwrap().amount(), dec!(5500.00));
+}
+
+#[test]
+fn test_future_value_tax_overflow_returns_none() {
+    // tax = Decimal::MAX causes percent_sub to overflow → None
+    let money = money!(USD, 5000);
+    let interest = money
+        .interest_fixed(5)
+        .unwrap()
+        .yearly()
+        .year(2026)
+        .month(1)
+        .day(1)
+        .years(2)
+        .with_tax(Decimal::MAX)
+        .unwrap();
+
+    assert!(interest.future_value().is_none());
+}
