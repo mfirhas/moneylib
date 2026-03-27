@@ -91,6 +91,8 @@ macro_rules! raw {
 ///
 /// This is an implementation detail used by the `dec!` macro to emit compile-time
 /// `Decimal` construction without leaking `::rust_decimal` paths into the caller's crate.
+///
+/// This is so that users are not required to import rust_decimal or putting Decimal in scope.
 #[doc(hidden)]
 pub use rust_decimal_macros::dec as __dec_inner;
 
