@@ -80,6 +80,7 @@ where
             month: current_date.1,
             day: current_date.2,
             contribs: None,
+            tax: None,
             _output: PhantomData,
             _currency: PhantomData,
         })
@@ -100,6 +101,7 @@ where
             month: current_date.1,
             day: current_date.2,
             contribs: None,
+            tax: None,
             _output: PhantomData,
             _currency: PhantomData,
         })
@@ -135,6 +137,9 @@ pub struct Interest<'a, M, C> {
 
     /// contributions each period(addition or negation)
     contribs: Option<&'a [M]>,
+
+    /// Tax apply to each period
+    tax: Option<Decimal>,
 
     _output: PhantomData<M>,
     _currency: PhantomData<C>,
