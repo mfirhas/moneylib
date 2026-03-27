@@ -446,6 +446,12 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     }
 }
 
+/// Returns the smallest representable unit for a given `minor_unit` (decimal places).
+/// For example, USD (minor_unit = 2) → 0.01; JPY (minor_unit = 0) → 1.
+fn one_minor_unit(minor_unit: u16) -> Option<Decimal> {
+    Decimal::ONE.checked_div(dec!(10).checked_powu(minor_unit.into())?)
+}
+
 /// Trait for arithmetic and comparison operations on money values.
 ///
 /// This trait extends `BaseMoney` with mathematical operations (addition, subtraction,
@@ -658,7 +664,15 @@ pub trait BaseOps<C: Currency>:
     /// assert!(split4.1.is_zero()); // no remainder
     /// ```
     fn split(&self, n: u32) -> Option<(Self, Self)> {
-        todo!()
+        if n == 0 {
+            return None;
+        }
+        let n_dec = Decimal::from_u32(n)?;
+        let equal = self.checked_div(n_dec)?;
+        let sum = equal.amount().checked_mul(n_dec)?;
+        let remainder_amount = self.amount().checked_sub(sum)?;
+        let remainder = Self::new(remainder_amount).ok()?;
+        Some((equal, remainder))
     }
 
     /// Split money into equal parts and distribute the remainder equally into parts.
@@ -677,16 +691,47 @@ pub trait BaseOps<C: Currency>:
     ///
     /// let money = money!(USD, 100);
     /// let split3 = money.split_dist(3).unwrap();
-    /// assert_eq!(split3, vec![money!(33.34), money!(33.33), money!(33.33)]); // all equal parts after split and remainder distributed starting from first element.
+    /// assert_eq!(split3, vec![money!(USD, 33.34), money!(USD, 33.33), money!(USD, 33.33)]); // all equal parts after split and remainder distributed starting from first element.
     /// assert_eq!(split3.len(), 3);
     ///
     /// let money = money!(USD, 500);
     /// let split4 = money.split_dist(4).unwrap();
-    /// assert_eq!(split4, vec![money!(125), money!(125), money!(125), money!(125)]); // all equal parts after split and leave no remainder.
+    /// assert_eq!(split4, vec![money!(USD, 125), money!(USD, 125), money!(USD, 125), money!(USD, 125)]); // all equal parts after split and leave no remainder.
     /// assert_eq!(split4.len(), 4);
     /// ```
     fn split_dist(&self, n: u32) -> Option<Vec<Self>> {
-        todo!()
+        if n == 0 {
+            return None;
+        }
+        let (equal, remainder) = self.split(n)?;
+        let n_usize = n as usize;
+        let minor_unit = self.minor_unit();
+        let one_minor = one_minor_unit(minor_unit)?;
+        let extra_count = if one_minor.is_zero() {
+            0usize
+        } else {
+            remainder
+                .abs()
+                .amount()
+                .checked_div(one_minor)
+                .and_then(|d| d.to_usize())
+                .unwrap_or(0)
+        };
+        let adjustment = if remainder.is_negative() {
+            -one_minor
+        } else {
+            one_minor
+        };
+        let mut result = Vec::with_capacity(n_usize);
+        for i in 0..n_usize {
+            if i < extra_count {
+                let adjusted = equal.amount().checked_add(adjustment)?;
+                result.push(Self::new(adjusted).ok()?);
+            } else {
+                result.push(equal.clone());
+            }
+        }
+        Some(result)
     }
 
     /// Allocate money by percentages.
@@ -696,26 +741,39 @@ pub trait BaseOps<C: Currency>:
     ///
     /// # Return
     /// Return list of allocated money all summed back into original amount.
+    /// Returns `None` if the percentages list is empty or does not sum to 100.
     ///
     /// # Example
     /// ```rust
-    /// use moneylib::{Money, BaseMoney, BaseOps};
+    /// use moneylib::{Money, BaseMoney, BaseOps, macros::dec, iso::USD};
     ///
     /// // percentage ratios: 60%, 40%
     /// let profit = Money::<USD>::new(dec!(10000.00)).unwrap();
-    /// let shares = profit.allocate(&[60, 40])?;  // 60/40 split
-    /// // Result: [USD 6000.00, USD 4000.00]
+    /// let shares = profit.allocate(&[60, 40]).unwrap();  // 60/40 split
+    /// assert_eq!(shares[0].amount(), dec!(6000.00));
+    /// assert_eq!(shares[1].amount(), dec!(4000.00));
     ///
     /// // Budget allocation by priority weights
     /// let budget = Money::<USD>::new(dec!(100000.00)).unwrap();
-    /// let depts = budget.allocate(&[35, 25, 20, 15, 5])?;
-    /// // Result: [USD 35000.00, USD 25000.00, USD 20000.00, USD 15000.00, USD 5000.00]
+    /// let depts = budget.allocate(&[35, 25, 20, 15, 5]).unwrap();
+    /// assert_eq!(depts[0].amount(), dec!(35000.00));
+    /// assert_eq!(depts[4].amount(), dec!(5000.00));
     /// ```
     fn allocate<D>(&self, pcns: &[D]) -> Option<Vec<Self>>
     where
         D: DecimalNumber,
     {
-        todo!()
+        if pcns.is_empty() {
+            return None;
+        }
+        let mut total = Decimal::ZERO;
+        for p in pcns {
+            total = total.checked_add(p.get_decimal()?)?;
+        }
+        if total != dec!(100) {
+            return None;
+        }
+        self.allocate_by_ratios(pcns)
     }
 
     /// Allocate money by ratios.
@@ -725,21 +783,65 @@ pub trait BaseOps<C: Currency>:
     ///
     /// # Return
     /// Return list of allocated money all summed back into original amount.
+    /// Returns `None` if the ratios list is empty or all ratios are zero.
     ///
     /// # Example
     /// ```rust
-    /// use moneylib::{Money, BaseMoney, BaseOps};
+    /// use moneylib::{Money, BaseMoney, BaseOps, macros::dec, iso::USD};
     ///
     /// // Unequal ratios: 1:2:1 means 25%, 50%, 25%
     /// let amount = Money::<USD>::new(dec!(400.00)).unwrap();
-    /// let parts = amount.allocate_by_ratios(&[1, 2, 1])?;
-    /// // Result: [USD 100.00, USD 200.00, USD 100.00]
+    /// let parts = amount.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    /// assert_eq!(parts[0].amount(), dec!(100.00));
+    /// assert_eq!(parts[1].amount(), dec!(200.00));
+    /// assert_eq!(parts[2].amount(), dec!(100.00));
     /// ```
     fn allocate_by_ratios<D>(&self, ratios: &[D]) -> Option<Vec<Self>>
     where
         D: DecimalNumber,
     {
-        todo!()
+        if ratios.is_empty() {
+            return None;
+        }
+        let mut total = Decimal::ZERO;
+        for r in ratios {
+            total = total.checked_add(r.get_decimal()?)?;
+        }
+        if total.is_zero() {
+            return None;
+        }
+        let amount = self.amount();
+        let minor_unit = self.minor_unit();
+        let one_minor = one_minor_unit(minor_unit)?;
+        let mut allocations: Vec<Decimal> = Vec::with_capacity(ratios.len());
+        let mut allocated_total = Decimal::ZERO;
+        for r in ratios {
+            let ratio_dec = r.get_decimal()?;
+            let raw = amount.checked_mul(ratio_dec)?.checked_div(total)?;
+            // Truncate toward zero to guarantee allocated_total <= amount (for positive amounts),
+            // allowing any remainder to be distributed one minor unit at a time.
+            let truncated =
+                raw.round_dp_with_strategy(minor_unit.into(), DecimalRoundingStrategy::ToZero);
+            allocated_total = allocated_total.checked_add(truncated)?;
+            allocations.push(truncated);
+        }
+        let mut remainder = amount.checked_sub(allocated_total)?;
+        let adjustment = if remainder.is_sign_negative() {
+            -one_minor
+        } else {
+            one_minor
+        };
+        let mut result = Vec::with_capacity(ratios.len());
+        for alloc in allocations {
+            if !remainder.is_zero() && remainder.abs() >= one_minor {
+                let adjusted = alloc.checked_add(adjustment)?;
+                remainder = remainder.checked_sub(adjustment)?;
+                result.push(Self::new(adjusted).ok()?);
+            } else {
+                result.push(Self::new(alloc).ok()?);
+            }
+        }
+        Some(result)
     }
 }
 
