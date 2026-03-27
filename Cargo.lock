@@ -567,6 +567,7 @@ dependencies = [
  "icu_decimal",
  "icu_locale",
  "rust_decimal",
+ "rust_decimal_macros",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -698,7 +699,6 @@ checksum = "61f703d19852dbf87cbc513643fa81428361eb6940f1ac14fd58155d295a3eb0"
 dependencies = [
  "arrayvec",
  "num-traits",
- "rust_decimal_macros",
 ]
 
 [[package]]
