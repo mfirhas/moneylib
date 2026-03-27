@@ -508,6 +508,18 @@ mod interest_impl {
         macros::dec,
     };
 
+    /// Apply tax to a period's interest amount.
+    /// Returns the after-tax interest: `interest * (1 - tax / 100)`.
+    /// If tax is None, returns the original interest unchanged.
+    fn apply_tax(interest: Decimal, tax: Option<Decimal>) -> Option<Decimal> {
+        if let Some(tax) = tax {
+            let tax_portion = interest.checked_mul(tax)?.checked_div(dec!(100))?;
+            interest.checked_sub(tax_portion)
+        } else {
+            Some(interest)
+        }
+    }
+
     /// Get total returns of fixed-rate
     /// FV = PV * (1 + (r * t))
     pub(crate) fn get_returns_fixed<M, C>(bld: &Interest<M, C>) -> Option<M>
@@ -524,13 +536,14 @@ mod interest_impl {
                 for year in years_months_days {
                     for month in year.1 {
                         for _day in month.1 {
-                            interest_total = interest_total.checked_add(
+                            let period_interest =
                                 current_principal.checked_mul(bld.rate_percent.get_daily_rate(
                                     bld.rate_days,
                                     year.0,
                                     month.0,
-                                )?)?,
-                            )?;
+                                )?)?;
+                            let after_tax = apply_tax(period_interest, bld.tax)?;
+                            interest_total = interest_total.checked_add(after_tax)?;
 
                             if let Some(contribs) = bld.contribs {
                                 let contrib = if let Some(c) = contribs.get(contrib_index) {
@@ -557,13 +570,14 @@ mod interest_impl {
                 let mut contrib_index = 0;
                 for (year, months) in year_months {
                     for month in months {
-                        total_interest = total_interest.checked_add(
+                        let period_interest =
                             current_principal.checked_mul(bld.rate_percent.get_monthly_rate(
                                 bld.rate_days,
                                 year,
                                 month,
-                            )?)?,
-                        )?;
+                            )?)?;
+                        let after_tax = apply_tax(period_interest, bld.tax)?;
+                        total_interest = total_interest.checked_add(after_tax)?;
 
                         if let Some(contribs) = bld.contribs {
                             let contrib = if let Some(c) = contribs.get(contrib_index) {
@@ -587,12 +601,12 @@ mod interest_impl {
                 let mut current_principal = bld.principal;
                 let mut contrib_index = 0;
                 for _y in 0..t {
-                    interest_total = interest_total.checked_add(
-                        current_principal.checked_mul(
-                            bld.rate_percent
-                                .get_yearly_rate(bld.rate_days, current_year)?,
-                        )?,
+                    let period_interest = current_principal.checked_mul(
+                        bld.rate_percent
+                            .get_yearly_rate(bld.rate_days, current_year)?,
                     )?;
+                    let after_tax = apply_tax(period_interest, bld.tax)?;
+                    interest_total = interest_total.checked_add(after_tax)?;
                     current_year = current_year.checked_add(1)?;
 
                     if let Some(contribs) = bld.contribs {
@@ -617,13 +631,14 @@ mod interest_impl {
                 let mut current_principal = bld.principal;
                 let mut contrib_index = 0;
                 for _q in 0..t {
-                    total_interest = total_interest.checked_add(current_principal.checked_mul(
-                        bld.rate_percent.get_quarterly_rate(
+                    let period_interest =
+                        current_principal.checked_mul(bld.rate_percent.get_quarterly_rate(
                             bld.rate_days,
                             current_year,
                             current_month,
-                        )?,
-                    )?)?;
+                        )?)?;
+                    let after_tax = apply_tax(period_interest, bld.tax)?;
+                    total_interest = total_interest.checked_add(after_tax)?;
                     let (next_quarter_year, next_quarter_month, _) =
                         current_month.add_months(current_year, 3)?;
                     current_year = next_quarter_year;
@@ -652,13 +667,14 @@ mod interest_impl {
                 let mut current_principal = bld.principal;
                 let mut contrib_index = 0;
                 for _s in 0..t {
-                    total_interest = total_interest.checked_add(current_principal.checked_mul(
-                        bld.rate_percent.get_semi_annualy_rate(
+                    let period_interest =
+                        current_principal.checked_mul(bld.rate_percent.get_semi_annualy_rate(
                             bld.rate_days,
                             current_year,
                             current_month,
-                        )?,
-                    )?)?;
+                        )?)?;
+                    let after_tax = apply_tax(period_interest, bld.tax)?;
+                    total_interest = total_interest.checked_add(after_tax)?;
                     let (next_halfyear_year, next_halfyear_month, _) =
                         current_month.add_months(current_year, 6)?;
                     current_year = next_halfyear_year;
@@ -705,8 +721,9 @@ mod interest_impl {
                                 bld.rate_percent
                                     .get_daily_rate(bld.rate_days, year.0, month.0)?,
                             )?;
-                            total_interest = total_interest.checked_add(current_interest)?;
-                            current_principal = current_principal.checked_add(current_interest)?;
+                            let after_tax = apply_tax(current_interest, bld.tax)?;
+                            total_interest = total_interest.checked_add(after_tax)?;
+                            current_principal = current_principal.checked_add(after_tax)?;
 
                             if let Some(contribs) = bld.contribs {
                                 let contrib = if let Some(c) = contribs.get(contrib_index) {
@@ -736,8 +753,9 @@ mod interest_impl {
                             bld.rate_percent
                                 .get_monthly_rate(bld.rate_days, year.0, month)?,
                         )?;
-                        total_interest = total_interest.checked_add(current_interest)?;
-                        current_principal = current_principal.checked_add(current_interest)?;
+                        let after_tax = apply_tax(current_interest, bld.tax)?;
+                        total_interest = total_interest.checked_add(after_tax)?;
+                        current_principal = current_principal.checked_add(after_tax)?;
 
                         if let Some(contribs) = bld.contribs {
                             let contrib = if let Some(c) = contribs.get(contrib_index) {
@@ -765,8 +783,9 @@ mod interest_impl {
                         bld.rate_percent
                             .get_yearly_rate(bld.rate_days, current_year)?,
                     )?;
-                    total_interest = total_interest.checked_add(current_interest)?;
-                    current_principal = current_principal.checked_add(current_interest)?;
+                    let after_tax = apply_tax(current_interest, bld.tax)?;
+                    total_interest = total_interest.checked_add(after_tax)?;
+                    current_principal = current_principal.checked_add(after_tax)?;
                     current_year = current_year.checked_add(1)?;
 
                     if let Some(contribs) = bld.contribs {
@@ -797,8 +816,9 @@ mod interest_impl {
                             current_year,
                             current_month,
                         )?)?;
-                    total_interest = total_interest.checked_add(current_interest)?;
-                    current_principal = current_principal.checked_add(current_interest)?;
+                    let after_tax = apply_tax(current_interest, bld.tax)?;
+                    total_interest = total_interest.checked_add(after_tax)?;
+                    current_principal = current_principal.checked_add(after_tax)?;
 
                     let (next_quarter_year, next_quarter_month, _) =
                         current_month.add_months(current_year, 3)?;
@@ -834,8 +854,9 @@ mod interest_impl {
                             current_year,
                             current_month,
                         )?)?;
-                    total_interest = total_interest.checked_add(current_interest)?;
-                    current_principal = current_principal.checked_add(current_interest)?;
+                    let after_tax = apply_tax(current_interest, bld.tax)?;
+                    total_interest = total_interest.checked_add(after_tax)?;
+                    current_principal = current_principal.checked_add(after_tax)?;
 
                     let (next_halfyear_year, next_halfyear_month, _) =
                         current_month.add_months(current_year, 6)?;
@@ -863,7 +884,7 @@ mod interest_impl {
         M::new(total_interest?).ok()
     }
 
-    /// Get future value: principal + contributions + after-tax total interests
+    /// Get future value: principal + contributions + total interests
     /// FV = PV * (1 + (r * t))
     pub(crate) fn get_future_value<C, M>(bld: &Interest<M, C>) -> Option<M>
     where
@@ -875,17 +896,7 @@ mod interest_impl {
             InterestType::Compounding => get_returns_compounding(bld)?,
         };
 
-        let after_tax_returns = if let Some(tax) = bld.tax {
-            let tax_amount = returns
-                .amount()
-                .checked_mul(tax)?
-                .checked_div(dec!(100))?;
-            M::new(returns.amount().checked_sub(tax_amount)?).ok()?
-        } else {
-            returns
-        };
-
-        let mut ret = M::new(bld.principal.checked_add(after_tax_returns.amount())?).ok()?;
+        let mut ret = M::new(bld.principal.checked_add(returns.amount())?).ok()?;
 
         if let Some(contribs) = bld.contribs
             && !contribs.is_empty()
