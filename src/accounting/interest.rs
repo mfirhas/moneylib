@@ -15,8 +15,11 @@ pub trait InterestOps<C> {
     /// Calculate fixed-interest on loan.
     ///
     /// # Formula
-    /// FV = PV * (1 + (r * t))
-    /// PV = FV / (1 + (r * t))
+    /// FV = PV × (1 + (r × t))
+    ///
+    /// PV = FV / (1 + (r × t))
+    ///
+    /// PMT = P × r × (1+r)ᵗ / \[(1+r)ᵗ − 1\]
     ///
     /// # Argument
     /// rate: impl DecimalNumber, supports Decimal, f64, i32, i64, i128.
@@ -36,8 +39,9 @@ pub trait InterestOps<C> {
     /// Calculate compounding-interest on loan.
     ///
     /// # Formula
-    /// FV = PV * (1 + r)^t
-    /// PV = FV / (1 + r)^t
+    /// FV = PV × (1 + r)ᵗ
+    ///
+    /// PV = FV / (1 + r)ᵗ
     ///
     /// # Argument
     /// rate: impl DecimalNumber, supports Decimal, f64, i32, i64, i128.
@@ -428,6 +432,7 @@ where
         }
     }
 
+    /// Sets the period of interest payments every 3 months.
     pub const fn quarters(self, n: u32) -> Self {
         Self {
             total_period: Period::Quarters(n),
@@ -435,6 +440,7 @@ where
         }
     }
 
+    /// Sets the period of interest payments every 6 months.
     pub const fn semi_annuals(self, n: u32) -> Self {
         Self {
             total_period: Period::SemiAnnuals(n),
@@ -515,6 +521,7 @@ mod interest_impl {
     };
 
     /// Get total returns of fixed-rate
+    ///
     /// FV = PV * (1 + (r * t))
     pub(crate) fn get_returns_fixed<M, C>(bld: &Interest<M, C>) -> Option<M>
     where
@@ -692,6 +699,7 @@ mod interest_impl {
     }
 
     /// Get total returns of compounding rate.
+    ///
     /// FV = PV * (1 + r)^t
     pub(crate) fn get_returns_compounding<M, C>(bld: &Interest<M, C>) -> Option<M>
     where
@@ -871,6 +879,7 @@ mod interest_impl {
 
     use crate::PercentOps;
     /// Get future value: principal + contributions + total interests
+    ///
     /// FV = PV * (1 + (r * t))
     pub(crate) fn get_future_value<C, M>(bld: &Interest<M, C>) -> Option<M>
     where
@@ -904,6 +913,7 @@ mod interest_impl {
     }
 
     /// Get present value on fixed-rate interest
+    ///
     /// PV = FV / (1 + (r * t))
     pub(crate) fn get_present_value_fixed<C, M>(bld: &Interest<M, C>) -> Option<M>
     where
@@ -1009,6 +1019,7 @@ mod interest_impl {
     }
 
     /// Get present value on compounding-rate interest
+    ///
     /// PV = FV / (1 + r)^t
     pub(crate) fn get_present_value_compounding<C, M>(bld: &Interest<M, C>) -> Option<M>
     where
@@ -1113,7 +1124,9 @@ mod interest_impl {
     }
 
     /// Get PMT payment on fixed-rate interest
+    ///
     /// PMT = P × r × (1+r)ⁿ / [(1+r)ⁿ − 1]
+    ///
     /// PMT is calculated against fixed-rate loan.
     pub(crate) fn get_pmt<C, M>(bld: &Interest<M, C>) -> Option<M>
     where
