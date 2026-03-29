@@ -2,7 +2,11 @@ use rust_decimal::prelude::FromPrimitive;
 
 use crate::dec;
 use crate::{BaseOps, Decimal};
-use crate::{Money, iso::{BHD, JPY, USD}, money};
+use crate::{
+    Money,
+    iso::{BHD, JPY, USD},
+    money,
+};
 
 #[cfg(feature = "raw_money")]
 use crate::{BaseMoney, RawMoney, macros::raw};
@@ -691,7 +695,10 @@ fn test_allocate_big_money() {
 
     // 70/30 split
     let parts = money.allocate(&[dec!(70), dec!(30)]).unwrap();
-    assert_eq!(parts, vec![money!(USD, 700_000.00), money!(USD, 300_000.00)]);
+    assert_eq!(
+        parts,
+        vec![money!(USD, 700_000.00), money!(USD, 300_000.00)]
+    );
     let sum: Money<USD> = parts.iter().sum();
     assert_eq!(sum, money);
 
@@ -994,9 +1001,7 @@ fn test_allocate_by_ratios_decimal_ratios() {
     assert_eq!(sum, money);
 
     // 0.1 : 0.9 (same as 1:9)
-    let parts2 = money
-        .allocate_by_ratios(&[dec!(0.1), dec!(0.9)])
-        .unwrap();
+    let parts2 = money.allocate_by_ratios(&[dec!(0.1), dec!(0.9)]).unwrap();
     assert_eq!(parts2, vec![money!(USD, 1.00), money!(USD, 9.00)]);
     let sum2: Money<USD> = parts2.iter().sum();
     assert_eq!(sum2, money);
