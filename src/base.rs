@@ -638,7 +638,7 @@ pub trait BaseOps<C: Currency>:
     /// n: u32, how many parts splitted.
     ///
     /// # Return
-    /// Option<(Self, Self)>, returns equal parts of split(0) and remainder(1) if any, if no remainder, it defaults to zero.
+    /// `Option<(Self, Self)>`, returns equal parts of split(0) and remainder(1) if any, if no remainder, it defaults to zero.
     ///
     /// # Example
     /// ```rust
