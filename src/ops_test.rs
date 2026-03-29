@@ -431,9 +431,9 @@ fn test_raw_allocate_by_ratios_uneven_remainder() {
     let amount = RawMoney::<USD>::new(dec!(1)).unwrap();
     let parts = amount.allocate_by_ratios(&[1, 1, 1]).unwrap();
     assert_eq!(parts.len(), 3);
-    assert_eq!(parts[0].amount(), dec!(0.34));
-    assert_eq!(parts[1].amount(), dec!(0.33));
-    assert_eq!(parts[2].amount(), dec!(0.33));
+    assert_eq!(parts[0].amount(), dec!(0.3333333333333333333333333334));
+    assert_eq!(parts[1].amount(), dec!(0.3333333333333333333333333333));
+    assert_eq!(parts[2].amount(), dec!(0.3333333333333333333333333333));
     let sum: crate::Decimal = parts.iter().map(|p| p.amount()).sum();
     assert_eq!(sum, dec!(1.00));
 }
