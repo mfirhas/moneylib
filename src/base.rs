@@ -632,7 +632,7 @@ pub trait BaseOps<C: Currency>:
     where
         RHS: DecimalNumber;
 
-    /// Split money into equal parts leaving a remainder.
+    /// Split money into equal same parts leaving a remainder(if any).
     ///
     /// # Argument
     /// n: u32, how many parts splitted.
@@ -664,7 +664,7 @@ pub trait BaseOps<C: Currency>:
         crate::split_alloc_ops::split(self, n)
     }
 
-    /// Split money into equal parts and distribute the remainder equally into parts.
+    /// Split money into equal parts and distribute the remainder(if any) equally into parts.
     ///
     /// # Argument
     /// n: u32, how many parts splitted.
@@ -695,7 +695,9 @@ pub trait BaseOps<C: Currency>:
         crate::split_alloc_ops::split_dist(self, n)
     }
 
-    /// Allocate money by percentages.
+    /// Allocate money by percentages and distribute the remainder(if any).
+    ///
+    /// Total percentages must be equal to 100.
     ///
     /// # Argument
     /// pcns: list of DecimalNumber: Decimal, f64, i32, i64, i128 -> denoting percentage, e.g. 20% -> 20.
@@ -728,7 +730,7 @@ pub trait BaseOps<C: Currency>:
         crate::split_alloc_ops::allocate(self, pcns)
     }
 
-    /// Allocate money by ratios.
+    /// Allocate money by ratios and distribute the remainder(if any).
     ///
     /// # Argument
     /// ratios: list of DecimalNumber: Decimal, f64, i32, i64, i128 -> denoting ratios.
