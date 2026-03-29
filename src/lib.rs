@@ -29,21 +29,17 @@ pub mod iso {
 mod money;
 pub use money::Money;
 
+#[cfg(feature = "raw_money")]
+mod raw_money;
+#[cfg(feature = "raw_money")]
+pub use raw_money::RawMoney;
+
 mod dec_ops;
 mod iter_ops;
 mod ops;
 mod percent_ops;
 pub use percent_ops::PercentOps;
 mod split_alloc_ops;
-
-#[cfg(feature = "raw_money")]
-mod raw_money;
-#[cfg(feature = "raw_money")]
-pub use raw_money::RawMoney;
-
-#[cfg(feature = "serde")]
-/// Serde implementations
-pub mod serde;
 
 #[cfg(feature = "exchange")]
 mod exchange;
@@ -54,12 +50,18 @@ pub use exchange::{Exchange, ExchangeRates};
 /// Accounting module
 pub mod accounting;
 
+#[cfg(feature = "accounting")]
+mod calendar;
+
+#[cfg(feature = "serde")]
+/// Serde implementations
+pub mod serde;
+
 mod fmt;
 
 mod parse;
 
-#[cfg(feature = "accounting")]
-mod calendar;
+// ----------------- test modules -----------------
 
 #[cfg(test)]
 mod parse_test;
