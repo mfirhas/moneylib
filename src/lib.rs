@@ -34,6 +34,7 @@ mod iter_ops;
 mod ops;
 mod percent_ops;
 pub use percent_ops::PercentOps;
+mod split_alloc_ops;
 
 #[cfg(feature = "raw_money")]
 mod raw_money;
@@ -80,6 +81,9 @@ mod iter_ops_test;
 
 #[cfg(test)]
 mod percent_ops_test;
+
+#[cfg(test)]
+mod split_alloc_ops_test;
 
 #[cfg(all(test, feature = "exchange"))]
 mod exchange_test;

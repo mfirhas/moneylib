@@ -631,6 +631,132 @@ pub trait BaseOps<C: Currency>:
     fn checked_div<RHS>(&self, rhs: RHS) -> Option<Self>
     where
         RHS: DecimalNumber;
+
+    /// Split money into equal same parts leaving a remainder(if any).
+    ///
+    /// # Argument
+    /// n: u32, how many parts splitted.
+    ///
+    /// # Return
+    /// `Option<(Self, Self)>`, returns equal parts of split(0) and remainder(1) if any, if no remainder, it defaults to zero.
+    ///
+    /// # Example
+    /// ```rust
+    /// use moneylib::money;
+    /// use moneylib::dec;
+    /// use moneylib::{BaseMoney, BaseOps};
+    ///
+    /// let money = money!(USD, 100);
+    /// let split3 = money.split(3).unwrap();
+    /// assert_eq!(split3.0.amount(), dec!(33.33)); // all equal parts after split.
+    /// assert_eq!(split3.1.amount(), dec!(0.01)); // remainder 1 cent.
+    /// // result: 100 = 33.33 + 33.33 + 33.33 + 0.01
+    ///
+    /// let money = money!(USD, 500);
+    /// let split4 = money.split(4).unwrap();
+    /// assert_eq!(split4.0.amount(), dec!(125.00)); // all equal parts
+    /// assert!(split4.1.is_zero()); // no remainder
+    /// ```
+    fn split(&self, n: u32) -> Option<(Self, Self)>
+    where
+        Self: Default + Amount<C> + Ord,
+    {
+        crate::split_alloc_ops::split(self, n)
+    }
+
+    /// Split money into equal parts and distribute the remainder(if any) equally into parts.
+    ///
+    /// # Argument
+    /// n: u32, how many parts splitted.
+    ///
+    /// # Return
+    /// `Option<Vec<T>>`, returns list of parts where remainder distribute among them(beginning from first).
+    ///
+    /// # Example
+    /// ```rust
+    /// use moneylib::money;
+    /// use moneylib::dec;
+    /// use moneylib::{BaseMoney, BaseOps};
+    ///
+    /// let money = money!(USD, 100);
+    /// let split3 = money.split_dist(3).unwrap();
+    /// assert_eq!(split3, vec![money!(USD, 33.34), money!(USD, 33.33), money!(USD, 33.33)]); // all equal parts after split and remainder distributed starting from first element.
+    /// assert_eq!(split3.len(), 3);
+    ///
+    /// let money = money!(USD, 500);
+    /// let split4 = money.split_dist(4).unwrap();
+    /// assert_eq!(split4, vec![money!(USD, 125), money!(USD, 125), money!(USD, 125), money!(USD, 125)]); // all equal parts after split and leave no remainder.
+    /// assert_eq!(split4.len(), 4);
+    /// ```
+    fn split_dist(&self, n: u32) -> Option<Vec<Self>>
+    where
+        Self: Default + Amount<C> + Ord,
+    {
+        crate::split_alloc_ops::split_dist(self, n)
+    }
+
+    /// Allocate money by percentages and distribute the remainder(if any).
+    ///
+    /// Total percentages must be equal to 100.
+    ///
+    /// # Argument
+    /// pcns: list of DecimalNumber: Decimal, f64, i32, i64, i128 -> denoting percentage, e.g. 20% -> 20.
+    ///
+    /// # Return
+    /// Return list of allocated money all summed back into original amount.
+    /// Returns `None` if the percentages list is empty or does not sum to 100.
+    ///
+    /// # Example
+    /// ```rust
+    /// use moneylib::{Money, BaseMoney, BaseOps, macros::dec, iso::USD};
+    ///
+    /// // percentage ratios: 60%, 40%
+    /// let profit = Money::<USD>::new(dec!(10000.00)).unwrap();
+    /// let shares = profit.allocate(&[60, 40]).unwrap();  // 60/40 split
+    /// assert_eq!(shares[0].amount(), dec!(6000.00));
+    /// assert_eq!(shares[1].amount(), dec!(4000.00));
+    ///
+    /// // Budget allocation by priority weights
+    /// let budget = Money::<USD>::new(dec!(100000.00)).unwrap();
+    /// let depts = budget.allocate(&[35, 25, 20, 15, 5]).unwrap();
+    /// assert_eq!(depts[0].amount(), dec!(35000.00));
+    /// assert_eq!(depts[4].amount(), dec!(5000.00));
+    /// ```
+    fn allocate<D>(&self, pcns: &[D]) -> Option<Vec<Self>>
+    where
+        Self: Default + Amount<C> + CustomMoney<C>,
+        D: DecimalNumber + Copy,
+    {
+        crate::split_alloc_ops::allocate(self, pcns)
+    }
+
+    /// Allocate money by ratios and distribute the remainder(if any).
+    ///
+    /// # Argument
+    /// ratios: list of DecimalNumber: Decimal, f64, i32, i64, i128 -> denoting ratios.
+    ///
+    /// # Return
+    /// Return list of allocated money all summed back into original amount.
+    /// Returns `None` if the ratios list is empty or all ratios are zero.
+    ///
+    /// # Example
+    /// ```rust
+    /// use moneylib::{Money, BaseMoney, BaseOps, macros::dec, iso::USD};
+    ///
+    /// // Unequal ratios: 1:2:1 means 25%, 50%, 25%
+    /// let amount = Money::<USD>::new(dec!(400.00)).unwrap();
+    /// let parts = amount.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    /// assert_eq!(parts[0].amount(), dec!(100.00));
+    /// assert_eq!(parts[1].amount(), dec!(200.00));
+    /// assert_eq!(parts[2].amount(), dec!(100.00));
+    /// ```
+    fn allocate_by_ratios<D>(&self, ratios: &[D]) -> Option<Vec<Self>>
+    where
+        Self: Default + Amount<C> + CustomMoney<C>,
+        D: DecimalNumber + Copy,
+    {
+        crate::split_alloc_ops::allocate_by_ratios(self, ratios)
+    }
 }
 
 /// Trait for statistical and aggregate operations on collections of money values.
