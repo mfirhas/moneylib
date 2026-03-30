@@ -374,6 +374,16 @@ where
         }
     }
 
+    #[inline]
+    fn round_with(self, decimal_points: u32, strategy: crate::base::RoundingStrategy) -> Self {
+        Self {
+            amount: self
+                .amount
+                .round_dp_with_strategy(decimal_points, strategy.into()),
+            _currency: PhantomData,
+        }
+    }
+
     /// Returns the money amount in its smallest unit, rounding as needed.
     ///
     /// Since minor amounts must be integers, this rounds the raw amount
@@ -456,17 +466,4 @@ where
     }
 }
 
-impl<C> CustomMoney<C> for RawMoney<C>
-where
-    C: Currency + Clone,
-{
-    #[inline]
-    fn round_with(self, decimal_points: u32, strategy: crate::base::RoundingStrategy) -> Self {
-        Self {
-            amount: self
-                .amount
-                .round_dp_with_strategy(decimal_points, strategy.into()),
-            _currency: PhantomData,
-        }
-    }
-}
+impl<C> CustomMoney<C> for RawMoney<C> where C: Currency + Clone {}

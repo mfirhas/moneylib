@@ -116,6 +116,22 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// ```
     fn round(self) -> Self;
 
+    /// Rounds the money amount to a specified number of decimal places using the given strategy.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::macros::dec;
+    /// use moneylib::{BaseMoney, CustomMoney};
+    ///
+    /// let money = Money::<USD>::new(dec!(123.456)).unwrap();
+    ///
+    /// let rounded = money.round_with(2, RoundingStrategy::Floor);
+    /// assert_eq!(rounded.amount(), dec!(123.46));
+    /// ```
+    fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self;
+
     // PROVIDED
 
     /// Returns the full name of the currency.
@@ -1172,24 +1188,6 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
 /// assert_eq!(rounded.amount(), dec!(123.46));
 /// ```
 pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
-    // REQUIRED
-
-    /// Rounds the money amount to a specified number of decimal places using the given strategy.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
-    /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
-    ///
-    /// let money = Money::<USD>::new(dec!(123.456)).unwrap();
-    ///
-    /// let rounded = money.round_with(2, RoundingStrategy::Floor);
-    /// assert_eq!(rounded.amount(), dec!(123.46));
-    /// ```
-    fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self;
-
     // PROVIDED
 
     /// Format money according to the provided format string `format_str`.
