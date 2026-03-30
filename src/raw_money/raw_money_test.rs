@@ -1914,3 +1914,41 @@ fn test_is_approx() {
     let matches = converted1.is_approx(converted2, dec!(0.02));
     assert!(matches);
 }
+
+#[test]
+fn test_money_fraction() {
+    let money = raw!(IDR, 123_000.9999);
+    let money_frac = money.fraction();
+    assert_eq!(money_frac, dec!(0.9999));
+
+    let money = raw!(IDR, 123_000.1269);
+    let money_frac = money.fraction();
+    assert_eq!(money_frac, dec!(0.1269));
+}
+
+#[test]
+fn test_money_scale() {
+    let money = raw!(IDR, 123_000.9999);
+    let money_scale = money.scale();
+    assert_eq!(money_scale, 4); // money's construction round to currency's minor unit -> 2, even when ended with .00
+
+    let money = raw!(IDR, 123_000.12692323);
+    let money_scale = money.scale();
+    assert_eq!(money_scale, 8);
+}
+
+#[test]
+fn test_money_truncate() {
+    let money = raw!(IDR, 123_234.88772244);
+    assert_eq!(money, raw!(IDR, 123_234.88772244));
+    let money_truncated = money.truncate();
+    assert_eq!(money_truncated, raw!(IDR, 123_234));
+}
+
+#[test]
+fn test_money_truncate_with() {
+    let money = raw!(IDR, 123_234.88772244);
+    assert_eq!(money, raw!(IDR, 123_234.88772244));
+    let money_truncated = money.truncate_with(4);
+    assert_eq!(money_truncated, raw!(IDR, 123_234.8877));
+}

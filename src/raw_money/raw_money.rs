@@ -33,7 +33,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive
 /// # Where Rounding Happens
 ///
 /// - [`BaseMoney::round`]: rounds using currency's minor unit (bankers rounding). Returns `RawMoney`.
-/// - [`CustomMoney::round_with`]: rounds using custom decimal points and strategy. Returns `RawMoney`.
+/// - [`BaseMoney::round_with`]: rounds using custom decimal points and strategy. Returns `RawMoney`.
 /// - [`RawMoney::finish`]: rounds to currency's minor unit using bankers rounding back to `Money`.
 ///
 /// # Examples
@@ -382,6 +382,16 @@ where
                 .round_dp_with_strategy(decimal_points, strategy.into()),
             _currency: PhantomData,
         }
+    }
+
+    #[inline]
+    fn truncate(&self) -> Self {
+        Self::from_decimal(self.amount.trunc())
+    }
+
+    #[inline]
+    fn truncate_with(&self, scale: u32) -> Self {
+        Self::from_decimal(self.amount.trunc_with_scale(scale))
     }
 
     /// Returns the money amount in its smallest unit, rounding as needed.

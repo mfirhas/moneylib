@@ -3392,3 +3392,41 @@ fn test_is_approx() {
     let matches = converted1.is_approx(converted2, dec!(0.02));
     assert!(matches);
 }
+
+#[test]
+fn test_money_fraction() {
+    let money = money!(IDR, 123_000.9999);
+    let money_frac = money.fraction();
+    assert_eq!(money_frac, dec!(0));
+
+    let money = money!(IDR, 123_000.1269);
+    let money_frac = money.fraction();
+    assert_eq!(money_frac, dec!(0.13));
+}
+
+#[test]
+fn test_money_scale() {
+    let money = money!(IDR, 123_000.9999);
+    let money_scale = money.scale();
+    assert_eq!(money_scale, 2); // money's construction round to currency's minor unit -> 2, even when ended with .00
+
+    let money = money!(IDR, 123_000.1269);
+    let money_scale = money.scale();
+    assert_eq!(money_scale, 2);
+}
+
+#[test]
+fn test_money_truncate() {
+    let money = money!(IDR, 123_234.88772244);
+    assert_eq!(money, money!(IDR, 123_234.89));
+    let money_truncated = money.truncate();
+    assert_eq!(money_truncated, money!(IDR, 123_234));
+}
+
+#[test]
+fn test_money_truncate_with() {
+    let money = money!(IDR, 123_234.88772244);
+    assert_eq!(money, money!(IDR, 123_234.89));
+    let money_truncated = money.truncate_with(4);
+    assert_eq!(money_truncated, money!(IDR, 123_234.89)); // already rounded smaller than intended scale
+}

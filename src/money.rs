@@ -385,6 +385,16 @@ where
             _currency: PhantomData,
         }
     }
+
+    #[inline]
+    fn truncate(&self) -> Self {
+        Self::from_decimal(self.amount.trunc())
+    }
+
+    #[inline]
+    fn truncate_with(&self, scale: u32) -> Self {
+        Self::from_decimal(self.amount.trunc_with_scale(scale))
+    }
 }
 
 impl<C> BaseOps<C> for Money<C>

@@ -132,6 +132,34 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// ```
     fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self;
 
+    /// Truncates the money amount removing the fraction.
+    ///
+    /// # Examples
+    /// ```
+    /// use moneylib::{Money, money, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::macros::dec;
+    /// use moneylib::{BaseMoney, CustomMoney};
+    ///
+    /// let money = money!(USD, 40.234345);
+    /// let truncated_money = money.truncate();
+    /// assert_eq!(truncated_money.amount(), dec!(40));
+    /// ```
+    fn truncate(&self) -> Self;
+
+    /// Truncates the money amount to certain scale.
+    ///
+    /// # Examples
+    /// ```
+    /// use moneylib::{Money, raw, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::macros::dec;
+    /// use moneylib::{BaseMoney, CustomMoney};
+    ///
+    /// let money = raw!(USD, 40.234845);
+    /// let truncated_money = money.truncate_with(3);
+    /// assert_eq!(truncated_money.amount(), dec!(40.234));
+    /// ```
+    fn truncate_with(&self, scale: u32) -> Self;
+
     // PROVIDED
 
     /// Returns the full name of the currency.
@@ -361,6 +389,46 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     #[inline]
     fn is_negative(&self) -> bool {
         self.amount().is_sign_negative()
+    }
+
+    /// Returns the fractional part of the money.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{money, raw, BaseMoney, dec};
+    ///
+    /// let money = money!(USD, 123.456);
+    /// let fract = money.fraction(); // 123.456 rounded into 123.46
+    /// assert_eq!(fract, dec!(0.46));
+    ///
+    /// let raw_money = raw!(USD, 123.456);
+    /// let fract = raw_money.fraction();
+    /// assert_eq!(fract, dec!(0.456));
+    /// ```
+    #[inline]
+    fn fraction(&self) -> Decimal {
+        self.amount().fract()
+    }
+
+    /// Returns the the scale.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{money, raw, BaseMoney, dec};
+    ///
+    /// let money = money!(USD, 123.456);
+    /// let scale = money.scale();
+    /// assert_eq!(scale, 2); // rounded to USD's minor unit = 2(cents)
+    ///
+    /// let raw_money = raw!(USD, 123.456);
+    /// let scale = raw_money.scale();
+    /// assert_eq!(scale, 3);
+    /// ```
+    #[inline]
+    fn scale(&self) -> u32 {
+        self.amount().scale()
     }
 
     /// Formats money with currency code along with thousands and decimal separators.
