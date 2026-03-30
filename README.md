@@ -52,7 +52,7 @@ Here are some features supported:
 ## Example
 
 ```rust
-use moneylib::{Money, BaseMoney, BaseOps, CustomMoney, RoundingStrategy, iso::{USD, JPY, BHD, EUR}, macros::dec};
+use moneylib::{Money, BaseMoney, BaseOps, MoneyFormatter, RoundingStrategy, iso::{USD, JPY, BHD, EUR}, macros::dec};
 use std::str::FromStr;
 
 // Creating money from string (supports thousand separators)
@@ -415,7 +415,7 @@ moneylib = { version = "...", features = ["locale", "raw_money"] }
 ```rust
 use moneylib::{BaseMoney, Money, Currency, iso::{USD, EUR, INR}};
 use moneylib::macros::dec;
-use moneylib::CustomMoney;
+use moneylib::MoneyFormatter;
 
 // English (US) locale: comma thousands separator, dot decimal separator
 let money = Money::<USD>::new(dec!(1234.56)).unwrap();

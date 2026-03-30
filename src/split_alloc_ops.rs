@@ -1,5 +1,5 @@
 use crate::base::Amount;
-use crate::{BaseMoney, BaseOps, CustomMoney, IterOps};
+use crate::{BaseMoney, BaseOps, IterOps, MoneyFormatter};
 use crate::{Currency, Decimal, base::DecimalNumber, macros::dec};
 use rust_decimal::prelude::FromPrimitive;
 
@@ -111,7 +111,7 @@ where
 /// Allocate money by percentages.
 pub(crate) fn allocate<M, C, D>(money: &M, pcns: &[D]) -> Option<Vec<M>>
 where
-    M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + CustomMoney<C>,
+    M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + MoneyFormatter<C>,
     C: Currency,
     D: DecimalNumber + Copy,
 {
@@ -145,7 +145,7 @@ where
 /// Allocate money by ratios.
 pub(crate) fn allocate_by_ratios<M, C, D>(money: &M, ratios: &[D]) -> Option<Vec<M>>
 where
-    M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + CustomMoney<C>,
+    M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + MoneyFormatter<C>,
     C: Currency,
     D: DecimalNumber + Copy,
 {

@@ -3,7 +3,7 @@
 // handling currency, precision, rounding, and arithmetic operations.
 
 use moneylib::{
-    BaseMoney, BaseOps, Currency, CustomMoney, Money, RoundingStrategy,
+    BaseMoney, BaseOps, Currency, Money, MoneyFormatter, RoundingStrategy,
     iso::{BHD, EUR, GBP, JPY, USD},
     macros::dec,
 };

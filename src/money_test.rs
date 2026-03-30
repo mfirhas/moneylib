@@ -1,7 +1,7 @@
 use crate::iso::{AUD, BDT, BHD, EUR, GBP, IDR, INR, JPY, SAR, SGD, USD};
 
 use crate::macros::dec;
-use crate::{BaseMoney, BaseOps, CustomMoney, Money, MoneyError, RoundingStrategy, money};
+use crate::{BaseMoney, BaseOps, Money, MoneyError, MoneyFormatter, RoundingStrategy, money};
 use std::str::FromStr;
 
 // ==================== Money::new() Tests ====================

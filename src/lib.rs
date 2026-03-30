@@ -14,7 +14,7 @@ pub use rust_decimal::Decimal;
 pub mod macros;
 
 mod base;
-pub use base::{BaseMoney, BaseOps, CustomMoney, IterOps, RoundingStrategy};
+pub use base::{BaseMoney, BaseOps, IterOps, MoneyFormatter, RoundingStrategy};
 
 mod error;
 pub use error::MoneyError;

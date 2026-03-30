@@ -123,7 +123,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// ```
     /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
+    /// use moneylib::{BaseMoney, MoneyFormatter};
     ///
     /// let money = Money::<USD>::new(dec!(123.456)).unwrap();
     ///
@@ -138,7 +138,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// ```
     /// use moneylib::{Money, money, Currency, RoundingStrategy, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
+    /// use moneylib::{BaseMoney, MoneyFormatter};
     ///
     /// let money = money!(USD, 40.234345);
     /// let truncated_money = money.truncate();
@@ -152,7 +152,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// ```
     /// use moneylib::{Money, raw, Currency, RoundingStrategy, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
+    /// use moneylib::{BaseMoney, MoneyFormatter};
     ///
     /// let money = raw!(USD, 40.234845);
     /// let truncated_money = money.truncate_with(3);
@@ -808,7 +808,7 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn allocate<D>(&self, pcns: &[D]) -> Option<Vec<Self>>
     where
-        Self: Default + Amount<C> + CustomMoney<C>,
+        Self: Default + Amount<C> + MoneyFormatter<C>,
         D: DecimalNumber + Copy,
     {
         crate::split_alloc_ops::allocate(self, pcns)
@@ -836,7 +836,7 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn allocate_by_ratios<D>(&self, ratios: &[D]) -> Option<Vec<Self>>
     where
-        Self: Default + Amount<C> + CustomMoney<C>,
+        Self: Default + Amount<C> + MoneyFormatter<C>,
         D: DecimalNumber + Copy,
     {
         crate::split_alloc_ops::allocate_by_ratios(self, ratios)
@@ -1091,7 +1091,7 @@ impl DecimalNumber for i128 {
 /// ```
 /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
 /// use moneylib::macros::dec;
-/// use moneylib::{BaseMoney, CustomMoney};
+/// use moneylib::{BaseMoney, MoneyFormatter};
 ///
 /// // Note: Money values are rounded to currency minor unit on creation,
 /// // so we use round_with with more precision to demonstrate differences
@@ -1116,7 +1116,7 @@ pub enum RoundingStrategy {
     /// ```
     /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
+    /// use moneylib::{BaseMoney, MoneyFormatter};
     ///
     /// // 2.5 rounds to 2 (even)
     /// let m1 = Money::<USD>::new(dec!(2.5)).unwrap();
@@ -1141,7 +1141,7 @@ pub enum RoundingStrategy {
     /// ```
     /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
+    /// use moneylib::{BaseMoney, MoneyFormatter};
     ///
     /// // 2.5 rounds to 3
     /// let m1 = Money::<USD>::new(dec!(2.5)).unwrap();
@@ -1164,7 +1164,7 @@ pub enum RoundingStrategy {
     /// ```
     /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
+    /// use moneylib::{BaseMoney, MoneyFormatter};
     ///
     /// // 2.5 rounds to 2
     /// let m1 = Money::<USD>::new(dec!(2.5)).unwrap();
@@ -1187,7 +1187,7 @@ pub enum RoundingStrategy {
     /// ```
     /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
+    /// use moneylib::{BaseMoney, MoneyFormatter};
     ///
     /// // 2.1 rounds to 3
     /// let m1 = Money::<USD>::new(dec!(2.1)).unwrap();
@@ -1210,7 +1210,7 @@ pub enum RoundingStrategy {
     /// ```
     /// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, CustomMoney};
+    /// use moneylib::{BaseMoney, MoneyFormatter};
     ///
     /// // 2.9 rounds to 2
     /// let m1 = Money::<USD>::new(dec!(2.9)).unwrap();
@@ -1237,25 +1237,10 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
     }
 }
 
-/// Trait for customizing money formatting and rounding behavior.
+/// Trait for customizing money formatting.
 ///
-/// This trait extends `BaseMoney` with methods to customize how money is displayed and rounded.
-///
-/// # Examples
-///
-/// ```
-/// use moneylib::{Money, Currency, RoundingStrategy, iso::USD};
-/// use moneylib::macros::dec;
-/// use moneylib::{BaseMoney, CustomMoney};
-///
-/// let mut money = Money::<USD>::new(dec!(1234.56)).unwrap();
-///
-/// // Custom rounding
-/// let value = Money::<USD>::new(dec!(123.456)).unwrap();
-/// let rounded = value.round_with(2, RoundingStrategy::Floor);
-/// assert_eq!(rounded.amount(), dec!(123.46));
-/// ```
-pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
+/// This trait extends `BaseMoney` with methods to customize how money is displayed.
+pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
     // PROVIDED
 
     /// Format money according to the provided format string `format_str`.
@@ -1309,7 +1294,7 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// ```
     /// use moneylib::{BaseMoney, Money, Currency, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::CustomMoney;
+    /// use moneylib::MoneyFormatter;
     ///
     /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
     ///
@@ -1404,7 +1389,7 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// ```rust
     /// use moneylib::{Money, RawMoney, Currency, iso::{USD, EUR}};
     /// use moneylib::macros::dec;
-    /// use moneylib::CustomMoney;
+    /// use moneylib::MoneyFormatter;
     ///
     /// let money = Money::<USD>::from_decimal(dec!(93009.446688));
     /// let ret = money.format_with_separator("c na", "*", "#");
@@ -1496,7 +1481,7 @@ pub trait CustomMoney<C: Currency>: Sized + BaseMoney<C> {
     /// ```
     /// use moneylib::{BaseMoney, Money, Currency, iso::{USD, EUR, INR}};
     /// use moneylib::macros::dec;
-    /// use moneylib::CustomMoney;
+    /// use moneylib::MoneyFormatter;
     ///
     /// // English (US) locale: comma thousands separator, dot decimal separator
     /// let money = Money::<USD>::new(dec!(1234.56)).unwrap();

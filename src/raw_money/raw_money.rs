@@ -9,7 +9,7 @@ use crate::{
         parse_symbol_comma_thousands_separator, parse_symbol_dot_thousands_separator,
     },
 };
-use crate::{Currency, CustomMoney};
+use crate::{Currency, MoneyFormatter};
 use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive};
 
 /// Represents a monetary value without automatic rounding.
@@ -476,4 +476,4 @@ where
     }
 }
 
-impl<C> CustomMoney<C> for RawMoney<C> where C: Currency + Clone {}
+impl<C> MoneyFormatter<C> for RawMoney<C> where C: Currency + Clone {}
