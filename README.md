@@ -142,10 +142,10 @@ Monetary values are sensitive matter and their invariants must always hold true.
   - Use methods in `BaseOps` for non-panic arithmetics.
 
 ### Currency
-- Currency types are defined at compile time using marker types (e.g., `USD`, `EUR`, `JPY`).
-- All ISO 4217 currencies are supported via the `Currency` trait.
-- Currency information is available through trait methods: `code()`, `symbol()`, `name()`, `minor_unit()`.
-- New/custom currency is supported by implementing `Currency` trait.
+- Currency trait defines properties for a currency, implemented by types denoting currencies inside `macros` module.
+- All ISO 4217 currencies are supported.
+- Currency information is available through trait methods: `code()`, `symbol()`, `name()`, `minor_unit()` of money instance.
+- New/custom currency is supported by implementing trait.
 
 This library maintains type-safety by preventing invalid state either by returning `Result`/`Option` or going *PANIC*.
 
