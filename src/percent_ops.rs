@@ -8,6 +8,9 @@ use crate::{
     macros::dec,
 };
 
+/// Trait for percentage operations.
+///
+/// It has blanket implementation for types implementing BaseMoney.
 pub trait PercentOps<C: Currency> {
     type Output;
 
