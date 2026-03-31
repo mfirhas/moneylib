@@ -50,7 +50,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 ///
 /// - [`BaseMoney`] trait for core money operations and accessors
 /// - [`BaseOps`] trait for arithmetic and comparison operations
-/// - [`CustomMoney`] trait for custom formatting and rounding
+/// - [`MoneyFormatter`] trait for custom formatting and rounding
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Money<C: Currency> {
     amount: Decimal,

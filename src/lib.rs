@@ -8,6 +8,44 @@
 #![forbid(clippy::cast_possible_wrap)]
 #![forbid(clippy::unwrap_used)]
 
+// ------------------ MoneyOps contains all ops traits for money instance ------------------
+
+#[cfg(not(any(feature = "exchange", feature = "accounting")))]
+/// MoneyOps\<C\> trait contains all traits on money instance.
+pub trait MoneyOps<C>: BaseOps<C> + MoneyFormatter<C> + PercentOps<C>
+where
+    C: Currency,
+{
+}
+
+#[cfg(all(feature = "exchange", not(feature = "accounting")))]
+/// MoneyOps\<C\> trait contains all traits on money instance.
+pub trait MoneyOps<C>: BaseOps<C> + MoneyFormatter<C> + PercentOps<C> + Exchange<C>
+where
+    C: Currency,
+{
+}
+
+#[cfg(all(feature = "accounting", not(feature = "exchange")))]
+/// MoneyOps\<C\> trait contains all traits on money instance.
+pub trait MoneyOps<C>:
+    BaseOps<C> + MoneyFormatter<C> + PercentOps<C> + accounting::InterestOps<C>
+where
+    C: Currency,
+{
+}
+
+#[cfg(all(feature = "exchange", feature = "accounting"))]
+/// MoneyOps\<C\> trait contains all traits on money instance.
+pub trait MoneyOps<C>:
+    BaseOps<C> + MoneyFormatter<C> + PercentOps<C> + Exchange<C> + accounting::InterestOps<C>
+where
+    C: Currency,
+{
+}
+
+// -----------------------------------------------------------------------------------------
+
 pub use rust_decimal::Decimal;
 
 /// Contains helper macros.
