@@ -1,3 +1,7 @@
+//! percent_ops contains trait for percentage operations.
+//!
+//! It has blanket implementation for types implementing BaseMoney.
+
 use crate::{
     BaseMoney, BaseOps, Currency,
     base::{Amount, DecimalNumber},
