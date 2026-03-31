@@ -1,7 +1,7 @@
 use std::{fmt::Display, iter::Sum, marker::PhantomData, str::FromStr};
 
 use crate::{
-    BaseMoney, BaseOps, Decimal, Money, MoneyError,
+    AccountingOps, BaseMoney, BaseOps, Decimal, Money, MoneyError, MoneyOps,
     base::{Amount, DecimalNumber},
     macros::dec,
     parse::{
@@ -477,3 +477,6 @@ where
 }
 
 impl<C> MoneyFormatter<C> for RawMoney<C> where C: Currency + Clone {}
+
+impl<C> AccountingOps<C> for RawMoney<C> where C: Currency + Clone {}
+impl<C> MoneyOps<C> for RawMoney<C> where C: Currency + Clone {}

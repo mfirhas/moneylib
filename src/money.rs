@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    BaseMoney, BaseOps, Decimal, MoneyError,
+    AccountingOps, BaseMoney, BaseOps, Decimal, MoneyError, MoneyOps,
     base::{Amount, DecimalNumber},
     macros::dec,
     parse::{
@@ -448,3 +448,6 @@ where
 }
 
 impl<C> MoneyFormatter<C> for Money<C> where C: Currency + Clone {}
+
+impl<C> AccountingOps<C> for Money<C> where C: Currency + Clone {}
+impl<C> MoneyOps<C> for Money<C> where C: Currency + Clone {}
