@@ -17,8 +17,12 @@ pub mod prelude {
     pub use crate::RoundingStrategy;
     pub use crate::{Decimal, Money, MoneyError};
 
+    pub use crate::macros::{dec, money};
+
     #[cfg(feature = "raw_money")]
     pub use crate::RawMoney;
+    #[cfg(feature = "raw_money")]
+    pub use crate::macros::raw;
 
     #[cfg(feature = "exchange")]
     pub use crate::ExchangeRates;
