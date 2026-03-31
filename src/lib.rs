@@ -8,6 +8,28 @@
 #![forbid(clippy::cast_possible_wrap)]
 #![forbid(clippy::unwrap_used)]
 
+/// Contains all types and traits of moneylib.
+pub mod prelude {
+    pub use crate::BaseMoney;
+    pub use crate::Currency;
+    pub use crate::IterOps;
+    pub use crate::MoneyOps;
+    pub use crate::RoundingStrategy;
+    pub use crate::{Decimal, Money, MoneyError};
+
+    #[cfg(feature = "raw_money")]
+    pub use crate::RawMoney;
+
+    #[cfg(feature = "exchange")]
+    pub use crate::ExchangeRates;
+
+    #[cfg(feature = "accounting")]
+    pub use crate::accounting::Interest;
+
+    #[cfg(feature = "serde")]
+    pub use crate::serde;
+}
+
 // ------------------ MoneyOps contains all ops traits for money instance ------------------
 
 #[cfg(not(any(feature = "exchange", feature = "accounting")))]
