@@ -145,7 +145,7 @@ Monetary values are sensitive matter and their invariants must always hold true.
 - Currency trait defines properties for a currency, implemented by types denoting currencies inside `moneylib::iso` module.
 - All ISO 4217 currencies are supported.
 - Currency information is available through trait methods: `code()`, `symbol()`, `name()`, `minor_unit()` of money instance via `BaseMoney` trait.
-- New/custom currency is supported by implementing trait.
+- New/custom currency is supported by implementing the trait.
 
 This library maintains type-safety by preventing invalid state either by returning `Result`/`Option` or going *PANIC*.
 
