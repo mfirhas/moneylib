@@ -3430,3 +3430,14 @@ fn test_money_truncate_with() {
     let money_truncated = money.truncate_with(4);
     assert_eq!(money_truncated, money!(IDR, 123_234.89)); // already rounded smaller than intended scale
 }
+
+#[test]
+fn test_money_remainder() {
+    let money = money!(USD, 100);
+    let rem = money.checked_rem(3).unwrap();
+    assert_eq!(rem.amount(), dec!(1));
+
+    let money = money!(USD, 100);
+    let rem = money.checked_rem(i128::MAX);
+    assert!(rem.is_none());
+}

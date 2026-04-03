@@ -1954,3 +1954,14 @@ fn test_money_truncate_with() {
     let money_truncated = money.truncate_with(4);
     assert_eq!(money_truncated, raw!(IDR, 123_234.8877));
 }
+
+#[test]
+fn test_raw_money_remainder() {
+    let money = raw!(USD, 100.029);
+    let rem = money.checked_rem(3).unwrap();
+    assert_eq!(rem.amount(), dec!(1.029));
+
+    let money = raw!(USD, 100.029);
+    let rem = money.checked_rem(i128::MAX);
+    assert!(rem.is_none());
+}

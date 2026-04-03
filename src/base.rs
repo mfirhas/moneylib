@@ -716,6 +716,23 @@ pub trait BaseOps<C: Currency>:
     where
         RHS: DecimalNumber;
 
+    /// Get remainder of self % rhs.
+    ///
+    /// # Examples
+    /// ```
+    /// use moneylib::{money, BaseMoney, BaseOps, dec};
+    ///
+    /// let money = money!(USD, 100);
+    /// let rem = money.checked_rem(3).unwrap();
+    /// assert_eq!(rem.amount(), dec!(1));
+    /// ```
+    fn checked_rem<RHS>(&self, rhs: RHS) -> Option<Self>
+    where
+        RHS: DecimalNumber,
+    {
+        Self::new(self.amount().checked_rem(rhs.get_decimal()?)?).ok()
+    }
+
     /// Split money into equal same parts leaving a remainder(if any).
     ///
     /// # Argument
