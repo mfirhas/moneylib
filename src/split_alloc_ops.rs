@@ -198,12 +198,12 @@ where
 
     let mut remainder = money.checked_sub(allocated_total.clone())?;
 
-    let smallest_unit = ulp(allocated_total.amount());
+    let ulp = ulp(allocated_total.amount());
 
     let mut i = 0;
-    while remainder.amount() >= smallest_unit && i < parts.len() {
-        parts[i] = parts[i].checked_add(smallest_unit)?;
-        remainder = remainder.checked_sub(smallest_unit)?;
+    while remainder.amount() >= ulp && i < parts.len() {
+        parts[i] = parts[i].checked_add(ulp)?;
+        remainder = remainder.checked_sub(ulp)?;
         i += 1;
     }
 
