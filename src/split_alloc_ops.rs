@@ -3,6 +3,12 @@ use crate::{BaseMoney, BaseOps, IterOps, MoneyFormatter};
 use crate::{Currency, Decimal, base::DecimalNumber, macros::dec};
 use rust_decimal::prelude::FromPrimitive;
 
+/// Get the Unit of Least Precision from a decimal amount.
+#[inline(always)]
+fn ulp(amount: Decimal) -> Decimal {
+    Decimal::new(1, amount.scale())
+}
+
 /// Split money into equal parts leaving a remainder.
 pub(crate) fn split<M, C>(money: &M, n: u32) -> Option<(M, M)>
 where
@@ -29,11 +35,10 @@ where
         let n_usize = n.try_into().ok()?;
         let mut parts = vec![equal_part; n_usize];
 
-        let scale = total.amount().scale();
-        let smallest_unit = Decimal::new(1, scale);
+        let ulp = ulp(total.amount());
         let mut i: usize = 0;
         while parts.checked_sum()?.amount() > money.amount() {
-            parts[i] = parts[i].checked_sub(smallest_unit)?;
+            parts[i] = parts[i].checked_sub(ulp)?;
             i += 1;
             if i >= parts.len() {
                 i = 0;
@@ -84,17 +89,16 @@ where
 
     let (equal_part, mut remainder) = split(&money, n)?;
 
-    let scale = remainder.amount().scale();
     let split_num: usize = n.try_into().ok()?;
 
-    let smallest_unit = Decimal::new(1, scale);
+    let ulp = ulp(remainder.amount());
 
     let mut parts = vec![equal_part; split_num];
 
     let mut i = 0;
-    while remainder.amount() >= smallest_unit {
-        parts[i] = parts[i].checked_add(smallest_unit)?;
-        remainder = remainder.checked_sub(smallest_unit)?;
+    while remainder.amount() >= ulp {
+        parts[i] = parts[i].checked_add(ulp)?;
+        remainder = remainder.checked_sub(ulp)?;
         i += 1;
         if i >= split_num {
             i = 0;
@@ -181,10 +185,9 @@ where
 
     if allocated_total.amount() > money.amount() {
         let mut i = 0;
-        let scale = allocated_total.amount().scale();
-        let smallest_unit = Decimal::new(1, scale);
+        let ulp = ulp(allocated_total.amount());
         while parts.checked_sum()?.amount() > money.amount() && i < parts.len() {
-            parts[i] = parts[i].checked_sub(smallest_unit)?;
+            parts[i] = parts[i].checked_sub(ulp)?;
             i += 1;
         }
 
@@ -195,8 +198,7 @@ where
 
     let mut remainder = money.checked_sub(allocated_total.clone())?;
 
-    let scale = allocated_total.amount().scale();
-    let smallest_unit = Decimal::new(1, scale);
+    let smallest_unit = ulp(allocated_total.amount());
 
     let mut i = 0;
     while remainder.amount() >= smallest_unit && i < parts.len() {
