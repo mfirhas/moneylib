@@ -237,13 +237,17 @@ where
             let share = money.checked_mul(*r)?.checked_div(total_ratio)?;
             let mantissa = share.amount().mantissa();
             let scale = share.amount().scale();
-            if let Some(shortest) = shortest_scale
-                && scale < shortest
-            {
-                shortest_scale = Some(scale);
-            }
-            if shortest_scale.is_none() {
-                shortest_scale = Some(scale);
+            // Only track scale for non-zero shares; a zero share's scale of 0
+            // must not over-aggressively truncate high-precision parts.
+            if !share.amount().is_zero() {
+                if let Some(shortest) = shortest_scale
+                    && scale < shortest
+                {
+                    shortest_scale = Some(scale);
+                }
+                if shortest_scale.is_none() {
+                    shortest_scale = Some(scale);
+                }
             }
             // only happen to raw money
             if mantissa.to_string().len() >= *DECIMAL_MAX_DIGITS && share.scale() > 0 {
