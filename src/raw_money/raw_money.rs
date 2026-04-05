@@ -1,4 +1,9 @@
-use std::{fmt::Display, iter::Sum, marker::PhantomData, str::FromStr};
+use std::{
+    fmt::{Debug, Display},
+    iter::Sum,
+    marker::PhantomData,
+    str::FromStr,
+};
 
 #[cfg(feature = "accounting")]
 use crate::AccountingOps;
@@ -65,7 +70,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive
 /// - [`BaseMoney`] trait for core money operations and accessors
 /// - [`BaseOps`] trait for arithmetic and comparison operations
 /// - [`MoneyFormatter`] trait for custom formatting and rounding
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct RawMoney<C: Currency> {
     amount: Decimal,
     _currency: PhantomData<C>,
@@ -314,6 +319,15 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
+    }
+}
+
+impl<C> Debug for RawMoney<C>
+where
+    C: Currency,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "RawMoney({}, {})", C::CODE, self.amount)
     }
 }
 

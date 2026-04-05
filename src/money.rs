@@ -54,7 +54,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 /// - [`BaseMoney`] trait for core money operations and accessors
 /// - [`BaseOps`] trait for arithmetic and comparison operations
 /// - [`MoneyFormatter`] trait for custom formatting and rounding
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Money<C: Currency> {
     amount: Decimal,
     _currency: PhantomData<C>,
@@ -332,6 +332,15 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
+    }
+}
+
+impl<C> Debug for Money<C>
+where
+    C: Currency,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Money({}, {})", C::CODE, self.amount)
     }
 }
 
