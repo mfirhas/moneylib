@@ -1316,3 +1316,596 @@ fn test_raw_allocation_by_ratios_total_rounded() {
     assert_eq!(ret.iter().sum::<RawMoney<USD>>(), money);
     assert_eq!(expected.iter().sum::<RawMoney<USD>>(), money);
 }
+
+// ===========================================================================
+// Additional edge-case and coverage tests
+// ===========================================================================
+
+// -------------------- split: n=1 returns whole amount + zero remainder ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_n1() {
+    let money = raw!(USD, 100);
+    let (equal, remainder) = money.split(1).unwrap();
+    assert_eq!(equal.amount(), money.amount());
+    assert!(remainder.is_zero());
+
+    let neg = raw!(USD, -42.123456789);
+    let (eq2, rem2) = neg.split(1).unwrap();
+    assert_eq!(eq2.amount(), neg.amount());
+    assert!(rem2.is_zero());
+
+    // n=0 is still invalid
+    assert!(money.split(0).is_none());
+}
+
+// -------------------- split: truncation branch (Decimal::MAX precision) ---
+//
+// raw!(USD, 79.228162514264337593543950335) has a 29-digit mantissa (= DECIMAL_MAX_DIGITS).
+// Dividing by 2 produces a 29-digit quotient that rounds up (banker's rounding), so
+// equal_part * 2 > money, triggering the truncation path in get_equal_part.
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_truncation_branch() {
+    let money = raw!(USD, 79.228162514264337593543950335);
+
+    let (equal, remainder) = money.split(2).unwrap();
+
+    // Invariant: equal * 2 + remainder == money (exact)
+    let reconstructed = (equal * dec!(2)) + remainder;
+    assert_eq!(reconstructed.amount(), money.amount());
+
+    // The equal part must be strictly less than half of money (truncated down)
+    assert!(equal.amount() * dec!(2) <= money.amount());
+    // Remainder must be non-negative and < one ULP of equal part
+    assert!(!remainder.is_negative());
+
+    // Exact values after truncation:
+    //   truncated mantissa = 3961408125713216879677197516 (28 digits), scale=26
+    assert_eq!(equal.amount(), dec!(39.61408125713216879677197516));
+    assert_eq!(remainder.amount(), dec!(0.000000000000000000000000015));
+}
+
+// -------------------- split: negative with truncation branch ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_negative_truncation_branch() {
+    let money = raw!(USD, -79.228162514264337593543950335);
+
+    let (equal, remainder) = money.split(2).unwrap();
+
+    // Invariant: equal * 2 + remainder == money
+    let reconstructed = (equal * dec!(2)) + remainder;
+    assert_eq!(reconstructed.amount(), money.amount());
+
+    // Both parts must be non-positive for a negative money
+    assert!(equal.is_negative());
+    assert!(!remainder.is_positive());
+
+    // Exact negated values
+    assert_eq!(equal.amount(), dec!(-39.61408125713216879677197516));
+    assert_eq!(remainder.amount(), dec!(-0.000000000000000000000000015));
+}
+
+// -------------------- split: negative with "total rounded" precision case ---
+//
+// raw!(USD, -100) / 3: the normal (non-truncation) path produces negative parts.
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_negative_total_rounded() {
+    let money = raw!(USD, -100);
+    let (equal, remainder) = money.split(3).unwrap();
+
+    assert!(equal.is_negative());
+    assert!(!remainder.is_positive());
+
+    // Invariant
+    let reconstructed = (equal * dec!(3)) + remainder;
+    assert_eq!(reconstructed.amount(), money.amount());
+
+    // Exact values (mirrors the positive test_raw_split_total_rounded)
+    assert_eq!(equal.amount(), dec!(-33.33333333333333333333333333));
+    assert_eq!(remainder.amount(), dec!(-0.00000000000000000000000001));
+}
+
+// -------------------- split: various negative amounts ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_negative_various() {
+    // -10 / 3
+    let money = raw!(USD, -10);
+    let (eq, rem) = money.split(3).unwrap();
+    assert!(eq.is_negative() || eq.is_zero());
+    assert!(!rem.is_positive());
+    let recon = (eq * dec!(3)) + rem;
+    assert_eq!(recon.amount(), money.amount());
+
+    // -0.001 / 3 (very small, BHD precision)
+    let money2 = raw!(USD, -0.001);
+    let (eq2, rem2) = money2.split(3).unwrap();
+    let recon2 = (eq2 * dec!(3)) + rem2;
+    assert_eq!(recon2.amount(), money2.amount());
+
+    // -1 / 7
+    let money3 = raw!(USD, -1);
+    let (eq3, rem3) = money3.split(7).unwrap();
+    assert!(eq3.is_negative() || eq3.is_zero());
+    let recon3 = (eq3 * dec!(7)) + rem3;
+    assert_eq!(recon3.amount(), money3.amount());
+}
+
+// -------------------- split: JPY and BHD for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_jpy_bhd() {
+    // JPY: integer-like amounts
+    let jpy = raw!(JPY, 10);
+    let (eq, rem) = jpy.split(3).unwrap();
+    let recon = (eq * dec!(3)) + rem;
+    assert_eq!(recon.amount(), jpy.amount());
+
+    let neg_jpy = raw!(JPY, -10);
+    let (neq, nrem) = neg_jpy.split(3).unwrap();
+    assert!(neq.is_negative() || neq.is_zero());
+    let nrecon = (neq * dec!(3)) + nrem;
+    assert_eq!(nrecon.amount(), neg_jpy.amount());
+
+    // BHD: 3-decimal currency
+    let bhd = raw!(BHD, 10.000);
+    let (beq, brem) = bhd.split(3).unwrap();
+    let brecon = (beq * dec!(3)) + brem;
+    assert_eq!(brecon.amount(), bhd.amount());
+
+    let neg_bhd = raw!(BHD, -10.000);
+    let (nbeq, nbrem) = neg_bhd.split(3).unwrap();
+    assert!(nbeq.is_negative() || nbeq.is_zero());
+    let nbrecon = (nbeq * dec!(3)) + nbrem;
+    assert_eq!(nbrecon.amount(), neg_bhd.amount());
+}
+
+// -------------------- split: comprehensive math invariant for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_math_invariant() {
+    let amounts: &[RawMoney<USD>] = &[
+        raw!(USD, 0),
+        raw!(USD, 0.001),
+        raw!(USD, 1),
+        raw!(USD, 10),
+        raw!(USD, 100),
+        raw!(USD, 1_000_000),
+        raw!(USD, 79.228162514264337593543950335),
+        raw!(USD, -0.001),
+        raw!(USD, -1),
+        raw!(USD, -10),
+        raw!(USD, -100),
+        raw!(USD, -1_000_000),
+        raw!(USD, -79.228162514264337593543950335),
+    ];
+    let ns: &[u32] = &[1, 2, 3, 5, 7, 100];
+    for amount in amounts {
+        for &n in ns {
+            if let Some((equal, remainder)) = amount.split(n) {
+                let n_dec = Decimal::from_u32(n).unwrap();
+                let reconstructed = (equal * n_dec) + remainder;
+                assert_eq!(
+                    reconstructed.amount(),
+                    amount.amount(),
+                    "raw split invariant failed: split({}, {})",
+                    amount,
+                    n
+                );
+            }
+        }
+    }
+}
+
+// -------------------- split_dist: n=1 for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_dist_n1() {
+    let money = raw!(USD, 79.228162514264337593543950335);
+    let parts = money.split_dist(1).unwrap();
+    assert_eq!(parts.len(), 1);
+    assert_eq!(parts[0].amount(), money.amount());
+
+    let neg = raw!(USD, -100);
+    let parts2 = neg.split_dist(1).unwrap();
+    assert_eq!(parts2.len(), 1);
+    assert_eq!(parts2[0].amount(), neg.amount());
+}
+
+// -------------------- split_dist: negative "total rounded" ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_dist_negative_total_rounded() {
+    // mirrors test_raw_split_dist_total_rounded but for negative
+    let money = raw!(USD, -100);
+    let parts = money.split_dist(3).unwrap();
+    assert_eq!(parts.len(), 3);
+
+    let sum: RawMoney<USD> = parts.iter().sum();
+    assert_eq!(sum.amount(), money.amount());
+
+    // all parts must be non-positive
+    for p in &parts {
+        assert!(!p.is_positive(), "expected non-positive part, got {}", p);
+    }
+
+    // Exact expected (negated from the positive case)
+    let expected = vec![
+        raw!(USD, -33.33333333333333333333333334),
+        raw!(USD, -33.33333333333333333333333333),
+        raw!(USD, -33.33333333333333333333333333),
+    ];
+    assert_eq!(&parts, &expected);
+}
+
+// -------------------- split_dist: truncation-branch negative ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_dist_negative_truncation_branch() {
+    let money = raw!(USD, -79.228162514264337593543950335);
+    let parts = money.split_dist(2).unwrap();
+    assert_eq!(parts.len(), 2);
+
+    let sum: RawMoney<USD> = parts.iter().sum();
+    assert_eq!(sum.amount(), money.amount());
+
+    for p in &parts {
+        assert!(!p.is_positive(), "expected non-positive part, got {}", p);
+    }
+}
+
+// -------------------- split_dist: comprehensive invariant for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_dist_math_invariant() {
+    let amounts: &[RawMoney<USD>] = &[
+        raw!(USD, 0),
+        raw!(USD, 0.001),
+        raw!(USD, 1),
+        raw!(USD, 100),
+        raw!(USD, 79.228162514264337593543950335),
+        raw!(USD, -0.001),
+        raw!(USD, -1),
+        raw!(USD, -100),
+        raw!(USD, -79.228162514264337593543950335),
+    ];
+    let ns: &[u32] = &[1, 2, 3, 7];
+    for amount in amounts {
+        for &n in ns {
+            if let Some(parts) = amount.split_dist(n) {
+                assert_eq!(parts.len(), n as usize);
+                let sum: RawMoney<USD> = parts.iter().sum();
+                assert_eq!(
+                    sum.amount(),
+                    amount.amount(),
+                    "raw split_dist invariant failed: split_dist({}, {})",
+                    amount,
+                    n
+                );
+            }
+        }
+    }
+}
+
+// -------------------- allocate: single 100% for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocate_single_100() {
+    let money = raw!(USD, 79.228162514264337593543950335);
+    let parts = money.allocate(&[dec!(100)]).unwrap();
+    assert_eq!(parts.len(), 1);
+    assert_eq!(parts[0].amount(), money.amount());
+
+    let neg = raw!(USD, -100);
+    let parts2 = neg.allocate(&[dec!(100)]).unwrap();
+    assert_eq!(parts2.len(), 1);
+    assert_eq!(parts2[0].amount(), neg.amount());
+
+    // percentages not summing to 100 → None
+    assert!(money.allocate(&[dec!(99)]).is_none());
+    assert!(money.allocate::<Decimal>(&[]).is_none());
+
+    // Regression: allocate with a 0% in the middle must not infinite-loop.
+    // 0+50+50 == 100, with the first slice being 0%.
+    // Previously the 0-share's scale would set shortest_scale=0, breaking
+    // the remainder distribution for high-precision RawMoney amounts.
+    let hp_parts = money.allocate(&[dec!(0), dec!(50), dec!(50)]).unwrap();
+    assert_eq!(hp_parts.len(), 3);
+    // The 0% part may receive a few ULPs from remainder distribution;
+    // the key invariant is that parts sum to the original amount.
+    let hp_sum: RawMoney<USD> = hp_parts.iter().sum();
+    assert_eq!(hp_sum.amount(), money.amount());
+}
+
+// -------------------- allocate: negative "total rounded" ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocation_negative_total_rounded() {
+    // mirrors test_raw_allocation_total_rounded for the negated amount
+    let money = raw!(USD, -79.228162514264337593543950335);
+    let parts = money.allocate(&[10, 10, 80]).unwrap();
+
+    assert_eq!(parts.len(), 3);
+
+    let sum: RawMoney<USD> = parts.iter().sum();
+    assert_eq!(sum.amount(), money.amount());
+
+    // all parts must be non-positive
+    for p in &parts {
+        assert!(!p.is_positive(), "expected non-positive part, got {}", p);
+    }
+
+    // exact expected (negated from the positive test)
+    let expected = &[
+        raw!(USD, -7.922816251426433759354395035),
+        raw!(USD, -7.922816251426433759354395035),
+        raw!(USD, -63.382530011411470074835160265),
+    ];
+    assert_eq!(&parts, expected);
+}
+
+// -------------------- allocate: JPY and BHD for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocate_jpy_bhd() {
+    // JPY
+    let jpy = raw!(JPY, 100);
+    let parts = jpy.allocate(&[dec!(70), dec!(30)]).unwrap();
+    assert_eq!(parts.len(), 2);
+    let sum: RawMoney<JPY> = parts.iter().sum();
+    assert_eq!(sum.amount(), jpy.amount());
+
+    let neg_jpy = raw!(JPY, -100);
+    let nparts = neg_jpy.allocate(&[dec!(50), dec!(50)]).unwrap();
+    let nsum: RawMoney<JPY> = nparts.iter().sum();
+    assert_eq!(nsum.amount(), neg_jpy.amount());
+
+    // BHD
+    let bhd = raw!(BHD, 1.000);
+    let bparts = bhd.allocate(&[dec!(50), dec!(50)]).unwrap();
+    let bsum: RawMoney<BHD> = bparts.iter().sum();
+    assert_eq!(bsum.amount(), bhd.amount());
+}
+
+// -------------------- allocate: comprehensive invariant for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocate_math_invariant_extended() {
+    let amounts: &[RawMoney<USD>] = &[
+        raw!(USD, 0),
+        raw!(USD, 0.001),
+        raw!(USD, 1),
+        raw!(USD, 100),
+        raw!(USD, 79.228162514264337593543950335),
+        raw!(USD, -0.001),
+        raw!(USD, -1),
+        raw!(USD, -100),
+        raw!(USD, -79.228162514264337593543950335),
+    ];
+    let pcn_slices: &[&[Decimal]] = &[
+        &[dec!(100)],
+        &[dec!(50), dec!(50)],
+        &[dec!(70), dec!(30)],
+        &[dec!(10), dec!(20), dec!(30), dec!(40)],
+        &[dec!(33.33), dec!(33.33), dec!(33.34)],
+        &[dec!(10), dec!(10), dec!(80)],
+    ];
+    for amount in amounts {
+        for pcns in pcn_slices {
+            if let Some(parts) = amount.allocate(*pcns) {
+                let sum: RawMoney<USD> = parts.iter().sum();
+                assert_eq!(
+                    sum.amount(),
+                    amount.amount(),
+                    "raw allocate invariant failed: allocate({}, {:?})",
+                    amount,
+                    pcns
+                );
+            }
+        }
+    }
+}
+
+// -------------------- allocate_by_ratios: single ratio ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocate_by_ratios_single_ratio() {
+    let money = raw!(USD, 79.228162514264337593543950335);
+    let parts = money.allocate_by_ratios(&[1]).unwrap();
+    assert_eq!(parts.len(), 1);
+    assert_eq!(parts[0].amount(), money.amount());
+
+    let neg = raw!(USD, -100);
+    let parts2 = neg.allocate_by_ratios(&[5]).unwrap();
+    assert_eq!(parts2.len(), 1);
+    assert_eq!(parts2[0].amount(), neg.amount());
+}
+
+// -------------------- allocate_by_ratios: zero in middle for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocate_by_ratios_zero_middle() {
+    let money = raw!(USD, 100);
+    let parts = money.allocate_by_ratios(&[1, 0, 1]).unwrap();
+    assert_eq!(parts.len(), 3);
+
+    let sum: RawMoney<USD> = parts.iter().sum();
+    assert_eq!(sum.amount(), money.amount());
+
+    // The zero-ratio part should get nothing
+    assert!(parts[1].is_zero(), "zero-ratio part should be zero, got {}", parts[1]);
+
+    // all-zero ratios → None
+    assert!(money.allocate_by_ratios(&[0, 0]).is_none());
+
+    // negative + zero in middle
+    let neg = raw!(USD, -100);
+    let nparts = neg.allocate_by_ratios(&[1, 0, 1]).unwrap();
+    let nsum: RawMoney<USD> = nparts.iter().sum();
+    assert_eq!(nsum.amount(), neg.amount());
+    assert!(nparts[1].is_zero());
+
+    // Regression: max-precision amount with zero in middle must NOT infinite-loop.
+    // Previously, the zero share's scale=0 would set shortest_scale=0, causing
+    // all high-precision parts to truncate to integers and leaving a huge remainder
+    // that took ~10^27 loop iterations to distribute.
+    let max_prec = raw!(USD, 79.228162514264337593543950335);
+    let hp_parts = max_prec.allocate_by_ratios(&[1, 0, 1]).unwrap();
+    assert_eq!(hp_parts.len(), 3);
+    // The zero-ratio part has at most a few ULPs from remainder distribution;
+    // the key invariant is that parts sum to the original amount.
+    let hp_sum: RawMoney<USD> = hp_parts.iter().sum();
+    assert_eq!(hp_sum.amount(), max_prec.amount());
+
+    // Same regression for negative max-precision amount
+    let neg_max = raw!(USD, -79.228162514264337593543950335);
+    let hn_parts = neg_max.allocate_by_ratios(&[1, 0, 1]).unwrap();
+    assert_eq!(hn_parts.len(), 3);
+    let hn_sum: RawMoney<USD> = hn_parts.iter().sum();
+    assert_eq!(hn_sum.amount(), neg_max.amount());
+}
+
+// -------------------- allocate_by_ratios: decimal ratios for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocate_by_ratios_decimal_ratios_raw() {
+    // 1.5 : 2.5 : 1.0 → proportional split
+    let money = raw!(USD, 100);
+    let parts = money
+        .allocate_by_ratios(&[dec!(1.5), dec!(2.5), dec!(1.0)])
+        .unwrap();
+    assert_eq!(parts.len(), 3);
+    let sum: RawMoney<USD> = parts.iter().sum();
+    assert_eq!(sum.amount(), money.amount());
+
+    // 0.1 : 0.9 → same proportion as 1:9
+    let parts2 = money.allocate_by_ratios(&[dec!(0.1), dec!(0.9)]).unwrap();
+    let sum2: RawMoney<USD> = parts2.iter().sum();
+    assert_eq!(sum2.amount(), money.amount());
+
+    // negative
+    let neg = raw!(USD, -100);
+    let nparts = neg
+        .allocate_by_ratios(&[dec!(1.5), dec!(2.5), dec!(1.0)])
+        .unwrap();
+    let nsum: RawMoney<USD> = nparts.iter().sum();
+    assert_eq!(nsum.amount(), neg.amount());
+    for p in &nparts {
+        assert!(!p.is_positive());
+    }
+}
+
+// -------------------- allocate_by_ratios: negative "total rounded" ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocation_by_ratios_negative_total_rounded() {
+    // mirrors test_raw_allocation_by_ratios_total_rounded for the negated amount
+    let money = raw!(USD, -100);
+    let parts = money.allocate_by_ratios(&[1, 1, 1]).unwrap();
+
+    let sum: RawMoney<USD> = parts.iter().sum();
+    assert_eq!(sum.amount(), money.amount());
+
+    for p in &parts {
+        assert!(!p.is_positive(), "expected non-positive part, got {}", p);
+    }
+
+    // exact expected (negated from the positive test)
+    let expected = vec![
+        raw!(USD, -33.33333333333333333333333334),
+        raw!(USD, -33.33333333333333333333333333),
+        raw!(USD, -33.33333333333333333333333333),
+    ];
+    assert_eq!(&parts, &expected);
+}
+
+// -------------------- allocate_by_ratios: JPY and BHD for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocate_by_ratios_jpy_bhd() {
+    // JPY
+    let jpy = raw!(JPY, 100);
+    let parts = jpy.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let sum: RawMoney<JPY> = parts.iter().sum();
+    assert_eq!(sum.amount(), jpy.amount());
+
+    let neg_jpy = raw!(JPY, -100);
+    let nparts = neg_jpy.allocate_by_ratios(&[1, 1]).unwrap();
+    let nsum: RawMoney<JPY> = nparts.iter().sum();
+    assert_eq!(nsum.amount(), neg_jpy.amount());
+    for p in &nparts {
+        assert!(!p.is_positive());
+    }
+
+    // BHD
+    let bhd = raw!(BHD, 10.000);
+    let bparts = bhd.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let bsum: RawMoney<BHD> = bparts.iter().sum();
+    assert_eq!(bsum.amount(), bhd.amount());
+}
+
+// -------------------- allocate_by_ratios: comprehensive invariant for RawMoney ---
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocate_by_ratios_math_invariant_extended() {
+    let amounts: &[RawMoney<USD>] = &[
+        raw!(USD, 0),
+        raw!(USD, 0.001),
+        raw!(USD, 1),
+        raw!(USD, 10),
+        raw!(USD, 100),
+        raw!(USD, 79.228162514264337593543950335),
+        raw!(USD, -0.001),
+        raw!(USD, -1),
+        raw!(USD, -10),
+        raw!(USD, -100),
+        raw!(USD, -79.228162514264337593543950335),
+    ];
+    let ratio_slices: &[&[i32]] = &[
+        &[1],
+        &[1, 1],
+        &[1, 2, 1],
+        &[1, 0, 1],
+        &[3, 7],
+        &[1, 2, 3, 4],
+        &[100, 200, 300],
+    ];
+    for amount in amounts {
+        for ratios in ratio_slices {
+            if let Some(parts) = amount.allocate_by_ratios(*ratios) {
+                let sum: RawMoney<USD> = parts.iter().sum();
+                assert_eq!(
+                    sum.amount(),
+                    amount.amount(),
+                    "raw allocate_by_ratios invariant failed: ({}, {:?})",
+                    amount,
+                    ratios
+                );
+            }
+        }
+    }
+}
