@@ -3,10 +3,76 @@ use crate::{BaseMoney, BaseOps, IterOps, MoneyFormatter};
 use crate::{Currency, Decimal, base::DecimalNumber, macros::dec};
 use rust_decimal::prelude::FromPrimitive;
 
+use std::sync::LazyLock;
+// max mantissa digits
+static DECIMAL_MAX_DIGITS: LazyLock<usize> =
+    LazyLock::new(|| crate::Decimal::MAX.mantissa().to_string().len());
+
 /// Get the Unit of Least Precision from a decimal amount.
 #[inline(always)]
 fn ulp(amount: Decimal) -> Decimal {
     Decimal::new(1, amount.scale())
+}
+
+/// Get equal part of money splitting
+fn get_equal_part<M, C>(money: &M, split: u32) -> Option<M>
+where
+    M: BaseMoney<C> + BaseOps<C> + PartialOrd,
+    C: Currency,
+{
+    let is_negative = money.is_negative();
+    let money = money.abs();
+
+    let split_dec = Decimal::from_u32(split)?;
+    let equal_part = money.checked_div(split_dec)?;
+    let total_parts = equal_part.checked_mul(split_dec)?;
+
+    let rem = money.checked_rem(split_dec)?;
+
+    let equal_part_scale = equal_part.scale();
+    let equal_part_digits_len = equal_part.amount().mantissa().to_string().len();
+
+    // If remainder is not zero, but the total parts summed back to origin money amount,
+    // then there's rounding in the calculation.
+    //
+    // For this case, we truncate the digit from most right(after decimal point), until total_parts < money(origin).
+    if !rem.amount().is_zero()
+        && total_parts >= money
+        && equal_part_scale > 0
+        && equal_part_digits_len >= *DECIMAL_MAX_DIGITS
+    {
+        let mut truncated_equal_part_mantissa = equal_part.amount().mantissa().checked_div(10)?;
+        let mut truncated_equal_part_scale = equal_part_scale - 1;
+        let mut truncated_equal_part_amount = Decimal::try_from_i128_with_scale(
+            truncated_equal_part_mantissa,
+            truncated_equal_part_scale,
+        )
+        .ok()?;
+        while truncated_equal_part_scale > 0
+            && truncated_equal_part_amount.checked_mul(split_dec)? >= money.amount()
+        {
+            truncated_equal_part_mantissa /= 10;
+            truncated_equal_part_scale -= 1;
+            truncated_equal_part_amount = Decimal::try_from_i128_with_scale(
+                truncated_equal_part_mantissa,
+                truncated_equal_part_scale,
+            )
+            .ok()?;
+        }
+
+        if is_negative {
+            truncated_equal_part_amount = -truncated_equal_part_amount;
+        }
+
+        return M::new(truncated_equal_part_amount).ok();
+    }
+
+    if is_negative {
+        return Some(-equal_part);
+    }
+
+    // if total_parts NOT rounded up
+    Some(equal_part)
 }
 
 /// Split money into equal parts leaving a remainder.
@@ -20,14 +86,10 @@ where
     }
 
     let is_negative = money.is_negative();
-    let money = if is_negative {
-        money.abs()
-    } else {
-        money.clone()
-    };
+    let money = money.abs();
 
     let split_num = Decimal::from_u32(n)?;
-    let mut equal_part = money.checked_div(split_num)?;
+    let mut equal_part = get_equal_part(&money, n)?;
     let total = equal_part.checked_mul(split_num)?;
 
     // total might be bigger than original amount due to rounding. E.g. 10.01 split by 3 = 3.33666666667 -> 3.34 and 3.34 * 3 = 10.02.
@@ -81,11 +143,7 @@ where
     }
 
     let is_negative = money.is_negative();
-    let money = if is_negative {
-        money.abs()
-    } else {
-        money.clone()
-    };
+    let money = money.abs();
 
     let (equal_part, mut remainder) = split(&money, n)?;
 
@@ -124,11 +182,7 @@ where
     }
 
     let is_negative = money.is_negative();
-    let money = if is_negative {
-        money.abs()
-    } else {
-        money.clone()
-    };
+    let money = money.abs();
 
     let mut total = Decimal::ZERO;
     for p in pcns {
@@ -158,11 +212,7 @@ where
     }
 
     let is_negative = money.is_negative();
-    let money = if is_negative {
-        money.abs()
-    } else {
-        money.clone()
-    };
+    let money = money.abs();
 
     let total_ratio: Decimal = {
         let mut total = Decimal::ZERO;
@@ -172,39 +222,88 @@ where
         total
     };
 
+    // Check if one of the parts has long scale equals to decimal max digits.
+    //
+    // If it is, then it must be RawMoney. It uses for checking for trimming the scale after truncating.
+    let mut is_long_scale = false;
+
+    // the shortest scale if is_long_scale
+    let mut shortest_scale: Option<u32> = None;
+
     // allocate base for each ratio
     let mut parts: Vec<M> = ratios
         .iter()
         .map(|r| {
             let share = money.checked_mul(*r)?.checked_div(total_ratio)?;
+            let mantissa = share.amount().mantissa();
+            let scale = share.amount().scale();
+            if let Some(shortest) = shortest_scale
+                && scale < shortest
+            {
+                shortest_scale = Some(scale);
+            }
+            if shortest_scale.is_none() {
+                shortest_scale = Some(scale);
+            }
+            // only happen to raw money
+            if mantissa.to_string().len() >= *DECIMAL_MAX_DIGITS && share.scale() > 0 {
+                is_long_scale = true;
+                let new_mantissa = mantissa / 10;
+                let new_scale = share.scale() - 1;
+                if let Some(shortest) = shortest_scale
+                    && new_scale < shortest
+                {
+                    shortest_scale = Some(new_scale);
+                }
+                return M::new(Decimal::from_i128_with_scale(new_mantissa, new_scale)).ok();
+            }
             Some(share)
         })
         .collect::<Option<Vec<_>>>()?;
+
+    if let Some(shortest) = shortest_scale
+        && is_long_scale
+    {
+        parts = parts
+            .iter()
+            .map(|p| p.truncate_with(shortest))
+            .collect::<Vec<_>>();
+    }
 
     let allocated_total = parts.checked_sum()?;
 
     if allocated_total.amount() > money.amount() {
         let mut i = 0;
         let ulp = ulp(allocated_total.amount());
-        while parts.checked_sum()?.amount() > money.amount() && i < parts.len() {
+        while parts.checked_sum()?.amount() > money.amount() {
             parts[i] = parts[i].checked_sub(ulp)?;
             i += 1;
+            if i >= parts.len() {
+                i = 0;
+            }
         }
 
         parts.sort_by_key(|b| std::cmp::Reverse(b.amount()));
+
+        if is_negative {
+            parts = parts.into_iter().map(|r| -r).collect::<Vec<_>>();
+        }
 
         return Some(parts);
     }
 
     let mut remainder = money.checked_sub(allocated_total.clone())?;
 
-    let ulp = ulp(allocated_total.amount());
+    let ulp = ulp(remainder.amount());
 
     let mut i = 0;
-    while remainder.amount() >= ulp && i < parts.len() {
+    while remainder.amount() >= ulp {
         parts[i] = parts[i].checked_add(ulp)?;
         remainder = remainder.checked_sub(ulp)?;
         i += 1;
+        if i >= parts.len() {
+            i = 0;
+        }
     }
 
     if is_negative {

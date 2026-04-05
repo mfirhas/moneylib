@@ -1236,3 +1236,83 @@ fn test_raw_allocate_math_invariant() {
         }
     }
 }
+
+// ====================== EDGE CASES ======================
+
+// Sometime, especially for raw money, total we get from multiplying each part by split num, return the same value as original amount because of rounding.
+// This leaves no remainder when it should be.
+//
+// This happens because original amount leaves remainder when splitted, but the division result when multiply back by split num, return original amount.
+// This is because the amount reaches max digits and max value of decimal number allowed by the type, hence we need to truncate the ulp digit.
+// E.g raw 100 / 3:
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_total_rounded() {
+    let money = raw!(USD, 100);
+    let ret = money.split(3).unwrap();
+    let expected = (
+        raw!(USD, 33.33333333333333333333333333),
+        raw!(USD, 0.00000000000000000000000001),
+    );
+    assert_eq!(&ret, &expected);
+    assert_eq!((expected.0 * dec!(3)) + expected.1, money);
+    assert_eq!((ret.0 * dec!(3)) + ret.1, money);
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_split_dist_total_rounded() {
+    let money = raw!(USD, 100);
+    let ret = money.split_dist(3).unwrap();
+    let expected = vec![
+        raw!(USD, 33.33333333333333333333333334),
+        raw!(USD, 33.33333333333333333333333333),
+        raw!(USD, 33.33333333333333333333333333),
+    ];
+    assert_eq!(
+        ret.iter().sum::<RawMoney<crate::iso::USD>>(),
+        expected.iter().sum::<RawMoney<crate::iso::USD>>()
+    );
+    assert_eq!(ret.iter().sum::<RawMoney<crate::iso::USD>>(), money);
+    assert_eq!(expected.iter().sum::<RawMoney<crate::iso::USD>>(), money);
+
+    assert_eq!(&ret, &expected);
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocation_total_rounded() {
+    let money = raw!(USD, 79.228162514264337593543950335);
+    let ret = money.allocate(&[10, 10, 80]).unwrap();
+    let expected = &[
+        raw!(USD, 7.922816251426433759354395035),
+        raw!(USD, 7.922816251426433759354395035),
+        raw!(USD, 63.382530011411470074835160265),
+    ];
+    assert_eq!(&ret, expected);
+    assert_eq!(ret.iter().sum::<RawMoney<USD>>(), money);
+
+    // make sure the addition is not rounded up.
+    // we substract 1 ulp from one of return, and summed up into original amount minus ulp.
+    let expected_sum = raw!(USD, 79.228162514264337593543950334);
+    let ulp = Decimal::new(1, expected[0].scale());
+    let asd = &[expected[0] - ulp, expected[1], expected[2]];
+    let asd_sum = asd.iter().sum::<RawMoney<USD>>();
+    assert_eq!(asd_sum, expected_sum);
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_raw_allocation_by_ratios_total_rounded() {
+    let money = raw!(USD, 100);
+    let ret = money.allocate_by_ratios(&[1, 1, 1]).unwrap();
+    let expected = vec![
+        raw!(USD, 33.33333333333333333333333334),
+        raw!(USD, 33.33333333333333333333333333),
+        raw!(USD, 33.33333333333333333333333333),
+    ];
+    assert_eq!(&ret, &expected);
+    assert_eq!(ret.iter().sum::<RawMoney<USD>>(), money);
+    assert_eq!(expected.iter().sum::<RawMoney<USD>>(), money);
+}
