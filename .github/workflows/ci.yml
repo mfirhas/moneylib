@@ -35,6 +35,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
+            ~/.cargo/bin
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
@@ -91,38 +92,6 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           override: true
 
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
-  coverage:
-    name: Coverage
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout codebase
-        uses: actions/checkout@v6
-
-      - name: Cache run data
-        id: cache-cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.cargo/bin
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ env.RUST_VERSION }}
-          override: true
-      
       - name: Install cargo-llvm-cov
         run: |
           if cargo llvm-cov --version &>/dev/null; then
@@ -131,8 +100,25 @@ jobs:
             cargo install cargo-llvm-cov --locked
           fi
 
-      - name: Run cargo llvm-cov
+      - name: Run tests and generate lcov
         run: make lcov
+
+      - name: Upload lcov artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-info
+          path: target/coverage/lcov.info
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Download lcov artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lcov-info
+          path: target/coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
