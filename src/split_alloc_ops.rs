@@ -274,8 +274,8 @@ where
 
     if allocated_total.amount() > money.amount() {
         let mut i = 0;
-        let ulp = ulp(allocated_total.amount());
         while parts.checked_sum()?.amount() > money.amount() {
+            let ulp = ulp(parts[i].amount());
             parts[i] = parts[i].checked_sub(ulp)?;
             i += 1;
             if i >= parts.len() {
