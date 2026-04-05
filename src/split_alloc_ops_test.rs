@@ -1538,7 +1538,7 @@ fn test_raw_split_dist_negative_total_rounded() {
 
     // all parts must be non-positive
     for p in &parts {
-        assert!(!p.is_positive(), "expected non-positive part, got {}", p);
+        assert!(!p.is_positive(), "expected non-positive part when splitting negative amount, got {}", p);
     }
 
     // Exact expected (negated from the positive case)
@@ -1563,7 +1563,7 @@ fn test_raw_split_dist_negative_truncation_branch() {
     assert_eq!(sum.amount(), money.amount());
 
     for p in &parts {
-        assert!(!p.is_positive(), "expected non-positive part, got {}", p);
+        assert!(!p.is_positive(), "expected non-positive part when splitting negative amount, got {}", p);
     }
 }
 
@@ -1648,7 +1648,7 @@ fn test_raw_allocation_negative_total_rounded() {
 
     // all parts must be non-positive
     for p in &parts {
-        assert!(!p.is_positive(), "expected non-positive part, got {}", p);
+        assert!(!p.is_positive(), "expected non-positive part when allocating negative amount, got {}", p);
     }
 
     // exact expected (negated from the positive test)
@@ -1753,7 +1753,7 @@ fn test_raw_allocate_by_ratios_zero_middle() {
     assert_eq!(sum.amount(), money.amount());
 
     // The zero-ratio part should get nothing
-    assert!(parts[1].is_zero(), "zero-ratio part should be zero, got {}", parts[1]);
+    assert!(parts[1].is_zero(), "zero-ratio part at index 1 should be zero, got {}", parts[1]);
 
     // all-zero ratios → None
     assert!(money.allocate_by_ratios(&[0, 0]).is_none());
@@ -1829,7 +1829,7 @@ fn test_raw_allocation_by_ratios_negative_total_rounded() {
     assert_eq!(sum.amount(), money.amount());
 
     for p in &parts {
-        assert!(!p.is_positive(), "expected non-positive part, got {}", p);
+        assert!(!p.is_positive(), "expected non-positive part when allocating negative amount, got {}", p);
     }
 
     // exact expected (negated from the positive test)
