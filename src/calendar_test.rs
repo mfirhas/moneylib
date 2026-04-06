@@ -1,3 +1,10 @@
+#[test]
+fn test_current_date() {
+    let ret = crate::calendar::current_date();
+    assert!(ret.is_some());
+    println!("{:?}", ret.unwrap());
+}
+
 #[cfg(test)]
 mod get_years_months_tests {
     use crate::calendar::*;

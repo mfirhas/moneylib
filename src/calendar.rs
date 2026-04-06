@@ -36,18 +36,6 @@ pub(crate) fn current_date() -> Option<(u32, u32, u32)> {
     Some((year, month, day))
 }
 
-#[cfg(test)]
-mod current_data_tests {
-    use super::current_date;
-
-    #[test]
-    fn test_current_date() {
-        let ret = current_date();
-        assert!(ret.is_some());
-        println!("{:?}", ret.unwrap());
-    }
-}
-
 pub(crate) fn days_in_month(year: u32, month: u32) -> Option<u32> {
     match month {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => Some(31),
