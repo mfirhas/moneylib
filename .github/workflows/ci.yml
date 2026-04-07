@@ -113,6 +113,9 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v6
+
       - name: Download lcov artifact
         uses: actions/download-artifact@v4
         with:
