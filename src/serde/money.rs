@@ -535,7 +535,58 @@ pub mod option_dot_str_symbol {
 /// #[serde(with = "moneylib::serde::money::minor")]
 /// amount: Money<USD>,
 /// ```
-pub mod minor {}
+pub mod minor {
+    use std::fmt;
+    use std::marker::PhantomData;
+
+    use ::serde::{Deserializer, Serializer, de};
+
+    use crate::{BaseMoney, Currency, Money};
+
+    pub fn serialize<C: Currency + Clone, S: Serializer>(
+        value: &Money<C>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        let minor = value
+            .minor_amount()
+            .map_err(|e| ::serde::ser::Error::custom(e))?;
+        serializer.serialize_i128(minor)
+    }
+
+    struct Visitor<C>(PhantomData<C>);
+
+    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+        type Value = Money<C>;
+
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            f.write_str("an integer representing the minor amount")
+        }
+
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> {
+            Money::<C>::from_minor(i128::from(v)).map_err(de::Error::custom)
+        }
+
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<Self::Value, E> {
+            Money::<C>::from_minor(i128::from(v)).map_err(de::Error::custom)
+        }
+
+        fn visit_i128<E: de::Error>(self, v: i128) -> Result<Self::Value, E> {
+            Money::<C>::from_minor(v).map_err(de::Error::custom)
+        }
+
+        fn visit_u128<E: de::Error>(self, v: u128) -> Result<Self::Value, E> {
+            i128::try_from(v)
+                .map_err(|_| de::Error::custom("value too large for minor amount"))
+                .and_then(|n| Money::<C>::from_minor(n).map_err(de::Error::custom))
+        }
+    }
+
+    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Money<C>, D::Error> {
+        deserializer.deserialize_any(Visitor(PhantomData))
+    }
+}
 
 /// Serialize/deserialize `Option<Money<C>>` as a JSON Number of its minor amount.
 ///
@@ -545,4 +596,49 @@ pub mod minor {}
 /// #[serde(with = "moneylib::serde::money::option_minor")]
 /// amount: Option<Money<USD>>,
 /// ```
-pub mod option_minor {}
+pub mod option_minor {
+    use std::fmt;
+    use std::marker::PhantomData;
+
+    use ::serde::{Deserializer, Serializer, de};
+
+    use crate::{Currency, Money};
+
+    pub fn serialize<C: Currency + Clone, S: Serializer>(
+        value: &Option<Money<C>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        match value {
+            Some(m) => super::minor::serialize(m, serializer),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    struct Visitor<C>(PhantomData<C>);
+
+    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+        type Value = Option<Money<C>>;
+
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            f.write_str("an integer representing the minor amount, or null")
+        }
+
+        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
+            super::minor::deserialize(d).map(Some)
+        }
+    }
+
+    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<Money<C>>, D::Error> {
+        deserializer.deserialize_option(Visitor(PhantomData))
+    }
+}
