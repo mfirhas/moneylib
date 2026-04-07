@@ -1614,3 +1614,395 @@ fn test_option_minor_roundtrip() {
     let deserialized: PaymentOptMinor = serde_json::from_str(&json).unwrap();
     assert_eq!(original.amount, deserialized.amount);
 }
+
+// ---------------------------------------------------------------------------
+// visit_unit: option visitors accept unit (None) from unit-based deserializers
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_option_comma_str_code_visit_unit() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::UnitDeserializer<E> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_comma_str_code::deserialize::<USD, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_comma_str_symbol_visit_unit() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::UnitDeserializer<E> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_comma_str_symbol::deserialize::<USD, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_dot_str_code_visit_unit() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::UnitDeserializer<E> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_dot_str_code::deserialize::<EUR, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_dot_str_symbol_visit_unit() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::UnitDeserializer<E> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_dot_str_symbol::deserialize::<EUR, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_minor_visit_unit() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::UnitDeserializer<E> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_minor::deserialize::<USD, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+// ---------------------------------------------------------------------------
+// minor: visit_i128 and visit_u128 (including overflow)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_minor_deserialize_i128() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    // Value smaller than i64::MIN → dispatches to visit_i128
+    let val: i128 = i64::MIN as i128 - 1;
+    let d: serde::de::value::I128Deserializer<E> = val.into_deserializer();
+    let result = crate::serde::raw_money::minor::deserialize::<USD, _>(d);
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap().code(), "USD");
+}
+
+#[test]
+fn test_minor_deserialize_u128() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    // Value greater than u64::MAX → dispatches to visit_u128 (success path)
+    let val: u128 = u64::MAX as u128 + 1;
+    let d: serde::de::value::U128Deserializer<E> = val.into_deserializer();
+    let result = crate::serde::raw_money::minor::deserialize::<USD, _>(d);
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap().code(), "USD");
+}
+
+#[test]
+fn test_minor_deserialize_u128_overflow() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    // u128::MAX exceeds i128::MAX → error path in visit_u128
+    let d: serde::de::value::U128Deserializer<E> = u128::MAX.into_deserializer();
+    let result = crate::serde::raw_money::minor::deserialize::<USD, _>(d);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("too large"));
+}
+
+// ---------------------------------------------------------------------------
+// option_minor: expecting (triggered by unexpected type via BoolDeserializer)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_option_minor_expecting() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    // BoolDeserializer::deserialize_option forwards to deserialize_any → visit_bool
+    // option_minor::Visitor has no visit_bool → default impl calls expecting()
+    let d: serde::de::value::BoolDeserializer<E> = true.into_deserializer();
+    let result = crate::serde::raw_money::option_minor::deserialize::<USD, _>(d);
+    assert!(result.is_err());
+    let msg = result.unwrap_err().to_string();
+    assert!(
+        msg.contains("integer") || msg.contains("null") || msg.contains("minor"),
+        "unexpected error message: {}",
+        msg
+    );
+}
+
+// ---------------------------------------------------------------------------
+// JPY: comma_str_code::Visitor::expecting triggered by wrong input type
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_comma_str_code_jpy_deserialize_wrong_type() {
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::raw_money::comma_str_code")]
+        amount: RawMoney<JPY>,
+    }
+    // Passing an integer where a string is expected triggers Visitor::expecting for JPY
+    let result: Result<W, _> = serde_json::from_str(r#"{"amount":1234}"#);
+    assert!(result.is_err());
+}
+
+// ---------------------------------------------------------------------------
+// Default deserializer: EUR, IDR, CAD with serde_json (via visit_map)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_default_deserialize_eur_json() {
+    let raw: RawMoney<EUR> = serde_json::from_str("1234.56789").unwrap();
+    assert_eq!(raw.code(), "EUR");
+}
+
+#[test]
+fn test_default_deserialize_idr_json() {
+    let raw: RawMoney<IDR> = serde_json::from_str("5000").unwrap();
+    assert_eq!(raw.code(), "IDR");
+}
+
+#[test]
+fn test_default_deserialize_cad_json() {
+    let raw: RawMoney<CAD> = serde_json::from_str("99.99123").unwrap();
+    assert_eq!(raw.code(), "CAD");
+}
+
+// ---------------------------------------------------------------------------
+// Multi-currency struct: covers visit_map<MapAccess<StrRead>> for EUR/IDR/CAD
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_default_deserialize_multi_currency_struct_json() {
+    #[derive(::serde::Deserialize)]
+    struct Multi {
+        eur: RawMoney<EUR>,
+        idr: RawMoney<IDR>,
+        cad: RawMoney<CAD>,
+    }
+    let m: Multi =
+        serde_json::from_str(r#"{"eur":100.56789,"idr":5000,"cad":99.99123}"#).unwrap();
+    assert_eq!(m.eur.code(), "EUR");
+    assert_eq!(m.idr.code(), "IDR");
+    assert_eq!(m.cad.code(), "CAD");
+}
+
+// ---------------------------------------------------------------------------
+// visit_map error path: YAML mapping triggers "unexpected key"
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_default_deserialize_yaml_mapping_error() {
+    // A YAML mapping fed to the default deserializer calls visit_map with
+    // serde_yaml's MapAccess; our visitor returns "unexpected key"
+    let result = serde_yaml::from_str::<RawMoney<USD>>(r#"unexpected_key: value"#);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_default_deserialize_eur_yaml_mapping_error() {
+    let result = serde_yaml::from_str::<RawMoney<EUR>>(r#"unexpected_key: value"#);
+    assert!(result.is_err());
+}
+
+// ---------------------------------------------------------------------------
+// Serialize via serde_json::to_value (exercises NumberStrEmitter path)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_default_serialize_to_value_usd() {
+    let raw = RawMoney::<USD>::from_decimal(dec!(1234.56789));
+    let val = serde_json::to_value(&raw).unwrap();
+    assert!(val.is_number());
+}
+
+#[test]
+fn test_default_serialize_to_value_eur() {
+    let raw = RawMoney::<EUR>::from_decimal(dec!(99.99));
+    let val = serde_json::to_value(&raw).unwrap();
+    assert!(val.is_number());
+}
+
+#[test]
+fn test_default_serialize_to_value_jpy() {
+    let raw = RawMoney::<JPY>::from_decimal(dec!(1234));
+    let val = serde_json::to_value(&raw).unwrap();
+    assert!(val.is_number());
+}
+
+#[test]
+fn test_comma_str_code_serialize_to_value_usd() {
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::raw_money::comma_str_code")]
+        amount: RawMoney<USD>,
+    }
+    let w = W {
+        amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)),
+    };
+    let val = serde_json::to_value(&w).unwrap();
+    assert_eq!(val["amount"], "USD 1,234.56789");
+}
+
+#[test]
+fn test_comma_str_code_serialize_to_value_jpy() {
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::raw_money::comma_str_code")]
+        amount: RawMoney<JPY>,
+    }
+    let w = W {
+        amount: RawMoney::<JPY>::from_decimal(dec!(1234)),
+    };
+    let val = serde_json::to_value(&w).unwrap();
+    assert_eq!(val["amount"], "JPY 1,234");
+}
+
+#[test]
+fn test_dot_str_symbol_serialize_to_value_eur() {
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::raw_money::dot_str_symbol")]
+        amount: RawMoney<EUR>,
+    }
+    let w = W {
+        amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)),
+    };
+    let val = serde_json::to_value(&w).unwrap();
+    assert_eq!(val["amount"], "€1.234,56789");
+}
+
+// ---------------------------------------------------------------------------
+// Default deserializer: EUR, IDR, CAD with serde_yaml (visit_f64, visit_i64)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_default_deserialize_eur_yaml() {
+    let raw: RawMoney<EUR> = serde_yaml::from_str("1234.56789").unwrap();
+    assert_eq!(raw.code(), "EUR");
+    let raw2: RawMoney<EUR> = serde_yaml::from_str("-500").unwrap();
+    assert_eq!(raw2.code(), "EUR");
+}
+
+#[test]
+fn test_default_deserialize_idr_yaml() {
+    let raw: RawMoney<IDR> = serde_yaml::from_str("50000.5").unwrap();
+    assert_eq!(raw.code(), "IDR");
+    let raw2: RawMoney<IDR> = serde_yaml::from_str("-1000").unwrap();
+    assert_eq!(raw2.code(), "IDR");
+}
+
+#[test]
+fn test_default_deserialize_cad_yaml() {
+    let raw: RawMoney<CAD> = serde_yaml::from_str("99.99123").unwrap();
+    assert_eq!(raw.code(), "CAD");
+    let raw2: RawMoney<CAD> = serde_yaml::from_str("-50").unwrap();
+    assert_eq!(raw2.code(), "CAD");
+}
+
+// ---------------------------------------------------------------------------
+// visit_map<MapAccess<StrRead>>: JSON object input (both branches)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_default_deserialize_json_object_number_key_usd() {
+    // JSON object with serde_json's private number key → success path of visit_map<MapAccess<StrRead>>
+    let raw: RawMoney<USD> =
+        serde_json::from_str(r#"{"$serde_json::private::Number":"1234.56789"}"#).unwrap();
+    assert_eq!(raw.code(), "USD");
+    assert_eq!(raw.amount(), dec!(1234.56789));
+}
+
+#[test]
+fn test_default_deserialize_json_object_number_key_eur() {
+    let raw: RawMoney<EUR> =
+        serde_json::from_str(r#"{"$serde_json::private::Number":"99.99"}"#).unwrap();
+    assert_eq!(raw.code(), "EUR");
+}
+
+#[test]
+fn test_default_deserialize_json_object_number_key_idr() {
+    let raw: RawMoney<IDR> =
+        serde_json::from_str(r#"{"$serde_json::private::Number":"5000"}"#).unwrap();
+    assert_eq!(raw.code(), "IDR");
+}
+
+#[test]
+fn test_default_deserialize_json_object_number_key_cad() {
+    let raw: RawMoney<CAD> =
+        serde_json::from_str(r#"{"$serde_json::private::Number":"99.99123"}"#).unwrap();
+    assert_eq!(raw.code(), "CAD");
+}
+
+#[test]
+fn test_default_deserialize_json_object_wrong_key() {
+    // JSON object with wrong key → else branch ("unexpected key") of visit_map<MapAccess<StrRead>>
+    let result = serde_json::from_str::<RawMoney<USD>>(r#"{"wrong_key":"value"}"#);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("unexpected key"));
+}
+
+#[test]
+fn test_default_deserialize_json_object_invalid_decimal() {
+    // JSON object with valid key but non-decimal value → map_err closure in visit_map
+    let result = serde_json::from_str::<RawMoney<USD>>(
+        r#"{"$serde_json::private::Number":"not_a_number"}"#,
+    );
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("invalid decimal"));
+}
+
+// ---------------------------------------------------------------------------
+// visit_unit: option visitors with serde_yaml::Error via UnitDeserializer
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_option_comma_str_code_visit_unit_yaml_error() {
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::UnitDeserializer<serde_yaml::Error> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_comma_str_code::deserialize::<USD, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_comma_str_symbol_visit_unit_yaml_error() {
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::UnitDeserializer<serde_yaml::Error> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_comma_str_symbol::deserialize::<USD, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_dot_str_code_visit_unit_yaml_error() {
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::UnitDeserializer<serde_yaml::Error> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_dot_str_code::deserialize::<EUR, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_dot_str_symbol_visit_unit_yaml_error() {
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::UnitDeserializer<serde_yaml::Error> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_dot_str_symbol::deserialize::<EUR, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_minor_visit_unit_yaml_error() {
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::UnitDeserializer<serde_yaml::Error> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_minor::deserialize::<USD, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_comma_str_code_visit_unit_json_error() {
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::UnitDeserializer<serde_json::Error> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_comma_str_code::deserialize::<USD, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+#[test]
+fn test_option_minor_visit_unit_json_error() {
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::UnitDeserializer<serde_json::Error> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_minor::deserialize::<USD, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
