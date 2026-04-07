@@ -522,3 +522,27 @@ pub mod option_dot_str_symbol {
         deserializer.deserialize_option(Visitor(PhantomData))
     }
 }
+
+// ---------------------------------------------------------------------------------
+// minor: serialize/deserialize as minor amount, e.g. USD 1,234.56 -> 123456
+// ---------------------------------------------------------------------------------
+
+/// Serialize/deserialize `Money<C>` as a JSON Number of its minor amount.
+///
+/// # Usage
+///
+/// ```ignore
+/// #[serde(with = "moneylib::serde::money::minor")]
+/// amount: Money<USD>,
+/// ```
+pub mod minor {}
+
+/// Serialize/deserialize `Option<Money<C>>` as a JSON Number of its minor amount.
+///
+/// # Usage
+///
+/// ```ignore
+/// #[serde(with = "moneylib::serde::money::option_minor")]
+/// amount: Option<Money<USD>>,
+/// ```
+pub mod option_minor {}
