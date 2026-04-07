@@ -1508,3 +1508,116 @@ fn test_all() {
     assert_eq!(ret.neg_amount_from_symbol_comma.amount(), dec!(-1.12));
     assert_eq!(ret.neg_amount_from_symbol_dot.amount(), dec!(-1.12));
 }
+
+// ---------------------------------------------------------------------------
+// minor serialize/deserialize
+// ---------------------------------------------------------------------------
+
+#[derive(::serde::Serialize, ::serde::Deserialize)]
+struct PaymentMinor {
+    #[serde(with = "crate::serde::money::minor")]
+    amount: Money<USD>,
+}
+
+#[test]
+fn test_minor_serialize_usd() {
+    let p = PaymentMinor {
+        amount: Money::<USD>::from_decimal(dec!(1234.56)),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":123456}"#);
+}
+
+#[test]
+fn test_minor_serialize_negative() {
+    let p = PaymentMinor {
+        amount: Money::<USD>::from_decimal(dec!(-1234.56)),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":-123456}"#);
+}
+
+#[test]
+fn test_minor_serialize_jpy() {
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct PaymentMinorJPY {
+        #[serde(with = "crate::serde::money::minor")]
+        amount: Money<JPY>,
+    }
+    let p = PaymentMinorJPY {
+        amount: Money::<JPY>::from_decimal(dec!(1234)),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":1234}"#);
+}
+
+#[test]
+fn test_minor_deserialize() {
+    let p: PaymentMinor = serde_json::from_str(r#"{"amount":123456}"#).unwrap();
+    assert_eq!(p.amount.amount(), dec!(1234.56));
+    assert_eq!(p.amount.code(), "USD");
+}
+
+#[test]
+fn test_minor_deserialize_negative() {
+    let p: PaymentMinor = serde_json::from_str(r#"{"amount":-123456}"#).unwrap();
+    assert_eq!(p.amount.amount(), dec!(-1234.56));
+}
+
+#[test]
+fn test_minor_roundtrip() {
+    let original = PaymentMinor {
+        amount: Money::<USD>::from_decimal(dec!(1234.56)),
+    };
+    let json = serde_json::to_string(&original).unwrap();
+    let deserialized: PaymentMinor = serde_json::from_str(&json).unwrap();
+    assert_eq!(original.amount, deserialized.amount);
+}
+
+// ---------------------------------------------------------------------------
+// option_minor serialize/deserialize
+// ---------------------------------------------------------------------------
+
+#[derive(::serde::Serialize, ::serde::Deserialize)]
+struct PaymentOptMinor {
+    #[serde(with = "crate::serde::money::option_minor")]
+    amount: Option<Money<USD>>,
+}
+
+#[test]
+fn test_option_minor_serialize_some() {
+    let p = PaymentOptMinor {
+        amount: Some(Money::<USD>::from_decimal(dec!(1234.56))),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":123456}"#);
+}
+
+#[test]
+fn test_option_minor_serialize_none() {
+    let p = PaymentOptMinor { amount: None };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":null}"#);
+}
+
+#[test]
+fn test_option_minor_deserialize_some() {
+    let p: PaymentOptMinor = serde_json::from_str(r#"{"amount":123456}"#).unwrap();
+    assert_eq!(p.amount.unwrap().amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_option_minor_deserialize_none() {
+    let p: PaymentOptMinor = serde_json::from_str(r#"{"amount":null}"#).unwrap();
+    assert!(p.amount.is_none());
+}
+
+#[test]
+fn test_option_minor_roundtrip() {
+    let original = PaymentOptMinor {
+        amount: Some(Money::<USD>::from_decimal(dec!(1234.56))),
+    };
+    let json = serde_json::to_string(&original).unwrap();
+    let deserialized: PaymentOptMinor = serde_json::from_str(&json).unwrap();
+    assert_eq!(original.amount, deserialized.amount);
+}
