@@ -544,9 +544,7 @@ pub mod minor {
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        let minor = value
-            .minor_amount()
-            .map_err(|e| ::serde::ser::Error::custom(e))?;
+        let minor = value.minor_amount().map_err(::serde::ser::Error::custom)?;
         serializer.serialize_i128(minor)
     }
 
