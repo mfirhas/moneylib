@@ -112,7 +112,7 @@ fn test_partial_ord_negative_amounts() {
 
 #[test]
 fn test_from_str_usd_comma_separator() {
-    let money = Money::<USD>::from_str("USD 1,234.56").unwrap();
+    let money = Money::<USD>::from_str_comma_thousands("USD 1,234.56").unwrap();
     assert_eq!(money.code(), "USD");
     assert_eq!(money.amount(), dec!(1234.56));
 }
@@ -130,14 +130,14 @@ fn test_from_str_eur_dot_separator() {
 
 #[test]
 fn test_from_str_simple_amount() {
-    let money = Money::<USD>::from_str("USD 100.50").unwrap();
+    let money = Money::<USD>::from_str_comma_thousands("USD 100.50").unwrap();
     assert_eq!(money.code(), "USD");
     assert_eq!(money.amount(), dec!(100.50));
 }
 
 #[test]
 fn test_from_str_large_amount_with_commas() {
-    let money = Money::<USD>::from_str("USD 1,000,000.99").unwrap();
+    let money = Money::<USD>::from_str_comma_thousands("USD 1,000,000.99").unwrap();
     assert_eq!(money.amount(), dec!(1000000.99));
 }
 
@@ -150,14 +150,14 @@ fn test_from_str_large_amount_with_dots() {
 
 #[test]
 fn test_from_str_zero_amount() {
-    let money = Money::<USD>::from_str("USD 0.00").unwrap();
+    let money = Money::<USD>::from_str_comma_thousands("USD 0.00").unwrap();
     assert_eq!(money.amount(), dec!(0.00));
 }
 
 #[test]
 fn test_from_str_zero_amount_variations() {
     // Test 0.00 money compared with dec!(0)
-    let money1 = Money::<USD>::from_str("USD 0.00").unwrap();
+    let money1 = Money::<USD>::from_str_comma_thousands("USD 0.00").unwrap();
     assert_eq!(money1.amount(), dec!(0));
 
     // Test dec!(0) compared with 0.00
@@ -165,13 +165,13 @@ fn test_from_str_zero_amount_variations() {
     assert_eq!(money2.amount(), dec!(0.00));
 
     // Test with more zeros after decimal point
-    let money3 = Money::<USD>::from_str("USD 0.000").unwrap();
+    let money3 = Money::<USD>::from_str_comma_thousands("USD 0.000").unwrap();
     assert_eq!(money3.amount(), dec!(0.000));
 
-    let money4 = Money::<USD>::from_str("USD 0.0000").unwrap();
+    let money4 = Money::<USD>::from_str_comma_thousands("USD 0.0000").unwrap();
     assert_eq!(money4.amount(), dec!(0.0000));
 
-    let money5 = Money::<USD>::from_str("USD 0.00000").unwrap();
+    let money5 = Money::<USD>::from_str_comma_thousands("USD 0.00000").unwrap();
     assert_eq!(money5.amount(), dec!(0));
     assert_eq!(money5.amount(), dec!(0.00));
     assert_eq!(money5.amount(), dec!(0.00000));
@@ -185,13 +185,13 @@ fn test_from_str_zero_amount_variations() {
 
 #[test]
 fn test_from_str_with_whitespace() {
-    let money = Money::<USD>::from_str("  USD 100.50  ").unwrap();
+    let money = Money::<USD>::from_str_comma_thousands("  USD 100.50  ").unwrap();
     assert_eq!(money.amount(), dec!(100.50));
 }
 
 #[test]
 fn test_from_str_rounding_to_minor_unit() {
-    let money = Money::<USD>::from_str("USD 100.999").unwrap();
+    let money = Money::<USD>::from_str_comma_thousands("USD 100.999").unwrap();
     // Should round to 2 decimal places for USD
     assert_eq!(money.amount(), dec!(101.00));
 }
@@ -207,7 +207,7 @@ fn test_from_str_invalid_no_space() {
 fn test_from_str_invalid_currency() {
     // Note: With the new API, this needs to specify a currency type.
     // We'll use USD, but the parsing will fail because string contains "XYZ"
-    let result = Money::<USD>::from_str("XYZ 100.50");
+    let result = Money::<USD>::from_str_comma_thousands("XYZ 100.50");
     assert!(result.is_err());
     // The error will be CurrencyMismatch since "XYZ" != "USD"
     assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
@@ -236,7 +236,7 @@ fn test_from_str_only_currency() {
 
 #[test]
 fn test_from_str_only_amount() {
-    let result = Money::<USD>::from_str("100.50");
+    let result = Money::<USD>::from_str_comma_thousands("100.50");
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
 }
@@ -251,7 +251,7 @@ fn test_from_str_too_many_parts() {
 #[test]
 fn test_from_str_no_decimal_separator() {
     // This actually parses successfully if it matches the thousands separator regex
-    let result = Money::<USD>::from_str("USD 100.0");
+    let result = Money::<USD>::from_str_comma_thousands("USD 100.0");
     assert!(result.is_ok());
     if let Ok(money) = result {
         assert_eq!(money.amount(), dec!(100.0));
@@ -261,8 +261,8 @@ fn test_from_str_no_decimal_separator() {
 #[test]
 fn test_from_str_optional_comma_thousands_separator() {
     // Test that comma thousands separator is optional
-    let with_separator = Money::<USD>::from_str("USD 1,234.56").unwrap();
-    let without_separator = Money::<USD>::from_str("USD 1234.56").unwrap();
+    let with_separator = Money::<USD>::from_str_comma_thousands("USD 1,234.56").unwrap();
+    let without_separator = Money::<USD>::from_str_comma_thousands("USD 1234.56").unwrap();
     assert_eq!(with_separator.amount(), dec!(1234.56));
     assert_eq!(without_separator.amount(), dec!(1234.56));
     assert_eq!(with_separator.amount(), without_separator.amount());
@@ -281,7 +281,7 @@ fn test_from_str_optional_dot_thousands_separator() {
 #[test]
 fn test_from_str_edge_case_1000_dot_000() {
     // Test USD 1000.000 - should parse as 1000.000 and round to 1000.00
-    let money = Money::<USD>::from_str("USD 1000.000").unwrap();
+    let money = Money::<USD>::from_str_comma_thousands("USD 1000.000").unwrap();
     assert_eq!(money.amount(), dec!(1000.00));
 }
 
@@ -305,7 +305,7 @@ fn test_from_str_no_thousands_separator_various() {
     ];
 
     for (input, expected) in usd_tests {
-        let money = Money::<USD>::from_str(input).unwrap();
+        let money = Money::<USD>::from_str_comma_thousands(input).unwrap();
         assert_eq!(money.amount(), expected, "Failed for input: {}", input);
     }
 
@@ -343,7 +343,7 @@ fn test_from_str_edge_case_variations() {
 
     for (input, expected) in &comma_thousands_tests {
         if input.starts_with("USD") {
-            let money: Money<USD> = Money::from_str(input).unwrap();
+            let money: Money<USD> = Money::from_str_comma_thousands(input).unwrap();
             assert_eq!(
                 money.amount(),
                 *expected,
@@ -351,7 +351,7 @@ fn test_from_str_edge_case_variations() {
                 input
             );
         } else if input.starts_with("EUR") {
-            let money: Money<EUR> = Money::from_str(input).unwrap();
+            let money: Money<EUR> = Money::from_str_comma_thousands(input).unwrap();
             assert_eq!(
                 money.amount(),
                 *expected,
@@ -1880,7 +1880,7 @@ fn test_bhd_three_decimal_places() {
 #[test]
 fn test_parse_and_format_roundtrip() {
     let original_str = "USD 1,234.56";
-    let money: Money<USD> = Money::from_str(original_str).unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands(original_str).unwrap();
     let formatted = money.format_code();
     assert_eq!(formatted, original_str);
 }
@@ -1995,7 +1995,7 @@ fn test_clamp_at_boundaries() {
 
 #[test]
 fn test_multiple_separators_in_parsing() {
-    let money: Money<USD> = Money::from_str("USD 1,234,567.89").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1,234,567.89").unwrap();
     assert_eq!(money.amount(), dec!(1234567.89));
 
     // Dot thousands separator requires from_str_dot_thousands
@@ -2005,20 +2005,20 @@ fn test_multiple_separators_in_parsing() {
 
 #[test]
 fn test_currency_mismatch_in_parsing() {
-    let money = Money::<EUR>::from_str("USD 1,234,567.89");
+    let money = Money::<EUR>::from_str_comma_thousands("USD 1,234,567.89");
     assert!(money.is_err());
     assert_eq!(money.err().unwrap(), MoneyError::CurrencyMismatch);
 }
 
 #[test]
 fn test_parsing_negative_money_no_separator() {
-    let money = Money::<USD>::from_str("USD -1234567.89").unwrap();
+    let money = Money::<USD>::from_str_comma_thousands("USD -1234567.89").unwrap();
     assert_eq!(money.amount(), dec!(-1_234_567.89));
 }
 
 #[test]
 fn test_parsing_negative_money() {
-    let money = Money::<USD>::from_str("USD -1,234,567.89").unwrap();
+    let money = Money::<USD>::from_str_comma_thousands("USD -1,234,567.89").unwrap();
     assert_eq!(money.amount(), dec!(-1_234_567.89));
 }
 

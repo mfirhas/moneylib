@@ -584,20 +584,20 @@ fn test_display_negative() {
 
 #[test]
 fn test_from_str_simple() {
-    let raw = RawMoney::<USD>::from_str("USD 100.50").unwrap();
+    let raw = RawMoney::<USD>::from_str_comma_thousands("USD 100.50").unwrap();
     assert_eq!(raw.amount(), dec!(100.50));
     assert_eq!(raw.code(), "USD");
 }
 
 #[test]
 fn test_from_str_with_thousands() {
-    let raw = RawMoney::<USD>::from_str("USD 1,234.56").unwrap();
+    let raw = RawMoney::<USD>::from_str_comma_thousands("USD 1,234.56").unwrap();
     assert_eq!(raw.amount(), dec!(1234.56));
 }
 
 #[test]
 fn test_from_str_many_decimals() {
-    let raw = RawMoney::<USD>::from_str("USD 100.123456789").unwrap();
+    let raw = RawMoney::<USD>::from_str_comma_thousands("USD 100.123456789").unwrap();
     assert_eq!(raw.amount(), dec!(100.123456789));
 }
 
@@ -648,13 +648,13 @@ fn test_from_str_dot_thousands_invalid_format_2() {
 
 #[test]
 fn test_parsing_negative_money_no_separator() {
-    let money = RawMoney::<USD>::from_str("USD -1234567.8924").unwrap();
+    let money = RawMoney::<USD>::from_str_comma_thousands("USD -1234567.8924").unwrap();
     assert_eq!(money.amount(), dec!(-1_234_567.8924));
 }
 
 #[test]
 fn test_parsing_negative_money() {
-    let money = RawMoney::<USD>::from_str("USD -1,234,567.8999").unwrap();
+    let money = RawMoney::<USD>::from_str_comma_thousands("USD -1,234,567.8999").unwrap();
     assert_eq!(money.amount(), dec!(-1_234_567.8999));
 }
 
