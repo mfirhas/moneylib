@@ -2010,4 +2010,3 @@ fn test_option_minor_visit_unit_json_error() {
     let result = crate::serde::money::option_minor::deserialize::<USD, _>(d);
     assert!(result.unwrap().is_none());
 }
-

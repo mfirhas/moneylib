@@ -50,9 +50,7 @@ impl<'de, C: Currency + Clone> de::Visitor<'de> for RawMoneyVisitor<C> {
     }
 
     fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-        Decimal::from_str(v)
-            .map(|d| RawMoney::<C>::from_decimal(d))
-            .map_err(|_| de::Error::custom(format!("invalid decimal: {}", v)))
+        RawMoney::<C>::from_str(v).map_err(|_| de::Error::custom(format!("invalid decimal: {}", v)))
     }
 
     // Handles serde_json's arbitrary_precision number format
@@ -97,7 +95,6 @@ impl<'de, C: Currency + Clone> Deserialize<'de> for RawMoney<C> {
 pub mod comma_str_code {
     use std::fmt;
     use std::marker::PhantomData;
-    use std::str::FromStr;
 
     use ::serde::{Deserializer, Serializer, de};
 
@@ -120,7 +117,7 @@ pub mod comma_str_code {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            RawMoney::<C>::from_str(v).map_err(de::Error::custom)
+            RawMoney::<C>::from_str_comma_thousands(v).map_err(de::Error::custom)
         }
     }
 
