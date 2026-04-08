@@ -398,6 +398,106 @@ fn test_from_str_edge_case_variations() {
     }
 }
 
+// ==================== from_str (plain decimal) Tests ====================
+
+#[test]
+fn test_from_str_plain_integer() {
+    let money = Money::<USD>::from_str("12").unwrap();
+    assert!(money.is_positive());
+    assert_eq!(money.amount(), dec!(12));
+}
+
+#[test]
+fn test_from_str_plain_decimal() {
+    let money = Money::<USD>::from_str("12.34").unwrap();
+    assert!(money.is_positive());
+    assert_eq!(money.amount(), dec!(12.34));
+}
+
+#[test]
+fn test_from_str_plain_high_precision_rounds() {
+    // USD rounds to 2 decimal places using banker's rounding
+    let money = Money::<USD>::from_str("12.239489").unwrap();
+    assert!(money.is_positive());
+    assert_eq!(money.amount(), dec!(12.24));
+}
+
+#[test]
+fn test_from_str_plain_negative() {
+    let money = Money::<USD>::from_str("-12.34").unwrap();
+    assert!(money.is_negative());
+    assert_eq!(money.amount(), dec!(-12.34));
+}
+
+#[test]
+fn test_from_str_plain_negative_integer() {
+    let money = Money::<USD>::from_str("-1234").unwrap();
+    assert!(money.is_negative());
+    assert_eq!(money.amount(), dec!(-1234));
+}
+
+#[test]
+fn test_from_str_plain_zero() {
+    let money = Money::<USD>::from_str("0").unwrap();
+    assert_eq!(money.amount(), dec!(0));
+}
+
+#[test]
+fn test_from_str_plain_large_number() {
+    let money = Money::<USD>::from_str("1234567.89").unwrap();
+    assert_eq!(money.amount(), dec!(1234567.89));
+}
+
+#[test]
+fn test_from_str_plain_whitespace_trimmed() {
+    let money = Money::<USD>::from_str("  12.34  ").unwrap();
+    assert_eq!(money.amount(), dec!(12.34));
+}
+
+#[test]
+fn test_from_str_plain_rejects_currency_prefix() {
+    // New from_str only accepts plain decimal numbers, not "CCC amount" format
+    let result = Money::<USD>::from_str("USD 12.34");
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+}
+
+#[test]
+fn test_from_str_plain_rejects_comma_thousands() {
+    // Comma thousands separator is not accepted by from_str
+    let result = Money::<USD>::from_str("1,234.56");
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+}
+
+#[test]
+fn test_from_str_plain_rejects_empty() {
+    let result = Money::<USD>::from_str("");
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+}
+
+#[test]
+fn test_from_str_plain_rejects_non_numeric() {
+    let result = Money::<USD>::from_str("abc");
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+}
+
+#[test]
+fn test_from_str_plain_bhd_three_decimals() {
+    // BHD has 3 decimal places - no rounding needed for 3 dp input
+    let money = Money::<BHD>::from_str("12.345").unwrap();
+    assert_eq!(money.amount(), dec!(12.345));
+}
+
+#[test]
+fn test_from_str_plain_jpy_zero_decimals() {
+    // JPY has 0 decimal places - rounds to integer
+    let money = Money::<JPY>::from_str("1234.6").unwrap();
+    assert_eq!(money.amount(), dec!(1235));
+}
+
 // ==================== from_str_dot_thousands Tests ====================
 
 #[test]
@@ -2066,71 +2166,71 @@ fn test_from_str_comma_empty_group0() {
 #[test]
 fn test_parsing_all() {
     //! from code comma thousands positive
-    let money: Money<USD> = Money::from_str("USD 12").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 12").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 12.2").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 12.2").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.2));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 12.23").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 12.23").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.23));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 12.239489").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 12.239489").unwrap();
     assert!(money.is_positive());
     // USD: round to 2 decimal places using bankers rounding -> 12.24
     assert_eq!(money.amount(), dec!(12.24));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1,234").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1,234").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1,234.3").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1,234.3").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1,234.38").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1,234.38").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1,269.34983").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1,269.34983").unwrap();
     assert!(money.is_positive());
     // USD: round to 2 decimal places using bankers rounding -> 1269.35
     assert_eq!(money.amount(), dec!(1269.35));
     println!("{} | {}", money, money.amount());
 
-    let money: Money<USD> = Money::from_str("USD 1234").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1234").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1234.3").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1234.3").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1234.38").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1234.38").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1269.34983").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1269.34983").unwrap();
     assert!(money.is_positive());
     // USD: round to 2 decimal places using bankers rounding -> 1269.35
     assert_eq!(money.amount(), dec!(1269.35));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1,234,000").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1,234,000").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1,234,000.3").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1,234,000.3").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000.3));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1,234,111.38").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1,234,111.38").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234111.38));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD 1,269,899.34983").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD 1,269,899.34983").unwrap();
     assert!(money.is_positive());
     // USD: round to 2 decimal places using bankers rounding -> 1269899.35
     assert_eq!(money.amount(), dec!(1269899.35));
@@ -2139,71 +2239,71 @@ fn test_parsing_all() {
     println!("----------------------------------------");
 
     // from code comma thousands negative
-    let money: Money<USD> = Money::from_str("USD -12").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -12").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -12.2").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -12.2").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.2));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -12.23").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -12.23").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.23));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -12.239489").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -12.239489").unwrap();
     assert!(money.is_negative());
     // USD: round to 2 decimal places using bankers rounding -> -12.24
     assert_eq!(money.amount(), dec!(-12.24));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1,234").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1,234").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1,234.3").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1,234.3").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1,234.38").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1,234.38").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1,269.34983").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1,269.34983").unwrap();
     assert!(money.is_negative());
     // USD: round to 2 decimal places using bankers rounding -> -1269.35
     assert_eq!(money.amount(), dec!(-1269.35));
     println!("{} | {}", money, money.amount());
 
-    let money: Money<USD> = Money::from_str("USD -1234").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1234").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1234.3").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1234.3").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1234.38").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1234.38").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1269.34983").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1269.34983").unwrap();
     assert!(money.is_negative());
     // USD: round to 2 decimal places using bankers rounding -> -1269.35
     assert_eq!(money.amount(), dec!(-1269.35));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1,234,000").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1,234,000").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1,234,000.3").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1,234,000.3").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000.3));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1,234,111.38").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1,234,111.38").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234111.38));
     println!("{} | {}", money, money.amount());
-    let money: Money<USD> = Money::from_str("USD -1,269,899.34983").unwrap();
+    let money: Money<USD> = Money::from_str_comma_thousands("USD -1,269,899.34983").unwrap();
     assert!(money.is_negative());
     // USD: round to 2 decimal places using bankers rounding -> -1269899.35
     assert_eq!(money.amount(), dec!(-1269899.35));
