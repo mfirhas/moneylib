@@ -45,7 +45,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 /// assert_eq!(money.amount(), dec!(100.50));
 ///
 /// // Parse money from string
-/// let money = Money::<USD>::from_str("USD 1,234.56").unwrap();
+/// let money = Money::<USD>::from_str("1234.56").unwrap();
 /// assert_eq!(money.amount(), dec!(1234.56));
 /// ```
 ///
@@ -130,26 +130,26 @@ where
     /// use std::str::FromStr;
     ///
     /// // Comma as thousand separator, dot as decimal
-    /// let money = Money::<USD>::from_str("USD 1,234.56").unwrap();
+    /// let money = Money::<USD>::from_str_comma_thousands("USD 1,234.56").unwrap();
     /// assert_eq!(money.amount(), dec!(1234.56));
     /// assert_eq!(money.code(), "USD");
     ///
     /// // No thousand separator
-    /// let money = Money::<GBP>::from_str("GBP 123.45").unwrap();
+    /// let money = Money::<GBP>::from_str_comma_thousands("GBP 123.45").unwrap();
     /// assert_eq!(money.amount(), dec!(123.45));
     ///
     /// // Large amount with multiple comma thousand separators
-    /// let money = Money::<USD>::from_str("USD 1,000,000.99").unwrap();
+    /// let money = Money::<USD>::from_str_comma_thousands("USD 1,000,000.99").unwrap();
     /// assert_eq!(money.amount(), dec!(1000000.99));
     ///
     /// // Error: invalid format (currency must come first)
-    /// assert!(Money::<USD>::from_str("100.00 USD").is_err());
+    /// assert!(Money::<USD>::from_str_comma_thousands("100.00 USD").is_err());
     ///
     /// // Error: currencies mismatch
-    /// assert!(Money::<USD>::from_str("EUR 100.00").is_err());
+    /// assert!(Money::<USD>::from_str_comma_thousands("EUR 100.00").is_err());
     ///
     /// // Error: dot thousands / comma decimal format not supported here
-    /// assert!(Money::<USD>::from_str("USD 1.234,56").is_err());
+    /// assert!(Money::<USD>::from_str_comma_thousands("USD 1.234,56").is_err());
     /// ```
     pub fn from_str_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
@@ -310,7 +310,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, iso::USD, money, dec};
+    /// use moneylib::{BaseMoney, Money, iso::USD, money, dec};
     /// use std::str::FromStr;
     ///
     /// let money = Money::<USD>::from_str("12334.4439").unwrap();

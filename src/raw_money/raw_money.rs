@@ -172,11 +172,11 @@ where
     /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
     /// use std::str::FromStr;
     ///
-    /// let raw = RawMoney::<USD>::from_str("USD 1,234.56789").unwrap();
+    /// let raw = RawMoney::<USD>::from_str_comma_thousands("USD 1,234.56789").unwrap();
     /// assert_eq!(raw.amount(), dec!(1234.56789));
     /// assert_eq!(raw.code(), "USD");
     ///
-    /// assert!(RawMoney::<USD>::from_str("EUR 100.00").is_err());
+    /// assert!(RawMoney::<USD>::from_str_comma_thousands("EUR 100.00").is_err());
     /// ```
     pub fn from_str_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
@@ -304,12 +304,12 @@ where
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{RawMoney, iso::USD, raw, dec};
+    /// use moneylib::{BaseMoney, RawMoney, iso::USD, raw, dec};
     /// use std::str::FromStr;
     ///
     /// let money = RawMoney::<USD>::from_str("12334.4439").unwrap();
-    /// assert_eq!(money, raw!(USD, 12334.44));
-    /// assert_eq!(money.amount(), dec!(12334.44));
+    /// assert_eq!(money, raw!(USD, 12334.4439));
+    /// assert_eq!(money.amount(), dec!(12334.4439));
     /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
