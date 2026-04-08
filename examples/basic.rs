@@ -46,7 +46,7 @@ fn main() {
     println!("------------------------------");
 
     // Parse money from string format "CURRENCY AMOUNT"
-    let money_from_str = Money::<USD>::from_str("USD 1,234.56").unwrap();
+    let money_from_str = Money::<USD>::from_str_comma_thousands("USD 1,234.56").unwrap();
     println!("Parsed from string: {}", money_from_str);
 
     // Supports different thousand separator formats
@@ -54,7 +54,7 @@ fn main() {
     println!("European format: {}", money_euro);
 
     // Works without thousand separators too
-    let money_simple = Money::<GBP>::from_str("GBP 500.25").unwrap();
+    let money_simple = Money::<GBP>::from_str_comma_thousands("GBP 500.25").unwrap();
     println!("Simple format: {}", money_simple);
     println!();
 
