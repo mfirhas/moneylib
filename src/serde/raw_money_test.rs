@@ -1774,8 +1774,7 @@ fn test_default_deserialize_multi_currency_struct_json() {
         idr: RawMoney<IDR>,
         cad: RawMoney<CAD>,
     }
-    let m: Multi =
-        serde_json::from_str(r#"{"eur":100.56789,"idr":5000,"cad":99.99123}"#).unwrap();
+    let m: Multi = serde_json::from_str(r#"{"eur":100.56789,"idr":5000,"cad":99.99123}"#).unwrap();
     assert_eq!(m.eur.code(), "EUR");
     assert_eq!(m.idr.code(), "IDR");
     assert_eq!(m.cad.code(), "CAD");
@@ -1939,9 +1938,8 @@ fn test_default_deserialize_json_object_wrong_key() {
 #[test]
 fn test_default_deserialize_json_object_invalid_decimal() {
     // JSON object with valid key but non-decimal value → map_err closure in visit_map
-    let result = serde_json::from_str::<RawMoney<USD>>(
-        r#"{"$serde_json::private::Number":"not_a_number"}"#,
-    );
+    let result =
+        serde_json::from_str::<RawMoney<USD>>(r#"{"$serde_json::private::Number":"not_a_number"}"#);
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("invalid decimal"));
 }
@@ -2005,4 +2003,3 @@ fn test_option_minor_visit_unit_json_error() {
     let result = crate::serde::raw_money::option_minor::deserialize::<USD, _>(d);
     assert!(result.unwrap().is_none());
 }
-
