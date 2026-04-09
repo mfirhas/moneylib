@@ -3,7 +3,7 @@ fn validate_and_build_result<'a>(
     currency_code: &'a str,
     integer_part: &'a str,
     decimal_part: Option<&'a str>,
-    separator: char,
+    separator: &'a str,
     is_positive: bool,
 ) -> Option<(&'a str, String)> {
     // Check if there are separators
@@ -116,7 +116,7 @@ pub fn parse_comma_thousands_separator(s: &str) -> Option<(&str, String)> {
         None
     };
 
-    validate_and_build_result(currency_code, integer_part, decimal_part, ',', is_positive)
+    validate_and_build_result(currency_code, integer_part, decimal_part, ",", is_positive)
 }
 
 /// Parse money string with dot thousands separator and comma decimal separator
@@ -168,7 +168,7 @@ pub fn parse_dot_thousands_separator(s: &str) -> Option<(&str, String)> {
         None
     };
 
-    validate_and_build_result(currency_code, integer_part, decimal_part, '.', is_positive)
+    validate_and_build_result(currency_code, integer_part, decimal_part, ".", is_positive)
 }
 
 pub fn parse_symbol_comma_thousands_separator<C: crate::Currency>(
@@ -195,7 +195,7 @@ pub fn parse_symbol_comma_thousands_separator<C: crate::Currency>(
         (decimal_parts[0], None)
     };
 
-    validate_and_build_result(C::SYMBOL, integer_part, decimal_part, ',', is_positive)
+    validate_and_build_result(C::SYMBOL, integer_part, decimal_part, ",", is_positive)
 }
 
 pub fn parse_symbol_dot_thousands_separator<C: crate::Currency>(s: &str) -> Option<(&str, String)> {
@@ -220,5 +220,87 @@ pub fn parse_symbol_dot_thousands_separator<C: crate::Currency>(s: &str) -> Opti
         (decimal_parts[0], None)
     };
 
-    validate_and_build_result(C::SYMBOL, integer_part, decimal_part, '.', is_positive)
+    validate_and_build_result(C::SYMBOL, integer_part, decimal_part, ".", is_positive)
+}
+
+/// Parse code format with locale separators.
+///
+/// Locale separators source: https://docs.rs/currencylib
+pub fn parse_code_locale_separator<C: crate::Currency>(s: &str) -> Option<(&str, String)> {
+    // Split by space (handles multiple spaces automatically)
+    let parts: Vec<&str> = s.split_whitespace().collect();
+    if parts.len() != 2 || parts[0].is_empty() || parts[1].is_empty() {
+        return None;
+    }
+
+    let currency_code = parts[0];
+    let amount_str = parts[1];
+
+    // Currency code must be 1-15 alphabetic characters
+    if currency_code.is_empty()
+        || currency_code.len() > 15
+        || !currency_code.chars().all(|c| c.is_ascii_alphabetic())
+    {
+        return None;
+    }
+
+    // Split by decimal point if present
+    let decimal_parts: Vec<&str> = amount_str.split(C::DECIMAL_SEPARATOR).collect();
+    if decimal_parts.len() > 2 {
+        return None;
+    }
+
+    let (integer_part, is_positive) = if let Some(neg_trimmed) = decimal_parts[0].strip_prefix("-")
+    {
+        (neg_trimmed, false)
+    } else {
+        (decimal_parts[0], true)
+    };
+    let decimal_part = if decimal_parts.len() == 2 {
+        Some(decimal_parts[1])
+    } else {
+        None
+    };
+
+    validate_and_build_result(
+        currency_code,
+        integer_part,
+        decimal_part,
+        C::THOUSAND_SEPARATOR,
+        is_positive,
+    )
+}
+
+/// Parse symbol format with locale separators.
+///
+/// Locale separators source: https://docs.rs/currencylib
+pub fn parse_symbol_locale_separator<C: crate::Currency>(s: &str) -> Option<(&str, String)> {
+    let (stripped_money, is_positive) = if let Some(trimmed) = s.strip_prefix('-') {
+        (trimmed, false)
+    } else {
+        (s, true)
+    };
+    let amount_str = stripped_money.strip_prefix(C::SYMBOL)?;
+    if amount_str.is_empty() {
+        return None;
+    }
+
+    let decimal_parts: Vec<&str> = amount_str.split(C::DECIMAL_SEPARATOR).collect();
+    if decimal_parts.len() > 2 {
+        return None;
+    }
+
+    let (integer_part, decimal_part) = if decimal_parts.len() == 2 {
+        (decimal_parts[0], Some(decimal_parts[1]))
+    } else {
+        (decimal_parts[0], None)
+    };
+
+    validate_and_build_result(
+        C::SYMBOL,
+        integer_part,
+        decimal_part,
+        C::THOUSAND_SEPARATOR,
+        is_positive,
+    )
 }

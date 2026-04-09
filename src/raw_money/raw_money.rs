@@ -13,8 +13,9 @@ use crate::{
     base::{Amount, DecimalNumber},
     macros::dec,
     parse::{
-        parse_comma_thousands_separator, parse_dot_thousands_separator,
-        parse_symbol_comma_thousands_separator, parse_symbol_dot_thousands_separator,
+        parse_code_locale_separator, parse_comma_thousands_separator,
+        parse_dot_thousands_separator, parse_symbol_comma_thousands_separator,
+        parse_symbol_dot_thousands_separator, parse_symbol_locale_separator,
     },
 };
 use crate::{Currency, MoneyFormatter};
@@ -250,6 +251,58 @@ where
             return Ok(Self::from_decimal(
                 Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
             ));
+        }
+
+        Err(MoneyError::ParseStr)
+    }
+
+    /// Parse from string with code, locale thousands and decimal separators.
+    ///
+    /// Code is space separated with amount.
+    ///
+    /// # Example
+    /// ```
+    /// use moneylib::{RawMoney, raw, iso::CHF, dec, BaseMoney};
+    ///
+    /// let money = RawMoney::<CHF>::from_code_locale_separator("CHF 1'123'456.2223").unwrap();
+    /// assert_eq!(money.code(), "CHF");
+    /// assert_eq!(money.symbol(), "₣");
+    /// assert_eq!(money.amount(), dec!(1123456.2223));
+    /// assert_eq!(money, raw!(CHF, 1123456.2223));
+    /// ```
+    pub fn from_code_locale_separator(s: &str) -> Result<Self, MoneyError> {
+        let s = s.trim();
+
+        if let Some((code, amount_str)) = parse_code_locale_separator::<C>(s)
+            && code == C::CODE
+        {
+            return Self::from_str(&amount_str).map_err(|_| MoneyError::ParseStr);
+        }
+
+        Err(MoneyError::ParseStr)
+    }
+
+    /// Parse from string with symbol, locale thousands and decimal separators.
+    ///
+    /// There's no space between symbol and amount.
+    ///
+    /// # Example
+    /// ```
+    /// use moneylib::{RawMoney, raw, iso::CHF, dec, BaseMoney};
+    ///
+    /// let money = RawMoney::<CHF>::from_symbol_locale_separator("₣1'123'456.2223").unwrap();
+    /// assert_eq!(money.code(), "CHF");
+    /// assert_eq!(money.symbol(), "₣");
+    /// assert_eq!(money.amount(), dec!(1123456.2223));
+    /// assert_eq!(money, raw!(CHF, 1123456.2223));
+    /// ```
+    pub fn from_symbol_locale_separator(s: &str) -> Result<Self, MoneyError> {
+        let s = s.trim();
+
+        if let Some((symbol, amount_str)) = parse_symbol_locale_separator::<C>(s)
+            && symbol == C::SYMBOL
+        {
+            return Self::from_str(&amount_str).map_err(|_| MoneyError::ParseStr);
         }
 
         Err(MoneyError::ParseStr)
