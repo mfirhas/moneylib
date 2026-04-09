@@ -391,6 +391,23 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
         self.amount().is_sign_negative()
     }
 
+    /// Returns the mantissa(significand digits) of money.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{money, BaseMoney, dec};
+    ///
+    /// let money = money!(USD, 1234.59);
+    ///
+    /// let mantissa = money.mantissa();
+    /// assert_eq!(mantissa, 123459_i128);
+    /// ```
+    #[inline]
+    fn mantissa(&self) -> i128 {
+        self.amount().mantissa()
+    }
+
     /// Returns the fractional part of the money.
     ///
     /// # Examples

@@ -2017,6 +2017,13 @@ fn test_is_approx() {
 }
 
 #[test]
+fn test_money_mantissa() {
+    let money = raw!(IDR, 5_123_234.44299);
+    let mantissa = money.mantissa();
+    assert_eq!(mantissa, 512323444299);
+}
+
+#[test]
 fn test_money_fraction() {
     let money = raw!(IDR, 123_000.9999);
     let money_frac = money.fraction();
