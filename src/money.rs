@@ -109,7 +109,8 @@ where
         .round())
     }
 
-    /// Implementation of string parsing for `Money` using comma as the thousands separator.
+    /// Implementation of string parsing for `Money` using comma as the thousands separator
+    /// and dot as the decimal separator.
     ///
     /// Parses a string representation of money in the format `"CCC amount"` where
     /// `CCC` is a currency code (1-15 letters) and `amount` uses commas for thousand grouping
@@ -229,7 +230,7 @@ where
         Err(MoneyError::ParseStr)
     }
 
-    /// Parse from string with symbol and comma-separated thousands.
+    /// Parse from string with symbol, comma-separated thousands and dot-separated decimal.
     /// Example: $1,234.22 into USD 1234.22
     pub fn from_symbol_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
@@ -245,7 +246,7 @@ where
         Err(MoneyError::ParseStr)
     }
 
-    /// Parse from string with symbol and dot-separated thousands.
+    /// Parse from string with symbol, dot-separated thousands and comma-separated decimal.
     /// Example: $1.234,22 into USD 1234.22
     pub fn from_symbol_dot_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();

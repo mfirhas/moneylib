@@ -159,7 +159,7 @@ where
         Money::from_decimal(self.amount())
     }
 
-    /// Parses a string in the format `"CCC amount"` (comma thousands separator).
+    /// Parses a string in the format `"CCC amount"` (comma thousands separator and dot decimal separator).
     ///
     /// The format is `"CCC amount"` where `CCC` is a currency code (1-15 letters).
     ///
@@ -223,7 +223,7 @@ where
         Err(MoneyError::ParseStr)
     }
 
-    /// Parse from string with symbol and comma-separated thousands, no rounding
+    /// Parse from string with symbol, comma-separated thousands, dot-separated decimal, no rounding
     /// Example: $1,234.2249 into USD 1234.2249
     pub fn from_symbol_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
@@ -239,7 +239,7 @@ where
         Err(MoneyError::ParseStr)
     }
 
-    /// Parse from string with symbol and dot-separated thousands, no rounding
+    /// Parse from string with symbol, dot-separated thousands, comma-separated decimal, no rounding
     /// Example: $1.234,2249 into USD 1234.2249
     pub fn from_symbol_dot_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
