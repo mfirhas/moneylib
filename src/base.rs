@@ -450,6 +450,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
 
     /// Formats money with currency code along with thousands and decimal separators.
     ///
+    /// This uses currency's locale separators.
+    ///
     /// # Examples
     ///
     /// ```
@@ -469,6 +471,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
 
     /// Formats money with currency symbol along with thousands and decimal separators.
     ///
+    /// This uses currency's locale separators.
+    ///
     /// # Examples
     ///
     /// ```
@@ -487,6 +491,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     }
 
     /// Formats money with currency code in the smallest unit along with thousands separators.
+    ///
+    /// This uses currency's locale separators.
     ///
     /// The amount is displayed in minor units (e.g., cents for USD).
     /// If the currency has no minor unit symbol, it defaults to "minor".
@@ -509,6 +515,8 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     }
 
     /// Formats money with currency symbol in the smallest unit along with thousands separators.
+    ///
+    /// This uses currency's locale separators.
     ///
     /// The amount is displayed in minor units (e.g., cents for USD).
     /// If the currency has no minor unit symbol, it defaults to "minor".
