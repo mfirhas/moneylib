@@ -81,7 +81,7 @@ impl<'de, C: Currency + Clone> Deserialize<'de> for Money<C> {
 // ---------------------------------------------------------------------------
 
 /// Serialize/deserialize `Money<C>` as a string with currency code prefix,
-/// using the currency's natural thousands/decimal separators.
+/// using comma as thousands separator and dot as decimal separator.
 ///
 /// Uses [`BaseMoney::format_code`] for serialization (e.g. `"USD 1,234.56"`).
 /// Deserializes via comma thousands separator parser.
@@ -98,13 +98,13 @@ pub mod comma_str_code {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money, MoneyFormatter};
 
     pub fn serialize<C: Currency + Clone, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_code())
+        serializer.serialize_str(&value.format_with_separator("c na", ",", "."))
     }
 
     struct Visitor<C>(PhantomData<C>);
@@ -192,7 +192,7 @@ pub mod option_comma_str_code {
 // ---------------------------------------------------------------------------
 
 /// Serialize/deserialize `Money<C>` as a string with currency symbol prefix,
-/// using the currency's natural thousands/decimal separators.
+/// using comma as thousands separator and dot as decimal separator.
 ///
 /// Uses [`BaseMoney::format_symbol`] for serialization (e.g. `"$1,234.56"`).
 /// Deserializes by stripping the symbol and parsing with comma thousands separator.
@@ -209,13 +209,13 @@ pub mod comma_str_symbol {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money, MoneyFormatter};
 
     pub fn serialize<C: Currency + Clone, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_symbol())
+        serializer.serialize_str(&value.format_with_separator("nsa", ",", "."))
     }
 
     struct Visitor<C>(PhantomData<C>);
@@ -303,7 +303,7 @@ pub mod option_comma_str_symbol {
 // ---------------------------------------------------------------------------
 
 /// Serialize/deserialize `Money<C>` as a string with currency code prefix,
-/// using the currency's natural thousands/decimal separators.
+/// using dot as thousands separator and comma as decimal separator.
 ///
 /// Uses [`BaseMoney::format_code`] for serialization (e.g. `"EUR 1.234,56"`).
 /// Deserializes via dot thousands separator parser.
@@ -320,13 +320,13 @@ pub mod dot_str_code {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money, MoneyFormatter};
 
     pub fn serialize<C: Currency + Clone, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_code())
+        serializer.serialize_str(&value.format_with_separator("c na", ".", ","))
     }
 
     struct Visitor<C>(PhantomData<C>);
@@ -414,7 +414,7 @@ pub mod option_dot_str_code {
 // ---------------------------------------------------------------------------
 
 /// Serialize/deserialize `Money<C>` as a string with currency symbol prefix,
-/// using the currency's natural thousands/decimal separators.
+/// using dot as thousands separator and comma as decimal separator.
 ///
 /// Uses [`BaseMoney::format_symbol`] for serialization (e.g. `"€1.234,56"`).
 /// Deserializes by stripping the symbol and parsing with dot thousands separator.
@@ -431,13 +431,13 @@ pub mod dot_str_symbol {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money, MoneyFormatter};
 
     pub fn serialize<C: Currency + Clone, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_symbol())
+        serializer.serialize_str(&value.format_with_separator("nsa", ".", ","))
     }
 
     struct Visitor<C>(PhantomData<C>);
