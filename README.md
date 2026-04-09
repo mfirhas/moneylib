@@ -56,7 +56,7 @@ use moneylib::{Money, BaseMoney, BaseOps, MoneyFormatter, RoundingStrategy, iso:
 use std::str::FromStr;
 
 // Creating money from string (supports thousand separators)
-let usd_money = Money::<USD>::from_str_comma_thousands("USD 1,234.56").unwrap();
+let usd_money = Money::<USD>::from_code_comma_thousands("USD 1,234.56").unwrap();
 println!("{}", usd_money); // USD 1,234.56
 
 // Creating money from minor amount (cents for USD)

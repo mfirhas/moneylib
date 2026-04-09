@@ -120,7 +120,7 @@ where
     ///
     /// For strings that use dot as the thousands separator and comma as the decimal
     /// separator (e.g., `"EUR 1.234,56"`), use
-    /// [`Money::from_str_dot_thousands`] instead.
+    /// [`Money::from_code_dot_thousands`] instead.
     ///
     /// Accepts negative amount CCC -amount
     ///
@@ -131,28 +131,28 @@ where
     /// use std::str::FromStr;
     ///
     /// // Comma as thousand separator, dot as decimal
-    /// let money = Money::<USD>::from_str_comma_thousands("USD 1,234.56").unwrap();
+    /// let money = Money::<USD>::from_code_comma_thousands("USD 1,234.56").unwrap();
     /// assert_eq!(money.amount(), dec!(1234.56));
     /// assert_eq!(money.code(), "USD");
     ///
     /// // No thousand separator
-    /// let money = Money::<GBP>::from_str_comma_thousands("GBP 123.45").unwrap();
+    /// let money = Money::<GBP>::from_code_comma_thousands("GBP 123.45").unwrap();
     /// assert_eq!(money.amount(), dec!(123.45));
     ///
     /// // Large amount with multiple comma thousand separators
-    /// let money = Money::<USD>::from_str_comma_thousands("USD 1,000,000.99").unwrap();
+    /// let money = Money::<USD>::from_code_comma_thousands("USD 1,000,000.99").unwrap();
     /// assert_eq!(money.amount(), dec!(1000000.99));
     ///
     /// // Error: invalid format (currency must come first)
-    /// assert!(Money::<USD>::from_str_comma_thousands("100.00 USD").is_err());
+    /// assert!(Money::<USD>::from_code_comma_thousands("100.00 USD").is_err());
     ///
     /// // Error: currencies mismatch
-    /// assert!(Money::<USD>::from_str_comma_thousands("EUR 100.00").is_err());
+    /// assert!(Money::<USD>::from_code_comma_thousands("EUR 100.00").is_err());
     ///
     /// // Error: dot thousands / comma decimal format not supported here
-    /// assert!(Money::<USD>::from_str_comma_thousands("USD 1.234,56").is_err());
+    /// assert!(Money::<USD>::from_code_comma_thousands("USD 1.234,56").is_err());
     /// ```
-    pub fn from_str_comma_thousands(s: &str) -> Result<Self, MoneyError> {
+    pub fn from_code_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
         if let Some((currency_code, amount_str)) = parse_comma_thousands_separator(s) {
@@ -193,29 +193,29 @@ where
     /// use moneylib::{Money, macros::dec, BaseMoney, iso::{EUR, USD}};
     ///
     /// // Dot as thousand separator, comma as decimal
-    /// let money = Money::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
+    /// let money = Money::<EUR>::from_code_dot_thousands("EUR 1.234,56").unwrap();
     /// assert_eq!(money.amount(), dec!(1234.56));
     /// assert_eq!(money.code(), "EUR");
     ///
     /// // Large amount with multiple dot thousand separators
-    /// let money = Money::<EUR>::from_str_dot_thousands("EUR 1.000.000,99").unwrap();
+    /// let money = Money::<EUR>::from_code_dot_thousands("EUR 1.000.000,99").unwrap();
     /// assert_eq!(money.amount(), dec!(1000000.99));
     ///
     /// // No thousand separator, only decimal comma
-    /// let money = Money::<EUR>::from_str_dot_thousands("EUR 100,50").unwrap();
+    /// let money = Money::<EUR>::from_code_dot_thousands("EUR 100,50").unwrap();
     /// assert_eq!(money.amount(), dec!(100.50));
     ///
     /// // Integer amount without decimal part
-    /// let money = Money::<EUR>::from_str_dot_thousands("EUR 1.234").unwrap();
+    /// let money = Money::<EUR>::from_code_dot_thousands("EUR 1.234").unwrap();
     /// assert_eq!(money.amount(), dec!(1234.00));
     ///
     /// // Error: currencies mismatch
-    /// assert!(Money::<USD>::from_str_dot_thousands("EUR 1.234,56").is_err());
+    /// assert!(Money::<USD>::from_code_dot_thousands("EUR 1.234,56").is_err());
     ///
     /// // Error: invalid format (wrong separator style)
-    /// assert!(Money::<EUR>::from_str_dot_thousands("EUR 1,234.56").is_err());
+    /// assert!(Money::<EUR>::from_code_dot_thousands("EUR 1,234.56").is_err());
     /// ```
-    pub fn from_str_dot_thousands(s: &str) -> Result<Self, MoneyError> {
+    pub fn from_code_dot_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
         if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {

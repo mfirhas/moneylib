@@ -164,7 +164,7 @@ where
     /// The format is `"CCC amount"` where `CCC` is a currency code (1-15 letters).
     ///
     /// For dot thousands separator format (e.g., `"EUR 1.234,56"`), use
-    /// [`RawMoney::from_str_dot_thousands`] instead.
+    /// [`RawMoney::from_code_dot_thousands`] instead.
     ///
     /// # Examples
     ///
@@ -172,13 +172,13 @@ where
     /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
     /// use std::str::FromStr;
     ///
-    /// let raw = RawMoney::<USD>::from_str_comma_thousands("USD 1,234.56789").unwrap();
+    /// let raw = RawMoney::<USD>::from_code_comma_thousands("USD 1,234.56789").unwrap();
     /// assert_eq!(raw.amount(), dec!(1234.56789));
     /// assert_eq!(raw.code(), "USD");
     ///
-    /// assert!(RawMoney::<USD>::from_str_comma_thousands("EUR 100.00").is_err());
+    /// assert!(RawMoney::<USD>::from_code_comma_thousands("EUR 100.00").is_err());
     /// ```
-    pub fn from_str_comma_thousands(s: &str) -> Result<Self, MoneyError> {
+    pub fn from_code_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
         if let Some((currency_code, amount_str)) = parse_comma_thousands_separator(s) {
@@ -203,12 +203,12 @@ where
     /// ```
     /// use moneylib::{RawMoney, BaseMoney, iso::{EUR, USD}};
     ///
-    /// let raw = RawMoney::<EUR>::from_str_dot_thousands("EUR 1.234,56").unwrap();
+    /// let raw = RawMoney::<EUR>::from_code_dot_thousands("EUR 1.234,56").unwrap();
     /// assert_eq!(raw.code(), "EUR");
     ///
-    /// assert!(RawMoney::<USD>::from_str_dot_thousands("EUR 1.234,56").is_err());
+    /// assert!(RawMoney::<USD>::from_code_dot_thousands("EUR 1.234,56").is_err());
     /// ```
-    pub fn from_str_dot_thousands(s: &str) -> Result<Self, MoneyError> {
+    pub fn from_code_dot_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
         if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {

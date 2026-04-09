@@ -117,7 +117,7 @@ pub mod comma_str_code {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            RawMoney::<C>::from_str_comma_thousands(v).map_err(de::Error::custom)
+            RawMoney::<C>::from_code_comma_thousands(v).map_err(de::Error::custom)
         }
     }
 
@@ -339,7 +339,7 @@ pub mod dot_str_code {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            RawMoney::<C>::from_str_dot_thousands(v).map_err(de::Error::custom)
+            RawMoney::<C>::from_code_dot_thousands(v).map_err(de::Error::custom)
         }
     }
 
