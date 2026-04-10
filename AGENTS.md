@@ -14,6 +14,13 @@ This file defines the rules and workflow that all AI models and agentic platform
 - AI models **must** merge their changes into owner (human) branches exclusively through a **Pull Request (PR)** originating from the AI's own branch.
 - Direct pushes or merges into owner branches are **strictly prohibited**.
 - After making changes, the AI **must** open a PR targeting the **branch from which the instructions were given**.
+- If commands come from a PR:
+  - If source branch of the PR created/initiated by owner/human, AI model **must** make changes in its own branch and make PR into said source branch.
+  - If source branch of the PR created/initiated by AI models, AI model can commits directly.
+- If commands come from an issue(assignments):
+  - By default AI models **must** make changes in its own branch and make PR into master branch. Unless owner/human specifies otherwise.
+- If commands come from new agent session or from a change:
+  - By default AI models **must** make changes in its own branch and make PR into master branch. Unless owner/human specifies otherwise.
 
 ## Pre-PR Checklist
 
