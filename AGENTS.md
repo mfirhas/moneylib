@@ -24,7 +24,7 @@ This file defines the rules and workflow that all AI models and agentic platform
 
 ## Pre-PR Checklist
 
-Before finalizing any PR, the AI **must** run the following command:
+Before finalizing any changes and making PR, the AI model **must** run the following command:
 
 ```bash
 make all
