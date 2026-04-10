@@ -1929,3 +1929,37 @@ fn test_raw_allocate_by_ratios_math_invariant_extended() {
         }
     }
 }
+
+// -------------------- allocate_by_ratios: negative money over-allocation branch ---
+//
+// For Money<USD>, individual shares are rounded to 2dp. When each share rounds up,
+// their sum can exceed the original amount (over-allocation). In that case the function
+// subtracts 1 ULP from the largest parts until the sum equals the original.
+//
+// With negative money, is_negative=true is set before taking abs(), so when the
+// over-allocation correction is applied, the final negation path (line 293) is exercised.
+
+#[test]
+fn test_allocate_by_ratios_negative_over_allocation() {
+    // -10.01 / [1,1,1]: each share = 10.01/3 = 3.3366... → rounds to 3.34 (2dp).
+    // 3.34 * 3 = 10.02 > 10.01 → over-allocation path fires.
+    // With is_negative=true the result is negated (line 293).
+    let money = money!(USD, -10.01);
+    let parts = money.allocate_by_ratios(&[1, 1, 1]).unwrap();
+    assert_eq!(parts.len(), 3);
+
+    // All parts must be non-positive
+    for p in &parts {
+        assert!(!p.is_positive(), "expected non-positive part, got {}", p);
+    }
+
+    // Sum invariant: parts must sum to original amount
+    let sum: Money<USD> = parts.iter().sum();
+    assert_eq!(sum, money);
+
+    // After over-allocation correction and negation, total over-allocation was 0.01,
+    // so exactly one part is reduced by 0.01: expected [-3.34, -3.34, -3.33]
+    assert_eq!(parts[0].amount(), dec!(-3.34));
+    assert_eq!(parts[1].amount(), dec!(-3.34));
+    assert_eq!(parts[2].amount(), dec!(-3.33));
+}
