@@ -316,6 +316,44 @@ impl<'a, C: Currency + Clone> ExchangeRates<'a, C> {
         Some(*self.rates.get(code)?)
     }
 
+    /// Get rate of a pair currencies <`from_code`> to <`to_code`>.
+    ///
+    /// E.g. from_code: USD, to_code: EUR -> get rate of USD/EUR.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Currency, ExchangeRates, iso::{USD, IDR, EUR, CAD}, macros::dec};
+    ///
+    /// let mut rates = ExchangeRates::<USD>::new();
+    /// rates.set(IDR::CODE, 16000);
+    /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(16000));
+    /// rates.set(IDR::CODE, dec!(17000.23));
+    /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(17000.23));
+    /// rates.set(EUR::CODE, dec!(0.8));
+    /// assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(0.8));
+    ///
+    /// let usd_idr = rates.get_pair(USD::CODE, IDR::CODE).unwrap();
+    /// assert_eq!(usd_idr, dec!(17000.23));
+    ///
+    /// let eur_usd = rates.get_pair(EUR::CODE, USD::CODE).unwrap();
+    /// assert_eq!(eur_usd, dec!(1.25));
+    ///
+    /// let idr_usd = rates.get_pair(IDR::CODE, USD::CODE).unwrap();
+    /// assert_eq!(idr_usd, dec!(0.0000588227335747810470799513));
+    ///
+    /// let idr_eur = rates.get_pair(IDR::CODE, EUR::CODE).unwrap();
+    /// assert_eq!(idr_eur, dec!(0.0000470581868598248376639610));
+    ///
+    /// let cad_idr = rates.get_pair(CAD::CODE, IDR::CODE);
+    /// assert!(cad_idr.is_none()); // CAD is not in the exchange rates `rates`
+    /// ```
+    pub fn get_pair(&self, from_code: &str, to_code: &str) -> Option<Decimal> {
+        dec!(1)
+            .checked_div(self.get(from_code)?)?
+            .checked_mul(self.get(to_code)?)
+    }
+
     #[allow(clippy::len_without_is_empty)]
     /// Get length of exchange rates list.
     pub fn len(&self) -> usize {
@@ -364,9 +402,7 @@ where
     T: Currency + Clone,
 {
     fn get_rate(&self) -> Option<Decimal> {
-        dec!(1)
-            .checked_div(self.get(C::CODE)?)?
-            .checked_mul(self.get(T::CODE)?)
+        self.get_pair(C::CODE, T::CODE)
     }
 }
 

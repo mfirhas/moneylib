@@ -55,6 +55,14 @@ fn test_exchange() {
     assert_eq!(rates.base(), "EUR");
     assert_eq!(rates.len(), 4);
     assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(1));
+    let irr_usd = rates.get_pair("IRR", "USD").unwrap();
+    assert_eq!(irr_usd, dec!(0.0000007566013467503972157070));
+    let eur_usd = rates.get_pair("EUR", "USD").unwrap();
+    assert_eq!(eur_usd, dec!(1.25));
+    let idr_irr = rates.get_pair("IDR", "IRR").unwrap();
+    assert_eq!(idr_irr, dec!(77.747058823529411764705960100));
+    let cad_usd = rates.get_pair("CAD", "USD");
+    assert!(cad_usd.is_none());
 
     let amount = <ExchangeRates<EUR> as Amount<IDR>>::get_decimal(&rates);
     assert_eq!(amount.unwrap(), dec!(21_250));
