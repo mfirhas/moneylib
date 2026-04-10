@@ -1,4 +1,4 @@
-use crate::iso::{AUD, BDT, BHD, EUR, GBP, IDR, INR, JPY, SAR, SGD, USD};
+use crate::iso::{AUD, BDT, BHD, CHF, EUR, GBP, IDR, INR, JPY, SAR, SGD, USD};
 
 use crate::macros::dec;
 use crate::{BaseMoney, BaseOps, Money, MoneyError, MoneyFormatter, RoundingStrategy, money};
@@ -3547,4 +3547,230 @@ fn test_money_remainder() {
     let money = money!(USD, 100);
     let rem = money.checked_rem(i128::MAX);
     assert!(rem.is_none());
+}
+
+// ==================== from_code_locale_separator Tests ====================
+
+#[test]
+fn test_code_locale_separator_chf_basic() {
+    // CHF: thousands='\'', decimal='.'
+    let money = Money::<CHF>::from_code_locale_separator("CHF 1'234.56").unwrap();
+    assert_eq!(money.code(), "CHF");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_code_locale_separator_chf_large_amount() {
+    let money = Money::<CHF>::from_code_locale_separator("CHF 1'123'456.23").unwrap();
+    assert_eq!(money.code(), "CHF");
+    assert_eq!(money.amount(), dec!(1123456.23));
+}
+
+#[test]
+fn test_code_locale_separator_chf_no_thousands_separator() {
+    let money = Money::<CHF>::from_code_locale_separator("CHF 1234.56").unwrap();
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_code_locale_separator_chf_integer_only() {
+    let money = Money::<CHF>::from_code_locale_separator("CHF 1'234").unwrap();
+    assert_eq!(money.amount(), dec!(1234.00));
+}
+
+#[test]
+fn test_code_locale_separator_chf_zero() {
+    let money = Money::<CHF>::from_code_locale_separator("CHF 0").unwrap();
+    assert_eq!(money.amount(), dec!(0));
+}
+
+#[test]
+fn test_code_locale_separator_chf_negative() {
+    let money = Money::<CHF>::from_code_locale_separator("CHF -1'234.56").unwrap();
+    assert_eq!(money.amount(), dec!(-1234.56));
+}
+
+#[test]
+fn test_code_locale_separator_chf_rounds_to_minor_unit() {
+    // CHF has 2 minor units; 1234.999 rounds to 1235.00
+    let money = Money::<CHF>::from_code_locale_separator("CHF 1'234.999").unwrap();
+    assert_eq!(money.amount(), dec!(1235.00));
+}
+
+#[test]
+fn test_code_locale_separator_usd_basic() {
+    // USD: thousands=',', decimal='.'
+    let money = Money::<USD>::from_code_locale_separator("USD 1,234.56").unwrap();
+    assert_eq!(money.code(), "USD");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_code_locale_separator_usd_large_amount() {
+    let money = Money::<USD>::from_code_locale_separator("USD 1,000,000.99").unwrap();
+    assert_eq!(money.amount(), dec!(1000000.99));
+}
+
+#[test]
+fn test_code_locale_separator_eur_basic() {
+    // EUR: thousands='.', decimal=','
+    let money = Money::<EUR>::from_code_locale_separator("EUR 1.234,56").unwrap();
+    assert_eq!(money.code(), "EUR");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_code_locale_separator_eur_large_amount() {
+    let money = Money::<EUR>::from_code_locale_separator("EUR 1.000.000,99").unwrap();
+    assert_eq!(money.amount(), dec!(1000000.99));
+}
+
+#[test]
+fn test_code_locale_separator_with_whitespace() {
+    let money = Money::<CHF>::from_code_locale_separator("  CHF 1'234.56  ").unwrap();
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_code_locale_separator_currency_mismatch() {
+    // When code in string doesn't match the type parameter, returns ParseStr
+    // (from_code_locale_separator uses a let-chain that collapses to ParseStr on mismatch)
+    let result = Money::<USD>::from_code_locale_separator("EUR 1,234.56");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_code_locale_separator_empty_string() {
+    assert!(Money::<CHF>::from_code_locale_separator("").is_err());
+}
+
+#[test]
+fn test_code_locale_separator_invalid_no_space() {
+    assert!(Money::<CHF>::from_code_locale_separator("CHF1'234.56").is_err());
+}
+
+#[test]
+fn test_code_locale_separator_invalid_wrong_grouping() {
+    // Grouping of 2 instead of 3 is invalid
+    assert!(Money::<CHF>::from_code_locale_separator("CHF 1'23.56").is_err());
+}
+
+#[test]
+fn test_code_locale_separator_overflow() {
+    let result = Money::<CHF>::from_code_locale_separator(format!("CHF {}", i128::MAX).as_str());
+    assert!(result.is_err());
+}
+
+// ==================== from_symbol_locale_separator Tests ====================
+
+#[test]
+fn test_symbol_locale_separator_chf_basic() {
+    // CHF symbol='₣', thousands='\'', decimal='.'
+    let money = Money::<CHF>::from_symbol_locale_separator("₣1'234.56").unwrap();
+    assert_eq!(money.code(), "CHF");
+    assert_eq!(money.symbol(), "₣");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_symbol_locale_separator_chf_large_amount() {
+    let money = Money::<CHF>::from_symbol_locale_separator("₣1'123'456.23").unwrap();
+    assert_eq!(money.amount(), dec!(1123456.23));
+}
+
+#[test]
+fn test_symbol_locale_separator_chf_no_thousands_separator() {
+    let money = Money::<CHF>::from_symbol_locale_separator("₣1234.56").unwrap();
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_symbol_locale_separator_chf_integer_only() {
+    let money = Money::<CHF>::from_symbol_locale_separator("₣1'234").unwrap();
+    assert_eq!(money.amount(), dec!(1234.00));
+}
+
+#[test]
+fn test_symbol_locale_separator_chf_zero() {
+    let money = Money::<CHF>::from_symbol_locale_separator("₣0").unwrap();
+    assert_eq!(money.amount(), dec!(0));
+}
+
+#[test]
+fn test_symbol_locale_separator_chf_negative() {
+    let money = Money::<CHF>::from_symbol_locale_separator("-₣1'234.56").unwrap();
+    assert_eq!(money.amount(), dec!(-1234.56));
+}
+
+#[test]
+fn test_symbol_locale_separator_chf_rounds_to_minor_unit() {
+    let money = Money::<CHF>::from_symbol_locale_separator("₣1'234.999").unwrap();
+    assert_eq!(money.amount(), dec!(1235.00));
+}
+
+#[test]
+fn test_symbol_locale_separator_eur_basic() {
+    // EUR symbol='€', thousands='.', decimal=','
+    let money = Money::<EUR>::from_symbol_locale_separator("€1.234,56").unwrap();
+    assert_eq!(money.code(), "EUR");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_symbol_locale_separator_eur_large_amount() {
+    let money = Money::<EUR>::from_symbol_locale_separator("€1.000.000,99").unwrap();
+    assert_eq!(money.amount(), dec!(1000000.99));
+}
+
+#[test]
+fn test_symbol_locale_separator_usd_basic() {
+    // USD symbol='$', thousands=',', decimal='.'
+    let money = Money::<USD>::from_symbol_locale_separator("$1,234.56").unwrap();
+    assert_eq!(money.code(), "USD");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_symbol_locale_separator_jpy_basic() {
+    // JPY symbol='¥', thousands=',', decimal='.'
+    let money = Money::<JPY>::from_symbol_locale_separator("¥1,234").unwrap();
+    assert_eq!(money.code(), "JPY");
+    assert_eq!(money.amount(), dec!(1234));
+}
+
+#[test]
+fn test_symbol_locale_separator_gbp_basic() {
+    // GBP symbol='£', thousands=',', decimal='.'
+    let money = Money::<GBP>::from_symbol_locale_separator("£1,234.56").unwrap();
+    assert_eq!(money.code(), "GBP");
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_symbol_locale_separator_with_whitespace() {
+    let money = Money::<CHF>::from_symbol_locale_separator("  ₣1'234.56  ").unwrap();
+    assert_eq!(money.amount(), dec!(1234.56));
+}
+
+#[test]
+fn test_symbol_locale_separator_currency_mismatch() {
+    // EUR symbol (€) doesn't match CHF parser
+    let result = Money::<CHF>::from_symbol_locale_separator("€1.234,56");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_symbol_locale_separator_empty_string() {
+    assert!(Money::<CHF>::from_symbol_locale_separator("").is_err());
+}
+
+#[test]
+fn test_symbol_locale_separator_symbol_only() {
+    assert!(Money::<CHF>::from_symbol_locale_separator("₣").is_err());
+}
+
+#[test]
+fn test_symbol_locale_separator_overflow() {
+    let result = Money::<CHF>::from_symbol_locale_separator(format!("₣{}", i128::MAX).as_str());
+    assert!(result.is_err());
 }
