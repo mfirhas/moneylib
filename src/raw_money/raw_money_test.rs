@@ -2177,6 +2177,19 @@ fn test_raw_code_locale_separator_invalid_wrong_grouping() {
 }
 
 #[test]
+fn test_raw_code_locale_separator_large_number() {
+    assert_eq!(
+        RawMoney::<CHF>::from_code_locale_separator("CHF 1'234'434'123.56234").unwrap(),
+        raw!(CHF, 1_234_434_123.56234)
+    );
+}
+
+#[test]
+fn test_raw_code_locale_separator_invalid_separator() {
+    assert!(RawMoney::<EUR>::from_code_locale_separator("EUR 1'234.56").is_err());
+}
+
+#[test]
 fn test_raw_code_locale_separator_overflow() {
     let result = RawMoney::<CHF>::from_code_locale_separator(format!("CHF {}", i128::MAX).as_str());
     assert!(result.is_err());
@@ -2293,4 +2306,17 @@ fn test_raw_symbol_locale_separator_symbol_only() {
 fn test_raw_symbol_locale_separator_overflow() {
     let result = RawMoney::<CHF>::from_symbol_locale_separator(format!("₣{}", i128::MAX).as_str());
     assert!(result.is_err());
+}
+
+#[test]
+fn test_raw_symbol_locale_separator_large_number() {
+    assert_eq!(
+        RawMoney::<CHF>::from_symbol_locale_separator("₣1'234'434'123.56666").unwrap(),
+        raw!(CHF, 1_234_434_123.56666)
+    );
+}
+
+#[test]
+fn test_raw_symbol_locale_separator_invalid_separator() {
+    assert!(RawMoney::<EUR>::from_symbol_locale_separator("€1'234.56").is_err());
 }
