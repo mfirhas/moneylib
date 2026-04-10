@@ -260,7 +260,7 @@ where
     ///
     /// Code is space separated with amount.
     ///
-    /// Currencies locale separators are from here: https://docs.rs/currencylib
+    /// Currencies locale separators are from here: <https://docs.rs/currencylib>
     ///
     /// # Example
     /// ```
@@ -288,7 +288,7 @@ where
     ///
     /// There's no space between symbol and amount.
     ///
-    /// Currencies locale separators are from here: https://docs.rs/currencylib
+    /// Currencies locale separators are from here: <https://docs.rs/currencylib>
     ///
     /// # Example
     /// ```
