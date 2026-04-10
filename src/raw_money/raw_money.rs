@@ -260,6 +260,8 @@ where
     ///
     /// Code is space separated with amount.
     ///
+    /// Currencies locale separators are from here: https://docs.rs/currencylib
+    ///
     /// # Example
     /// ```
     /// use moneylib::{RawMoney, raw, iso::CHF, dec, BaseMoney};
@@ -285,6 +287,8 @@ where
     /// Parse from string with symbol, locale thousands and decimal separators.
     ///
     /// There's no space between symbol and amount.
+    ///
+    /// Currencies locale separators are from here: https://docs.rs/currencylib
     ///
     /// # Example
     /// ```
