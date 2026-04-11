@@ -15,7 +15,7 @@ fn ulp(amount: Decimal) -> Decimal {
 }
 
 /// Get equal part of money splitting
-fn get_equal_part<M, C>(money: &M, split: u32) -> Option<M>
+pub(crate) fn get_equal_part<M, C>(money: &M, split: u32) -> Option<M>
 where
     M: BaseMoney<C> + BaseOps<C> + PartialOrd,
     C: Currency,
@@ -315,39 +315,4 @@ where
     }
 
     Some(parts)
-}
-
-// -----------------------------------------------------------------
-// Internal tests: exercise private helpers that are not accessible
-// from the sibling test module (split_alloc_ops_test.rs).
-//
-// get_equal_part is called by split/split_dist with money.abs(), so
-// the `if is_negative` branches at lines 63-65 and 70-72 can only
-// be reached by calling it directly with a negative amount.
-// -----------------------------------------------------------------
-#[cfg(all(test, feature = "raw_money"))]
-mod internal_tests {
-    use super::*;
-    use crate::iso::USD;
-    use crate::macros::raw;
-
-    // 29-digit mantissa triggers the is_long_scale truncation path.
-    // Negative input covers the `if is_negative` at line 63 (line 64).
-    #[test]
-    fn test_get_equal_part_negative_long_scale() {
-        let money = raw!(USD, -79.228162514264337593543950335);
-        let result = get_equal_part(&money, 2);
-        assert!(result.is_some());
-        assert!(result.unwrap().is_negative());
-    }
-
-    // Short mantissa bypasses the is_long_scale branch.
-    // Negative input covers the `if is_negative` at line 70 (line 71).
-    #[test]
-    fn test_get_equal_part_negative_short() {
-        let money = raw!(USD, -10.00);
-        let result = get_equal_part(&money, 2);
-        assert!(result.is_some());
-        assert!(result.unwrap().is_negative());
-    }
 }

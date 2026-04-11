@@ -1963,3 +1963,31 @@ fn test_allocate_by_ratios_negative_over_allocation() {
     assert_eq!(parts[1].amount(), dec!(-3.34));
     assert_eq!(parts[2].amount(), dec!(-3.33));
 }
+
+// -------------------- get_equal_part: negative money (private helper) ---
+//
+// get_equal_part is always called with money.abs() from the public API,
+// so the `if is_negative` return branches can only be reached by calling
+// it directly with a negative amount.
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_get_equal_part_negative_long_scale() {
+    // 29-digit mantissa triggers the is_long_scale truncation path.
+    // Negative input covers the `if is_negative` branch in that path.
+    let money = raw!(USD, -79.228162514264337593543950335);
+    let result = crate::split_alloc_ops::get_equal_part(&money, 2);
+    assert!(result.is_some());
+    assert!(result.unwrap().is_negative());
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_get_equal_part_negative_short() {
+    // Short mantissa bypasses the is_long_scale branch.
+    // Negative input covers the `if is_negative` branch in the normal path.
+    let money = raw!(USD, -10.00);
+    let result = crate::split_alloc_ops::get_equal_part(&money, 2);
+    assert!(result.is_some());
+    assert!(result.unwrap().is_negative());
+}
