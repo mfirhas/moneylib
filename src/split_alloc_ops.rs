@@ -15,7 +15,7 @@ fn ulp(amount: Decimal) -> Decimal {
 }
 
 /// Get equal part of money splitting
-fn get_equal_part<M, C>(money: &M, split: u32) -> Option<M>
+pub(crate) fn get_equal_part<M, C>(money: &M, split: u32) -> Option<M>
 where
     M: BaseMoney<C> + BaseOps<C> + PartialOrd,
     C: Currency,
