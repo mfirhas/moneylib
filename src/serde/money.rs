@@ -523,6 +523,9 @@ pub mod option_dot_str_symbol {
 /// Serialize/deserialize money as string with code formatting like `CCC amount`.
 /// The separators used are from currency's locale separator.
 ///
+/// Uses [`BaseMoney::format_code`] for serialization (e.g. `"USD 1,234.56"` or `"CHF 1'234.56"`).
+/// Deserializes via [`Money::from_code_locale_separator`].
+///
 /// # Usage
 ///
 /// ```ignore
@@ -530,7 +533,39 @@ pub mod option_dot_str_symbol {
 /// amount: Money<USD>,
 /// ```
 pub mod str_code {
-    // TODO
+    use std::fmt;
+    use std::marker::PhantomData;
+
+    use ::serde::{Deserializer, Serializer, de};
+
+    use crate::{BaseMoney, Currency, Money};
+
+    pub fn serialize<C: Currency + Clone, S: Serializer>(
+        value: &Money<C>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&value.format_code())
+    }
+
+    struct Visitor<C>(PhantomData<C>);
+
+    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+        type Value = Money<C>;
+
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            f.write_str("a string like 'CCC amount' with locale separators")
+        }
+
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+            Money::<C>::from_code_locale_separator(v).map_err(de::Error::custom)
+        }
+    }
+
+    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Money<C>, D::Error> {
+        deserializer.deserialize_str(Visitor(PhantomData))
+    }
 }
 
 /// Serialize/deserialize *nullable* money as string with code formatting like `CCC amount`.
@@ -543,11 +578,57 @@ pub mod str_code {
 /// amount: Option<Money<USD>>,
 /// ```
 pub mod option_str_code {
-    // TODO
+    use std::fmt;
+    use std::marker::PhantomData;
+
+    use ::serde::{Deserializer, Serializer, de};
+
+    use crate::{BaseMoney, Currency, Money};
+
+    pub fn serialize<C: Currency + Clone, S: Serializer>(
+        value: &Option<Money<C>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        match value {
+            Some(m) => serializer.serialize_some(m.format_code().as_str()),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    struct Visitor<C>(PhantomData<C>);
+
+    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+        type Value = Option<Money<C>>;
+
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            f.write_str("a string like 'CCC amount' with locale separators, or null")
+        }
+
+        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
+            super::str_code::deserialize(d).map(Some)
+        }
+    }
+
+    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<Money<C>>, D::Error> {
+        deserializer.deserialize_option(Visitor(PhantomData))
+    }
 }
 
 /// Serialize/deserialize money as string with symbol formatting like `S<amount>`.
 /// The separators used are from currency's locale separator.
+///
+/// Uses [`BaseMoney::format_symbol`] for serialization (e.g. `"$1,234.56"` or `"₣1'234.56"`).
+/// Deserializes via [`Money::from_symbol_locale_separator`].
 ///
 /// # Usage
 ///
@@ -556,7 +637,39 @@ pub mod option_str_code {
 /// amount: Money<USD>,
 /// ```
 pub mod str_symbol {
-    // TODO
+    use std::fmt;
+    use std::marker::PhantomData;
+
+    use ::serde::{Deserializer, Serializer, de};
+
+    use crate::{BaseMoney, Currency, Money};
+
+    pub fn serialize<C: Currency + Clone, S: Serializer>(
+        value: &Money<C>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&value.format_symbol())
+    }
+
+    struct Visitor<C>(PhantomData<C>);
+
+    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+        type Value = Money<C>;
+
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            f.write_str("a string like 'S<amount>' with locale separators")
+        }
+
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+            Money::<C>::from_symbol_locale_separator(v).map_err(de::Error::custom)
+        }
+    }
+
+    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Money<C>, D::Error> {
+        deserializer.deserialize_str(Visitor(PhantomData))
+    }
 }
 
 /// Serialize/deserialize *nullable* money as string with symbol formatting like `S<amount>`.
@@ -569,7 +682,50 @@ pub mod str_symbol {
 /// amount: Option<Money<USD>>,
 /// ```
 pub mod option_str_symbol {
-    // TODO
+    use std::fmt;
+    use std::marker::PhantomData;
+
+    use ::serde::{Deserializer, Serializer, de};
+
+    use crate::{BaseMoney, Currency, Money};
+
+    pub fn serialize<C: Currency + Clone, S: Serializer>(
+        value: &Option<Money<C>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        match value {
+            Some(m) => serializer.serialize_some(m.format_symbol().as_str()),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    struct Visitor<C>(PhantomData<C>);
+
+    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+        type Value = Option<Money<C>>;
+
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            f.write_str("a string like 'S<amount>' with locale separators, or null")
+        }
+
+        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
+            super::str_symbol::deserialize(d).map(Some)
+        }
+    }
+
+    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<Money<C>>, D::Error> {
+        deserializer.deserialize_option(Visitor(PhantomData))
+    }
 }
 
 // ---------------------------------------------------------------------------------

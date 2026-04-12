@@ -1,4 +1,4 @@
-use crate::iso::{CAD, EUR, GBP, IDR, JPY, USD};
+use crate::iso::{CAD, CHF, EUR, GBP, IDR, JPY, USD};
 use crate::{BaseMoney, RawMoney, macros::dec};
 
 // ---------------------------------------------------------------------------
@@ -2001,5 +2001,319 @@ fn test_option_minor_visit_unit_json_error() {
     use serde::de::IntoDeserializer;
     let d: serde::de::value::UnitDeserializer<serde_json::Error> = ().into_deserializer();
     let result = crate::serde::raw_money::option_minor::deserialize::<USD, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+// ---------------------------------------------------------------------------
+// str_code: serialize/deserialize using currency locale separators (code)
+// ---------------------------------------------------------------------------
+
+#[derive(::serde::Serialize, ::serde::Deserialize)]
+struct PaymentLocaleCode {
+    #[serde(with = "crate::serde::raw_money::str_code")]
+    amount: RawMoney<CHF>,
+}
+
+#[test]
+fn test_str_code_serialize_chf() {
+    // CHF: thousands='\'' decimal='.'
+    let p = PaymentLocaleCode {
+        amount: RawMoney::<CHF>::from_decimal(dec!(1234.56789)),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":"CHF 1'234.56789"}"#);
+}
+
+#[test]
+fn test_str_code_serialize_chf_negative() {
+    let p = PaymentLocaleCode {
+        amount: RawMoney::<CHF>::from_decimal(dec!(-1234.56789)),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":"CHF -1'234.56789"}"#);
+}
+
+#[test]
+fn test_str_code_deserialize_chf() {
+    let p: PaymentLocaleCode = serde_json::from_str(r#"{"amount":"CHF 1'234.56789"}"#).unwrap();
+    assert_eq!(p.amount.amount(), dec!(1234.56789));
+    assert_eq!(p.amount.code(), "CHF");
+}
+
+#[test]
+fn test_str_code_deserialize_chf_negative() {
+    let p: PaymentLocaleCode = serde_json::from_str(r#"{"amount":"CHF -1'234.56789"}"#).unwrap();
+    assert_eq!(p.amount.amount(), dec!(-1234.56789));
+}
+
+#[test]
+fn test_str_code_roundtrip_chf() {
+    let original = PaymentLocaleCode {
+        amount: RawMoney::<CHF>::from_decimal(dec!(1234.56789)),
+    };
+    let json = serde_json::to_string(&original).unwrap();
+    let deserialized: PaymentLocaleCode = serde_json::from_str(&json).unwrap();
+    assert_eq!(original.amount, deserialized.amount);
+}
+
+#[test]
+fn test_str_code_serialize_usd_locale() {
+    // USD locale is same as comma_str_code
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::raw_money::str_code")]
+        amount: RawMoney<USD>,
+    }
+    let w = W {
+        amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)),
+    };
+    let json = serde_json::to_string(&w).unwrap();
+    assert_eq!(json, r#"{"amount":"USD 1,234.56789"}"#);
+}
+
+#[test]
+fn test_str_code_serialize_eur_locale() {
+    // EUR locale is same as dot_str_code
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::raw_money::str_code")]
+        amount: RawMoney<EUR>,
+    }
+    let w = W {
+        amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)),
+    };
+    let json = serde_json::to_string(&w).unwrap();
+    assert_eq!(json, r#"{"amount":"EUR 1.234,56789"}"#);
+}
+
+#[test]
+fn test_str_code_deserialize_chf_wrong_currency() {
+    let result: Result<PaymentLocaleCode, _> =
+        serde_json::from_str(r#"{"amount":"EUR 1.234,56789"}"#);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_str_code_deserialize_chf_malformed() {
+    let result: Result<PaymentLocaleCode, _> = serde_json::from_str(r#"{"amount":"not_valid"}"#);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_str_code_serialize_zero_chf() {
+    let p = PaymentLocaleCode {
+        amount: RawMoney::<CHF>::from_decimal(dec!(0)),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":"CHF 0.00"}"#);
+}
+
+// ---------------------------------------------------------------------------
+// option_str_code: optional variant of str_code
+// ---------------------------------------------------------------------------
+
+#[derive(::serde::Serialize, ::serde::Deserialize)]
+struct PaymentOptLocaleCode {
+    #[serde(with = "crate::serde::raw_money::option_str_code")]
+    amount: Option<RawMoney<CHF>>,
+}
+
+#[test]
+fn test_option_str_code_serialize_some_chf() {
+    let p = PaymentOptLocaleCode {
+        amount: Some(RawMoney::<CHF>::from_decimal(dec!(1234.56789))),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":"CHF 1'234.56789"}"#);
+}
+
+#[test]
+fn test_option_str_code_serialize_none() {
+    let p = PaymentOptLocaleCode { amount: None };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":null}"#);
+}
+
+#[test]
+fn test_option_str_code_deserialize_some_chf() {
+    let p: PaymentOptLocaleCode = serde_json::from_str(r#"{"amount":"CHF 1'234.56789"}"#).unwrap();
+    assert_eq!(p.amount.unwrap().amount(), dec!(1234.56789));
+}
+
+#[test]
+fn test_option_str_code_deserialize_none() {
+    let p: PaymentOptLocaleCode = serde_json::from_str(r#"{"amount":null}"#).unwrap();
+    assert!(p.amount.is_none());
+}
+
+#[test]
+fn test_option_str_code_roundtrip() {
+    let original = PaymentOptLocaleCode {
+        amount: Some(RawMoney::<CHF>::from_decimal(dec!(1234.56789))),
+    };
+    let json = serde_json::to_string(&original).unwrap();
+    let deserialized: PaymentOptLocaleCode = serde_json::from_str(&json).unwrap();
+    assert_eq!(original.amount, deserialized.amount);
+}
+
+#[test]
+fn test_option_str_code_visit_unit() {
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::UnitDeserializer<serde_yaml::Error> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_str_code::deserialize::<CHF, _>(d);
+    assert!(result.unwrap().is_none());
+}
+
+// ---------------------------------------------------------------------------
+// str_symbol: serialize/deserialize using currency locale separators (symbol)
+// ---------------------------------------------------------------------------
+
+#[derive(::serde::Serialize, ::serde::Deserialize)]
+struct PaymentLocaleSymbol {
+    #[serde(with = "crate::serde::raw_money::str_symbol")]
+    amount: RawMoney<CHF>,
+}
+
+#[test]
+fn test_str_symbol_serialize_chf() {
+    // CHF symbol: ₣, thousands='\'', decimal='.'
+    let p = PaymentLocaleSymbol {
+        amount: RawMoney::<CHF>::from_decimal(dec!(1234.56789)),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":"₣1'234.56789"}"#);
+}
+
+#[test]
+fn test_str_symbol_serialize_chf_negative() {
+    let p = PaymentLocaleSymbol {
+        amount: RawMoney::<CHF>::from_decimal(dec!(-1234.56789)),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":"-₣1'234.56789"}"#);
+}
+
+#[test]
+fn test_str_symbol_deserialize_chf() {
+    let p: PaymentLocaleSymbol = serde_json::from_str(r#"{"amount":"₣1'234.56789"}"#).unwrap();
+    assert_eq!(p.amount.amount(), dec!(1234.56789));
+    assert_eq!(p.amount.code(), "CHF");
+}
+
+#[test]
+fn test_str_symbol_deserialize_chf_negative() {
+    let p: PaymentLocaleSymbol = serde_json::from_str(r#"{"amount":"-₣1'234.56789"}"#).unwrap();
+    assert_eq!(p.amount.amount(), dec!(-1234.56789));
+}
+
+#[test]
+fn test_str_symbol_roundtrip_chf() {
+    let original = PaymentLocaleSymbol {
+        amount: RawMoney::<CHF>::from_decimal(dec!(1234.56789)),
+    };
+    let json = serde_json::to_string(&original).unwrap();
+    let deserialized: PaymentLocaleSymbol = serde_json::from_str(&json).unwrap();
+    assert_eq!(original.amount, deserialized.amount);
+}
+
+#[test]
+fn test_str_symbol_serialize_usd_locale() {
+    // USD locale is same as comma_str_symbol
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::raw_money::str_symbol")]
+        amount: RawMoney<USD>,
+    }
+    let w = W {
+        amount: RawMoney::<USD>::from_decimal(dec!(1234.56789)),
+    };
+    let json = serde_json::to_string(&w).unwrap();
+    assert_eq!(json, r#"{"amount":"$1,234.56789"}"#);
+}
+
+#[test]
+fn test_str_symbol_serialize_eur_locale() {
+    // EUR locale is same as dot_str_symbol
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::raw_money::str_symbol")]
+        amount: RawMoney<EUR>,
+    }
+    let w = W {
+        amount: RawMoney::<EUR>::from_decimal(dec!(1234.56789)),
+    };
+    let json = serde_json::to_string(&w).unwrap();
+    assert_eq!(json, r#"{"amount":"€1.234,56789"}"#);
+}
+
+#[test]
+fn test_str_symbol_deserialize_chf_wrong_symbol() {
+    let result: Result<PaymentLocaleSymbol, _> =
+        serde_json::from_str(r#"{"amount":"€1.234,56789"}"#);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_str_symbol_serialize_zero_chf() {
+    let p = PaymentLocaleSymbol {
+        amount: RawMoney::<CHF>::from_decimal(dec!(0)),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":"₣0.00"}"#);
+}
+
+// ---------------------------------------------------------------------------
+// option_str_symbol: optional variant of str_symbol
+// ---------------------------------------------------------------------------
+
+#[derive(::serde::Serialize, ::serde::Deserialize)]
+struct PaymentOptLocaleSymbol {
+    #[serde(with = "crate::serde::raw_money::option_str_symbol")]
+    amount: Option<RawMoney<CHF>>,
+}
+
+#[test]
+fn test_option_str_symbol_serialize_some_chf() {
+    let p = PaymentOptLocaleSymbol {
+        amount: Some(RawMoney::<CHF>::from_decimal(dec!(1234.56789))),
+    };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":"₣1'234.56789"}"#);
+}
+
+#[test]
+fn test_option_str_symbol_serialize_none() {
+    let p = PaymentOptLocaleSymbol { amount: None };
+    let json = serde_json::to_string(&p).unwrap();
+    assert_eq!(json, r#"{"amount":null}"#);
+}
+
+#[test]
+fn test_option_str_symbol_deserialize_some_chf() {
+    let p: PaymentOptLocaleSymbol = serde_json::from_str(r#"{"amount":"₣1'234.56789"}"#).unwrap();
+    assert_eq!(p.amount.unwrap().amount(), dec!(1234.56789));
+}
+
+#[test]
+fn test_option_str_symbol_deserialize_none() {
+    let p: PaymentOptLocaleSymbol = serde_json::from_str(r#"{"amount":null}"#).unwrap();
+    assert!(p.amount.is_none());
+}
+
+#[test]
+fn test_option_str_symbol_roundtrip() {
+    let original = PaymentOptLocaleSymbol {
+        amount: Some(RawMoney::<CHF>::from_decimal(dec!(1234.56789))),
+    };
+    let json = serde_json::to_string(&original).unwrap();
+    let deserialized: PaymentOptLocaleSymbol = serde_json::from_str(&json).unwrap();
+    assert_eq!(original.amount, deserialized.amount);
+}
+
+#[test]
+fn test_option_str_symbol_visit_unit() {
+    use serde::de::IntoDeserializer;
+    let d: serde::de::value::UnitDeserializer<serde_yaml::Error> = ().into_deserializer();
+    let result = crate::serde::raw_money::option_str_symbol::deserialize::<CHF, _>(d);
     assert!(result.unwrap().is_none());
 }
