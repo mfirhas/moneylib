@@ -520,6 +520,58 @@ pub mod option_dot_str_symbol {
     }
 }
 
+/// Serialize/deserialize money as string with code formatting like `CCC amount`.
+/// The separators used are from currency's locale separator.
+///
+/// # Usage
+///
+/// ```ignore
+/// #[serde(with = "moneylib::serde::raw_money::str_code")]
+/// amount: RawMoney<USD>,
+/// ```
+pub mod str_code {
+    // TODO
+}
+
+/// Serialize/deserialize *nullable* money as string with code formatting like `CCC amount`.
+/// The separators used are from currency's locale separator.
+///
+/// # Usage
+///
+/// ```ignore
+/// #[serde(with = "moneylib::serde::raw_money::option_str_code")]
+/// amount: Option<RawMoney<USD>>,
+/// ```
+pub mod option_str_code {
+    // TODO
+}
+
+/// Serialize/deserialize money as string with symbol formatting like `S<amount>`.
+/// The separators used are from currency's locale separator.
+///
+/// # Usage
+///
+/// ```ignore
+/// #[serde(with = "moneylib::serde::raw_money::str_symbol")]
+/// amount: RawMoney<USD>,
+/// ```
+pub mod str_symbol {
+    // TODO
+}
+
+/// Serialize/deserialize *nullable* money as string with symbol formatting like `S<amount>`.
+/// The separators used are from currency's locale separator.
+///
+/// # Usage
+///
+/// ```ignore
+/// #[serde(with = "moneylib::serde::raw_money::option_str_symbol")]
+/// amount: Option<RawMoney<USD>>,
+/// ```
+pub mod option_str_symbol {
+    // TODO
+}
+
 // ---------------------------------------------------------------------------------
 // minor: serialize/deserialize as minor amount, e.g. USD 1,234.5684335 -> 123457
 // ---------------------------------------------------------------------------------
