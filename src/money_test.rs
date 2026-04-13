@@ -1761,6 +1761,13 @@ fn test_div_money_by_zero_panic() {
     let _ = money1 / money2;
 }
 
+#[test]
+fn test_remainder() {
+    let money = money!(USD, 100);
+    let ret = money % dec!(3);
+    assert_eq!(ret.amount(), dec!(1));
+}
+
 // ==================== Operator Tests (Money + Decimal) ====================
 
 #[test]

@@ -1,7 +1,7 @@
 use crate::Currency;
 
 use crate::{BaseMoney, Decimal, Money};
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Div, Mul, Rem, Sub};
 
 // Money + Decimal = Money
 impl<C> Add<Decimal> for Money<C>
@@ -138,6 +138,22 @@ where
         let ret = self
             .checked_div(rhs.amount())
             .expect("division operation overflow");
+
+        Money::from_decimal(ret)
+    }
+}
+
+impl<C> Rem<Decimal> for Money<C>
+where
+    C: Currency + Clone,
+{
+    type Output = Money<C>;
+
+    fn rem(self, rhs: Decimal) -> Self::Output {
+        let ret = self
+            .amount()
+            .checked_rem(rhs)
+            .expect("remainder operation failed");
 
         Money::from_decimal(ret)
     }

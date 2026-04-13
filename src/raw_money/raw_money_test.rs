@@ -288,6 +288,13 @@ fn test_div_decimal() {
     assert_eq!(result.amount(), dec!(25));
 }
 
+#[test]
+fn test_remainder() {
+    let money = raw!(USD, 100);
+    let ret = money % dec!(3);
+    assert_eq!(ret.amount(), dec!(1));
+}
+
 // ==================== Decimal Operations (reversed) Tests ====================
 
 #[test]
