@@ -1472,7 +1472,8 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
     /// - Languages code with region: en-US, id-ID, de-DE, fr-FR, ar-SA, zh-CN, etc.
     /// - BCP 47 extension: zh-CN-u-nu-hanidec (Chinese locale with Chinese numbers).
     ///
-    /// Some locales are default to latin numberings, some default to their own local numberings.
+    /// List of BCP 47 numbers extension currently supported:
+    /// <https://github.com/unicode-org/icu4x/blob/main/provider/data/decimal/fingerprints.csv>
     ///
     /// `format_str` contains these symbols as parts of money display.
     /// Format symbols:
