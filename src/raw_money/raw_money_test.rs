@@ -1906,6 +1906,18 @@ fn test_format_locale_amount_bn_bd_latin_symbol() {
     assert_eq!(result.unwrap(), "\u{09F3} 1,234.56");
 }
 
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_no_minor_amount() {
+    let money = raw!(BHD, 123123);
+    let ret = money.format_locale_amount("ar-BH", "c na").unwrap();
+    assert_eq!(&ret, "BHD ١٢٣٬١٢٣٫٠٠٠");
+
+    let money = raw!(BHD, 123123.0);
+    let ret = money.format_locale_amount("ar-u-nu-arab", "c na").unwrap();
+    assert_eq!(&ret, "BHD ١٢٣٬١٢٣٫٠٠٠");
+}
+
 // ==================== raw! macro Tests ====================
 
 #[test]

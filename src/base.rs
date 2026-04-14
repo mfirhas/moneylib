@@ -1560,7 +1560,23 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
             .map_err(|_| MoneyError::ParseLocale)?;
 
         let is_negative = self.is_negative();
-        let abs_amount = self.amount().abs().to_string();
+        let curr_minor_unit = C::MINOR_UNIT.into();
+        let abs_amount = if self.scale() < curr_minor_unit {
+            let remaining_scale: usize = (curr_minor_unit - self.scale())
+                .try_into()
+                .map_err(|_| MoneyError::ParseLocale)?;
+            let minor_amount = "0".repeat(remaining_scale);
+            let fract = if self.scale() == 0 {
+                format!(".{}", minor_amount)
+            } else {
+                minor_amount
+            };
+            let mut ret = self.amount().abs().to_string();
+            ret.push_str(&fract);
+            ret
+        } else {
+            self.amount().abs().to_string()
+        };
 
         let decimal =
             LocaleDecimal::try_from_str(&abs_amount).map_err(|_| MoneyError::DecimalConversion)?;

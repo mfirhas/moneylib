@@ -3383,6 +3383,18 @@ fn test_format_locale_amount_bn_bd_latin_symbol() {
     assert_eq!(result.unwrap(), "\u{09F3} 1,234.56");
 }
 
+#[cfg(feature = "locale")]
+#[test]
+fn test_format_locale_amount_no_minor_amount() {
+    let money = money!(IDR, 123123);
+    let ret = money.format_locale_amount("id-ID", "nsa").unwrap();
+    assert_eq!(&ret, "Rp123.123,00");
+
+    let money = money!(IDR, 123123.0);
+    let ret = money.format_locale_amount("id-ID", "nsa").unwrap();
+    assert_eq!(&ret, "Rp123.123,00");
+}
+
 // ==================== money! macro Tests ====================
 
 #[test]
