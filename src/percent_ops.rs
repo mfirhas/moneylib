@@ -17,6 +17,20 @@ pub trait PercentOps<C: Currency> {
     /// Calculates what a certain percentage of a money amount equals.
     ///
     /// `pcn` is the percentage, 20% -> pcn = 20.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{BaseMoney, PercentOps, macros::{dec, money}};
+    ///
+    /// let price = money!(USD, 200);
+    /// let tax = price.percent(15).unwrap(); // 15% of $200
+    /// assert_eq!(tax.amount(), dec!(30));
+    ///
+    /// // Returns None on overflow
+    /// let none_on_overflow = price.percent(moneylib::Decimal::MAX);
+    /// assert!(none_on_overflow.is_none());
+    /// ```
     fn percent<D>(&self, pcn: D) -> Option<Self::Output>
     where
         D: DecimalNumber;
@@ -24,6 +38,20 @@ pub trait PercentOps<C: Currency> {
     /// Adds amount by percentage
     ///
     /// `pcn` is the percentage, 20% -> pcn = 20.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{BaseMoney, PercentOps, macros::{dec, money}};
+    ///
+    /// let price = money!(USD, 100);
+    /// let after_tax = price.percent_add(20).unwrap(); // $100 + 20% = $120
+    /// assert_eq!(after_tax.amount(), dec!(120));
+    ///
+    /// // Returns None on overflow
+    /// let none_on_overflow = price.percent_add(moneylib::Decimal::MAX);
+    /// assert!(none_on_overflow.is_none());
+    /// ```
     fn percent_add<D>(&self, pcn: D) -> Option<Self::Output>
     where
         D: DecimalNumber;
@@ -33,6 +61,22 @@ pub trait PercentOps<C: Currency> {
     /// Each items in `pcns` are percentage, 20% -> 20.
     ///
     /// Order of `pcns` does **NOT** matter.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{BaseMoney, PercentOps, macros::{dec, money}};
+    ///
+    /// let base = money!(USD, 1_000);
+    /// // All percentages are applied to the original base amount:
+    /// // $1000 + 10% of $1000 + 5% of $1000 = $1000 + $100 + $50 = $1150
+    /// let total = base.percent_adds_fixed([10, 5]).unwrap();
+    /// assert_eq!(total.amount(), dec!(1150));
+    ///
+    /// // Returns None on overflow
+    /// let none_on_overflow = base.percent_adds_fixed([moneylib::Decimal::MAX]);
+    /// assert!(none_on_overflow.is_none());
+    /// ```
     fn percent_adds_fixed<D, I>(&self, pcns: I) -> Option<Self::Output>
     where
         for<'a> &'a I: IntoIterator<Item = &'a D>,
@@ -43,6 +87,23 @@ pub trait PercentOps<C: Currency> {
     /// Each items in `pcns` are percentage, 20% -> 20.
     ///
     /// Order of `pcns` **DOES** matter.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{BaseMoney, PercentOps, macros::{dec, money}};
+    ///
+    /// let base = money!(USD, 1_000);
+    /// // Percentages compound on the running total:
+    /// // Step 1: $1000 + 10% of $1000  = $1100
+    /// // Step 2: $1100 + 5%  of $1100  = $1155
+    /// let total = base.percent_adds_compound([10, 5]).unwrap();
+    /// assert_eq!(total.amount(), dec!(1155));
+    ///
+    /// // Returns None on overflow
+    /// let none_on_overflow = base.percent_adds_compound([moneylib::Decimal::MAX]);
+    /// assert!(none_on_overflow.is_none());
+    /// ```
     fn percent_adds_compound<D, I>(&self, pcns: I) -> Option<Self::Output>
     where
         for<'a> &'a I: IntoIterator<Item = &'a D>,
@@ -51,6 +112,20 @@ pub trait PercentOps<C: Currency> {
     /// Substracts amount by percentage(discount)
     ///
     /// `pcn` is the percentage, 20% -> pcn = 20.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{BaseMoney, PercentOps, macros::{dec, money}};
+    ///
+    /// let price = money!(USD, 200);
+    /// let after_discount = price.percent_sub(25).unwrap(); // $200 - 25% = $150
+    /// assert_eq!(after_discount.amount(), dec!(150));
+    ///
+    /// // Returns None on overflow
+    /// let none_on_overflow = price.percent_sub(moneylib::Decimal::MAX);
+    /// assert!(none_on_overflow.is_none());
+    /// ```
     fn percent_sub<D>(&self, pcn: D) -> Option<Self::Output>
     where
         D: DecimalNumber;
@@ -60,12 +135,44 @@ pub trait PercentOps<C: Currency> {
     /// Each items in `pcns` are percentage, 20% -> 20.
     ///
     /// Order of `pcns` **DOES** matter.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{BaseMoney, PercentOps, macros::{dec, money}};
+    ///
+    /// let gross = money!(USD, 1_000);
+    /// // Deductions compound on the running total:
+    /// // Step 1: $1000 - 10% of $1000 = $900
+    /// // Step 2: $900  - 5%  of $900  = $855
+    /// let net = gross.percent_subs_sequence([10, 5]).unwrap();
+    /// assert_eq!(net.amount(), dec!(855));
+    ///
+    /// // Returns None on overflow
+    /// let none_on_overflow = gross.percent_subs_sequence([moneylib::Decimal::MAX]);
+    /// assert!(none_on_overflow.is_none());
+    /// ```
     fn percent_subs_sequence<D, I>(&self, pcns: I) -> Option<Self::Output>
     where
         for<'a> &'a I: IntoIterator<Item = &'a D>,
         D: DecimalNumber;
 
     /// Determines what percentage one money is of another.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{BaseMoney, PercentOps, macros::{dec, money}};
+    ///
+    /// let profit = money!(USD, 50);
+    /// let revenue = money!(USD, 200);
+    /// let margin = profit.percent_of(revenue).unwrap(); // $50 is 25% of $200
+    /// assert_eq!(margin.amount(), dec!(25));
+    ///
+    /// // Returns None when dividing by zero
+    /// let zero = money!(USD, 0);
+    /// assert!(profit.percent_of(zero).is_none());
+    /// ```
     fn percent_of<M>(&self, rhs: M) -> Option<Self::Output>
     where
         M: Amount<C>;
