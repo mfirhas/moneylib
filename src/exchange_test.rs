@@ -29,6 +29,7 @@ fn test_exchange() {
     assert_eq!(rates.get(USD::CODE).unwrap(), dec!(1));
     rates.set(EUR::CODE, dec!(0.8));
     rates.set(IDR::CODE, 17_000);
+    rates.set(USD::CODE, 40); // ignored, since base already in USD.
     assert_eq!(rates.base(), "USD");
     let ret = money.convert::<EUR>(&rates);
     assert_eq!(ret.unwrap().amount(), dec!(98.4));

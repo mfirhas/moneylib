@@ -294,7 +294,10 @@ impl<'a, C: Currency + Clone> ExchangeRates<'a, C> {
     /// assert!(another.is_none());
     /// ```
     pub fn set(&mut self, code: &'a str, rate: impl DecimalNumber) -> Option<Decimal> {
-        self.rates.insert(code, rate.get_decimal()?)
+        if code != C::CODE {
+            return self.rates.insert(code, rate.get_decimal()?);
+        }
+        None
     }
 
     /// Get a rate for a currency exists in rates by code, e.g "USD", "EUR", etc.
