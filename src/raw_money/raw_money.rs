@@ -157,7 +157,7 @@ where
     /// ```
     #[inline]
     pub fn finish(self) -> Money<C> {
-        Money::from_decimal(self.amount())
+        Money::from_decimal(self.amount)
     }
 
     /// Parses a string in the format `"CCC amount"` (comma thousands separator and dot decimal separator).
@@ -346,7 +346,7 @@ where
     C: Currency + Clone,
 {
     fn get_decimal(&self) -> Option<Decimal> {
-        Some(self.amount())
+        Some(self.amount)
     }
 }
 
@@ -461,7 +461,7 @@ where
     #[inline]
     fn round(self) -> Self {
         Self {
-            amount: self.amount().round_dp(C::MINOR_UNIT.into()),
+            amount: self.amount.round_dp(C::MINOR_UNIT.into()),
             _currency: PhantomData,
         }
     }
@@ -505,7 +505,7 @@ where
     /// ```
     #[inline]
     fn minor_amount(&self) -> Result<i128, MoneyError> {
-        self.amount()
+        self.amount
             .round_dp(C::MINOR_UNIT.into())
             .checked_mul(
                 dec!(10)
@@ -569,6 +569,41 @@ where
 }
 
 impl<C> MoneyFormatter<C> for RawMoney<C> where C: Currency + Clone {}
+
+impl<C: Currency + Clone> crate::ObjMoney for RawMoney<C> {
+    #[inline]
+    fn amount(&self) -> Decimal {
+        BaseMoney::amount(self)
+    }
+    #[inline]
+    fn code(&self) -> &str {
+        C::CODE
+    }
+    #[inline]
+    fn symbol(&self) -> &str {
+        C::SYMBOL
+    }
+    #[inline]
+    fn name(&self) -> &str {
+        C::NAME
+    }
+    #[inline]
+    fn minor_unit(&self) -> u16 {
+        C::MINOR_UNIT
+    }
+    #[inline]
+    fn thousand_separator(&self) -> &str {
+        C::THOUSAND_SEPARATOR
+    }
+    #[inline]
+    fn decimal_separator(&self) -> &str {
+        C::DECIMAL_SEPARATOR
+    }
+    #[inline]
+    fn minor_unit_symbol(&self) -> &str {
+        C::MINOR_UNIT_SYMBOL
+    }
+}
 
 #[cfg(feature = "accounting")]
 impl<C> AccountingOps<C> for RawMoney<C> where C: Currency + Clone {}

@@ -1,129 +1,17 @@
 /// Tests for heterogeneous collections of `Money` and `RawMoney` with different currencies,
-/// using an object-safe `DynMoney` trait to enable dynamic dispatch (`dyn`).
+/// using the object-safe `ObjMoney` trait for dynamic dispatch (`dyn`).
 use crate::iso::{CHF, EUR, GBP, INR, JPY, SGD, USD};
 use crate::macros::dec;
-use crate::{BaseMoney, BaseOps, Currency, Decimal, Money, MoneyError};
+use crate::{BaseMoney, BaseOps, Decimal, Money, ObjMoney};
 
 #[cfg(feature = "raw_money")]
 use crate::RawMoney;
 
-// ==================== Object-safe DynMoney trait ====================
-
-/// Object-safe subset of [`BaseMoney`] enabling `dyn`-dispatch over
-/// different-currency money types stored in a single collection.
-trait DynMoney {
-    fn amount(&self) -> Decimal;
-    fn code(&self) -> &str;
-    fn symbol(&self) -> &str;
-    fn name(&self) -> &str;
-    fn minor_unit(&self) -> u16;
-    fn minor_amount(&self) -> Result<i128, MoneyError>;
-    fn is_zero(&self) -> bool;
-    fn is_positive(&self) -> bool;
-    fn is_negative(&self) -> bool;
-    fn format_code(&self) -> String;
-    fn format_symbol(&self) -> String;
-    fn scale(&self) -> u32;
-    fn fraction(&self) -> Decimal;
-    fn mantissa(&self) -> i128;
-}
-
-impl<C: Currency + Clone> DynMoney for Money<C> {
-    fn amount(&self) -> Decimal {
-        BaseMoney::amount(self)
-    }
-    fn code(&self) -> &str {
-        BaseMoney::code(self)
-    }
-    fn symbol(&self) -> &str {
-        BaseMoney::symbol(self)
-    }
-    fn name(&self) -> &str {
-        BaseMoney::name(self)
-    }
-    fn minor_unit(&self) -> u16 {
-        BaseMoney::minor_unit(self)
-    }
-    fn minor_amount(&self) -> Result<i128, MoneyError> {
-        BaseMoney::minor_amount(self)
-    }
-    fn is_zero(&self) -> bool {
-        BaseMoney::is_zero(self)
-    }
-    fn is_positive(&self) -> bool {
-        BaseMoney::is_positive(self)
-    }
-    fn is_negative(&self) -> bool {
-        BaseMoney::is_negative(self)
-    }
-    fn format_code(&self) -> String {
-        BaseMoney::format_code(self)
-    }
-    fn format_symbol(&self) -> String {
-        BaseMoney::format_symbol(self)
-    }
-    fn scale(&self) -> u32 {
-        BaseMoney::scale(self)
-    }
-    fn fraction(&self) -> Decimal {
-        BaseMoney::fraction(self)
-    }
-    fn mantissa(&self) -> i128 {
-        BaseMoney::mantissa(self)
-    }
-}
-
-#[cfg(feature = "raw_money")]
-impl<C: Currency + Clone> DynMoney for RawMoney<C> {
-    fn amount(&self) -> Decimal {
-        BaseMoney::amount(self)
-    }
-    fn code(&self) -> &str {
-        BaseMoney::code(self)
-    }
-    fn symbol(&self) -> &str {
-        BaseMoney::symbol(self)
-    }
-    fn name(&self) -> &str {
-        BaseMoney::name(self)
-    }
-    fn minor_unit(&self) -> u16 {
-        BaseMoney::minor_unit(self)
-    }
-    fn minor_amount(&self) -> Result<i128, MoneyError> {
-        BaseMoney::minor_amount(self)
-    }
-    fn is_zero(&self) -> bool {
-        BaseMoney::is_zero(self)
-    }
-    fn is_positive(&self) -> bool {
-        BaseMoney::is_positive(self)
-    }
-    fn is_negative(&self) -> bool {
-        BaseMoney::is_negative(self)
-    }
-    fn format_code(&self) -> String {
-        BaseMoney::format_code(self)
-    }
-    fn format_symbol(&self) -> String {
-        BaseMoney::format_symbol(self)
-    }
-    fn scale(&self) -> u32 {
-        BaseMoney::scale(self)
-    }
-    fn fraction(&self) -> Decimal {
-        BaseMoney::fraction(self)
-    }
-    fn mantissa(&self) -> i128 {
-        BaseMoney::mantissa(self)
-    }
-}
-
 // ==================== Money: attribute tests ====================
 
 #[test]
-fn test_dyn_money_vec_currency_codes() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_currency_codes() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(100.50)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(200.75)).unwrap()),
         Box::new(Money::<JPY>::new(dec!(15000)).unwrap()),
@@ -137,8 +25,8 @@ fn test_dyn_money_vec_currency_codes() {
 }
 
 #[test]
-fn test_dyn_money_vec_symbols() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_symbols() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(1.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(1.00)).unwrap()),
         Box::new(Money::<JPY>::new(dec!(100)).unwrap()),
@@ -152,8 +40,8 @@ fn test_dyn_money_vec_symbols() {
 }
 
 #[test]
-fn test_dyn_money_vec_names() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_names() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(1.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(1.00)).unwrap()),
         Box::new(Money::<JPY>::new(dec!(100)).unwrap()),
@@ -165,8 +53,8 @@ fn test_dyn_money_vec_names() {
 }
 
 #[test]
-fn test_dyn_money_vec_minor_units() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_minor_units() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(1.00)).unwrap()), // 2 decimals
         Box::new(Money::<JPY>::new(dec!(100)).unwrap()),  // 0 decimals
         Box::new(Money::<SGD>::new(dec!(1.00)).unwrap()), // 2 decimals
@@ -178,8 +66,8 @@ fn test_dyn_money_vec_minor_units() {
 }
 
 #[test]
-fn test_dyn_money_vec_minor_amounts() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_minor_amounts() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(10.50)).unwrap()), // 1050 cents
         Box::new(Money::<JPY>::new(dec!(300)).unwrap()),   // 300 yen (no sub-unit)
         Box::new(Money::<GBP>::new(dec!(5.75)).unwrap()),  // 575 pence
@@ -191,8 +79,8 @@ fn test_dyn_money_vec_minor_amounts() {
 }
 
 #[test]
-fn test_dyn_money_vec_amounts() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_amounts() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(123.45)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(678.90)).unwrap()),
         Box::new(Money::<JPY>::new(dec!(50000)).unwrap()),
@@ -204,8 +92,8 @@ fn test_dyn_money_vec_amounts() {
 }
 
 #[test]
-fn test_dyn_money_vec_scale_and_fraction() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_scale_and_fraction() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(100.45)).unwrap()),
         Box::new(Money::<JPY>::new(dec!(500)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(200.99)).unwrap()),
@@ -225,8 +113,8 @@ fn test_dyn_money_vec_scale_and_fraction() {
 }
 
 #[test]
-fn test_dyn_money_vec_mantissa() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_mantissa() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(1234.59)).unwrap()),
         Box::new(Money::<JPY>::new(dec!(9876)).unwrap()),
     ];
@@ -236,8 +124,8 @@ fn test_dyn_money_vec_mantissa() {
 }
 
 #[test]
-fn test_dyn_money_vec_format_code() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_format_code() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(1234.56)).unwrap()),
         Box::new(Money::<JPY>::new(dec!(1234)).unwrap()),
     ];
@@ -247,8 +135,8 @@ fn test_dyn_money_vec_format_code() {
 }
 
 #[test]
-fn test_dyn_money_vec_format_symbol() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_format_symbol() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(1234.56)).unwrap()),
         Box::new(Money::<GBP>::new(dec!(1234.56)).unwrap()),
     ];
@@ -257,11 +145,40 @@ fn test_dyn_money_vec_format_symbol() {
     assert_eq!(portfolio[1].format_symbol(), "£1,234.56");
 }
 
+#[test]
+fn test_obj_money_vec_format_code_minor() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(Money::<USD>::new(dec!(1234.45)).unwrap()),
+        Box::new(Money::<GBP>::new(dec!(10.50)).unwrap()),
+        Box::new(Money::<JPY>::new(dec!(1234)).unwrap()),
+    ];
+
+    assert_eq!(portfolio[0].format_code_minor(), "USD 123,445 ¢");
+    assert_eq!(portfolio[1].format_code_minor(), "GBP 1,050 p");
+    // JPY has no sub-unit so minor_amount == amount
+    let jpy_minor_symbol = portfolio[2].minor_unit_symbol();
+    assert_eq!(
+        portfolio[2].format_code_minor(),
+        format!("JPY 1,234 {jpy_minor_symbol}")
+    );
+}
+
+#[test]
+fn test_obj_money_vec_format_symbol_minor() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(Money::<USD>::new(dec!(1234.45)).unwrap()),
+        Box::new(Money::<USD>::new(dec!(-10.50)).unwrap()),
+    ];
+
+    assert_eq!(portfolio[0].format_symbol_minor(), "$123,445 ¢");
+    assert_eq!(portfolio[1].format_symbol_minor(), "-$1,050 ¢");
+}
+
 // ==================== Money: sign / zero checks ====================
 
 #[test]
-fn test_dyn_money_vec_positive_negative_zero() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_vec_positive_negative_zero() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(50.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(-30.00)).unwrap()),
         Box::new(Money::<JPY>::new(dec!(0)).unwrap()),
@@ -287,8 +204,8 @@ fn test_dyn_money_vec_positive_negative_zero() {
 }
 
 #[test]
-fn test_dyn_money_count_by_sign() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_count_by_sign() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(100.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(-50.00)).unwrap()),
         Box::new(Money::<JPY>::new(dec!(0)).unwrap()),
@@ -311,9 +228,9 @@ fn test_dyn_money_count_by_sign() {
 // ==================== Money: arithmetic / aggregate operations ====================
 
 #[test]
-fn test_dyn_money_sum_all_amounts() {
+fn test_obj_money_sum_all_amounts() {
     // Sum of decimal amounts regardless of currency (portfolio total at face value)
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(100.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(200.00)).unwrap()),
         Box::new(Money::<GBP>::new(dec!(50.00)).unwrap()),
@@ -326,8 +243,8 @@ fn test_dyn_money_sum_all_amounts() {
 }
 
 #[test]
-fn test_dyn_money_sum_per_currency() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_sum_per_currency() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(100.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(200.00)).unwrap()),
         Box::new(Money::<USD>::new(dec!(50.00)).unwrap()),
@@ -354,9 +271,9 @@ fn test_dyn_money_sum_per_currency() {
 }
 
 #[test]
-fn test_dyn_money_apply_discount_to_amounts() {
+fn test_obj_money_apply_discount_to_amounts() {
     // Apply a 10% discount to each amount via Decimal arithmetic
-    let prices: Vec<Box<dyn DynMoney>> = vec![
+    let prices: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(100.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(200.00)).unwrap()),
         Box::new(Money::<GBP>::new(dec!(50.00)).unwrap()),
@@ -370,8 +287,8 @@ fn test_dyn_money_apply_discount_to_amounts() {
 }
 
 #[test]
-fn test_dyn_money_max_and_min_amount() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_max_and_min_amount() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(300.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(100.00)).unwrap()),
         Box::new(Money::<GBP>::new(dec!(500.00)).unwrap()),
@@ -394,8 +311,8 @@ fn test_dyn_money_max_and_min_amount() {
 }
 
 #[test]
-fn test_dyn_money_filter_positive_and_sum() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_filter_positive_and_sum() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(100.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(-30.00)).unwrap()),
         Box::new(Money::<GBP>::new(dec!(75.50)).unwrap()),
@@ -412,9 +329,9 @@ fn test_dyn_money_filter_positive_and_sum() {
 }
 
 #[test]
-fn test_dyn_money_same_currency_checked_ops_via_extraction() {
+fn test_obj_money_same_currency_checked_ops_via_extraction() {
     // Extract same-currency moneys from a dyn vec and use typed arithmetic.
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(1000.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(850.00)).unwrap()),
         Box::new(Money::<USD>::new(dec!(250.00)).unwrap()),
@@ -450,13 +367,13 @@ fn test_dyn_money_same_currency_checked_ops_via_extraction() {
 }
 
 #[test]
-fn test_dyn_money_slice_iteration() {
-    // Demonstrate that slices of `dyn DynMoney` also work.
+fn test_obj_money_slice_iteration() {
+    // Demonstrate that slices of `dyn ObjMoney` also work.
     let usd = Money::<USD>::new(dec!(10.00)).unwrap();
     let eur = Money::<EUR>::new(dec!(20.00)).unwrap();
     let jpy = Money::<JPY>::new(dec!(3000)).unwrap();
 
-    let items: [&dyn DynMoney; 3] = [&usd, &eur, &jpy];
+    let items: [&dyn ObjMoney; 3] = [&usd, &eur, &jpy];
 
     let codes: Vec<&str> = items.iter().map(|m| m.code()).collect();
     assert_eq!(codes, vec!["USD", "EUR", "JPY"]);
@@ -466,8 +383,8 @@ fn test_dyn_money_slice_iteration() {
 }
 
 #[test]
-fn test_dyn_money_sort_by_amount() {
-    let mut portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_sort_by_amount() {
+    let mut portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<GBP>::new(dec!(300.00)).unwrap()),
         Box::new(Money::<USD>::new(dec!(100.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(200.00)).unwrap()),
@@ -481,8 +398,8 @@ fn test_dyn_money_sort_by_amount() {
 }
 
 #[test]
-fn test_dyn_money_dedup_currencies() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_money_dedup_currencies() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(100.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(200.00)).unwrap()),
         Box::new(Money::<USD>::new(dec!(50.00)).unwrap()),
@@ -511,8 +428,8 @@ fn test_dyn_money_dedup_currencies() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_vec_currency_codes() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_raw_money_vec_currency_codes() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<USD>::new(dec!(100.123456)).unwrap()),
         Box::new(RawMoney::<EUR>::new(dec!(200.789012)).unwrap()),
         Box::new(RawMoney::<JPY>::new(dec!(15000.5)).unwrap()),
@@ -525,9 +442,9 @@ fn test_dyn_raw_money_vec_currency_codes() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_precision_preserved() {
+fn test_obj_raw_money_precision_preserved() {
     // RawMoney must NOT round – check that high-precision amounts survive dyn dispatch.
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<USD>::new(dec!(100.123456)).unwrap()),
         Box::new(RawMoney::<EUR>::new(dec!(200.789012)).unwrap()),
         Box::new(RawMoney::<JPY>::new(dec!(15000.5)).unwrap()), // JPY has 0 minor units but RawMoney keeps fraction
@@ -540,8 +457,8 @@ fn test_dyn_raw_money_precision_preserved() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_scale() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_raw_money_scale() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<USD>::new(dec!(1.12345)).unwrap()),
         Box::new(RawMoney::<EUR>::new(dec!(2.1)).unwrap()),
         Box::new(RawMoney::<JPY>::new(dec!(300.999)).unwrap()),
@@ -554,8 +471,8 @@ fn test_dyn_raw_money_scale() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_fraction() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_raw_money_fraction() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<USD>::new(dec!(123.456)).unwrap()),
         Box::new(RawMoney::<GBP>::new(dec!(10.999)).unwrap()),
     ];
@@ -566,8 +483,8 @@ fn test_dyn_raw_money_fraction() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_minor_amounts() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_raw_money_minor_amounts() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<USD>::new(dec!(10.50)).unwrap()), // minor = 1050
         Box::new(RawMoney::<JPY>::new(dec!(300)).unwrap()),   // minor = 300
     ];
@@ -578,8 +495,8 @@ fn test_dyn_raw_money_minor_amounts() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_sum_amounts() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_raw_money_sum_amounts() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<USD>::new(dec!(100.001)).unwrap()),
         Box::new(RawMoney::<EUR>::new(dec!(200.002)).unwrap()),
         Box::new(RawMoney::<GBP>::new(dec!(50.003)).unwrap()),
@@ -593,8 +510,8 @@ fn test_dyn_raw_money_sum_amounts() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_filter_and_aggregate() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_raw_money_filter_and_aggregate() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<USD>::new(dec!(100.1234)).unwrap()),
         Box::new(RawMoney::<EUR>::new(dec!(-50.5678)).unwrap()),
         Box::new(RawMoney::<USD>::new(dec!(75.8765)).unwrap()),
@@ -620,8 +537,8 @@ fn test_dyn_raw_money_filter_and_aggregate() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_apply_multiplier() {
-    let prices: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_raw_money_apply_multiplier() {
+    let prices: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<USD>::new(dec!(33.333333)).unwrap()),
         Box::new(RawMoney::<EUR>::new(dec!(66.666666)).unwrap()),
         Box::new(RawMoney::<GBP>::new(dec!(11.111111)).unwrap()),
@@ -637,8 +554,8 @@ fn test_dyn_raw_money_apply_multiplier() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_same_currency_checked_ops_via_extraction() {
-    let portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_raw_money_same_currency_checked_ops_via_extraction() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<USD>::new(dec!(500.12345)).unwrap()),
         Box::new(RawMoney::<EUR>::new(dec!(400.99)).unwrap()),
         Box::new(RawMoney::<USD>::new(dec!(250.67890)).unwrap()),
@@ -674,8 +591,8 @@ fn test_dyn_raw_money_same_currency_checked_ops_via_extraction() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_raw_money_sort_by_amount() {
-    let mut portfolio: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_raw_money_sort_by_amount() {
+    let mut portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(RawMoney::<EUR>::new(dec!(300.999)).unwrap()),
         Box::new(RawMoney::<USD>::new(dec!(100.001)).unwrap()),
         Box::new(RawMoney::<GBP>::new(dec!(200.500)).unwrap()),
@@ -688,13 +605,37 @@ fn test_dyn_raw_money_sort_by_amount() {
     assert_eq!(sorted_codes, vec!["JPY", "USD", "GBP", "EUR"]);
 }
 
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_format_code_minor() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(RawMoney::<USD>::new(dec!(10.50)).unwrap()),
+        Box::new(RawMoney::<GBP>::new(dec!(5.75)).unwrap()),
+    ];
+
+    assert_eq!(portfolio[0].format_code_minor(), "USD 1,050 ¢");
+    assert_eq!(portfolio[1].format_code_minor(), "GBP 575 p");
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_format_symbol_minor() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(RawMoney::<USD>::new(dec!(1234.45)).unwrap()),
+        Box::new(RawMoney::<USD>::new(dec!(-10.50)).unwrap()),
+    ];
+
+    assert_eq!(portfolio[0].format_symbol_minor(), "$123,445 ¢");
+    assert_eq!(portfolio[1].format_symbol_minor(), "-$1,050 ¢");
+}
+
 // ==================== Mixed Money and RawMoney in the same dyn vec ====================
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_dyn_mixed_money_and_raw_money() {
-    // A single Vec can hold both Money and RawMoney via dyn DynMoney.
-    let mixed: Vec<Box<dyn DynMoney>> = vec![
+fn test_obj_mixed_money_and_raw_money() {
+    // A single Vec can hold both Money and RawMoney via dyn ObjMoney.
+    let mixed: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(100.505)).unwrap()), // rounds to 100.50 (bankers: 0 is even, round down)
         Box::new(RawMoney::<USD>::new(dec!(100.505)).unwrap()), // keeps 100.505
         Box::new(Money::<EUR>::new(dec!(200.999)).unwrap()), // rounds to 201.00
@@ -717,3 +658,5 @@ fn test_dyn_mixed_money_and_raw_money() {
     assert_eq!(mixed[0].minor_unit(), mixed[1].minor_unit());
     assert_eq!(mixed[2].minor_unit(), mixed[3].minor_unit());
 }
+
+// end of obj_money_test.rs

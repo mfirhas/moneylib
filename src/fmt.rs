@@ -1,6 +1,9 @@
 use crate::Currency;
 
+use crate::macros::dec;
 use crate::{BaseMoney, Decimal};
+use rust_decimal::MathematicalOps;
+use rust_decimal::prelude::ToPrimitive;
 
 const ESCAPE_SYMBOL: char = '\\';
 
@@ -169,7 +172,7 @@ pub(crate) fn format_with_separator<C: Currency>(
 
 /// Returns true if `symbol` appears as an active (non-escaped, non-literal-block) format symbol
 /// in `format_str`.
-fn contains_active_format_symbol(format_str: &str, symbol: char) -> bool {
+pub(crate) fn contains_active_format_symbol(format_str: &str, symbol: char) -> bool {
     let mut chars = format_str.chars().peekable();
     while let Some(ch) = chars.next() {
         if ch == ESCAPE_SYMBOL {
@@ -198,6 +201,26 @@ fn contains_active_format_symbol(format_str: &str, symbol: char) -> bool {
 pub(crate) fn format_with_amount<C: Currency>(
     display_amount: &str,
     is_negative: bool,
+    format_str: &str,
+) -> String {
+    format_parts(
+        display_amount,
+        is_negative,
+        C::CODE,
+        C::SYMBOL,
+        C::MINOR_UNIT_SYMBOL,
+        format_str,
+    )
+}
+
+/// Runtime counterpart of [`format_with_amount`]: takes code/symbol/minor_unit_symbol as
+/// `&str` at runtime rather than as compile-time constants from a `Currency` type.
+pub(crate) fn format_parts(
+    display_amount: &str,
+    is_negative: bool,
+    code: &str,
+    symbol: &str,
+    minor_unit_symbol: &str,
     format_str: &str,
 ) -> String {
     let mut chars = format_str.chars().peekable();
@@ -229,9 +252,9 @@ pub(crate) fn format_with_amount<C: Currency>(
         } else {
             match ch {
                 AMOUNT_FORMAT_SYMBOL => result.push_str(display_amount),
-                CODE_FORMAT_SYMBOL => result.push_str(C::CODE),
-                SYMBOL_FORMAT_SYMBOL => result.push_str(C::SYMBOL),
-                MINOR_FORMAT_SYMBOL => result.push_str(C::MINOR_UNIT_SYMBOL),
+                CODE_FORMAT_SYMBOL => result.push_str(code),
+                SYMBOL_FORMAT_SYMBOL => result.push_str(symbol),
+                MINOR_FORMAT_SYMBOL => result.push_str(minor_unit_symbol),
                 NEGATIVE_FORMAT_SYMBOL => {
                     if is_negative {
                         result.push('-');
@@ -244,4 +267,49 @@ pub(crate) fn format_with_amount<C: Currency>(
     }
 
     result
+}
+
+/// Runtime counterpart of [`format_with_separator`]: formats money described by plain `&str`
+/// fields rather than by a generic `C: Currency` type parameter.
+///
+/// Used by [`crate::ObjMoney`] default implementations so that a single
+/// `dyn ObjMoney` trait object can be formatted without knowing the concrete currency type.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn format_obj_money(
+    amount: Decimal,
+    code: &str,
+    symbol: &str,
+    minor_unit_symbol: &str,
+    minor_unit: u16,
+    thousand_separator: &str,
+    decimal_separator: &str,
+    format_str: &str,
+) -> String {
+    let is_negative = amount.is_sign_negative();
+
+    let display_amount = if contains_active_format_symbol(format_str, MINOR_FORMAT_SYMBOL) {
+        let minor_result = amount
+            .checked_mul(
+                dec!(10)
+                    .checked_powu(minor_unit.into())
+                    .unwrap_or(Decimal::ZERO),
+            )
+            .and_then(|m| m.to_i128());
+        if let Some(n) = minor_result {
+            format_128_abs(n, thousand_separator)
+        } else {
+            "OVERFLOWED_AMOUNT".into()
+        }
+    } else {
+        format_decimal_abs(amount, thousand_separator, decimal_separator, minor_unit)
+    };
+
+    format_parts(
+        &display_amount,
+        is_negative,
+        code,
+        symbol,
+        minor_unit_symbol,
+        format_str,
+    )
 }

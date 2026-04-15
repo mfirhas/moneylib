@@ -18,7 +18,7 @@ use crate::{
         parse_symbol_dot_thousands_separator, parse_symbol_locale_separator,
     },
 };
-use crate::{Currency, MoneyFormatter};
+use crate::{Currency, MoneyFormatter, ObjMoney};
 use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 
 /// Represents a monetary value with a specific currency and amount.
@@ -353,7 +353,7 @@ where
     C: Currency + Clone,
 {
     fn get_decimal(&self) -> Option<Decimal> {
-        Some(self.amount())
+        Some(self.amount)
     }
 }
 
@@ -459,7 +459,7 @@ where
     #[inline]
     fn round(self) -> Self {
         Self {
-            amount: self.amount().round_dp(C::MINOR_UNIT.into()),
+            amount: self.amount.round_dp(C::MINOR_UNIT.into()),
             _currency: PhantomData,
         }
     }
@@ -536,6 +536,41 @@ where
 }
 
 impl<C> MoneyFormatter<C> for Money<C> where C: Currency + Clone {}
+
+impl<C: Currency + Clone> ObjMoney for Money<C> {
+    #[inline]
+    fn amount(&self) -> crate::Decimal {
+        BaseMoney::amount(self)
+    }
+    #[inline]
+    fn code(&self) -> &str {
+        C::CODE
+    }
+    #[inline]
+    fn symbol(&self) -> &str {
+        C::SYMBOL
+    }
+    #[inline]
+    fn name(&self) -> &str {
+        C::NAME
+    }
+    #[inline]
+    fn minor_unit(&self) -> u16 {
+        C::MINOR_UNIT
+    }
+    #[inline]
+    fn thousand_separator(&self) -> &str {
+        C::THOUSAND_SEPARATOR
+    }
+    #[inline]
+    fn decimal_separator(&self) -> &str {
+        C::DECIMAL_SEPARATOR
+    }
+    #[inline]
+    fn minor_unit_symbol(&self) -> &str {
+        C::MINOR_UNIT_SYMBOL
+    }
+}
 
 #[cfg(feature = "accounting")]
 impl<C> AccountingOps<C> for Money<C> where C: Currency + Clone {}
