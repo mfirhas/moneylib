@@ -159,3 +159,6 @@ mod exchange_test;
 
 #[cfg(all(test, feature = "accounting"))]
 mod calendar_test;
+
+#[cfg(test)]
+mod multi_currency_test;
