@@ -288,12 +288,9 @@ pub(crate) fn format_obj_money(
     let is_negative = amount.is_sign_negative();
 
     let display_amount = if contains_active_format_symbol(format_str, MINOR_FORMAT_SYMBOL) {
-        let minor_result = amount
-            .checked_mul(
-                dec!(10)
-                    .checked_powu(minor_unit.into())
-                    .unwrap_or(Decimal::ZERO),
-            )
+        let minor_result = dec!(10)
+            .checked_powu(minor_unit.into())
+            .and_then(|factor| amount.checked_mul(factor))
             .and_then(|m| m.to_i128());
         if let Some(n) = minor_result {
             format_128_abs(n, thousand_separator)
