@@ -511,10 +511,7 @@ where
 mod interest_impl {
     use crate::{
         BaseMoney, BaseOps, Currency, IterOps,
-        accounting::{
-            Interest,
-            interest::{InterestType, Period},
-        },
+        accounting::interest::{Interest, InterestType, Period},
         base::Amount,
         calendar::{AddMonths, get_years_months, get_years_months_days},
         macros::dec,

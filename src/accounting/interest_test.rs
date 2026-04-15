@@ -1,6 +1,6 @@
 use crate::BaseMoney;
 use crate::Decimal;
-use crate::accounting::InterestOps;
+use crate::accounting::interest::InterestOps;
 use crate::accounting::interest::RateDays;
 use crate::macros::{dec, money};
 

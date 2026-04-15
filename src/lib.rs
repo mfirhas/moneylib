@@ -28,7 +28,7 @@ pub mod prelude {
     pub use crate::ExchangeRates;
 
     #[cfg(feature = "accounting")]
-    pub use crate::accounting::Interest;
+    pub use crate::accounting;
 
     #[cfg(feature = "serde")]
     pub use crate::serde;
@@ -54,7 +54,7 @@ where
 
 #[cfg(feature = "accounting")]
 /// Contains all ops traits inside accounting module
-pub trait AccountingOps<C>: accounting::InterestOps<C> {}
+pub trait AccountingOps<C>: accounting::interest::InterestOps<C> {}
 
 #[cfg(all(feature = "accounting", not(feature = "exchange")))]
 /// MoneyOps\<C\> trait contains all traits on money instance.
