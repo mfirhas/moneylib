@@ -25,7 +25,7 @@ pub mod prelude {
     pub use crate::macros::raw;
 
     #[cfg(feature = "exchange")]
-    pub use crate::ExchangeRates;
+    pub use crate::exchange::{Exchange, ExchangeRates};
 
     #[cfg(feature = "accounting")]
     pub use crate::accounting;
