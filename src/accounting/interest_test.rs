@@ -3982,6 +3982,12 @@ fn test_pmt_semi_annuals_none_on_inner_semi_annual_rate_overflow() {
     );
 }
 
+#[test]
+fn test_pmt_compound_return_none() {
+    let pmt = money!(USD, 5094).interest_compound(5).unwrap().payment();
+    assert!(pmt.is_none());
+}
+
 // ------ Tax tests ------
 // -----------------------
 

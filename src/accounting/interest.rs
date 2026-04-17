@@ -500,7 +500,10 @@ where
     /// where r is the period rate and n is the total number of periods.
     /// PMT is amortized against fixed-rate loan.
     pub fn payment(&self) -> Option<M> {
-        interest_impl::get_pmt(self)
+        match self.interest_type {
+            InterestType::Fixed => interest_impl::get_pmt(self),
+            _ => None,
+        }
     }
 }
 
