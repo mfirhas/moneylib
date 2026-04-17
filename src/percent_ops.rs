@@ -3,7 +3,7 @@
 //! It has blanket implementation for types implementing BaseMoney.
 
 use crate::{
-    BaseMoney, BaseOps, Currency,
+    BaseMoney, BaseOps, Currency, Decimal,
     base::{Amount, DecimalNumber},
     macros::dec,
 };
@@ -166,14 +166,14 @@ pub trait PercentOps<C: Currency> {
     ///
     /// let profit = money!(USD, 50);
     /// let revenue = money!(USD, 200);
-    /// let margin = profit.percent_of(revenue).unwrap(); // $50 is 25% of $200
-    /// assert_eq!(margin.amount(), dec!(25));
+    /// let margin_percentage = profit.percent_of(revenue).unwrap(); // $50 is 25% of $200
+    /// assert_eq!(margin_percentage, dec!(25));
     ///
     /// // Returns None when dividing by zero
     /// let zero = money!(USD, 0);
     /// assert!(profit.percent_of(zero).is_none());
     /// ```
-    fn percent_of<M>(&self, rhs: M) -> Option<Self::Output>
+    fn percent_of<M>(&self, rhs: M) -> Option<Decimal>
     where
         M: Amount<C>;
 }
@@ -246,10 +246,12 @@ where
         Some(result)
     }
 
-    fn percent_of<D>(&self, rhs: D) -> Option<Self::Output>
+    fn percent_of<D>(&self, rhs: D) -> Option<Decimal>
     where
         D: Amount<C>,
     {
-        (self.checked_div(rhs.get_decimal()?)?).checked_mul(dec!(100))
+        (self.checked_div(rhs.get_decimal()?)?)
+            .amount()
+            .checked_mul(dec!(100))
     }
 }

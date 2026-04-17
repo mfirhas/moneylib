@@ -40,13 +40,13 @@ fn test_percent_ops() {
 
     let profit = money!(USD, 200);
     let revenue = money!(USD, 300);
-    let margin = profit.percent_of(revenue).unwrap();
-    assert_eq!(margin.amount(), dec!(67));
+    let margin_percentage = profit.percent_of(revenue).unwrap();
+    assert_eq!(margin_percentage, dec!(67));
 
     let profit = raw!(USD, 200.4004);
     let revenue = raw!(USD, 300.123123);
-    let margin = profit.percent_of(revenue).unwrap();
-    assert_eq!(margin.amount(), dec!(66.772729137567984056996501400));
+    let margin_percentage = profit.percent_of(revenue).unwrap();
+    assert_eq!(margin_percentage, dec!(66.772729137567984056996501400));
 
     let profit = money!(USD, 200);
     let margin = profit.percent_of(i128::MAX);
