@@ -9,7 +9,7 @@ use crate::{
 // ========================= Exchange =========================
 
 /// Trait for currency exchange.
-/// This does exchange from C into T.
+/// This does exchange from `From` into `To`.
 ///
 /// This trait has blanket implementation for M where M implements `BaseMoney<C>` + `BaseOps<C>` + `Convert<C>`
 /// with method `convert` that does the conversion.
@@ -19,13 +19,13 @@ pub trait Exchange<From: Currency> {
     where
         Self: Convert<T>;
 
-    /// Method to do conversion from `Self<C>` into `Target<T>`.
+    /// Method to do conversion from `Self<From>` into `Target<To>`.
     ///
-    /// If C == T, immediately return `Target<T>` with Self's amount.
+    /// If `From` == `To`, immediately return `Target<To>` with Self's amount.
     ///
     /// # Arguments
-    /// - T: Currency = Target conversion currency.
-    /// - rate: Rate<C, T> = rate amount accepting these types:
+    /// - To: Currency = Type parameter as the target of currency conversion.
+    /// - rate: Rate<From, To> = exchange rate of From/To accepting value from these types:
     ///     - `Money<T>` where T is target currency
     ///     - `RawMoney<T>` where T is target currency
     ///     - `Decimal`
