@@ -116,6 +116,7 @@ let parts = bill.allocate(&[50_i32, 30, 20]).unwrap(); // [USD 5.00, USD 3.00, U
 // --- Compile-time currency type safety ---
 let usd = money!(USD, 100.00);
 let eur = money!(EUR, 100.00);
+// let is_same = usd == eur; // won't compile, as money with different currencies are treated as different types.
 // usd + eur;  // ← compile error: cannot add Money<USD> and Money<EUR>
 ```
 
