@@ -17,6 +17,10 @@ It also make sure the money always in valid state on every operations and arithm
 
 This crate uses [Decimal](https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html) type underneath for the amount of money. 
 
+More detailed docs:
+- [docs.rs](https://docs.rs/moneylib)
+- [moneylib](https://mfirhas.com/projects/moneylib/)
+
 ## Features
 Here are some features supported:
 - Type-safe: 
