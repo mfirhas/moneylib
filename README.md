@@ -52,62 +52,71 @@ Here are some features supported:
 ## Example
 
 ```rust
-use moneylib::{Money, BaseMoney, BaseOps, MoneyFormatter, RoundingStrategy, iso::{USD, JPY, BHD, EUR}, macros::dec};
-use std::str::FromStr;
+use moneylib::{BaseMoney, BaseOps, IterOps, Money, PercentOps, RoundingStrategy,
+               iso::{BHD, EUR, JPY, USD}, macros::{dec, money}};
 
-// Creating money from string (supports thousand separators)
-let usd_money = Money::<USD>::from_code_comma_thousands("USD 1,234.56").unwrap();
-println!("{}", usd_money); // USD 1,234.56
+// --- Creating money ---
 
-// Creating money from minor amount (cents for USD)
+// Use the money! macro for the most concise syntax (no `use moneylib::iso::USD` required)
+let price = money!(USD, 100.00);     // Money<USD>
+let tax   = money!(USD, 8.50);
+
+// Or construct explicitly; amount is auto-rounded to the currency's minor unit
+let rounded = Money::<USD>::new(dec!(9.995)).unwrap(); // USD 10.00 (bankers rounding)
+
+// From a string with thousand separators
+let parsed = Money::<USD>::from_code_comma_thousands("USD 1,234.56").unwrap();
+
+// From minor units (cents for USD: 12345 cents = USD 123.45)
 let from_cents = Money::<USD>::from_minor(12345).unwrap();
-println!("{}", from_cents); // USD 123.45
 
-// Arithmetic operations with automatic rounding
-let money_a = Money::<USD>::new(dec!(100.00)).unwrap();
-let money_b = Money::<USD>::new(dec!(50.00)).unwrap();
-println!("{}", money_a + money_b); // USD 150.00
-println!("{}", money_a * dec!(1.5)); // USD 150.00
-println!("{}", money_a / dec!(3)); // USD 33.33 (rounded)
+// --- Arithmetic (operator overloading; panics on overflow) ---
+let total = price + tax;             // USD 108.50
+let half  = total / dec!(2);         // USD 54.25
 
-// Comparisons
-println!("{}", money_a > money_b); // true
-println!("{}", money_a == Money::<USD>::new(dec!(100.00)).unwrap()); // true
+// Safe (non-panicking) variants return Option
+let safe_sum = price.checked_add(tax).unwrap(); // USD 108.50
 
-// Working with different currencies
-// JPY has 0 decimal places
-let jpy_money = Money::<JPY>::new(dec!(1000)).unwrap();
-println!("{}", jpy_money); // JPY 1,000
+// --- Comparisons ---
+assert!(price > tax);
+assert!(price != tax);
 
-// BHD has 3 decimal places
-let bhd_money = Money::<BHD>::new(dec!(12.345)).unwrap();
-println!("{}", bhd_money); // BHD 12.345
+// --- Currency-specific minor units ---
+let jpy = money!(JPY, 1000);         // JPY 1,000  (0 decimal places)
+let bhd = Money::<BHD>::new(dec!(12.345)).unwrap(); // BHD 12.345 (3 decimal places)
 
-// Custom formatting
-let money = Money::<USD>::new(dec!(1234.56)).unwrap();
-println!("{}", money.format_symbol()); // $1,234.56
-println!("{}", money.format_code()); // USD 1,234.56
+// --- Formatting ---
+let large = money!(USD, 1234.56);
+println!("{}", large.format_code());    // USD 1,234.56
+println!("{}", large.format_symbol());  // $1,234.56
 
-// Rounding with round_with method
-let rounded = Money::<USD>::new(dec!(123.456)).unwrap();
-let half_up_rounded = rounded.round_with(2, RoundingStrategy::HalfUp);
-println!("{}", half_up_rounded.amount()); // 123.46
+// --- Rounding strategies ---
+let raw = Money::<USD>::from_decimal(dec!(123.455));
+println!("{}", raw.round_with(2, RoundingStrategy::HalfUp).amount());    // 123.46
+println!("{}", raw.round_with(2, RoundingStrategy::HalfDown).amount());  // 123.45
 
-// Negative amounts
-let negative = Money::<USD>::new(dec!(-50.00)).unwrap();
-println!("{}", negative); // USD -50.00
+// --- Negative amounts ---
+let negative = money!(USD, -50.00);
 println!("{}", negative.abs()); // USD 50.00
 
-// Error handling with Result types
-match money_a.checked_add(money_b) {
-    Some(sum) => println!("Sum: {}", sum),
-    None => println!("overflowed"),
-}
+// --- Percentage operations ---
+let discount = price.percent(10).unwrap();      // 10% of USD 100.00 = USD 10.00
+let after_vat = price.percent_add(20).unwrap(); // USD 100.00 + 20% = USD 120.00
 
-// Safe operations with different currencies (won't compile due to type safety)
-let eur_money = Money::<EUR>::new(dec!(100.00)).unwrap();
-// This won't compile because USD and EUR are different types:
-// let result = money_a + eur_money; // Compile error!
+// --- Iterator helpers (sum, mean, median, mode) ---
+let basket = vec![money!(USD, 10.00), money!(USD, 20.00), money!(USD, 30.00)];
+let sum  = basket.checked_sum().unwrap(); // USD 60.00
+let mean = basket.mean().unwrap();        // USD 20.00
+
+// --- Split and allocate ---
+let bill = money!(USD, 10.00);
+let (base, remainder) = bill.split(3).unwrap(); // base = USD 3.33, remainder = USD 0.01
+let parts = bill.allocate(&[50_i32, 30, 20]).unwrap(); // [USD 5.00, USD 3.00, USD 2.00]
+
+// --- Compile-time currency type safety ---
+let usd = money!(USD, 100.00);
+let eur = money!(EUR, 100.00);
+// usd + eur;  // ← compile error: cannot add Money<USD> and Money<EUR>
 ```
 
 ## Components
