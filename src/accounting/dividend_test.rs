@@ -1,7 +1,9 @@
 use crate::BaseMoney;
 use crate::Decimal;
-use crate::accounting::dividend::DividendOps;
+use crate::accounting::dividend::{Dividend, DividendOps};
 use crate::macros::{dec, money};
+
+type UsdDividend = Dividend<crate::Money<crate::iso::USD>, crate::iso::USD>;
 
 // ============================================================================
 // ============================= Dividend Yield ===============================
@@ -315,11 +317,7 @@ fn test_payout_plus_retention_equals_100() {
 fn test_dividend_per_share_basic() {
     // Total dividends = $1,000,000, Shares outstanding = 500,000.
     // DPS = 1000000 / 500000 = 2.00
-    let dps = crate::accounting::dividend::Dividend::<crate::Money<crate::iso::USD>, crate::iso::USD>::dividend_per_share(
-        dec!(1000000),
-        dec!(500000),
-    )
-    .unwrap();
+    let dps = UsdDividend::dividend_per_share(dec!(1000000), dec!(500000)).unwrap();
     assert_eq!(dps, dec!(2));
 }
 
@@ -327,21 +325,14 @@ fn test_dividend_per_share_basic() {
 fn test_dividend_per_share_fractional() {
     // Total dividends = $750, Shares outstanding = 1000.
     // DPS = 750 / 1000 = 0.75
-    let dps = crate::accounting::dividend::Dividend::<crate::Money<crate::iso::USD>, crate::iso::USD>::dividend_per_share(
-        dec!(750),
-        dec!(1000),
-    )
-    .unwrap();
+    let dps = UsdDividend::dividend_per_share(dec!(750), dec!(1000)).unwrap();
     assert_eq!(dps, dec!(0.75));
 }
 
 #[test]
 fn test_dividend_per_share_zero_shares() {
     // Shares = 0 → division by zero → None.
-    let dps = crate::accounting::dividend::Dividend::<crate::Money<crate::iso::USD>, crate::iso::USD>::dividend_per_share(
-        dec!(1000),
-        dec!(0),
-    );
+    let dps = UsdDividend::dividend_per_share(dec!(1000), dec!(0));
     assert!(dps.is_none());
 }
 
