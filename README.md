@@ -103,7 +103,7 @@ println!("{}", negative.abs()); // USD 50.00
 let discount = price.percent(10).unwrap();      // 10% of USD 100.00 = USD 10.00
 let after_vat = price.percent_add(20).unwrap(); // USD 100.00 + 20% = USD 120.00
 
-// --- Iterator helpers (sum, mean, median, mode) ---
+// --- Iterator helpers (sum, mean) ---
 let basket = vec![money!(USD, 10.00), money!(USD, 20.00), money!(USD, 30.00)];
 let sum  = basket.checked_sum().unwrap(); // USD 60.00
 let mean = basket.mean().unwrap();        // USD 20.00
