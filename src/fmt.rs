@@ -172,7 +172,7 @@ pub(crate) fn format_with_separator<C: Currency>(
 
 /// Returns true if `symbol` appears as an active (non-escaped, non-literal-block) format symbol
 /// in `format_str`.
-pub(crate) fn contains_active_format_symbol(format_str: &str, symbol: char) -> bool {
+fn contains_active_format_symbol(format_str: &str, symbol: char) -> bool {
     let mut chars = format_str.chars().peekable();
     while let Some(ch) = chars.next() {
         if ch == ESCAPE_SYMBOL {
@@ -203,14 +203,50 @@ pub(crate) fn format_with_amount<C: Currency>(
     is_negative: bool,
     format_str: &str,
 ) -> String {
-    format_parts(
-        display_amount,
-        is_negative,
-        C::CODE,
-        C::SYMBOL,
-        C::MINOR_UNIT_SYMBOL,
-        format_str,
-    )
+    let mut chars = format_str.chars().peekable();
+
+    let mut result = String::new();
+    while let Some(ch) = chars.next() {
+        if ch == ESCAPE_SYMBOL {
+            if let Some(&next_ch) = chars.peek() {
+                if next_ch == '{' {
+                    chars.next(); // consume '{'
+                    // collect everything until closing '}', output literally
+                    for inner_ch in chars.by_ref() {
+                        if inner_ch == '}' {
+                            break;
+                        }
+                        result.push(inner_ch);
+                    }
+                    continue;
+                } else if FORMAT_SYMBOLS.contains(&next_ch) || next_ch == ESCAPE_SYMBOL {
+                    chars.next();
+                    result.push(next_ch);
+                    continue;
+                } else {
+                    result.push(ch);
+                }
+            } else {
+                result.push(ch);
+            }
+        } else {
+            match ch {
+                AMOUNT_FORMAT_SYMBOL => result.push_str(display_amount),
+                CODE_FORMAT_SYMBOL => result.push_str(C::CODE),
+                SYMBOL_FORMAT_SYMBOL => result.push_str(C::SYMBOL),
+                MINOR_FORMAT_SYMBOL => result.push_str(C::MINOR_UNIT_SYMBOL),
+                NEGATIVE_FORMAT_SYMBOL => {
+                    if is_negative {
+                        result.push('-');
+                    }
+                }
+                ' ' => result.push(' '),
+                _ => result.push(ch),
+            }
+        }
+    }
+
+    result
 }
 
 /// Runtime counterpart of [`format_with_amount`]: takes code/symbol/minor_unit_symbol as
