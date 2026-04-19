@@ -4,7 +4,7 @@ use super::RawMoney;
 
 impl<C> Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     /// Converts this `Money` into `RawMoney`, preserving the current (rounded) amount.
     ///

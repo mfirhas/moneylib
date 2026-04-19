@@ -62,7 +62,7 @@ pub trait InterestOps<C> {
 impl<M, C> InterestOps<C> for M
 where
     M: BaseMoney<C> + BaseOps<C> + Amount<C>,
-    C: Currency + Clone,
+    C: Currency,
 {
     type InterestBuilder<'a>
         = Interest<'a, M, C>

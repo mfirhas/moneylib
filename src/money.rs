@@ -63,7 +63,7 @@ pub struct Money<C: Currency> {
 
 impl<C> Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     /// Creates a new `Money` instance from Decimal
     ///
@@ -350,7 +350,7 @@ where
 
 impl<C> Amount<C> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn get_decimal(&self) -> Option<Decimal> {
         Some(self.amount())
@@ -359,7 +359,7 @@ where
 
 impl<C> FromStr for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Err = MoneyError;
 
@@ -413,7 +413,7 @@ impl<C: Currency> Clone for Money<C> {
 /// ```
 impl<C> Display for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
@@ -429,7 +429,7 @@ where
     }
 }
 
-impl<C: Currency + Clone> Sum for Money<C> {
+impl<C: Currency> Sum for Money<C> {
     /// Sum all moneys
     ///
     /// WARN: PANIC!!! if overflowed.
@@ -438,7 +438,7 @@ impl<C: Currency + Clone> Sum for Money<C> {
     }
 }
 
-impl<'a, C: Currency + Clone> Sum<&'a Money<C>> for Money<C> {
+impl<'a, C: Currency> Sum<&'a Money<C>> for Money<C> {
     /// Sum all moneys(borrowed)
     ///
     /// WARN: PANIC!!! if overflowed.
@@ -449,7 +449,7 @@ impl<'a, C: Currency + Clone> Sum<&'a Money<C>> for Money<C> {
 
 impl<C> BaseMoney<C> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     #[inline]
     fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
@@ -496,7 +496,7 @@ where
 
 impl<C> BaseOps<C> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     #[inline]
     fn abs(&self) -> Self {
@@ -544,9 +544,9 @@ where
     }
 }
 
-impl<C> MoneyFormatter<C> for Money<C> where C: Currency + Clone {}
+impl<C> MoneyFormatter<C> for Money<C> where C: Currency {}
 
 #[cfg(feature = "accounting")]
-impl<C> AccountingOps<C> for Money<C> where C: Currency + Clone {}
+impl<C> AccountingOps<C> for Money<C> where C: Currency {}
 
-impl<C> MoneyOps<C> for Money<C> where C: Currency + Clone {}
+impl<C> MoneyOps<C> for Money<C> where C: Currency {}

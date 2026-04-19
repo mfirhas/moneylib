@@ -9,7 +9,7 @@ use super::RawMoney;
 /// RawMoney + RawMoney = RawMoney (no auto-rounding)
 impl<C> Add for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -27,7 +27,7 @@ where
 /// RawMoney - RawMoney = RawMoney (no auto-rounding)
 impl<C> Sub for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -45,7 +45,7 @@ where
 /// RawMoney * RawMoney = RawMoney (no auto-rounding)
 impl<C> Mul for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -63,7 +63,7 @@ where
 /// RawMoney / RawMoney = RawMoney (no auto-rounding)
 impl<C> Div for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -81,7 +81,7 @@ where
 /// RawMoney += RawMoney (no auto-rounding)
 impl<C> AddAssign for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn add_assign(&mut self, other: Self) {
         let ret = self
@@ -96,7 +96,7 @@ where
 /// RawMoney -= RawMoney (no auto-rounding)
 impl<C> SubAssign for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn sub_assign(&mut self, other: Self) {
         let ret = self
@@ -111,7 +111,7 @@ where
 /// RawMoney *= RawMoney (no auto-rounding)
 impl<C> MulAssign for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn mul_assign(&mut self, other: Self) {
         let ret = self
@@ -126,7 +126,7 @@ where
 /// RawMoney /= RawMoney (no auto-rounding)
 impl<C> DivAssign for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn div_assign(&mut self, other: Self) {
         let ret = self
@@ -141,7 +141,7 @@ where
 /// Negation: -RawMoney = RawMoney
 impl<C> Neg for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
