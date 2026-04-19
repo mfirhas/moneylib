@@ -55,7 +55,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 /// - [`BaseMoney`] trait for core money operations and accessors
 /// - [`BaseOps`] trait for arithmetic and comparison operations
 /// - [`MoneyFormatter`] trait for custom formatting and rounding
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Copy, PartialEq, Eq)]
 pub struct Money<C: Currency> {
     amount: Decimal,
     _currency: PhantomData<C>,
@@ -379,6 +379,15 @@ where
         let s = s.trim();
         let dec_num = Decimal::from_str(s).map_err(|_| MoneyError::ParseStr)?;
         Ok(Self::from_decimal(dec_num))
+    }
+}
+
+impl<C: Currency> Clone for Money<C> {
+    fn clone(&self) -> Self {
+        Self {
+            amount: self.amount,
+            _currency: PhantomData,
+        }
     }
 }
 
