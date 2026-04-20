@@ -1,6 +1,8 @@
-use crate::fmt::{
-    CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format_obj_money,
-};
+mod fmt;
+
+use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR};
+use fmt::format_obj_money;
+
 use crate::macros::dec;
 use crate::{Decimal, MoneyError};
 use rust_decimal::MathematicalOps;
@@ -8,8 +10,8 @@ use rust_decimal::prelude::ToPrimitive;
 
 /// Object-safe trait enabling dynamic dispatch (`dyn`) over different-currency money types.
 ///
-/// This trait exposes the read-only subset of [`BaseMoney`] needed for heterogeneous collections
-/// (e.g. `Vec<Box<dyn ObjMoney>>`) where the currency type `C` is erased at runtime.
+/// This trait exposes the read-only subset of [`crate::BaseMoney`] needed for heterogeneous
+/// collections (e.g. `Vec<Box<dyn ObjMoney>>`) where the currency type `C` is erased at runtime.
 ///
 /// # Why not `BaseMoney<C>` directly?
 ///
@@ -185,3 +187,13 @@ pub trait ObjMoney {
         )
     }
 }
+
+// ---- Implementations for Money and RawMoney ----
+
+mod money_impl;
+
+#[cfg(feature = "raw_money")]
+mod raw_money_impl;
+
+#[cfg(test)]
+mod obj_money_test;

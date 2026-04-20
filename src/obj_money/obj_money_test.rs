@@ -1,8 +1,9 @@
 /// Tests for heterogeneous collections of `Money` and `RawMoney` with different currencies,
 /// using the object-safe `ObjMoney` trait for dynamic dispatch (`dyn`).
+use super::ObjMoney;
 use crate::iso::{CHF, EUR, GBP, INR, JPY, SGD, USD};
 use crate::macros::dec;
-use crate::{BaseMoney, BaseOps, Decimal, Money, ObjMoney};
+use crate::{BaseMoney, BaseOps, Decimal, Money};
 
 #[cfg(feature = "raw_money")]
 use crate::RawMoney;

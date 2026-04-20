@@ -14,7 +14,6 @@ pub mod prelude {
     pub use crate::Currency;
     pub use crate::IterOps;
     pub use crate::MoneyOps;
-    pub use crate::ObjMoney;
     pub use crate::RoundingStrategy;
     pub use crate::{Decimal, Money, MoneyError};
 
@@ -27,6 +26,9 @@ pub mod prelude {
 
     #[cfg(feature = "exchange")]
     pub use crate::ExchangeRates;
+
+    #[cfg(feature = "obj_money")]
+    pub use crate::ObjMoney;
 
     #[cfg(feature = "accounting")]
     pub use crate::accounting;
@@ -84,9 +86,6 @@ pub mod macros;
 mod base;
 pub use base::{BaseMoney, BaseOps, IterOps, MoneyFormatter, RoundingStrategy};
 
-mod obj_money;
-pub use obj_money::ObjMoney;
-
 mod error;
 pub use error::MoneyError;
 
@@ -132,6 +131,11 @@ mod fmt;
 
 mod parse;
 
+#[cfg(feature = "obj_money")]
+mod obj_money;
+#[cfg(feature = "obj_money")]
+pub use obj_money::ObjMoney;
+
 // ----------------- test modules -----------------
 
 #[cfg(test)]
@@ -163,6 +167,3 @@ mod exchange_test;
 
 #[cfg(all(test, feature = "accounting"))]
 mod calendar_test;
-
-#[cfg(test)]
-mod obj_money_test;
