@@ -6,8 +6,8 @@ use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MI
 use crate::macros::dec;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive};
+use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use std::{fmt::Debug, str::FromStr};
 
 #[cfg(feature = "locale")]
 use crate::fmt::format_with_amount;
@@ -42,7 +42,7 @@ use crate::fmt::format_with_amount;
 /// assert_eq!(money.format_code(), "USD 1,234.56");
 /// assert_eq!(money.format_symbol(), "$1,234.56");
 /// ```
-pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
+pub trait BaseMoney<C: Currency>: Sized + Clone {
     // REQUIRED
 
     /// Creates a new `Money` instance with amount of `Decimal`, `f64`, `i32`, `i64`, `i128`.
