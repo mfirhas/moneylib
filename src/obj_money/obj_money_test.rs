@@ -660,4 +660,109 @@ fn test_obj_mixed_money_and_raw_money() {
     assert_eq!(mixed[2].minor_unit(), mixed[3].minor_unit());
 }
 
+// ==================== RawMoney: name accessor ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_names() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(RawMoney::<USD>::new(dec!(1.00)).unwrap()),
+        Box::new(RawMoney::<EUR>::new(dec!(1.00)).unwrap()),
+        Box::new(RawMoney::<JPY>::new(dec!(100)).unwrap()),
+    ];
+
+    assert_eq!(portfolio[0].name(), "United States dollar");
+    assert_eq!(portfolio[1].name(), "Euro");
+    assert_eq!(portfolio[2].name(), "Japanese yen");
+}
+
+// ==================== fmt helper: escape sequences and edge cases ====================
+
+/// `format_obj_money` with `\{...}` literal block: text inside braces is output verbatim
+/// and any format symbols within the block (e.g. 'a', 'm') are NOT interpreted.
+/// This covers the `\{` branch in `contains_active_format_symbol` and `format_parts`.
+#[test]
+fn test_format_obj_money_literal_block_escape() {
+    use super::fmt::format_obj_money;
+
+    // The 'a' inside \{Total:} is literal text, not the amount placeholder.
+    // 'm' does not appear as an active symbol, so decimal (not minor) amount is used.
+    let result = format_obj_money(
+        dec!(1234.56),
+        "USD",
+        "$",
+        "¢",
+        2,
+        ",",
+        ".",
+        r"\{Total:} c na",
+    );
+    assert_eq!(result, "Total: USD 1,234.56");
+}
+
+/// `format_obj_money` with a backslash-escaped format symbol (`\m`): the symbol is
+/// output as a literal character and NOT used to trigger minor-unit formatting.
+/// This covers the single-char escape branch in `contains_active_format_symbol`
+/// and the `FORMAT_SYMBOLS` branch in `format_parts`.
+#[test]
+fn test_format_obj_money_escape_format_symbol() {
+    use super::fmt::format_obj_money;
+
+    // \m → literal 'm' in output; minor formatting is NOT activated.
+    let result = format_obj_money(dec!(100.50), "USD", "$", "¢", 2, ",", ".", r"\m c na");
+    assert_eq!(result, "m USD 100.50");
+}
+
+/// `format_obj_money` with a backslash followed by a character that is neither `{`
+/// nor a recognised format symbol: the backslash is pushed literally and the
+/// following character falls through to the `_` wildcard arm of `format_parts`.
+/// This covers lines 72–74 (unknown-char escape) and line 90 (`_` arm) in `fmt.rs`.
+#[test]
+fn test_format_obj_money_escape_non_format_symbol() {
+    use super::fmt::format_obj_money;
+
+    // "\\x na" is the 4-character string: \, x, space, n, a.
+    // \x → backslash pushed; x → _ arm; n (positive) → nothing; a → amount.
+    let result = format_obj_money(dec!(100.00), "USD", "$", "¢", 2, ",", ".", "\\x na");
+    assert_eq!(result, "\\x 100.00");
+}
+
+/// `format_obj_money` with a trailing backslash (no character following it):
+/// the backslash is pushed literally.
+/// This covers lines 75–77 in `format_parts`.
+#[test]
+fn test_format_obj_money_trailing_backslash() {
+    use super::fmt::format_obj_money;
+
+    // "na\\" is the 3-character string: n, a, \.
+    // n (positive) → nothing; a → amount; \ (no next char) → push \.
+    let result = format_obj_money(dec!(100.00), "USD", "$", "¢", 2, ",", ".", "na\\");
+    assert_eq!(result, "100.00\\");
+}
+
+/// `format_obj_money` with a non-format-symbol character in the template (`:` here):
+/// the character falls through to the `_` wildcard arm of `format_parts`.
+/// This covers line 90 in `fmt.rs`.
+#[test]
+fn test_format_obj_money_wildcard_char_in_template() {
+    use super::fmt::format_obj_money;
+
+    // "c:na" → code + ':' (via _ arm) + amount (n is positive so nothing).
+    let result = format_obj_money(dec!(100.00), "USD", "$", "¢", 2, ",", ".", "c:na");
+    assert_eq!(result, "USD:100.00");
+}
+
+/// When `amount * 10^minor_unit` overflows `Decimal`, the display falls back to
+/// the sentinel string `"OVERFLOWED_AMOUNT"`.
+/// This covers line 124 in `fmt.rs`.
+#[test]
+fn test_format_obj_money_minor_overflow() {
+    use super::fmt::format_obj_money;
+    use crate::Decimal;
+
+    // Decimal::MAX * 100 (USD minor unit = 2) overflows → "OVERFLOWED_AMOUNT".
+    let result = format_obj_money(Decimal::MAX, "USD", "$", "¢", 2, ",", ".", "c na m");
+    assert_eq!(result, "USD OVERFLOWED_AMOUNT ¢");
+}
+
 // end of obj_money_test.rs
