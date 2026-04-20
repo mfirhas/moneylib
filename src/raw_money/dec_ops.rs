@@ -6,7 +6,7 @@ use super::RawMoney;
 // RawMoney + Decimal = RawMoney (no auto-rounding)
 impl<C> Add<Decimal> for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -24,7 +24,7 @@ where
 // RawMoney - Decimal = RawMoney (no auto-rounding)
 impl<C> Sub<Decimal> for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -42,7 +42,7 @@ where
 // RawMoney * Decimal = RawMoney (no auto-rounding)
 impl<C> Mul<Decimal> for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -60,7 +60,7 @@ where
 // RawMoney / Decimal = RawMoney (no auto-rounding)
 impl<C> Div<Decimal> for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -78,7 +78,7 @@ where
 // Decimal + RawMoney = RawMoney (no auto-rounding)
 impl<C> Add<RawMoney<C>> for Decimal
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = RawMoney<C>;
 
@@ -95,7 +95,7 @@ where
 // Decimal - RawMoney = RawMoney (no auto-rounding)
 impl<C> Sub<RawMoney<C>> for Decimal
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = RawMoney<C>;
 
@@ -112,7 +112,7 @@ where
 // Decimal * RawMoney = RawMoney (no auto-rounding)
 impl<C> Mul<RawMoney<C>> for Decimal
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = RawMoney<C>;
 
@@ -129,7 +129,7 @@ where
 // Decimal / RawMoney = RawMoney (no auto-rounding)
 impl<C> Div<RawMoney<C>> for Decimal
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = RawMoney<C>;
 
@@ -145,7 +145,7 @@ where
 
 impl<C> Rem<Decimal> for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = RawMoney<C>;
 

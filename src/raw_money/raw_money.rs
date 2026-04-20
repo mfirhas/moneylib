@@ -79,7 +79,7 @@ pub struct RawMoney<C: Currency> {
 
 impl<C> RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     /// Creates a new `RawMoney` instance from Decimal without rounding.
     ///
@@ -343,7 +343,7 @@ where
 
 impl<C> Amount<C> for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn get_decimal(&self) -> Option<Decimal> {
         Some(self.amount())
@@ -352,7 +352,7 @@ where
 
 impl<C> FromStr for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Err = MoneyError;
 
@@ -399,7 +399,7 @@ impl<C: Currency> Clone for RawMoney<C> {
 /// ```
 impl<C> Display for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
@@ -415,7 +415,7 @@ where
     }
 }
 
-impl<C: Currency + Clone> Sum for RawMoney<C> {
+impl<C: Currency> Sum for RawMoney<C> {
     /// Sum all moneys
     ///
     /// WARN: PANIC! if overflowed.
@@ -424,7 +424,7 @@ impl<C: Currency + Clone> Sum for RawMoney<C> {
     }
 }
 
-impl<'a, C: Currency + Clone> Sum<&'a RawMoney<C>> for RawMoney<C> {
+impl<'a, C: Currency> Sum<&'a RawMoney<C>> for RawMoney<C> {
     /// Sum all moneys(borrowed)
     ///
     /// WARN: PANIC!!! if overflowed.
@@ -435,7 +435,7 @@ impl<'a, C: Currency + Clone> Sum<&'a RawMoney<C>> for RawMoney<C> {
 
 impl<C> BaseMoney<C> for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     #[inline]
     fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
@@ -529,7 +529,7 @@ where
 
 impl<C> BaseOps<C> for RawMoney<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     #[inline]
     fn abs(&self) -> Self {
@@ -577,9 +577,9 @@ where
     }
 }
 
-impl<C> MoneyFormatter<C> for RawMoney<C> where C: Currency + Clone {}
+impl<C> MoneyFormatter<C> for RawMoney<C> where C: Currency {}
 
 #[cfg(feature = "accounting")]
-impl<C> AccountingOps<C> for RawMoney<C> where C: Currency + Clone {}
+impl<C> AccountingOps<C> for RawMoney<C> where C: Currency {}
 
-impl<C> MoneyOps<C> for RawMoney<C> where C: Currency + Clone {}
+impl<C> MoneyOps<C> for RawMoney<C> where C: Currency {}

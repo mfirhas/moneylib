@@ -6,7 +6,7 @@ use std::ops::{Add, Div, Mul, Rem, Sub};
 // Money + Decimal = Money
 impl<C> Add<Decimal> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -24,7 +24,7 @@ where
 // Money - Decimal = Money
 impl<C> Sub<Decimal> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -42,7 +42,7 @@ where
 // Money * Decimal = Money
 impl<C> Mul<Decimal> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -60,7 +60,7 @@ where
 // Money / Decimal = Money
 impl<C> Div<Decimal> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -78,7 +78,7 @@ where
 // Decimal + Money = Money
 impl<C> Add<Money<C>> for Decimal
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Money<C>;
 
@@ -95,7 +95,7 @@ where
 // Decimal - Money = Money
 impl<C> Sub<Money<C>> for Decimal
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Money<C>;
 
@@ -112,7 +112,7 @@ where
 // Decimal * Money = Money
 impl<C> Mul<Money<C>> for Decimal
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Money<C>;
 
@@ -129,7 +129,7 @@ where
 // Decimal / Money = Money
 impl<C> Div<Money<C>> for Decimal
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Money<C>;
 
@@ -145,7 +145,7 @@ where
 
 impl<C> Rem<Decimal> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Money<C>;
 
