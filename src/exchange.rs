@@ -113,7 +113,7 @@ pub trait Exchange<From: Currency> {
     /// // CAD is not in the rates, so None returned.
     /// assert!(money.convert::<CAD>(rates).is_none());
     /// ```
-    fn convert<To: Currency + Clone>(&self, rate: impl Rate<From, To>) -> Option<Self::Target<To>>
+    fn convert<To: Currency>(&self, rate: impl Rate<From, To>) -> Option<Self::Target<To>>
     where
         Self: Convert<To>;
 }
@@ -128,7 +128,7 @@ where
     where
         M: Convert<T>;
 
-    fn convert<To: Currency + Clone>(&self, rate: impl Rate<From, To>) -> Option<Self::Target<To>>
+    fn convert<To: Currency>(&self, rate: impl Rate<From, To>) -> Option<Self::Target<To>>
     where
         M: Convert<To>,
     {
@@ -146,11 +146,11 @@ pub trait Convert<T: Currency> {
     type Output: BaseMoney<T>;
 }
 
-impl<C: Currency, T: Currency + Clone> Convert<T> for Money<C> {
+impl<C: Currency, T: Currency> Convert<T> for Money<C> {
     type Output = Money<T>;
 }
 
-impl<C: Currency, T: Currency + Clone> Convert<T> for RawMoney<C> {
+impl<C: Currency, T: Currency> Convert<T> for RawMoney<C> {
     type Output = RawMoney<T>;
 }
 
@@ -168,26 +168,26 @@ impl<C: Currency, T: Currency + Clone> Convert<T> for RawMoney<C> {
 /// - i128
 /// - ExchangeRates<'a, C> where C is base currency of exchange rates
 ///
-pub trait Rate<From: Currency, To: Currency + Clone>: Amount<To> {
+pub trait Rate<From: Currency, To: Currency>: Amount<To> {
     /// Get T's rate relative to C.
     fn get_rate(&self) -> Option<Decimal> {
         self.get_decimal()
     }
 }
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for Money<To> {}
+impl<From: Currency, To: Currency> Rate<From, To> for Money<To> {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for RawMoney<To> {}
+impl<From: Currency, To: Currency> Rate<From, To> for RawMoney<To> {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for Decimal {}
+impl<From: Currency, To: Currency> Rate<From, To> for Decimal {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for f64 {}
+impl<From: Currency, To: Currency> Rate<From, To> for f64 {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for i32 {}
+impl<From: Currency, To: Currency> Rate<From, To> for i32 {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for i64 {}
+impl<From: Currency, To: Currency> Rate<From, To> for i64 {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for i128 {}
+impl<From: Currency, To: Currency> Rate<From, To> for i128 {}
 
 // ========================= ExchangeRates =========================
 
@@ -235,7 +235,7 @@ pub struct ExchangeRates<'a, Base: Currency> {
     _base: PhantomData<Base>,
 }
 
-impl<'a, Base: Currency + Clone> ExchangeRates<'a, Base> {
+impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// Initiate new ExchangeRates with base currency and 1 entry to the base with value 1.
     ///
     /// # Examples
@@ -364,7 +364,7 @@ impl<'a, Base: Currency + Clone> ExchangeRates<'a, Base> {
     }
 }
 
-impl<'a, I, Base: Currency + Clone> From<I> for ExchangeRates<'a, Base>
+impl<'a, I, Base: Currency> From<I> for ExchangeRates<'a, Base>
 where
     I: IntoIterator<Item = (&'a str, Decimal)>,
 {
@@ -380,7 +380,7 @@ where
     }
 }
 
-impl<'a, Base: Currency + Clone> Default for ExchangeRates<'a, Base> {
+impl<'a, Base: Currency> Default for ExchangeRates<'a, Base> {
     fn default() -> Self {
         Self::new()
     }
@@ -400,9 +400,9 @@ impl<'a, Base: Currency, To: Currency> Amount<To> for &ExchangeRates<'a, Base> {
 
 impl<'a, Base, From, To> Rate<From, To> for ExchangeRates<'a, Base>
 where
-    Base: Currency + Clone,
-    From: Currency + Clone,
-    To: Currency + Clone,
+    Base: Currency,
+    From: Currency,
+    To: Currency,
 {
     fn get_rate(&self) -> Option<Decimal> {
         self.get_pair(From::CODE, To::CODE)
@@ -411,9 +411,9 @@ where
 
 impl<'a, Base, From, To> Rate<From, To> for &ExchangeRates<'a, Base>
 where
-    Base: Currency + Clone,
-    From: Currency + Clone,
-    To: Currency + Clone,
+    Base: Currency,
+    From: Currency,
+    To: Currency,
 {
     fn get_rate(&self) -> Option<Decimal> {
         <ExchangeRates<Base> as Rate<From, To>>::get_rate(self)

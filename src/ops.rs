@@ -9,7 +9,7 @@ use crate::{BaseMoney, Money};
 /// Money + Money = Money
 impl<C> Add for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -27,7 +27,7 @@ where
 /// Money - Money = Money
 impl<C> Sub for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -45,7 +45,7 @@ where
 /// Money * Money = Money
 impl<C> Mul for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -63,7 +63,7 @@ where
 /// Money / Money = Money
 impl<C> Div for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
@@ -81,7 +81,7 @@ where
 /// Money += Money
 impl<C> AddAssign for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn add_assign(&mut self, other: Self) {
         // WARN: PANIC!
@@ -99,7 +99,7 @@ where
 /// Money -= Money
 impl<C> SubAssign for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn sub_assign(&mut self, other: Self) {
         // WARN: PANIC!
@@ -117,7 +117,7 @@ where
 /// Money *= Money
 impl<C> MulAssign for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn mul_assign(&mut self, other: Self) {
         // WARN: PANIC!
@@ -135,7 +135,7 @@ where
 /// Money /= Money
 impl<C> DivAssign for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn div_assign(&mut self, other: Self) {
         // WARN: PANIC!
@@ -152,7 +152,7 @@ where
 
 impl<C> Neg for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Output = Self;
 
