@@ -1,7 +1,7 @@
 use crate::{
     BaseMoney, Currency, Exchange, ExchangeRates, Money, RawMoney,
     base::Amount,
-    iso::{CAD, EUR, IDR, IRR, USD},
+    iso::{CAD, EUR, IDR, IRR, JPY, USD},
     macros::dec,
 };
 
@@ -121,4 +121,90 @@ fn test_exchange() {
 
     // CAD is not in the rates, so None returned.
     assert!(money.convert::<crate::iso::CAD>(rates).is_none());
+}
+
+#[test]
+fn test_exchange_rates() {
+    let mut rates = ExchangeRates::<USD>::new();
+    assert_eq!(rates.len(), 1);
+    assert_eq!(rates.get(USD::CODE).unwrap(), dec!(1));
+    println!("after initiation: {:?}", &rates);
+    println!("--------------------------------");
+
+    rates.set("EUR", dec!(0.8));
+    rates.set("IDR", dec!(17_000));
+    rates.set("CAD", dec!(1.2));
+    assert_eq!(rates.len(), 4);
+    println!("{}", rates);
+    println!("--------------------------------");
+
+    rates.set_pair("CNY", "IDR", i128::MAX); // wont set
+    rates.set_pair("CNY", "IDR", 2500);
+    assert_eq!(rates.len(), 5);
+    assert_eq!(rates.get("CNY").unwrap(), dec!(6.8));
+
+    use crate::money;
+    let cny_idr_rate = money!(CNY, 5262.657).convert::<IDR>(2500).unwrap();
+    let cny_idr_rates = money!(CNY, 5262.657).convert::<IDR>(&rates).unwrap();
+    assert_eq!(cny_idr_rate, cny_idr_rates);
+
+    println!("after setting CNY/IDR: {}", rates);
+    println!("--------------------------------");
+
+    rates.set_pair("CNY", "IDR", 3000);
+    let cny_idr_new_rate = money!(CNY, 34989.123).convert::<IDR>(3000).unwrap();
+    let cny_idr_new_rates = money!(CNY, 34989.123).convert::<IDR>(&rates).unwrap();
+    assert_eq!(cny_idr_new_rate, cny_idr_new_rates);
+    println!("after updating CNY/IDR: {}", rates);
+    println!("--------------------------------");
+
+    // set base/base
+    rates.set_pair("USD", "USD", 123); // should be ignored
+    assert_eq!(rates.get("USD").unwrap(), dec!(1));
+    assert_eq!(rates.get_pair("USD", "USD").unwrap(), dec!(1));
+
+    rates.set_pair("USD", "EUR", i128::MAX);
+    rates.set_pair("USD", "EUR", dec!(0.85));
+    assert_eq!(rates.get_pair("USD", "EUR").unwrap(), dec!(0.85));
+    assert_eq!(
+        money!(USD, 123).convert::<EUR>(dec!(0.85)).unwrap(),
+        money!(USD, 123).convert::<EUR>(&rates).unwrap()
+    );
+    println!("after setting USD/EUR: {}", rates);
+    println!("--------------------------------");
+
+    rates.set_pair("CAD", "USD", i128::MAX);
+    rates.set_pair("CAD", "USD", dec!(0.9));
+    assert_eq!(
+        money!(CAD, 123).convert::<USD>(dec!(0.9)).unwrap(),
+        money!(CAD, 123).convert::<USD>(&rates).unwrap()
+    );
+    println!("after setting CAD/USD: {}", rates);
+    println!("--------------------------------");
+
+    rates.set_pair("CNY", "JPY", i128::MAX);
+    rates.set_pair("CNY", "JPY", 23);
+    assert_eq!(
+        money!(CNY, 123).convert::<JPY>(dec!(23)).unwrap(),
+        money!(CNY, 123).convert::<JPY>(&rates).unwrap()
+    );
+    println!("after setting CNY/JPY: {}", rates);
+    println!("--------------------------------");
+
+    // set both not exist
+    rates.set_pair("SGD", "HKD", 6);
+    println!("after setting SGD/HKD: {}", rates);
+    println!("--------------------------------");
+
+    // set max value, failed
+    rates.set_pair("CNY", "JPY", i128::MAX);
+    assert_eq!(
+        money!(CNY, 123).convert::<JPY>(dec!(23)).unwrap(),
+        money!(CNY, 123).convert::<JPY>(&rates).unwrap()
+    );
+    rates.set_pair("CNY", "JPY", i128::MAX);
+    assert_eq!(
+        money!(CNY, 123).convert::<JPY>(dec!(23)).unwrap(),
+        money!(CNY, 123).convert::<JPY>(&rates).unwrap()
+    );
 }
