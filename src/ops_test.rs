@@ -107,7 +107,7 @@ fn test_split_no_remainder() {
 #[test]
 fn test_split_zero_n_returns_none() {
     let money = Money::<USD>::new(dec!(100)).unwrap();
-    assert!(money.split(0).is_none());
+    assert!(money.split::<_, (_, _)>(0).is_none());
 }
 
 #[test]
@@ -139,7 +139,7 @@ fn test_split_negative_amount() {
 #[test]
 fn test_split_dist_with_remainder() {
     let money = Money::<USD>::new(dec!(100)).unwrap();
-    let parts = money.split_dist(3).unwrap();
+    let parts: Vec<_> = money.split(3).unwrap();
     assert_eq!(parts.len(), 3);
     assert_eq!(parts[0].amount(), dec!(33.34));
     assert_eq!(parts[1].amount(), dec!(33.33));
@@ -152,7 +152,7 @@ fn test_split_dist_with_remainder() {
 #[test]
 fn test_split_dist_no_remainder() {
     let money = Money::<USD>::new(dec!(500)).unwrap();
-    let parts = money.split_dist(4).unwrap();
+    let parts: Vec<_> = money.split(4).unwrap();
     assert_eq!(parts.len(), 4);
     assert!(parts.iter().all(|p| p.amount() == dec!(125.00)));
 }
@@ -160,13 +160,13 @@ fn test_split_dist_no_remainder() {
 #[test]
 fn test_split_dist_zero_n_returns_none() {
     let money = Money::<USD>::new(dec!(100)).unwrap();
-    assert!(money.split_dist(0).is_none());
+    assert!(money.split::<_, Vec<_>>(0).is_none());
 }
 
 #[test]
 fn test_split_dist_into_one() {
     let money = Money::<USD>::new(dec!(100)).unwrap();
-    let parts = money.split_dist(1).unwrap();
+    let parts: Vec<_> = money.split(1).unwrap();
     assert_eq!(parts.len(), 1);
     assert_eq!(parts[0].amount(), dec!(100.00));
 }
@@ -174,7 +174,7 @@ fn test_split_dist_into_one() {
 #[test]
 fn test_split_dist_jpy() {
     let money = Money::<JPY>::new(dec!(10)).unwrap();
-    let parts = money.split_dist(3).unwrap();
+    let parts: Vec<_> = money.split(3).unwrap();
     assert_eq!(parts.len(), 3);
     assert_eq!(parts[0].amount(), dec!(4));
     assert_eq!(parts[1].amount(), dec!(3));
@@ -188,7 +188,7 @@ fn test_split_dist_jpy() {
 #[test]
 fn test_allocate_even_split() {
     let money = Money::<USD>::new(dec!(10000.00)).unwrap();
-    let shares = money.allocate(&[60, 40]).unwrap();
+    let shares: Vec<_> = money.split([60, 40].as_slice()).unwrap();
     assert_eq!(shares.len(), 2);
     assert_eq!(shares[0].amount(), dec!(6000.00));
     assert_eq!(shares[1].amount(), dec!(4000.00));
@@ -197,7 +197,7 @@ fn test_allocate_even_split() {
 #[test]
 fn test_allocate_five_weights() {
     let money = Money::<USD>::new(dec!(100000.00)).unwrap();
-    let depts = money.allocate(&[35, 25, 20, 15, 5]).unwrap();
+    let depts: Vec<_> = money.split([35, 25, 20, 15, 5].as_slice()).unwrap();
     assert_eq!(depts.len(), 5);
     assert_eq!(depts[0].amount(), dec!(35000.00));
     assert_eq!(depts[1].amount(), dec!(25000.00));
@@ -209,7 +209,7 @@ fn test_allocate_five_weights() {
 #[test]
 fn test_allocate_with_remainder_distribution() {
     let money = Money::<USD>::new(dec!(100)).unwrap();
-    let parts = money.allocate(&[33, 33, 34]).unwrap();
+    let parts: Vec<_> = money.split([33, 33, 34].as_slice()).unwrap();
     assert_eq!(parts.len(), 3);
     // Sum must equal original
     let sum: crate::Decimal = parts.iter().map(|p| p.amount()).sum();
@@ -217,16 +217,10 @@ fn test_allocate_with_remainder_distribution() {
 }
 
 #[test]
-fn test_allocate_percentages_not_100_returns_none() {
-    let money = Money::<USD>::new(dec!(100)).unwrap();
-    assert!(money.allocate(&[60, 30]).is_none()); // sums to 90, not 100
-}
-
-#[test]
 fn test_allocate_empty_returns_none() {
     let money = Money::<USD>::new(dec!(100)).unwrap();
     let empty: &[i32] = &[];
-    assert!(money.allocate(empty).is_none());
+    assert!(money.split::<_, Vec<_>>(empty).is_none());
 }
 
 // ==================== allocate_by_ratios ====================
@@ -234,7 +228,7 @@ fn test_allocate_empty_returns_none() {
 #[test]
 fn test_allocate_by_ratios_equal() {
     let amount = Money::<USD>::new(dec!(400.00)).unwrap();
-    let parts = amount.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts: Vec<_> = amount.split([1, 2, 1].as_slice()).unwrap();
     assert_eq!(parts.len(), 3);
     assert_eq!(parts[0].amount(), dec!(100.00));
     assert_eq!(parts[1].amount(), dec!(200.00));
@@ -244,7 +238,7 @@ fn test_allocate_by_ratios_equal() {
 #[test]
 fn test_allocate_by_ratios_uneven_remainder() {
     let amount = Money::<USD>::new(dec!(1)).unwrap();
-    let parts = amount.allocate_by_ratios(&[1, 1, 1]).unwrap();
+    let parts: Vec<_> = amount.split([1, 1, 1]).unwrap();
     assert_eq!(parts.len(), 3);
     // Remainder 0.01 goes to first part
     assert_eq!(parts[0].amount(), dec!(0.34));
@@ -257,7 +251,7 @@ fn test_allocate_by_ratios_uneven_remainder() {
 #[test]
 fn test_allocate_by_ratios_single() {
     let amount = Money::<USD>::new(dec!(100)).unwrap();
-    let parts = amount.allocate_by_ratios(&[1]).unwrap();
+    let parts: Vec<_> = amount.split(&[1]).unwrap();
     assert_eq!(parts.len(), 1);
     assert_eq!(parts[0].amount(), dec!(100.00));
 }
@@ -266,13 +260,13 @@ fn test_allocate_by_ratios_single() {
 fn test_allocate_by_ratios_empty_returns_none() {
     let amount = Money::<USD>::new(dec!(100)).unwrap();
     let empty: &[i32] = &[];
-    assert!(amount.allocate_by_ratios(empty).is_none());
+    assert!(amount.split::<_, Vec<_>>(empty).is_none());
 }
 
 #[test]
 fn test_allocate_by_ratios_all_zero_returns_none() {
     let amount = Money::<USD>::new(dec!(100)).unwrap();
-    assert!(amount.allocate_by_ratios(&[0, 0, 0]).is_none());
+    assert!(amount.split::<_, Vec<_>>(&[0, 0, 0]).is_none());
 }
 
 // ==================== RawMoney split ====================
@@ -310,7 +304,7 @@ fn test_raw_split_math_invariant() {
 #[test]
 fn test_raw_split_zero_n_returns_none() {
     let money = RawMoney::<USD>::new(dec!(100)).unwrap();
-    assert!(money.split(0).is_none());
+    assert!(money.split::<_, (_, _)>(0).is_none());
 }
 
 #[cfg(feature = "raw_money")]
@@ -338,7 +332,7 @@ fn test_raw_split_negative() {
 fn test_raw_split_dist_exact() {
     // 500 / 4 = 125 exactly – all parts are equal, no distribution needed
     let money = RawMoney::<USD>::new(dec!(500)).unwrap();
-    let parts = money.split_dist(4).unwrap();
+    let parts: Vec<_> = money.split(4).unwrap();
     assert_eq!(parts.len(), 4);
     assert!(parts.iter().all(|p| p.amount() == dec!(125)));
     let sum: crate::Decimal = parts.iter().map(|p| p.amount()).sum();
@@ -350,7 +344,7 @@ fn test_raw_split_dist_exact() {
 fn test_raw_split_dist_high_precision() {
     // 10.005 / 3 = 3.335 exactly – RawMoney preserves the full decimal value
     let money = RawMoney::<USD>::new(dec!(10.005)).unwrap();
-    let parts = money.split_dist(3).unwrap();
+    let parts: Vec<_> = money.split(3).unwrap();
     assert_eq!(parts.len(), 3);
     assert!(parts.iter().all(|p| p.amount() == dec!(3.335)));
     let sum: crate::Decimal = parts.iter().map(|p| p.amount()).sum();
@@ -361,14 +355,14 @@ fn test_raw_split_dist_high_precision() {
 #[test]
 fn test_raw_split_dist_zero_n_returns_none() {
     let money = RawMoney::<USD>::new(dec!(100)).unwrap();
-    assert!(money.split_dist(0).is_none());
+    assert!(money.split::<_, Vec<_>>(0).is_none());
 }
 
 #[cfg(feature = "raw_money")]
 #[test]
 fn test_raw_split_dist_into_one() {
     let money = RawMoney::<USD>::new(dec!(100)).unwrap();
-    let parts = money.split_dist(1).unwrap();
+    let parts: Vec<_> = money.split(1).unwrap();
     assert_eq!(parts.len(), 1);
     assert_eq!(parts[0].amount(), dec!(100));
 }
@@ -379,7 +373,7 @@ fn test_raw_split_dist_into_one() {
 #[test]
 fn test_raw_allocate_even_split() {
     let money = RawMoney::<USD>::new(dec!(10000)).unwrap();
-    let shares = money.allocate(&[60, 40]).unwrap();
+    let shares: Vec<_> = money.split([60, 40].as_slice()).unwrap();
     assert_eq!(shares.len(), 2);
     assert_eq!(shares[0].amount(), dec!(6000));
     assert_eq!(shares[1].amount(), dec!(4000));
@@ -390,7 +384,7 @@ fn test_raw_allocate_even_split() {
 fn test_raw_allocate_remainder_distributed() {
     // 100 split 33/33/34 – remainder 0.01 is given to first part
     let money = RawMoney::<USD>::new(dec!(100)).unwrap();
-    let parts = money.allocate(&[33, 33, 34]).unwrap();
+    let parts: Vec<_> = money.split([33, 33, 34].as_slice()).unwrap();
     assert_eq!(parts.len(), 3);
     let sum: crate::Decimal = parts.iter().map(|p| p.amount()).sum();
     assert_eq!(sum, dec!(100));
@@ -398,17 +392,10 @@ fn test_raw_allocate_remainder_distributed() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_raw_allocate_not_100_returns_none() {
-    let money = RawMoney::<USD>::new(dec!(100)).unwrap();
-    assert!(money.allocate(&[60, 30]).is_none()); // sums to 90
-}
-
-#[cfg(feature = "raw_money")]
-#[test]
 fn test_raw_allocate_empty_returns_none() {
     let money = RawMoney::<USD>::new(dec!(100)).unwrap();
     let empty: &[i32] = &[];
-    assert!(money.allocate(empty).is_none());
+    assert!(money.split::<_, Vec<_>>(empty).is_none());
 }
 
 // ==================== RawMoney allocate_by_ratios ====================
@@ -417,7 +404,7 @@ fn test_raw_allocate_empty_returns_none() {
 #[test]
 fn test_raw_allocate_by_ratios_equal() {
     let amount = RawMoney::<USD>::new(dec!(400)).unwrap();
-    let parts = amount.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts: Vec<_> = amount.split(&[1, 2, 1]).unwrap();
     assert_eq!(parts.len(), 3);
     assert_eq!(parts[0].amount(), dec!(100));
     assert_eq!(parts[1].amount(), dec!(200));
@@ -429,7 +416,7 @@ fn test_raw_allocate_by_ratios_equal() {
 fn test_raw_allocate_by_ratios_uneven_remainder() {
     // 1 USD split by equal thirds: truncated to 0.33 each, remainder 0.01 to first
     let amount = RawMoney::<USD>::new(dec!(1)).unwrap();
-    let parts = amount.allocate_by_ratios(&[1, 1, 1]).unwrap();
+    let parts: Vec<_> = amount.split(&[1, 1, 1]).unwrap();
     assert_eq!(parts.len(), 3);
     assert_eq!(parts[0].amount(), dec!(0.3333333333333333333333333334));
     assert_eq!(parts[1].amount(), dec!(0.3333333333333333333333333333));
@@ -443,7 +430,7 @@ fn test_raw_allocate_by_ratios_uneven_remainder() {
 fn test_raw_allocate_by_ratios_single() {
     // Single ratio – entire amount returned as one part
     let amount = RawMoney::<USD>::new(dec!(100)).unwrap();
-    let parts = amount.allocate_by_ratios(&[1]).unwrap();
+    let parts: Vec<_> = amount.split(&[1]).unwrap();
     assert_eq!(parts.len(), 1);
     assert_eq!(parts[0].amount(), dec!(100));
 }
@@ -453,12 +440,12 @@ fn test_raw_allocate_by_ratios_single() {
 fn test_raw_allocate_by_ratios_empty_returns_none() {
     let amount = RawMoney::<USD>::new(dec!(100)).unwrap();
     let empty: &[i32] = &[];
-    assert!(amount.allocate_by_ratios(empty).is_none());
+    assert!(amount.split::<_, Vec<_>>(empty).is_none());
 }
 
 #[cfg(feature = "raw_money")]
 #[test]
 fn test_raw_allocate_by_ratios_all_zero_returns_none() {
     let amount = RawMoney::<USD>::new(dec!(100)).unwrap();
-    assert!(amount.allocate_by_ratios(&[0, 0, 0]).is_none());
+    assert!(amount.split::<_, Vec<_>>(&[0, 0, 0]).is_none());
 }

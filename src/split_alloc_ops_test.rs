@@ -156,7 +156,7 @@ fn test_split_dist() {
     ];
 
     for case in cases {
-        let result = case.money.split_dist(case.n);
+        let result: Option<Vec<_>> = case.money.split(case.n);
         assert_eq!(
             result, case.expected,
             "split_dist({}, {})",
@@ -227,16 +227,15 @@ fn test_allocate() {
             pcns: vec![],
             expected: None,
         },
-        // percentages don't sum to 100
         AllocateCase {
             money: money!(USD, 100.00),
             pcns: vec![dec!(50), dec!(40)],
-            expected: None,
+            expected: Some(vec![money!(USD, 55.56), money!(USD, 44.44)]),
         },
     ];
 
     for case in cases {
-        let result = case.money.allocate(&case.pcns);
+        let result = case.money.split::<_, Vec<_>>(&case.pcns);
         assert_eq!(
             result, case.expected,
             "allocate({}, {:?})",
@@ -335,7 +334,7 @@ fn test_allocate_by_ratios() {
     ];
 
     for case in cases {
-        let result = case.money.allocate_by_ratios(&case.ratios);
+        let result = case.money.split(&case.ratios);
         assert_eq!(
             result, case.expected,
             "allocate_by_ratios({}, {:?})",
@@ -372,7 +371,7 @@ fn test_split_zero_money() {
     assert_eq!(rem1, money!(USD, 0.00));
 
     // n=0 on zero money is still invalid
-    assert!(money.split(0).is_none());
+    assert!(money.split::<_, (_, _)>(0).is_none());
 }
 
 // ==================== split: negative money ====================
@@ -402,7 +401,7 @@ fn test_split_negative_money() {
     assert_eq!(reconstructed3, money3);
 
     // n=0 on negative money is invalid
-    assert!(money.split(0).is_none());
+    assert!(money.split::<_, (_, _)>(0).is_none());
 }
 
 // ==================== split: big money ====================
@@ -528,7 +527,7 @@ fn test_split_math_invariant() {
 #[test]
 fn test_split_dist_zero_money_extra() {
     let money = money!(USD, 0.00);
-    let parts = money.split_dist(1).unwrap();
+    let parts: Vec<_> = money.split(1).unwrap();
     assert_eq!(parts, vec![money!(USD, 0.00)]);
     let sum: Money<USD> = parts.iter().sum();
     assert_eq!(sum, money);
@@ -540,7 +539,7 @@ fn test_split_dist_zero_money_extra() {
 fn test_split_dist_negative_money() {
     // -10.00 / 3 with distribution -> [-3.34, -3.33, -3.33]
     let money = money!(USD, -10.00);
-    let parts = money.split_dist(3).unwrap();
+    let parts: Vec<_> = money.split(3).unwrap();
     assert_eq!(
         parts,
         vec![money!(USD, -3.34), money!(USD, -3.33), money!(USD, -3.33)]
@@ -550,7 +549,7 @@ fn test_split_dist_negative_money() {
 
     // -10.01 / 3 -> [-3.34, -3.34, -3.33]
     let money2 = money!(USD, -10.01);
-    let parts2 = money2.split_dist(3).unwrap();
+    let parts2: Vec<_> = money2.split(3).unwrap();
     assert_eq!(
         parts2,
         vec![money!(USD, -3.34), money!(USD, -3.34), money!(USD, -3.33)]
@@ -560,11 +559,11 @@ fn test_split_dist_negative_money() {
 
     // n=1 on negative: whole amount in one part
     let money3 = money!(USD, -99.99);
-    let parts3 = money3.split_dist(1).unwrap();
+    let parts3: Vec<_> = money3.split(1).unwrap();
     assert_eq!(parts3, vec![money!(USD, -99.99)]);
 
     // n=0 on negative -> None
-    assert!(money.split_dist(0).is_none());
+    assert!(money.split::<_, Vec<_>>(0).is_none());
 }
 
 // ==================== split_dist: big money ====================
@@ -574,13 +573,13 @@ fn test_split_dist_big_money() {
     let money = money!(USD, 1_000_000.00);
 
     // 1_000_000 / 3 with distribution
-    let parts = money.split_dist(3).unwrap();
+    let parts: Vec<_> = money.split(3).unwrap();
     assert_eq!(parts.len(), 3);
     let sum: Money<USD> = parts.iter().sum();
     assert_eq!(sum, money);
 
     // 1_000_000 / 7
-    let parts7 = money.split_dist(7).unwrap();
+    let parts7: Vec<_> = money.split(7).unwrap();
     assert_eq!(parts7.len(), 7);
     let sum7: Money<USD> = parts7.iter().sum();
     assert_eq!(sum7, money);
@@ -592,14 +591,14 @@ fn test_split_dist_big_money() {
 fn test_split_dist_jpy() {
     // 10 JPY / 3 -> [4, 3, 3]
     let money = money!(JPY, 10);
-    let parts = money.split_dist(3).unwrap();
+    let parts: Vec<_> = money.split(3).unwrap();
     assert_eq!(parts, vec![money!(JPY, 4), money!(JPY, 3), money!(JPY, 3)]);
     let sum: Money<JPY> = parts.iter().sum();
     assert_eq!(sum, money);
 
     // 1000 JPY / 3 -> [334, 333, 333]
     let money2 = money!(JPY, 1000);
-    let parts2 = money2.split_dist(3).unwrap();
+    let parts2: Vec<_> = money2.split(3).unwrap();
     assert_eq!(
         parts2,
         vec![money!(JPY, 334), money!(JPY, 333), money!(JPY, 333)]
@@ -609,7 +608,7 @@ fn test_split_dist_jpy() {
 
     // negative JPY: -10 / 3 -> [-4, -3, -3]
     let money3 = money!(JPY, -10);
-    let parts3 = money3.split_dist(3).unwrap();
+    let parts3: Vec<_> = money3.split(3).unwrap();
     assert_eq!(
         parts3,
         vec![money!(JPY, -4), money!(JPY, -3), money!(JPY, -3)]
@@ -633,7 +632,7 @@ fn test_split_dist_math_invariant() {
     let ns: &[u32] = &[1, 2, 3, 7];
     for amount in amounts {
         for &n in ns {
-            if let Some(parts) = amount.split_dist(n) {
+            if let Some(parts) = amount.split::<_, Vec<_>>(n) {
                 assert_eq!(parts.len(), n as usize);
                 let sum: Money<USD> = parts.iter().sum();
                 assert_eq!(
@@ -651,8 +650,8 @@ fn test_split_dist_math_invariant() {
 #[test]
 fn test_allocate_zero_money_extra() {
     let money = money!(USD, 0.00);
-    let parts = money
-        .allocate(&[dec!(33.33), dec!(33.33), dec!(33.34)])
+    let parts: Vec<_> = money
+        .split(&[dec!(33.33), dec!(33.33), dec!(33.34)])
         .unwrap();
     assert_eq!(
         parts,
@@ -666,25 +665,27 @@ fn test_allocate_zero_money_extra() {
 fn test_allocate_negative_money() {
     // -100 by 50/50 -> [-50, -50]
     let money = money!(USD, -100.00);
-    let parts = money.allocate(&[dec!(50), dec!(50)]).unwrap();
+    let parts: Vec<_> = money.split(&[dec!(50), dec!(50)]).unwrap();
     assert_eq!(parts, vec![money!(USD, -50.00), money!(USD, -50.00)]);
     let sum: Money<USD> = parts.iter().sum();
     assert_eq!(sum, money);
 
     // -100 by 70/30 -> [-70, -30]
-    let parts2 = money.allocate(&[dec!(70), dec!(30)]).unwrap();
+    let parts2: Vec<_> = money.split(&[dec!(70), dec!(30)]).unwrap();
     assert_eq!(parts2, vec![money!(USD, -70.00), money!(USD, -30.00)]);
     let sum2: Money<USD> = parts2.iter().sum();
     assert_eq!(sum2, money);
 
     // -0.01 by 50/50 — invariant check
     let small = money!(USD, -0.01);
-    let parts3 = small.allocate(&[dec!(50), dec!(50)]).unwrap();
+    let parts3: Vec<_> = small.split(&[dec!(50), dec!(50)]).unwrap();
     let sum3: Money<USD> = parts3.iter().sum();
     assert_eq!(sum3, small);
 
-    // percentages not summing to 100 -> None even for negative money
-    assert!(money.allocate(&[dec!(50), dec!(40)]).is_none());
+    assert_eq!(
+        money.split::<_, Vec<_>>(&[dec!(50), dec!(40)]).unwrap(),
+        vec![-money!(USD, 55.56), money!(USD, -44.44)]
+    );
 }
 
 // ==================== allocate: big money ====================
@@ -694,7 +695,7 @@ fn test_allocate_big_money() {
     let money = money!(USD, 1_000_000.00);
 
     // 70/30 split
-    let parts = money.allocate(&[dec!(70), dec!(30)]).unwrap();
+    let parts: Vec<_> = money.split(&[dec!(70), dec!(30)]).unwrap();
     assert_eq!(
         parts,
         vec![money!(USD, 700_000.00), money!(USD, 300_000.00)]
@@ -703,8 +704,8 @@ fn test_allocate_big_money() {
     assert_eq!(sum, money);
 
     // 10/20/30/40
-    let parts2 = money
-        .allocate(&[dec!(10), dec!(20), dec!(30), dec!(40)])
+    let parts2: Vec<_> = money
+        .split(&[dec!(10), dec!(20), dec!(30), dec!(40)])
         .unwrap();
     assert_eq!(
         parts2,
@@ -726,16 +727,16 @@ fn test_allocate_many_percentages() {
     let money = money!(USD, 100.00);
 
     // 70/30
-    let parts = money.allocate(&[dec!(70), dec!(30)]).unwrap();
+    let parts: Vec<_> = money.split(&[dec!(70), dec!(30)]).unwrap();
     assert_eq!(parts, vec![money!(USD, 70.00), money!(USD, 30.00)]);
 
     // 1/99
-    let parts2 = money.allocate(&[dec!(1), dec!(99)]).unwrap();
+    let parts2 = money.split(&[dec!(1), dec!(99)]).unwrap();
     assert_eq!(parts2, vec![money!(USD, 1.00), money!(USD, 99.00)]);
 
     // 25/25/25/25
     let parts3 = money
-        .allocate(&[dec!(25), dec!(25), dec!(25), dec!(25)])
+        .split([dec!(25), dec!(25), dec!(25), dec!(25)])
         .unwrap();
     assert_eq!(
         parts3,
@@ -749,7 +750,7 @@ fn test_allocate_many_percentages() {
 
     // 10/20/30/40
     let parts4 = money
-        .allocate(&[dec!(10), dec!(20), dec!(30), dec!(40)])
+        .split(&[dec!(10), dec!(20), dec!(30), dec!(40)])
         .unwrap();
     assert_eq!(
         parts4,
@@ -763,7 +764,7 @@ fn test_allocate_many_percentages() {
 
     // decimal percentages with remainder distribution
     let parts5 = money
-        .allocate(&[dec!(33.33), dec!(33.33), dec!(33.34)])
+        .split(&[dec!(33.33), dec!(33.33), dec!(33.34)])
         .unwrap();
     assert_eq!(
         parts5,
@@ -771,7 +772,7 @@ fn test_allocate_many_percentages() {
     );
 
     // single 100% slice
-    let parts6 = money.allocate(&[dec!(100)]).unwrap();
+    let parts6 = money.split(&[dec!(100)]).unwrap();
     assert_eq!(parts6, vec![money!(USD, 100.00)]);
 
     // all variants must satisfy sum invariant
@@ -787,20 +788,22 @@ fn test_allocate_many_percentages() {
 fn test_allocate_jpy() {
     // 100 JPY by 70/30 -> [70, 30]
     let money = money!(JPY, 100);
-    let parts = money.allocate(&[dec!(70), dec!(30)]).unwrap();
+    let allocations = vec![dec!(70), dec!(30)];
+    let parts: Vec<_> = money.split(allocations).unwrap();
     assert_eq!(parts, vec![money!(JPY, 70), money!(JPY, 30)]);
     let sum: Money<JPY> = parts.iter().sum();
     assert_eq!(sum, money);
 
     // 10 JPY by 33/33/34 — remainder distribution
     let money2 = money!(JPY, 10);
-    let parts2 = money2.allocate(&[dec!(33), dec!(33), dec!(34)]).unwrap();
+    let allocations = vec![dec!(33), dec!(33), dec!(34)];
+    let parts2: Vec<_> = money2.split(&allocations).unwrap();
     let sum2: Money<JPY> = parts2.iter().sum();
     assert_eq!(sum2, money2);
 
     // negative: -100 JPY by 50/50 -> [-50, -50]
     let money3 = money!(JPY, -100);
-    let parts3 = money3.allocate(&[dec!(50), dec!(50)]).unwrap();
+    let parts3: Vec<_> = money3.split(&[dec!(50), dec!(50)]).unwrap();
     assert_eq!(parts3, vec![money!(JPY, -50), money!(JPY, -50)]);
     let sum3: Money<JPY> = parts3.iter().sum();
     assert_eq!(sum3, money3);
@@ -812,14 +815,14 @@ fn test_allocate_jpy() {
 fn test_allocate_bhd() {
     // 1.000 BHD by 50/50 -> [0.500, 0.500]
     let money = money!(BHD, 1.000);
-    let parts = money.allocate(&[dec!(50), dec!(50)]).unwrap();
+    let parts: Vec<_> = money.split(&[dec!(50), dec!(50)]).unwrap();
     assert_eq!(parts, vec![money!(BHD, 0.500), money!(BHD, 0.500)]);
     let sum: Money<BHD> = parts.iter().sum();
     assert_eq!(sum, money);
 
     // 1.000 BHD by 33.33/33.33/33.34 — invariant
-    let parts2 = money
-        .allocate(&[dec!(33.33), dec!(33.33), dec!(33.34)])
+    let parts2: Vec<_> = money
+        .split(&[dec!(33.33), dec!(33.33), dec!(33.34)])
         .unwrap();
     let sum2: Money<BHD> = parts2.iter().sum();
     assert_eq!(sum2, money);
@@ -847,7 +850,7 @@ fn test_allocate_math_invariant() {
     ];
     for amount in amounts {
         for pcns in pcn_slices {
-            if let Some(parts) = amount.allocate(*pcns) {
+            if let Some(parts) = amount.split::<_, Vec<_>>(*pcns) {
                 let sum: Money<USD> = parts.iter().sum();
                 assert_eq!(
                     sum, *amount,
@@ -864,7 +867,7 @@ fn test_allocate_math_invariant() {
 #[test]
 fn test_allocate_by_ratios_zero_money_extra() {
     let money = money!(USD, 0.00);
-    let parts = money.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts: Vec<_> = money.split(&[1, 2, 1]).unwrap();
     assert_eq!(
         parts,
         vec![money!(USD, 0.00), money!(USD, 0.00), money!(USD, 0.00)]
@@ -877,13 +880,13 @@ fn test_allocate_by_ratios_zero_money_extra() {
 fn test_allocate_by_ratios_negative_money() {
     // -100.00 by 1:1 -> [-50.00, -50.00]
     let money = money!(USD, -100.00);
-    let parts = money.allocate_by_ratios(&[1, 1]).unwrap();
+    let parts: Vec<_> = money.split(&[1, 1]).unwrap();
     assert_eq!(parts, vec![money!(USD, -50.00), money!(USD, -50.00)]);
     let sum: Money<USD> = parts.iter().sum();
     assert_eq!(sum, money);
 
     // -100.00 by 1:2:1 -> [-25.00, -50.00, -25.00]
-    let parts2 = money.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts2: Vec<_> = money.split(&[1, 2, 1]).unwrap();
     assert_eq!(
         parts2,
         vec![
@@ -897,12 +900,12 @@ fn test_allocate_by_ratios_negative_money() {
 
     // -10.01 by 1:2:1 — invariant check
     let money3 = money!(USD, -10.01);
-    let parts3 = money3.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts3: Vec<_> = money3.split(&[1, 2, 1]).unwrap();
     let sum3: Money<USD> = parts3.iter().sum();
     assert_eq!(sum3, money3);
 
     // all-zero ratios still invalid
-    assert!(money.allocate_by_ratios(&[0, 0]).is_none());
+    assert!(money.split::<_, Vec<_>>(&[0, 0]).is_none());
 }
 
 // ==================== allocate_by_ratios: big money ====================
@@ -912,7 +915,7 @@ fn test_allocate_by_ratios_big_money() {
     let money = money!(USD, 1_000_000.00);
 
     // 1:1 -> [500_000, 500_000]
-    let parts = money.allocate_by_ratios(&[1, 1]).unwrap();
+    let parts: Vec<_> = money.split(&[1, 1]).unwrap();
     assert_eq!(
         parts,
         vec![money!(USD, 500_000.00), money!(USD, 500_000.00)]
@@ -921,7 +924,7 @@ fn test_allocate_by_ratios_big_money() {
     assert_eq!(sum, money);
 
     // 1:2:1 -> [250_000, 500_000, 250_000]
-    let parts2 = money.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts2: Vec<_> = money.split(&[1, 2, 1]).unwrap();
     assert_eq!(
         parts2,
         vec![
@@ -934,7 +937,7 @@ fn test_allocate_by_ratios_big_money() {
     assert_eq!(sum2, money);
 
     // 7-way — invariant only
-    let parts7 = money.allocate_by_ratios(&[1, 1, 1, 1, 1, 1, 1]).unwrap();
+    let parts7: Vec<_> = money.split(&[1, 1, 1, 1, 1, 1, 1]).unwrap();
     assert_eq!(parts7.len(), 7);
     let sum7: Money<USD> = parts7.iter().sum();
     assert_eq!(sum7, money);
@@ -947,20 +950,20 @@ fn test_allocate_by_ratios_many_ratios() {
     let money = money!(USD, 10.00);
 
     // 3:7
-    let parts = money.allocate_by_ratios(&[3, 7]).unwrap();
+    let parts: Vec<_> = money.split(&[3, 7]).unwrap();
     assert_eq!(parts, vec![money!(USD, 3.00), money!(USD, 7.00)]);
 
     // 1:9
-    let parts2 = money.allocate_by_ratios(&[1, 9]).unwrap();
+    let parts2: Vec<_> = money.split(&[1, 9]).unwrap();
     assert_eq!(parts2, vec![money!(USD, 1.00), money!(USD, 9.00)]);
 
     // 100:200:300 (proportional to 1:2:3)
-    let parts3 = money.allocate_by_ratios(&[100, 200, 300]).unwrap();
+    let parts3: Vec<_> = money.split(&[100, 200, 300]).unwrap();
     let sum3: Money<USD> = parts3.iter().sum();
     assert_eq!(sum3, money);
 
     // 1:3
-    let parts4 = money.allocate_by_ratios(&[1, 3]).unwrap();
+    let parts4: Vec<_> = money.split(&[1, 3]).unwrap();
     assert_eq!(parts4, vec![money!(USD, 2.50), money!(USD, 7.50)]);
 
     for p in [&parts, &parts2, &parts3, &parts4] {
@@ -970,7 +973,7 @@ fn test_allocate_by_ratios_many_ratios() {
 
     // 0.10 by 1:2:3:4
     let small = money!(USD, 0.10);
-    let parts5 = small.allocate_by_ratios(&[1, 2, 3, 4]).unwrap();
+    let parts5: Vec<_> = small.split(&[1, 2, 3, 4]).unwrap();
     assert_eq!(
         parts5,
         vec![
@@ -990,9 +993,7 @@ fn test_allocate_by_ratios_many_ratios() {
 fn test_allocate_by_ratios_decimal_ratios() {
     // 1.5 : 2.5 : 1.0  (total = 5.0)
     let money = money!(USD, 10.00);
-    let parts = money
-        .allocate_by_ratios(&[dec!(1.5), dec!(2.5), dec!(1.0)])
-        .unwrap();
+    let parts: Vec<_> = money.split(&[dec!(1.5), dec!(2.5), dec!(1.0)]).unwrap();
     assert_eq!(
         parts,
         vec![money!(USD, 3.00), money!(USD, 5.00), money!(USD, 2.00)]
@@ -1001,7 +1002,7 @@ fn test_allocate_by_ratios_decimal_ratios() {
     assert_eq!(sum, money);
 
     // 0.1 : 0.9 (same as 1:9)
-    let parts2 = money.allocate_by_ratios(&[dec!(0.1), dec!(0.9)]).unwrap();
+    let parts2: Vec<_> = money.split(&[dec!(0.1), dec!(0.9)]).unwrap();
     assert_eq!(parts2, vec![money!(USD, 1.00), money!(USD, 9.00)]);
     let sum2: Money<USD> = parts2.iter().sum();
     assert_eq!(sum2, money);
@@ -1013,7 +1014,7 @@ fn test_allocate_by_ratios_decimal_ratios() {
 fn test_allocate_by_ratios_jpy() {
     // 100 JPY by 1:2:1 -> [25, 50, 25]
     let money = money!(JPY, 100);
-    let parts = money.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts: Vec<_> = money.split(&[1, 2, 1]).unwrap();
     assert_eq!(
         parts,
         vec![money!(JPY, 25), money!(JPY, 50), money!(JPY, 25)]
@@ -1023,13 +1024,13 @@ fn test_allocate_by_ratios_jpy() {
 
     // 10 JPY by 1:2:1 — remainder distribution, invariant check
     let money2 = money!(JPY, 10);
-    let parts2 = money2.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts2: Vec<_> = money2.split(&[1, 2, 1]).unwrap();
     let sum2: Money<JPY> = parts2.iter().sum();
     assert_eq!(sum2, money2);
 
     // negative: -100 JPY by 1:1 -> [-50, -50]
     let money3 = money!(JPY, -100);
-    let parts3 = money3.allocate_by_ratios(&[1, 1]).unwrap();
+    let parts3: Vec<_> = money3.split([1, 1]).unwrap();
     assert_eq!(parts3, vec![money!(JPY, -50), money!(JPY, -50)]);
     let sum3: Money<JPY> = parts3.iter().sum();
     assert_eq!(sum3, money3);
@@ -1056,7 +1057,7 @@ fn test_allocate_by_ratios_math_invariant() {
     ];
     for amount in amounts {
         for ratios in ratio_slices {
-            if let Some(parts) = amount.allocate_by_ratios(*ratios) {
+            if let Some(parts) = amount.split::<_, Vec<_>>(*ratios) {
                 let sum: Money<USD> = parts.iter().sum();
                 assert_eq!(
                     sum, *amount,
@@ -1114,14 +1115,14 @@ fn test_raw_split_zero_money() {
     assert!(equal.is_zero());
     assert!(remainder.is_zero());
 
-    assert!(money.split(0).is_none());
+    assert!(money.split::<_, (_, _)>(0).is_none());
 }
 
 #[cfg(feature = "raw_money")]
 #[test]
 fn test_raw_split_dist_negative() {
     let money = raw!(USD, -10);
-    let parts = money.split_dist(3).unwrap();
+    let parts: Vec<_> = money.split(3).unwrap();
     assert_eq!(parts.len(), 3);
     for p in &parts {
         assert!(p.is_negative() || p.is_zero());
@@ -1135,7 +1136,7 @@ fn test_raw_split_dist_negative() {
 fn test_raw_split_dist_big_money() {
     // Use a value that divides evenly so full-precision RawMoney sums back exactly
     let money = raw!(USD, 1_000_000);
-    let parts = money.split_dist(4).unwrap();
+    let parts: Vec<_> = money.split(4).unwrap();
     assert_eq!(parts.len(), 4);
     let sum: RawMoney<USD> = parts.iter().sum();
     assert_eq!(sum.amount(), money.amount());
@@ -1145,7 +1146,7 @@ fn test_raw_split_dist_big_money() {
 #[test]
 fn test_raw_allocate_negative() {
     let money = raw!(USD, -100);
-    let parts = money.allocate(&[dec!(50), dec!(50)]).unwrap();
+    let parts: Vec<_> = money.split(&[dec!(50), dec!(50)]).unwrap();
     assert_eq!(parts.len(), 2);
     for p in &parts {
         assert!(p.is_negative() || p.is_zero());
@@ -1153,15 +1154,20 @@ fn test_raw_allocate_negative() {
     let sum: RawMoney<USD> = parts.iter().sum();
     assert_eq!(sum.amount(), money.amount());
 
-    // percentages not summing to 100 -> None even for negative
-    assert!(money.allocate(&[dec!(50), dec!(40)]).is_none());
+    assert_eq!(
+        money.split::<_, Vec<_>>(&[dec!(50), dec!(40)]).unwrap(),
+        vec![
+            raw!(USD, -55.55555555555555555555555556),
+            -raw!(USD, 44.44444444444444444444444444)
+        ]
+    );
 }
 
 #[cfg(feature = "raw_money")]
 #[test]
 fn test_raw_allocate_big_money() {
     let money = raw!(USD, 1_000_000);
-    let parts = money.allocate(&[dec!(70), dec!(30)]).unwrap();
+    let parts: Vec<_> = money.split(&[dec!(70), dec!(30)]).unwrap();
     assert_eq!(parts[0].amount(), dec!(700000));
     assert_eq!(parts[1].amount(), dec!(300000));
     let sum: RawMoney<USD> = parts.iter().sum();
@@ -1172,7 +1178,7 @@ fn test_raw_allocate_big_money() {
 #[test]
 fn test_raw_allocate_by_ratios_negative() {
     let money = raw!(USD, -100);
-    let parts = money.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts: Vec<_> = money.split(&[1, 2, 1]).unwrap();
     assert_eq!(parts.len(), 3);
     for p in &parts {
         assert!(p.is_negative() || p.is_zero());
@@ -1185,7 +1191,7 @@ fn test_raw_allocate_by_ratios_negative() {
 #[test]
 fn test_raw_allocate_by_ratios_big_money() {
     let money = raw!(USD, 1_000_000);
-    let parts = money.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts: Vec<_> = money.split(&[1, 2, 1]).unwrap();
     assert_eq!(parts[0].amount(), dec!(250000));
     assert_eq!(parts[1].amount(), dec!(500000));
     assert_eq!(parts[2].amount(), dec!(250000));
@@ -1198,7 +1204,7 @@ fn test_raw_allocate_by_ratios_big_money() {
 fn test_raw_full_precision_allocate_by_ratios() {
     // With RawMoney, irrational-looking splits get full decimal precision
     let money = raw!(USD, 10.005);
-    let parts = money.allocate_by_ratios(&[1, 1, 1]).unwrap();
+    let parts: Vec<_> = money.split(&[1, 1, 1]).unwrap();
     assert_eq!(parts.len(), 3);
     let sum: RawMoney<USD> = parts.iter().sum();
     assert_eq!(sum.amount(), money.amount());
@@ -1223,7 +1229,7 @@ fn test_raw_allocate_math_invariant() {
     ];
     for amount in amounts {
         for pcns in pcn_slices {
-            if let Some(parts) = amount.allocate(*pcns) {
+            if let Some(parts) = amount.split::<_, Vec<_>>(*pcns) {
                 let sum: RawMoney<USD> = parts.iter().sum();
                 assert_eq!(
                     sum.amount(),
@@ -1250,7 +1256,7 @@ fn test_raw_allocate_math_invariant() {
 #[test]
 fn test_raw_split_total_rounded() {
     let money = raw!(USD, 100);
-    let ret = money.split(3).unwrap();
+    let ret: (_, _) = money.split(3).unwrap();
     let expected = (
         raw!(USD, 33.33333333333333333333333333),
         raw!(USD, 0.00000000000000000000000001),
@@ -1264,7 +1270,7 @@ fn test_raw_split_total_rounded() {
 #[test]
 fn test_raw_split_dist_total_rounded() {
     let money = raw!(USD, 100);
-    let ret = money.split_dist(3).unwrap();
+    let ret: Vec<_> = money.split(3).unwrap();
     let expected = vec![
         raw!(USD, 33.33333333333333333333333334),
         raw!(USD, 33.33333333333333333333333333),
@@ -1284,7 +1290,7 @@ fn test_raw_split_dist_total_rounded() {
 #[test]
 fn test_raw_allocation_total_rounded() {
     let money = raw!(USD, 79.228162514264337593543950335);
-    let ret = money.allocate(&[10, 10, 80]).unwrap();
+    let ret: Vec<_> = money.split(&[10, 10, 80]).unwrap();
     let expected = &[
         raw!(USD, 7.922816251426433759354395035),
         raw!(USD, 7.922816251426433759354395035),
@@ -1306,7 +1312,7 @@ fn test_raw_allocation_total_rounded() {
 #[test]
 fn test_raw_allocation_by_ratios_total_rounded() {
     let money = raw!(USD, 100);
-    let ret = money.allocate_by_ratios(&[1, 1, 1]).unwrap();
+    let ret: Vec<_> = money.split(&[1, 1, 1]).unwrap();
     let expected = vec![
         raw!(USD, 33.33333333333333333333333334),
         raw!(USD, 33.33333333333333333333333333),
@@ -1337,7 +1343,7 @@ fn test_raw_split_n1() {
     assert!(rem2.is_zero());
 
     // n=0 is still invalid
-    assert!(money.split(0).is_none());
+    assert!(money.split::<_, (_, _)>(0).is_none());
 }
 
 // -------------------- split: truncation branch (Decimal::MAX precision) ---
@@ -1513,12 +1519,12 @@ fn test_raw_split_math_invariant() {
 #[test]
 fn test_raw_split_dist_n1() {
     let money = raw!(USD, 79.228162514264337593543950335);
-    let parts = money.split_dist(1).unwrap();
+    let parts: Vec<_> = money.split(1).unwrap();
     assert_eq!(parts.len(), 1);
     assert_eq!(parts[0].amount(), money.amount());
 
     let neg = raw!(USD, -100);
-    let parts2 = neg.split_dist(1).unwrap();
+    let parts2: Vec<_> = neg.split(1).unwrap();
     assert_eq!(parts2.len(), 1);
     assert_eq!(parts2[0].amount(), neg.amount());
 }
@@ -1530,7 +1536,7 @@ fn test_raw_split_dist_n1() {
 fn test_raw_split_dist_negative_total_rounded() {
     // mirrors test_raw_split_dist_total_rounded but for negative
     let money = raw!(USD, -100);
-    let parts = money.split_dist(3).unwrap();
+    let parts: Vec<_> = money.split(3).unwrap();
     assert_eq!(parts.len(), 3);
 
     let sum: RawMoney<USD> = parts.iter().sum();
@@ -1560,7 +1566,7 @@ fn test_raw_split_dist_negative_total_rounded() {
 #[test]
 fn test_raw_split_dist_negative_truncation_branch() {
     let money = raw!(USD, -79.228162514264337593543950335);
-    let parts = money.split_dist(2).unwrap();
+    let parts: Vec<_> = money.split(2).unwrap();
     assert_eq!(parts.len(), 2);
 
     let sum: RawMoney<USD> = parts.iter().sum();
@@ -1594,7 +1600,7 @@ fn test_raw_split_dist_math_invariant() {
     let ns: &[u32] = &[1, 2, 3, 7];
     for amount in amounts {
         for &n in ns {
-            if let Some(parts) = amount.split_dist(n) {
+            if let Some(parts) = amount.split::<_, Vec<_>>(n) {
                 assert_eq!(parts.len(), n as usize);
                 let sum: RawMoney<USD> = parts.iter().sum();
                 assert_eq!(
@@ -1615,24 +1621,27 @@ fn test_raw_split_dist_math_invariant() {
 #[test]
 fn test_raw_allocate_single_100() {
     let money = raw!(USD, 79.228162514264337593543950335);
-    let parts = money.allocate(&[dec!(100)]).unwrap();
+    let parts: Vec<_> = money.split(&[dec!(100)]).unwrap();
     assert_eq!(parts.len(), 1);
     assert_eq!(parts[0].amount(), money.amount());
 
     let neg = raw!(USD, -100);
-    let parts2 = neg.allocate(&[dec!(100)]).unwrap();
+    let parts2: Vec<_> = neg.split(&[dec!(100)]).unwrap();
     assert_eq!(parts2.len(), 1);
     assert_eq!(parts2[0].amount(), neg.amount());
 
-    // percentages not summing to 100 → None
-    assert!(money.allocate(&[dec!(99)]).is_none());
-    assert!(money.allocate::<Decimal>(&[]).is_none());
+    assert_eq!(
+        money.split::<_, Vec<_>>(&[dec!(99)]).unwrap(),
+        vec![raw!(USD, 79.228162514264337593543950335)]
+    );
+
+    assert!(money.split::<&[i32], Vec<_>>(&[]).is_none());
 
     // Regression: allocate with a 0% in the middle must not infinite-loop.
     // 0+50+50 == 100, with the first slice being 0%.
     // Previously the 0-share's scale would set shortest_scale=0, breaking
     // the remainder distribution for high-precision RawMoney amounts.
-    let hp_parts = money.allocate(&[dec!(0), dec!(50), dec!(50)]).unwrap();
+    let hp_parts: Vec<_> = money.split(&[dec!(0), dec!(50), dec!(50)]).unwrap();
     assert_eq!(hp_parts.len(), 3);
     // The 0% part may receive a few ULPs from remainder distribution;
     // the key invariant is that parts sum to the original amount.
@@ -1647,7 +1656,7 @@ fn test_raw_allocate_single_100() {
 fn test_raw_allocation_negative_total_rounded() {
     // mirrors test_raw_allocation_total_rounded for the negated amount
     let money = raw!(USD, -79.228162514264337593543950335);
-    let parts = money.allocate(&[10, 10, 80]).unwrap();
+    let parts: Vec<_> = money.split(&[10, 10, 80]).unwrap();
 
     assert_eq!(parts.len(), 3);
 
@@ -1679,19 +1688,19 @@ fn test_raw_allocation_negative_total_rounded() {
 fn test_raw_allocate_jpy_bhd() {
     // JPY
     let jpy = raw!(JPY, 100);
-    let parts = jpy.allocate(&[dec!(70), dec!(30)]).unwrap();
+    let parts: Vec<_> = jpy.split(&[dec!(70), dec!(30)]).unwrap();
     assert_eq!(parts.len(), 2);
     let sum: RawMoney<JPY> = parts.iter().sum();
     assert_eq!(sum.amount(), jpy.amount());
 
     let neg_jpy = raw!(JPY, -100);
-    let nparts = neg_jpy.allocate(&[dec!(50), dec!(50)]).unwrap();
+    let nparts: Vec<_> = neg_jpy.split(&[dec!(50), dec!(50)]).unwrap();
     let nsum: RawMoney<JPY> = nparts.iter().sum();
     assert_eq!(nsum.amount(), neg_jpy.amount());
 
     // BHD
     let bhd = raw!(BHD, 1.000);
-    let bparts = bhd.allocate(&[dec!(50), dec!(50)]).unwrap();
+    let bparts: Vec<_> = bhd.split(&[dec!(50), dec!(50)]).unwrap();
     let bsum: RawMoney<BHD> = bparts.iter().sum();
     assert_eq!(bsum.amount(), bhd.amount());
 }
@@ -1722,7 +1731,7 @@ fn test_raw_allocate_math_invariant_extended() {
     ];
     for amount in amounts {
         for pcns in pcn_slices {
-            if let Some(parts) = amount.allocate(*pcns) {
+            if let Some(parts) = amount.split::<_, Vec<_>>(*pcns) {
                 let sum: RawMoney<USD> = parts.iter().sum();
                 assert_eq!(
                     sum.amount(),
@@ -1742,12 +1751,12 @@ fn test_raw_allocate_math_invariant_extended() {
 #[test]
 fn test_raw_allocate_by_ratios_single_ratio() {
     let money = raw!(USD, 79.228162514264337593543950335);
-    let parts = money.allocate_by_ratios(&[1]).unwrap();
+    let parts: Vec<_> = money.split(&[1]).unwrap();
     assert_eq!(parts.len(), 1);
     assert_eq!(parts[0].amount(), money.amount());
 
     let neg = raw!(USD, -100);
-    let parts2 = neg.allocate_by_ratios(&[5]).unwrap();
+    let parts2: Vec<_> = neg.split(&[5]).unwrap();
     assert_eq!(parts2.len(), 1);
     assert_eq!(parts2[0].amount(), neg.amount());
 }
@@ -1758,7 +1767,7 @@ fn test_raw_allocate_by_ratios_single_ratio() {
 #[test]
 fn test_raw_allocate_by_ratios_zero_middle() {
     let money = raw!(USD, 100);
-    let parts = money.allocate_by_ratios(&[1, 0, 1]).unwrap();
+    let parts: Vec<_> = money.split(&[1, 0, 1]).unwrap();
     assert_eq!(parts.len(), 3);
 
     let sum: RawMoney<USD> = parts.iter().sum();
@@ -1772,11 +1781,11 @@ fn test_raw_allocate_by_ratios_zero_middle() {
     );
 
     // all-zero ratios → None
-    assert!(money.allocate_by_ratios(&[0, 0]).is_none());
+    assert!(money.split::<_, Vec<_>>(&[0, 0]).is_none());
 
     // negative + zero in middle
     let neg = raw!(USD, -100);
-    let nparts = neg.allocate_by_ratios(&[1, 0, 1]).unwrap();
+    let nparts: Vec<_> = neg.split(&[1, 0, 1]).unwrap();
     let nsum: RawMoney<USD> = nparts.iter().sum();
     assert_eq!(nsum.amount(), neg.amount());
     assert!(nparts[1].is_zero());
@@ -1786,7 +1795,7 @@ fn test_raw_allocate_by_ratios_zero_middle() {
     // all high-precision parts to truncate to integers and leaving a huge remainder
     // that took ~10^27 loop iterations to distribute.
     let max_prec = raw!(USD, 79.228162514264337593543950335);
-    let hp_parts = max_prec.allocate_by_ratios(&[1, 0, 1]).unwrap();
+    let hp_parts: Vec<_> = max_prec.split(&[1, 0, 1]).unwrap();
     assert_eq!(hp_parts.len(), 3);
     // The zero-ratio part has at most a few ULPs from remainder distribution;
     // the key invariant is that parts sum to the original amount.
@@ -1795,7 +1804,7 @@ fn test_raw_allocate_by_ratios_zero_middle() {
 
     // Same regression for negative max-precision amount
     let neg_max = raw!(USD, -79.228162514264337593543950335);
-    let hn_parts = neg_max.allocate_by_ratios(&[1, 0, 1]).unwrap();
+    let hn_parts: Vec<_> = neg_max.split(&[1, 0, 1]).unwrap();
     assert_eq!(hn_parts.len(), 3);
     let hn_sum: RawMoney<USD> = hn_parts.iter().sum();
     assert_eq!(hn_sum.amount(), neg_max.amount());
@@ -1808,23 +1817,19 @@ fn test_raw_allocate_by_ratios_zero_middle() {
 fn test_raw_allocate_by_ratios_decimal_ratios_raw() {
     // 1.5 : 2.5 : 1.0 → proportional split
     let money = raw!(USD, 100);
-    let parts = money
-        .allocate_by_ratios(&[dec!(1.5), dec!(2.5), dec!(1.0)])
-        .unwrap();
+    let parts: Vec<_> = money.split(&[dec!(1.5), dec!(2.5), dec!(1.0)]).unwrap();
     assert_eq!(parts.len(), 3);
     let sum: RawMoney<USD> = parts.iter().sum();
     assert_eq!(sum.amount(), money.amount());
 
     // 0.1 : 0.9 → same proportion as 1:9
-    let parts2 = money.allocate_by_ratios(&[dec!(0.1), dec!(0.9)]).unwrap();
+    let parts2: Vec<_> = money.split(&[dec!(0.1), dec!(0.9)]).unwrap();
     let sum2: RawMoney<USD> = parts2.iter().sum();
     assert_eq!(sum2.amount(), money.amount());
 
     // negative
     let neg = raw!(USD, -100);
-    let nparts = neg
-        .allocate_by_ratios(&[dec!(1.5), dec!(2.5), dec!(1.0)])
-        .unwrap();
+    let nparts: Vec<_> = neg.split(&[dec!(1.5), dec!(2.5), dec!(1.0)]).unwrap();
     let nsum: RawMoney<USD> = nparts.iter().sum();
     assert_eq!(nsum.amount(), neg.amount());
     for p in &nparts {
@@ -1839,7 +1844,7 @@ fn test_raw_allocate_by_ratios_decimal_ratios_raw() {
 fn test_raw_allocation_by_ratios_negative_total_rounded() {
     // mirrors test_raw_allocation_by_ratios_total_rounded for the negated amount
     let money = raw!(USD, -100);
-    let parts = money.allocate_by_ratios(&[1, 1, 1]).unwrap();
+    let parts: Vec<_> = money.split(&[1, 1, 1]).unwrap();
 
     let sum: RawMoney<USD> = parts.iter().sum();
     assert_eq!(sum.amount(), money.amount());
@@ -1868,12 +1873,12 @@ fn test_raw_allocation_by_ratios_negative_total_rounded() {
 fn test_raw_allocate_by_ratios_jpy_bhd() {
     // JPY
     let jpy = raw!(JPY, 100);
-    let parts = jpy.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let parts: Vec<_> = jpy.split(&[1, 2, 1]).unwrap();
     let sum: RawMoney<JPY> = parts.iter().sum();
     assert_eq!(sum.amount(), jpy.amount());
 
     let neg_jpy = raw!(JPY, -100);
-    let nparts = neg_jpy.allocate_by_ratios(&[1, 1]).unwrap();
+    let nparts: Vec<_> = neg_jpy.split(&[1, 1]).unwrap();
     let nsum: RawMoney<JPY> = nparts.iter().sum();
     assert_eq!(nsum.amount(), neg_jpy.amount());
     for p in &nparts {
@@ -1882,7 +1887,7 @@ fn test_raw_allocate_by_ratios_jpy_bhd() {
 
     // BHD
     let bhd = raw!(BHD, 10.000);
-    let bparts = bhd.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    let bparts: Vec<_> = bhd.split(&[1, 2, 1]).unwrap();
     let bsum: RawMoney<BHD> = bparts.iter().sum();
     assert_eq!(bsum.amount(), bhd.amount());
 }
@@ -1916,7 +1921,7 @@ fn test_raw_allocate_by_ratios_math_invariant_extended() {
     ];
     for amount in amounts {
         for ratios in ratio_slices {
-            if let Some(parts) = amount.allocate_by_ratios(*ratios) {
+            if let Some(parts) = amount.split::<_, Vec<_>>(*ratios) {
                 let sum: RawMoney<USD> = parts.iter().sum();
                 assert_eq!(
                     sum.amount(),
@@ -1945,7 +1950,7 @@ fn test_allocate_by_ratios_negative_over_allocation() {
     // 3.34 * 3 = 10.02 > 10.01 → over-allocation path fires.
     // With is_negative=true the result is negated (line 293).
     let money = money!(USD, -10.01);
-    let parts = money.allocate_by_ratios(&[1, 1, 1]).unwrap();
+    let parts: Vec<_> = money.split([1, 1, 1]).unwrap();
     assert_eq!(parts.len(), 3);
 
     // All parts must be non-positive
@@ -1990,4 +1995,13 @@ fn test_get_equal_part_negative_short() {
     let result = crate::split_alloc_ops::get_equal_part(&money, 2);
     assert!(result.is_some());
     assert!(result.unwrap().is_negative());
+}
+
+#[test]
+fn test_allocate_returns() {
+    let split: Vec<_> = money!(USD, 100.01).split(&[10, 10, 30, 50]).unwrap();
+    let split_ratios: Vec<_> = money!(USD, 100.01).split(&[10, 10, 30, 50]).unwrap();
+    dbg!(&split);
+    dbg!(&split_ratios);
+    assert_eq!(split, split_ratios);
 }

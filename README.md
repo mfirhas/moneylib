@@ -115,7 +115,7 @@ let mean = basket.mean().unwrap();        // USD 20.00
 // --- Split and allocate ---
 let bill = money!(USD, 10.00);
 let (base, remainder) = bill.split(3).unwrap(); // base = USD 3.33, remainder = USD 0.01
-let parts = bill.allocate(&[50_i32, 30, 20]).unwrap(); // [USD 5.00, USD 3.00, USD 2.00]
+let parts: Vec<_> = bill.split(&[50_i32, 30, 20]).unwrap(); // [USD 5.00, USD 3.00, USD 2.00]
 
 // --- Compile-time currency type safety ---
 let usd = money!(USD, 100.00);
