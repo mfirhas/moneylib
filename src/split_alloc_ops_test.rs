@@ -1079,6 +1079,8 @@ fn test_raw_split_negative() {
     // -100 / 3: parts are negative, invariant holds
     let money = raw!(USD, -100);
     let (equal, remainder) = money.split(3).unwrap();
+    assert_eq!(equal, raw!(USD, -33.33333333333333333333333333));
+    assert_eq!(remainder, raw!(USD, -0.00000000000000000000000001));
     assert!(equal.is_negative());
     let n = Decimal::from_u32(3).unwrap();
     let reconstructed = equal * n + remainder;
