@@ -8,8 +8,7 @@ const ERROR_PREFIX: &str = "[MONEYLIB]";
 #[derive(Debug)]
 pub enum MoneyError {
     ParseStr,
-    DecimalConversion,
-    ArithmeticOverflow,
+    OverflowError,
     CurrencyMismatch,
 
     #[cfg(feature = "locale")]
@@ -24,19 +23,17 @@ impl Display for MoneyError {
         match self {
             MoneyError::ParseStr => write!(
                 f,
-                "{} failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator of `,` or `.`.",
-                ERROR_PREFIX
+                "{ERROR_PREFIX} failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator of `,` or `.`."
             ),
-            MoneyError::DecimalConversion => {
-                write!(f, "{} failed converting to/from Decimal", ERROR_PREFIX)
-            }
-            MoneyError::ArithmeticOverflow => write!(f, "{} arithmetic overflow", ERROR_PREFIX),
+
+            MoneyError::OverflowError => write!(f, "{ERROR_PREFIX} got overflowed"),
+
             MoneyError::CurrencyMismatch => {
-                write!(f, "{} currency mismatch", ERROR_PREFIX)
+                write!(f, "{ERROR_PREFIX} currency mismatch")
             }
 
             #[cfg(feature = "locale")]
-            MoneyError::ParseLocale => write!(f, "{} error parsing locale", ERROR_PREFIX),
+            MoneyError::ParseLocale => write!(f, "{ERROR_PREFIX} error parsing locale"),
 
             #[cfg(feature = "exchange")]
             MoneyError::ExchangeError(err) => write!(f, "{ERROR_PREFIX} exchange error: {}", err),

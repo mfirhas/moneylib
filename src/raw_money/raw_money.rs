@@ -122,13 +122,13 @@ where
     pub fn from_minor(minor_amount: i128) -> Result<Self, MoneyError> {
         Ok(Self {
             amount: Decimal::from_i128(minor_amount)
-                .ok_or(MoneyError::DecimalConversion)?
+                .ok_or(MoneyError::OverflowError)?
                 .checked_div(
                     dec!(10)
                         .checked_powu(C::MINOR_UNIT.into())
-                        .ok_or(MoneyError::ArithmeticOverflow)?,
+                        .ok_or(MoneyError::OverflowError)?,
                 )
-                .ok_or(MoneyError::ArithmeticOverflow)?,
+                .ok_or(MoneyError::OverflowError)?,
             _currency: PhantomData,
         })
     }
@@ -440,7 +440,7 @@ where
     #[inline]
     fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
         Ok(Self {
-            amount: amount.get_decimal().ok_or(MoneyError::DecimalConversion)?,
+            amount: amount.get_decimal().ok_or(MoneyError::OverflowError)?,
             _currency: PhantomData,
         })
     }
@@ -519,11 +519,11 @@ where
             .checked_mul(
                 dec!(10)
                     .checked_powu(C::MINOR_UNIT.into())
-                    .ok_or(MoneyError::ArithmeticOverflow)?,
+                    .ok_or(MoneyError::OverflowError)?,
             )
-            .ok_or(MoneyError::ArithmeticOverflow)?
+            .ok_or(MoneyError::OverflowError)?
             .to_i128()
-            .ok_or(MoneyError::DecimalConversion)
+            .ok_or(MoneyError::OverflowError)
     }
 }
 

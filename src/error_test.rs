@@ -8,23 +8,16 @@ fn test_display_parse_str() {
 }
 
 #[test]
-fn test_display_decimal_conversion() {
-    let error = MoneyError::DecimalConversion;
-    let expected = "[MONEYLIB] failed converting to/from Decimal";
-    assert_eq!(error.to_string(), expected);
-}
-
-#[test]
 fn test_display_arithmetic_overflow() {
-    let error = MoneyError::ArithmeticOverflow;
-    let expected = "[MONEYLIB] arithmetic overflow";
+    let error = MoneyError::OverflowError;
+    let expected = "[MONEYLIB] got overflowed";
     assert_eq!(error.to_string(), expected);
 }
 
 #[test]
 fn test_error_trait_implementation() {
     // Test that MoneyError implements std::error::Error
-    let error = MoneyError::ArithmeticOverflow;
+    let error = MoneyError::OverflowError;
     let _: &dyn std::error::Error = &error;
 }
 
@@ -41,8 +34,7 @@ fn test_all_errors_have_prefix() {
     // Verify all error messages start with the expected prefix
     let errors = vec![
         MoneyError::ParseStr,
-        MoneyError::DecimalConversion,
-        MoneyError::ArithmeticOverflow,
+        MoneyError::OverflowError,
         MoneyError::CurrencyMismatch,
         #[cfg(feature = "locale")]
         MoneyError::ParseLocale,

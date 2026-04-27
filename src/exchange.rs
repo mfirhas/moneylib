@@ -154,7 +154,7 @@ where
                         .into(),
                     ))?,
                 )
-                .ok_or(MoneyError::ArithmeticOverflow)?
+                .ok_or(MoneyError::OverflowError)?
                 .amount(),
             ),
             true => <M as Convert<To>>::Output::new(self.amount()),
@@ -312,10 +312,8 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// ```
     pub fn set(&mut self, code: &'a str, rate: impl DecimalNumber) -> Result<(), MoneyError> {
         if code != Base::CODE {
-            self.rates.insert(
-                code,
-                rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?,
-            );
+            self.rates
+                .insert(code, rate.get_decimal().ok_or(MoneyError::OverflowError)?);
         }
         Ok(())
     }
@@ -378,27 +376,27 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
             (_, to_base) if to_base == Base::CODE => self.set(
                 from_code,
                 dec!(1)
-                    .checked_div(rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
-                    .ok_or(MoneyError::ArithmeticOverflow)?,
+                    .checked_div(rate.get_decimal().ok_or(MoneyError::OverflowError)?)
+                    .ok_or(MoneyError::OverflowError)?,
             ),
             (from, to) => match (self.get(from), self.get(to)) {
                 (Some(base_from_rate), None) => {
                     let base_to_rate = base_from_rate
-                        .checked_mul(rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
-                        .ok_or(MoneyError::ArithmeticOverflow)?;
+                        .checked_mul(rate.get_decimal().ok_or(MoneyError::OverflowError)?)
+                        .ok_or(MoneyError::OverflowError)?;
                     self.set(to, base_to_rate)
                 }
                 (None, Some(base_to_rate)) => {
                     let base_from_rate = base_to_rate
-                        .checked_div(rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
-                        .ok_or(MoneyError::ArithmeticOverflow)?;
+                        .checked_div(rate.get_decimal().ok_or(MoneyError::OverflowError)?)
+                        .ok_or(MoneyError::OverflowError)?;
                     self.set(from, base_from_rate)
                 }
                 // update Base/to_code rate
                 (Some(base_from_rate), Some(_)) => {
                     let new_base_to_rate = base_from_rate
-                        .checked_mul(rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
-                        .ok_or(MoneyError::ArithmeticOverflow)?;
+                        .checked_mul(rate.get_decimal().ok_or(MoneyError::OverflowError)?)
+                        .ok_or(MoneyError::OverflowError)?;
                     self.set(to, new_base_to_rate)
                 }
                 _ => Err(MoneyError::ExchangeError(

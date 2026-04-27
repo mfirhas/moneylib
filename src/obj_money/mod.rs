@@ -88,11 +88,11 @@ pub trait ObjMoney {
             .checked_mul(
                 dec!(10)
                     .checked_powu(self.minor_unit().into())
-                    .ok_or(MoneyError::ArithmeticOverflow)?,
+                    .ok_or(MoneyError::OverflowError)?,
             )
-            .ok_or(MoneyError::ArithmeticOverflow)?
+            .ok_or(MoneyError::OverflowError)?
             .to_i128()
-            .ok_or(MoneyError::DecimalConversion)
+            .ok_or(MoneyError::OverflowError)
     }
 
     /// Returns `true` if the amount is zero.
