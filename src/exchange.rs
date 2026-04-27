@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    BaseMoney, BaseOps, Currency, Decimal, Money, RawMoney,
+    BaseMoney, BaseOps, Currency, Decimal, Money, MoneyError, RawMoney,
     base::{Amount, DecimalNumber},
     macros::dec,
 };
@@ -115,9 +115,12 @@ pub trait Exchange<From: Currency> {
     /// assert_eq!(money.convert::<EUR>(&rates).unwrap().amount(), dec!(0.01));
     ///
     /// // CAD is not in the rates, so None returned.
-    /// assert!(money.convert::<CAD>(rates).is_none());
+    /// assert!(money.convert::<CAD>(rates).is_err());
     /// ```
-    fn convert<To: Currency>(&self, rate: impl Rate<From, To>) -> Option<Self::Target<To>>
+    fn convert<To: Currency>(
+        &self,
+        rate: impl Rate<From, To>,
+    ) -> Result<Self::Target<To>, MoneyError>
     where
         Self: Convert<To>;
 }
@@ -132,15 +135,29 @@ where
     where
         M: Convert<T>;
 
-    fn convert<To: Currency>(&self, rate: impl Rate<From, To>) -> Option<Self::Target<To>>
+    fn convert<To: Currency>(
+        &self,
+        rate: impl Rate<From, To>,
+    ) -> Result<Self::Target<To>, MoneyError>
     where
         M: Convert<To>,
     {
         match From::CODE == To::CODE {
-            false => {
-                <M as Convert<To>>::Output::new(self.checked_mul(rate.get_rate()?)?.amount()).ok()
-            }
-            true => <M as Convert<To>>::Output::new(self.amount()).ok(),
+            false => <M as Convert<To>>::Output::new(
+                self.checked_mul(
+                    rate.get_rate().ok_or(MoneyError::ExchangeError(
+                        format!(
+                            "overflowed or rate from {} to {} not found",
+                            From::CODE,
+                            To::CODE
+                        )
+                        .into(),
+                    ))?,
+                )
+                .ok_or(MoneyError::ArithmeticOverflow)?
+                .amount(),
+            ),
+            true => <M as Convert<To>>::Output::new(self.amount()),
         }
     }
 }
@@ -272,9 +289,9 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
         Base::CODE
     }
 
-    /// Upsert rate into exchange rates.
+    /// Upsert rate into exchange rates relative to Base rate.
     ///
-    /// If value already exist, it got updated and old value returned.
+    /// Return error if overflowed.
     ///
     /// # Argument
     /// - code: &str, currency code, e.g. "USD", "EUR", etc.
@@ -286,22 +303,21 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// use moneylib::{Currency, ExchangeRates, iso::{USD, IDR, EUR}, macros::dec};
     ///
     /// let mut rates = ExchangeRates::<USD>::new();
-    /// let entry = rates.set(IDR::CODE, 16000);
+    /// rates.set(IDR::CODE, 16000).unwrap();
     /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(16000));
-    /// let updated_entry = rates.set(IDR::CODE, dec!(17000.23));
+    /// rates.set(IDR::CODE, dec!(17000.23)).unwrap();
     /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(17000.23));
-    /// let another = rates.set(EUR::CODE, dec!(0.8));
+    /// rates.set(EUR::CODE, dec!(0.8)).unwrap();
     /// assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(0.8));
-    ///
-    /// assert!(entry.is_none());
-    /// assert_eq!(updated_entry.unwrap(), dec!(16000));
-    /// assert!(another.is_none());
     /// ```
-    pub fn set(&mut self, code: &'a str, rate: impl DecimalNumber) -> Option<Decimal> {
+    pub fn set(&mut self, code: &'a str, rate: impl DecimalNumber) -> Result<(), MoneyError> {
         if code != Base::CODE {
-            return self.rates.insert(code, rate.get_decimal()?);
+            self.rates.insert(
+                code,
+                rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?,
+            );
         }
-        None
+        Ok(())
     }
 
     /// Upsert a rate of a pair.
@@ -313,6 +329,8 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// If one of the rate not exist, it fills it by calculating existing rate against the base rate.
     ///
     /// If both rates exist, it updates the target/quote currency, indirectly updating Base/to_code.
+    ///
+    /// If both are not in the rates, error returned.
     ///
     /// The rate is updated relative to base currency.
     ///
@@ -328,13 +346,13 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// assert_eq!(rates.len(), 1);
     /// assert_eq!(rates.get(USD::CODE).unwrap(), dec!(1));
     ///
-    /// rates.set("EUR", dec!(0.8));
-    /// rates.set("IDR", dec!(17_000));
-    /// rates.set("CAD", dec!(1.2));
+    /// rates.set("EUR", dec!(0.8)).unwrap();
+    /// rates.set("IDR", dec!(17_000)).unwrap();
+    /// rates.set("CAD", dec!(1.2)).unwrap();
     /// assert_eq!(rates.len(), 4);
     ///
-    /// rates.set_pair("CNY", "IDR", i128::MAX); // wont set
-    /// rates.set_pair("CNY", "IDR", 2500);
+    /// rates.set_pair("CNY", "IDR", i128::MAX).unwrap_err(); // wont set
+    /// rates.set_pair("CNY", "IDR", 2500).unwrap();
     /// assert_eq!(rates.len(), 5);
     /// assert_eq!(rates.get("CNY").unwrap(), dec!(6.8));
     ///
@@ -342,7 +360,7 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// let cny_idr_rates = money!(CNY, 5262.657).convert::<IDR>(&rates).unwrap();
     /// assert_eq!(cny_idr_rate, cny_idr_rates);
     ///
-    /// rates.set_pair("CNY", "IDR", 3000);
+    /// rates.set_pair("CNY", "IDR", 3000).unwrap();
     /// let cny_idr_new_rate = money!(CNY, 34989.123).convert::<IDR>(3000).unwrap();
     /// let cny_idr_new_rates = money!(CNY, 34989.123).convert::<IDR>(&rates).unwrap();
     /// assert_eq!(cny_idr_new_rate, cny_idr_new_rates);
@@ -352,29 +370,40 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
         from_code: &'a str,
         to_code: &'a str,
         rate: impl DecimalNumber,
-    ) -> Option<Decimal> {
+    ) -> Result<(), MoneyError> {
         match (from_code, to_code) {
             // if setting the pair for Base/Base, do nothing
-            (from_base, to_base) if from_base == Base::CODE && to_base == Base::CODE => None,
-            (from_base, _) if from_base == Base::CODE => self.set(to_code, rate.get_decimal()?),
-            (_, to_base) if to_base == Base::CODE => {
-                self.set(from_code, dec!(1).checked_div(rate.get_decimal()?)?)
-            }
+            (from_base, to_base) if from_base == Base::CODE && to_base == Base::CODE => Ok(()),
+            (from_base, _) if from_base == Base::CODE => self.set(to_code, rate),
+            (_, to_base) if to_base == Base::CODE => self.set(
+                from_code,
+                dec!(1)
+                    .checked_div(rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
+                    .ok_or(MoneyError::ArithmeticOverflow)?,
+            ),
             (from, to) => match (self.get(from), self.get(to)) {
                 (Some(base_from_rate), None) => {
-                    let base_to_rate = base_from_rate.checked_mul(rate.get_decimal()?)?;
+                    let base_to_rate = base_from_rate
+                        .checked_mul(rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
+                        .ok_or(MoneyError::ArithmeticOverflow)?;
                     self.set(to, base_to_rate)
                 }
                 (None, Some(base_to_rate)) => {
-                    let base_from_rate = base_to_rate.checked_div(rate.get_decimal()?)?;
+                    let base_from_rate = base_to_rate
+                        .checked_div(rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
+                        .ok_or(MoneyError::ArithmeticOverflow)?;
                     self.set(from, base_from_rate)
                 }
                 // update Base/to_code rate
                 (Some(base_from_rate), Some(_)) => {
-                    let new_base_to_rate = base_from_rate.checked_mul(rate.get_decimal()?)?;
+                    let new_base_to_rate = base_from_rate
+                        .checked_mul(rate.get_decimal().ok_or(MoneyError::ArithmeticOverflow)?)
+                        .ok_or(MoneyError::ArithmeticOverflow)?;
                     self.set(to, new_base_to_rate)
                 }
-                _ => None,
+                _ => Err(MoneyError::ExchangeError(
+                    "both rates are not found inside exchange rates".into(),
+                )),
             },
         }
     }
@@ -447,11 +476,14 @@ impl<'a, I, Base: Currency> From<I> for ExchangeRates<'a, Base>
 where
     I: IntoIterator<Item = (&'a str, Decimal)>,
 {
+    /// Set exchange rates from list of rates.
+    ///
+    /// If some of the sets failed, will be skipped.
     fn from(value: I) -> Self {
         let mut exchange_rates = Self::new();
         for (k, v) in value {
             if k != Base::CODE {
-                exchange_rates.set(k, v);
+                let _ = exchange_rates.set(k, v);
             }
         }
 

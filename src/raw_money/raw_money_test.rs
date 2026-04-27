@@ -643,14 +643,14 @@ fn test_from_str_dot_thousands_keep_precision() {
 fn test_from_str_dot_thousands_invalid_format() {
     let result = RawMoney::<EUR>::from_code_dot_thousands("EUR 1,234.578396");
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err(), MoneyError::ParseStr);
+    assert!(matches!(result, Err(MoneyError::ParseStr)));
 }
 
 #[test]
 fn test_from_str_dot_thousands_invalid_format_2() {
     let result = RawMoney::<EUR>::from_code_dot_thousands("EUR 1234.578396");
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err(), MoneyError::ParseStr);
+    assert!(matches!(result, Err(MoneyError::ParseStr)));
 }
 
 #[test]
@@ -1799,7 +1799,7 @@ fn test_format_locale_amount_negative() {
 fn test_format_locale_amount_invalid_locale() {
     let money = RawMoney::<USD>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("!!!invalid", "c na");
-    assert_eq!(result.unwrap_err(), MoneyError::ParseLocale);
+    assert!(matches!(result, Err(MoneyError::ParseLocale)));
 }
 
 #[cfg(feature = "locale")]

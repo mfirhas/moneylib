@@ -57,10 +57,3 @@ fn test_all_errors_have_prefix() {
         );
     }
 }
-
-#[test]
-fn test_error_is_clone() {
-    // Test that MoneyError is Clone
-    let error = MoneyError::CurrencyMismatch;
-    let _cloned = error.clone();
-}

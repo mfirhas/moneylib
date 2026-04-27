@@ -27,21 +27,21 @@ fn test_exchange() {
     let mut rates = ExchangeRates::<USD>::default();
     assert_eq!(rates.len(), 1);
     assert_eq!(rates.get(USD::CODE).unwrap(), dec!(1));
-    rates.set(EUR::CODE, dec!(0.8));
-    rates.set(IDR::CODE, 17_000);
-    rates.set(USD::CODE, 40); // ignored, since base already in USD.
+    rates.set(EUR::CODE, dec!(0.8)).unwrap();
+    rates.set(IDR::CODE, 17_000).unwrap();
+    rates.set(USD::CODE, 40).unwrap(); // ignored, since base already in USD.
     assert_eq!(rates.base(), "USD");
     let ret = money.convert::<EUR>(&rates);
     assert_eq!(ret.unwrap().amount(), dec!(98.4));
     let ret = money.convert::<IDR>(&rates);
     assert_eq!(ret.unwrap().amount(), dec!(2_091_000));
 
-    let set_max_i128 = rates.set(CAD::CODE, i128::MAX);
-    assert!(set_max_i128.is_none());
+    rates.set(CAD::CODE, i128::MAX).unwrap_err();
+    assert!(rates.get(CAD::CODE).is_none());
 
-    rates.set(crate::iso::SGD::CODE, 0);
+    rates.set(crate::iso::SGD::CODE, 0).unwrap();
     let sgd = Money::<crate::iso::SGD>::from_decimal(dec!(2));
-    assert!(sgd.convert::<IDR>(&rates).is_none());
+    assert!(sgd.convert::<IDR>(&rates).is_err());
 
     let money = Money::<EUR>::new(123).unwrap();
     let ret = money.convert::<IDR>(rates);
@@ -111,16 +111,20 @@ fn test_exchange() {
     );
 
     let non_existent_rate = Money::<crate::iso::SGD>::from_decimal(dec!(123));
-    assert!(non_existent_rate.convert::<IDR>(&rates).is_none());
+    assert!(non_existent_rate.convert::<IDR>(&rates).is_err());
 
     let none_rate = rates.get(crate::iso::SGD::CODE);
     assert!(none_rate.is_none());
 
     let max_money = Money::<EUR>::from_decimal(crate::Decimal::MAX);
-    assert!(max_money.convert::<IDR>(&rates).is_none());
+    assert!(max_money.convert::<IDR>(&rates).is_err());
 
-    // CAD is not in the rates, so None returned.
-    assert!(money.convert::<crate::iso::CAD>(rates).is_none());
+    // CAD is not in the rates, so error returned.
+    let not_in_rates = money.convert::<crate::iso::CAD>(rates);
+    assert!(matches!(
+        not_in_rates,
+        Err(crate::MoneyError::ExchangeError(_))
+    ));
 }
 
 #[test]
@@ -131,15 +135,15 @@ fn test_exchange_rates() {
     println!("after initiation: {:?}", &rates);
     println!("--------------------------------");
 
-    rates.set("EUR", dec!(0.8));
-    rates.set("IDR", dec!(17_000));
-    rates.set("CAD", dec!(1.2));
+    rates.set("EUR", dec!(0.8)).unwrap();
+    rates.set("IDR", dec!(17_000)).unwrap();
+    rates.set("CAD", dec!(1.2)).unwrap();
     assert_eq!(rates.len(), 4);
     println!("{}", rates);
     println!("--------------------------------");
 
-    rates.set_pair("CNY", "IDR", i128::MAX); // wont set
-    rates.set_pair("CNY", "IDR", 2500);
+    rates.set_pair("CNY", "IDR", i128::MAX).unwrap_err(); // wont set, return error
+    rates.set_pair("CNY", "IDR", 2500).unwrap();
     assert_eq!(rates.len(), 5);
     assert_eq!(rates.get("CNY").unwrap(), dec!(6.8));
 
@@ -151,7 +155,7 @@ fn test_exchange_rates() {
     println!("after setting CNY/IDR: {}", rates);
     println!("--------------------------------");
 
-    rates.set_pair("CNY", "IDR", 3000);
+    rates.set_pair("CNY", "IDR", 3000).unwrap();
     let cny_idr_new_rate = money!(CNY, 34989.123).convert::<IDR>(3000).unwrap();
     let cny_idr_new_rates = money!(CNY, 34989.123).convert::<IDR>(&rates).unwrap();
     assert_eq!(cny_idr_new_rate, cny_idr_new_rates);
@@ -159,12 +163,12 @@ fn test_exchange_rates() {
     println!("--------------------------------");
 
     // set base/base
-    rates.set_pair("USD", "USD", 123); // should be ignored
+    rates.set_pair("USD", "USD", 123).unwrap(); // should be ignored
     assert_eq!(rates.get("USD").unwrap(), dec!(1));
     assert_eq!(rates.get_pair("USD", "USD").unwrap(), dec!(1));
 
-    rates.set_pair("USD", "EUR", i128::MAX);
-    rates.set_pair("USD", "EUR", dec!(0.85));
+    rates.set_pair("USD", "EUR", i128::MAX).unwrap_err();
+    rates.set_pair("USD", "EUR", dec!(0.85)).unwrap();
     assert_eq!(rates.get_pair("USD", "EUR").unwrap(), dec!(0.85));
     assert_eq!(
         money!(USD, 123).convert::<EUR>(dec!(0.85)).unwrap(),
@@ -173,8 +177,8 @@ fn test_exchange_rates() {
     println!("after setting USD/EUR: {}", rates);
     println!("--------------------------------");
 
-    rates.set_pair("CAD", "USD", i128::MAX);
-    rates.set_pair("CAD", "USD", dec!(0.9));
+    rates.set_pair("CAD", "USD", i128::MAX).unwrap_err();
+    rates.set_pair("CAD", "USD", dec!(0.9)).unwrap();
     assert_eq!(
         money!(CAD, 123).convert::<USD>(dec!(0.9)).unwrap(),
         money!(CAD, 123).convert::<USD>(&rates).unwrap()
@@ -182,8 +186,8 @@ fn test_exchange_rates() {
     println!("after setting CAD/USD: {}", rates);
     println!("--------------------------------");
 
-    rates.set_pair("CNY", "JPY", i128::MAX);
-    rates.set_pair("CNY", "JPY", 23);
+    rates.set_pair("CNY", "JPY", i128::MAX).unwrap_err();
+    rates.set_pair("CNY", "JPY", 23).unwrap();
     assert_eq!(
         money!(CNY, 123).convert::<JPY>(dec!(23)).unwrap(),
         money!(CNY, 123).convert::<JPY>(&rates).unwrap()
@@ -192,17 +196,21 @@ fn test_exchange_rates() {
     println!("--------------------------------");
 
     // set both not exist
-    rates.set_pair("SGD", "HKD", 6);
+    let both_not_exist = rates.set_pair("SGD", "HKD", 6);
+    assert!(matches!(
+        both_not_exist,
+        Err(crate::MoneyError::ExchangeError(_))
+    ));
     println!("after setting SGD/HKD: {}", rates);
     println!("--------------------------------");
 
     // set max value, failed
-    rates.set_pair("CNY", "JPY", i128::MAX);
+    rates.set_pair("CNY", "JPY", i128::MAX).unwrap_err();
     assert_eq!(
         money!(CNY, 123).convert::<JPY>(dec!(23)).unwrap(),
         money!(CNY, 123).convert::<JPY>(&rates).unwrap()
     );
-    rates.set_pair("CNY", "JPY", i128::MAX);
+    rates.set_pair("CNY", "JPY", i128::MAX).unwrap_err();
     assert_eq!(
         money!(CNY, 123).convert::<JPY>(dec!(23)).unwrap(),
         money!(CNY, 123).convert::<JPY>(&rates).unwrap()

@@ -2114,7 +2114,7 @@ fn test_multiple_separators_in_parsing() {
 fn test_currency_mismatch_in_parsing() {
     let money = Money::<EUR>::from_code_comma_thousands("USD 1,234,567.89");
     assert!(money.is_err());
-    assert_eq!(money.err().unwrap(), MoneyError::CurrencyMismatch);
+    assert!(matches!(money, Err(MoneyError::CurrencyMismatch)));
 }
 
 #[test]
@@ -3276,7 +3276,7 @@ fn test_format_locale_amount_negative() {
 fn test_format_locale_amount_invalid_locale() {
     let money = Money::<USD>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("!!!invalid", "c na");
-    assert_eq!(result.unwrap_err(), MoneyError::ParseLocale);
+    assert!(matches!(result, Err(MoneyError::ParseLocale)));
 }
 
 #[cfg(feature = "locale")]

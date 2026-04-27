@@ -1,9 +1,11 @@
 use std::{error::Error, fmt::Display};
 
+pub type ErrVal = Box<dyn Error + Send + Sync + 'static>;
+
 const ERROR_PREFIX: &str = "[MONEYLIB]";
 
 /// Error type for moneylib.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum MoneyError {
     ParseStr,
     DecimalConversion,
@@ -12,6 +14,9 @@ pub enum MoneyError {
 
     #[cfg(feature = "locale")]
     ParseLocale,
+
+    #[cfg(feature = "exchange")]
+    ExchangeError(ErrVal),
 }
 
 impl Display for MoneyError {
@@ -32,6 +37,9 @@ impl Display for MoneyError {
 
             #[cfg(feature = "locale")]
             MoneyError::ParseLocale => write!(f, "{} error parsing locale", ERROR_PREFIX),
+
+            #[cfg(feature = "exchange")]
+            MoneyError::ExchangeError(err) => write!(f, "{ERROR_PREFIX} exchange error: {}", err),
         }
     }
 }
