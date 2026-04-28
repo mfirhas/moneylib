@@ -1400,7 +1400,6 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
         )
     }
 
-    #[cfg(feature = "locale")]
     /// Format money's amount using locale standard with `format_str` format.
     ///
     /// `locale_str` supports ISO 639 lowercase language code, ISO 639 with ISO 3166-1 alpha‑2 uppercase region code,
@@ -1484,6 +1483,7 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
     /// let money = Money::<USD>::new(dec!(1234.56)).unwrap();
     /// assert!(money.format_locale_amount("!!!invalid", "c na").is_err());
     /// ```
+    #[cfg(feature = "locale")]
     fn format_locale_amount(
         &self,
         locale_str: &str,
