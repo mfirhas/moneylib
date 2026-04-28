@@ -187,10 +187,10 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`MoneyError::CurrencyMismatch`] if the currency code in the string does
+    /// Returns [`MoneyError::CurrencyMismatchError`] if the currency code in the string does
     /// not match the currency type parameter `C`.
     ///
-    /// Returns [`MoneyError::ParseStr`] if the string is not in the expected format.
+    /// Returns [`MoneyError::ParseStrError`] if the string is not in the expected format.
     ///
     /// Accepts negative amount CCC -amount
     ///

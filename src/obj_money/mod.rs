@@ -80,8 +80,7 @@ pub trait ObjMoney {
     ///
     /// # Errors
     ///
-    /// Returns [`MoneyError::ArithmeticOverflow`] if the computation overflows.
-    /// Returns [`MoneyError::DecimalConversion`] if the result cannot be represented as `i128`.
+    /// Returns [`MoneyError::OverflowError`] if the computation overflows.
     #[inline]
     fn minor_amount(&self) -> Result<i128, MoneyError> {
         self.amount()
