@@ -2148,6 +2148,13 @@ fn test_parsing_negative_dot_separator_money() {
 }
 
 #[test]
+fn test_overflow_parsing_code_comma_thousands() {
+    let money = Money::<USD>::from_code_comma_thousands(format!("USD {}", i128::MAX).as_str());
+    assert!(money.is_err());
+    assert!(matches!(money.unwrap_err(), MoneyError::ParseStrError(_)));
+}
+
+#[test]
 fn test_overflow_parsing_str_comma_thousands() {
     let money = Money::<USD>::from_str(format!("USD {}", i128::MAX.to_string().as_str()).as_str());
     assert!(money.is_err());
