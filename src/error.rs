@@ -45,16 +45,4 @@ impl Display for MoneyError {
     }
 }
 
-impl Error for MoneyError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            MoneyError::ParseStrError(err) => Some(err.as_ref()),
-            MoneyError::OverflowError => None,
-            MoneyError::CurrencyMismatchError(_, _) => None,
-            #[cfg(feature = "locale")]
-            MoneyError::ParseLocale(err) => Some(err.as_ref()),
-            #[cfg(feature = "exchange")]
-            MoneyError::ExchangeError(err) => Some(err.as_ref()),
-        }
-    }
-}
+impl Error for MoneyError {}
