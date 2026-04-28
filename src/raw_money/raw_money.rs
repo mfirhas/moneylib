@@ -186,12 +186,15 @@ where
             if currency_code != C::CODE {
                 return Err(MoneyError::CurrencyMismatch);
             }
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
+            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
+                |err| MoneyError::ParseStrError(err.to_string().into()),
+            )?));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <CODE> <AMOUNT> where <CODE> is defined and <AMOUNT> is comma-separated thousands(optional) and dot-separated decimal",
+            s
+        ).into()))
     }
 
     /// Creates a new `RawMoney` from a string with dot as the thousands separator
@@ -216,12 +219,15 @@ where
             if currency_code != C::CODE {
                 return Err(MoneyError::CurrencyMismatch);
             }
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
+            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
+                |err| MoneyError::ParseStrError(err.to_string().into()),
+            )?));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <CODE> <AMOUNT> where <CODE> is defined and <AMOUNT> is dot-separated thousands(optional) and comma-separated decimal",
+            s
+        ).into()))
     }
 
     /// Parse from string with symbol, comma-separated thousands, dot-separated decimal, no rounding
@@ -232,12 +238,15 @@ where
         if let Some((symbol, amount_str)) = parse_symbol_comma_thousands_separator::<C>(s)
             && symbol == C::SYMBOL
         {
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
+            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
+                |err| MoneyError::ParseStrError(err.to_string().into()),
+            )?));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <SYMBOL><AMOUNT> where <SYMBOL> is defined and <AMOUNT> is comma-separated thousands(optional) and dot-separated decimal",
+            s
+        ).into()))
     }
 
     /// Parse from string with symbol, dot-separated thousands, comma-separated decimal, no rounding
@@ -248,12 +257,15 @@ where
         if let Some((symbol, amount_str)) = parse_symbol_dot_thousands_separator::<C>(s)
             && symbol == C::SYMBOL
         {
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
+            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
+                |err| MoneyError::ParseStrError(err.to_string().into()),
+            )?));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <SYMBOL><AMOUNT> where <SYMBOL> is defined and <AMOUNT> is dot-separated thousands(optional) and comma-separated decimal",
+            s
+        ).into()))
     }
 
     /// Parse from string with code, locale thousands and decimal separators.
@@ -278,10 +290,14 @@ where
         if let Some((code, amount_str)) = parse_code_locale_separator::<C>(s)
             && code == C::CODE
         {
-            return Self::from_str(&amount_str).map_err(|_| MoneyError::ParseStr);
+            return Self::from_str(&amount_str)
+                .map_err(|err| MoneyError::ParseStrError(err.to_string().into()));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <CODE> <AMOUNT> where <CODE> is defined and <AMOUNT> is separated by locale separators",
+            s
+        ).into()))
     }
 
     /// Parse from string with symbol, locale thousands and decimal separators.
@@ -306,10 +322,14 @@ where
         if let Some((symbol, amount_str)) = parse_symbol_locale_separator::<C>(s)
             && symbol == C::SYMBOL
         {
-            return Self::from_str(&amount_str).map_err(|_| MoneyError::ParseStr);
+            return Self::from_str(&amount_str)
+                .map_err(|err| MoneyError::ParseStrError(err.to_string().into()));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <SYMBOL><AMOUNT> where <SYMBOL> is defined and <AMOUNT> is separated by locale separators",
+            s
+        ).into()))
     }
 }
 
@@ -370,7 +390,9 @@ where
     /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
-        let dec_num = Decimal::from_str(s).map_err(|_| MoneyError::ParseStr)?;
+        let dec_num = Decimal::from_str(s).map_err(|err| {
+            MoneyError::ParseStrError(format!("failed parsing money from string: {}", err).into())
+        })?;
         Ok(Self::from_decimal(dec_num))
     }
 }

@@ -7,7 +7,7 @@ const ERROR_PREFIX: &str = "[MONEYLIB]";
 /// Error type for moneylib.
 #[derive(Debug)]
 pub enum MoneyError {
-    ParseStr,
+    ParseStrError(ErrVal),
     OverflowError,
     CurrencyMismatch,
 
@@ -21,10 +21,7 @@ pub enum MoneyError {
 impl Display for MoneyError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MoneyError::ParseStr => write!(
-                f,
-                "{ERROR_PREFIX} failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator of `,` or `.`."
-            ),
+            MoneyError::ParseStrError(err) => write!(f, "{ERROR_PREFIX} parsing error: {}", err),
 
             MoneyError::OverflowError => write!(f, "{ERROR_PREFIX} got overflowed"),
 

@@ -200,7 +200,7 @@ fn test_from_str_rounding_to_minor_unit() {
 fn test_from_str_invalid_no_space() {
     let result = Money::<USD>::from_str("USD100.50");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
@@ -217,35 +217,35 @@ fn test_from_str_invalid_currency() {
 fn test_from_str_invalid_amount() {
     let result = Money::<USD>::from_str("USD abc");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
 fn test_from_str_empty_string() {
     let result = Money::<USD>::from_str("");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
 fn test_from_str_only_currency() {
     let result = Money::<USD>::from_str("USD");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
 fn test_from_str_only_amount() {
     let result = Money::<USD>::from_code_comma_thousands("100.50");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
 fn test_from_str_too_many_parts() {
     let result = Money::<USD>::from_str("USD 100.50 extra");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
@@ -459,7 +459,7 @@ fn test_from_str_plain_rejects_currency_prefix() {
     // New from_str only accepts plain decimal numbers, not "CCC amount" format
     let result = Money::<USD>::from_str("USD 12.34");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
@@ -467,21 +467,21 @@ fn test_from_str_plain_rejects_comma_thousands() {
     // Comma thousands separator is not accepted by from_str
     let result = Money::<USD>::from_str("1,234.56");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
 fn test_from_str_plain_rejects_empty() {
     let result = Money::<USD>::from_str("");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
 fn test_from_str_plain_rejects_non_numeric() {
     let result = Money::<USD>::from_str("abc");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
