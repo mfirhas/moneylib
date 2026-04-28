@@ -83,9 +83,9 @@ fn test_parse_str_error_implements_error_trait() {
 }
 
 #[test]
-fn test_parse_str_error_source_is_none() {
+fn test_parse_str_error_source_is_some() {
     let err = MoneyError::ParseStrError(Box::new(std::io::Error::other("bad input")));
-    assert!(err.source().is_none());
+    assert!(err.source().is_some());
 }
 
 #[test]
@@ -211,9 +211,9 @@ fn test_parse_locale_error_implements_error_trait() {
 
 #[cfg(feature = "locale")]
 #[test]
-fn test_parse_locale_error_source_is_none() {
+fn test_parse_locale_error_source_is_some() {
     let err = MoneyError::ParseLocale(Box::new(std::io::Error::other("invalid locale")));
-    assert!(err.source().is_none());
+    assert!(err.source().is_some());
 }
 
 // ==================== MoneyError::ExchangeError Tests (feature = "exchange") ====================
@@ -264,9 +264,9 @@ fn test_exchange_error_implements_error_trait() {
 
 #[cfg(feature = "exchange")]
 #[test]
-fn test_exchange_error_source_is_none() {
+fn test_exchange_error_source_is_some() {
     let err = MoneyError::ExchangeError(Box::new(std::io::Error::other("rate not found")));
-    assert!(err.source().is_none());
+    assert!(err.source().is_some());
 }
 
 #[cfg(feature = "exchange")]
