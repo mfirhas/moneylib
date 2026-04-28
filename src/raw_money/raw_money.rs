@@ -184,7 +184,10 @@ where
 
         if let Some((currency_code, amount_str)) = parse_comma_thousands_separator(s) {
             if currency_code != C::CODE {
-                return Err(MoneyError::CurrencyMismatch);
+                return Err(MoneyError::CurrencyMismatchError(
+                    currency_code.into(),
+                    C::CODE.into(),
+                ));
             }
             return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
                 |err| MoneyError::ParseStrError(err.to_string().into()),
@@ -217,7 +220,10 @@ where
 
         if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {
             if currency_code != C::CODE {
-                return Err(MoneyError::CurrencyMismatch);
+                return Err(MoneyError::CurrencyMismatchError(
+                    currency_code.into(),
+                    C::CODE.into(),
+                ));
             }
             return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
                 |err| MoneyError::ParseStrError(err.to_string().into()),
@@ -235,9 +241,14 @@ where
     pub fn from_symbol_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((symbol, amount_str)) = parse_symbol_comma_thousands_separator::<C>(s)
-            && symbol == C::SYMBOL
-        {
+        if let Some((symbol, amount_str)) = parse_symbol_comma_thousands_separator::<C>(s) {
+            if symbol != C::SYMBOL {
+                return Err(MoneyError::CurrencyMismatchError(
+                    symbol.into(),
+                    C::SYMBOL.into(),
+                ));
+            }
+
             return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
                 |err| MoneyError::ParseStrError(err.to_string().into()),
             )?));
@@ -254,9 +265,14 @@ where
     pub fn from_symbol_dot_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((symbol, amount_str)) = parse_symbol_dot_thousands_separator::<C>(s)
-            && symbol == C::SYMBOL
-        {
+        if let Some((symbol, amount_str)) = parse_symbol_dot_thousands_separator::<C>(s) {
+            if symbol != C::SYMBOL {
+                return Err(MoneyError::CurrencyMismatchError(
+                    symbol.into(),
+                    C::SYMBOL.into(),
+                ));
+            }
+
             return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
                 |err| MoneyError::ParseStrError(err.to_string().into()),
             )?));
@@ -287,9 +303,14 @@ where
     pub fn from_code_locale_separator(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((code, amount_str)) = parse_code_locale_separator::<C>(s)
-            && code == C::CODE
-        {
+        if let Some((code, amount_str)) = parse_code_locale_separator::<C>(s) {
+            if code != C::CODE {
+                return Err(MoneyError::CurrencyMismatchError(
+                    code.into(),
+                    C::CODE.into(),
+                ));
+            }
+
             return Self::from_str(&amount_str)
                 .map_err(|err| MoneyError::ParseStrError(err.to_string().into()));
         }
@@ -319,9 +340,14 @@ where
     pub fn from_symbol_locale_separator(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((symbol, amount_str)) = parse_symbol_locale_separator::<C>(s)
-            && symbol == C::SYMBOL
-        {
+        if let Some((symbol, amount_str)) = parse_symbol_locale_separator::<C>(s) {
+            if symbol != C::SYMBOL {
+                return Err(MoneyError::CurrencyMismatchError(
+                    symbol.into(),
+                    C::SYMBOL.into(),
+                ));
+            }
+
             return Self::from_str(&amount_str)
                 .map_err(|err| MoneyError::ParseStrError(err.to_string().into()));
         }

@@ -9,7 +9,9 @@ const ERROR_PREFIX: &str = "[MONEYLIB]";
 pub enum MoneyError {
     ParseStrError(ErrVal),
     OverflowError,
-    CurrencyMismatch,
+
+    /// CurrencyMismatchError(got, expected)
+    CurrencyMismatchError(String, String),
 
     #[cfg(feature = "locale")]
     ParseLocale,
@@ -25,8 +27,11 @@ impl Display for MoneyError {
 
             MoneyError::OverflowError => write!(f, "{ERROR_PREFIX} got overflowed"),
 
-            MoneyError::CurrencyMismatch => {
-                write!(f, "{ERROR_PREFIX} currency mismatch")
+            MoneyError::CurrencyMismatchError(got, expected) => {
+                write!(
+                    f,
+                    "{ERROR_PREFIX} currency mismatch: got {got}, expected {expected}",
+                )
             }
 
             #[cfg(feature = "locale")]

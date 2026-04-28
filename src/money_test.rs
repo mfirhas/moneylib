@@ -210,7 +210,10 @@ fn test_from_str_invalid_currency() {
     let result = Money::<USD>::from_code_comma_thousands("XYZ 100.50");
     assert!(result.is_err());
     // The error will be CurrencyMismatch since "XYZ" != "USD"
-    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+    assert!(matches!(
+        result.unwrap_err(),
+        MoneyError::CurrencyMismatchError(got, expected) if &got == "XYZ" && &expected == "USD"
+    ));
 }
 
 #[test]
@@ -555,7 +558,10 @@ fn test_from_str_dot_thousands_with_whitespace() {
 fn test_from_str_dot_thousands_currency_mismatch() {
     let result = Money::<USD>::from_code_dot_thousands("EUR 1.234,56");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+    assert!(matches!(
+        result.unwrap_err(),
+        MoneyError::CurrencyMismatchError(got, expected) if &got == "EUR" && &expected == "USD"
+    ));
 }
 
 #[test]
@@ -578,7 +584,10 @@ fn test_from_str_dot_thousands_invalid_no_space() {
 fn test_from_str_dot_thousands_invalid_currency_mismatch() {
     let result = Money::<EUR>::from_code_dot_thousands("USD 100,00");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::CurrencyMismatch));
+    assert!(matches!(
+        result.unwrap_err(),
+        MoneyError::CurrencyMismatchError(got, expected) if &got == "USD" && &expected == "EUR"
+    ));
 }
 
 #[test]
@@ -2114,7 +2123,10 @@ fn test_multiple_separators_in_parsing() {
 fn test_currency_mismatch_in_parsing() {
     let money = Money::<EUR>::from_code_comma_thousands("USD 1,234,567.89");
     assert!(money.is_err());
-    assert!(matches!(money, Err(MoneyError::CurrencyMismatch)));
+    assert!(matches!(
+        money.unwrap_err(),
+        MoneyError::CurrencyMismatchError(got, expected) if &got == "USD" && &expected == "EUR"
+    ));
 }
 
 #[test]
