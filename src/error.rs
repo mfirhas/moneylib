@@ -14,7 +14,7 @@ pub enum MoneyError {
     CurrencyMismatchError(String, String),
 
     #[cfg(feature = "locale")]
-    ParseLocale,
+    ParseLocale(ErrVal),
 
     #[cfg(feature = "exchange")]
     ExchangeError(ErrVal),
@@ -35,7 +35,9 @@ impl Display for MoneyError {
             }
 
             #[cfg(feature = "locale")]
-            MoneyError::ParseLocale => write!(f, "{ERROR_PREFIX} error parsing locale"),
+            MoneyError::ParseLocale(err) => {
+                write!(f, "{ERROR_PREFIX} error parsing locale: {}", err)
+            }
 
             #[cfg(feature = "exchange")]
             MoneyError::ExchangeError(err) => write!(f, "{ERROR_PREFIX} exchange error: {}", err),

@@ -1492,16 +1492,24 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
         use icu_decimal::{DecimalFormatter, input::Decimal as LocaleDecimal};
         use icu_locale::Locale;
 
-        let loc: Locale = locale_str.parse().map_err(|_| MoneyError::ParseLocale)?;
+        let loc: Locale = locale_str.parse().map_err(|_| {
+            MoneyError::ParseLocale(
+                format!(
+                    "failed parsing locale {} , invalid or not found",
+                    locale_str
+                )
+                .into(),
+            )
+        })?;
         let formatter = DecimalFormatter::try_new(loc.into(), Default::default())
-            .map_err(|_| MoneyError::ParseLocale)?;
+            .map_err(|_| MoneyError::ParseLocale("failed initiating decimal formatter".into()))?;
 
         let is_negative = self.is_negative();
         let curr_minor_unit = C::MINOR_UNIT.into();
         let abs_amount = if self.scale() < curr_minor_unit {
             let remaining_scale: usize = (curr_minor_unit - self.scale())
                 .try_into()
-                .map_err(|_| MoneyError::ParseLocale)?;
+                .map_err(|_| MoneyError::ParseLocale("invalid minor unit".into()))?;
             let minor_amount = "0".repeat(remaining_scale);
             let fract = if self.scale() == 0 {
                 format!(".{}", minor_amount)
