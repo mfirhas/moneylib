@@ -286,11 +286,11 @@ pub trait BaseMoney<C: Currency>: Sized + Clone {
             .checked_mul(
                 dec!(10)
                     .checked_powu(self.minor_unit().into())
-                    .ok_or(MoneyError::ArithmeticOverflow)?,
+                    .ok_or(MoneyError::OverflowError)?,
             )
-            .ok_or(MoneyError::ArithmeticOverflow)?
+            .ok_or(MoneyError::OverflowError)?
             .to_i128()
-            .ok_or(MoneyError::DecimalConversion)
+            .ok_or(MoneyError::OverflowError)
     }
 
     /// Returns the thousands separator used by the currency.
@@ -1492,16 +1492,24 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
         use icu_decimal::{DecimalFormatter, input::Decimal as LocaleDecimal};
         use icu_locale::Locale;
 
-        let loc: Locale = locale_str.parse().map_err(|_| MoneyError::ParseLocale)?;
+        let loc: Locale = locale_str.parse().map_err(|_| {
+            MoneyError::ParseLocale(
+                format!(
+                    "failed parsing locale {} , invalid or not found",
+                    locale_str
+                )
+                .into(),
+            )
+        })?;
         let formatter = DecimalFormatter::try_new(loc.into(), Default::default())
-            .map_err(|_| MoneyError::ParseLocale)?;
+            .map_err(|_| MoneyError::ParseLocale("failed initiating decimal formatter".into()))?;
 
         let is_negative = self.is_negative();
         let curr_minor_unit = C::MINOR_UNIT.into();
         let abs_amount = if self.scale() < curr_minor_unit {
             let remaining_scale: usize = (curr_minor_unit - self.scale())
                 .try_into()
-                .map_err(|_| MoneyError::ParseLocale)?;
+                .map_err(|_| MoneyError::ParseLocale("invalid minor unit".into()))?;
             let minor_amount = "0".repeat(remaining_scale);
             let fract = if self.scale() == 0 {
                 format!(".{}", minor_amount)
@@ -1516,7 +1524,7 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
         };
 
         let decimal =
-            LocaleDecimal::try_from_str(&abs_amount).map_err(|_| MoneyError::DecimalConversion)?;
+            LocaleDecimal::try_from_str(&abs_amount).map_err(|_| MoneyError::OverflowError)?;
 
         let formatted_decimal = formatter.format(&decimal).to_string();
 

@@ -1,37 +1,46 @@
 use std::{error::Error, fmt::Display};
 
+pub type ErrVal = Box<dyn Error + Send + Sync + 'static>;
+
 const ERROR_PREFIX: &str = "[MONEYLIB]";
 
 /// Error type for moneylib.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum MoneyError {
-    ParseStr,
-    DecimalConversion,
-    ArithmeticOverflow,
-    CurrencyMismatch,
+    ParseStrError(ErrVal),
+    OverflowError,
+
+    /// CurrencyMismatchError(got, expected)
+    CurrencyMismatchError(String, String),
 
     #[cfg(feature = "locale")]
-    ParseLocale,
+    ParseLocale(ErrVal),
+
+    #[cfg(feature = "exchange")]
+    ExchangeError(ErrVal),
 }
 
 impl Display for MoneyError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MoneyError::ParseStr => write!(
-                f,
-                "{} failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator of `,` or `.`.",
-                ERROR_PREFIX
-            ),
-            MoneyError::DecimalConversion => {
-                write!(f, "{} failed converting to/from Decimal", ERROR_PREFIX)
-            }
-            MoneyError::ArithmeticOverflow => write!(f, "{} arithmetic overflow", ERROR_PREFIX),
-            MoneyError::CurrencyMismatch => {
-                write!(f, "{} currency mismatch", ERROR_PREFIX)
+            MoneyError::ParseStrError(err) => write!(f, "{ERROR_PREFIX} parsing error: {}", err),
+
+            MoneyError::OverflowError => write!(f, "{ERROR_PREFIX} got overflowed"),
+
+            MoneyError::CurrencyMismatchError(got, expected) => {
+                write!(
+                    f,
+                    "{ERROR_PREFIX} currency mismatch: got {got}, expected {expected}",
+                )
             }
 
             #[cfg(feature = "locale")]
-            MoneyError::ParseLocale => write!(f, "{} error parsing locale", ERROR_PREFIX),
+            MoneyError::ParseLocale(err) => {
+                write!(f, "{ERROR_PREFIX} error parsing locale: {}", err)
+            }
+
+            #[cfg(feature = "exchange")]
+            MoneyError::ExchangeError(err) => write!(f, "{ERROR_PREFIX} exchange error: {}", err),
         }
     }
 }

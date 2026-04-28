@@ -1,66 +1,39 @@
 use crate::MoneyError;
 
 #[test]
-fn test_display_parse_str() {
-    let error = MoneyError::ParseStr;
-    let expected = "[MONEYLIB] failed parsing from str, use format: `<CODE> <AMOUNT>`, <AMOUNT> can be formatted with thousands and/or decimal separator of `,` or `.`.";
-    assert_eq!(error.to_string(), expected);
+fn test_parse_str_error_display() {
+    let err = MoneyError::ParseStrError("bad input".to_string().into());
+    assert!(err.to_string().contains("[MONEYLIB]"));
+    assert!(err.to_string().contains("bad input"));
 }
 
 #[test]
-fn test_display_decimal_conversion() {
-    let error = MoneyError::DecimalConversion;
-    let expected = "[MONEYLIB] failed converting to/from Decimal";
-    assert_eq!(error.to_string(), expected);
+fn test_overflow_error_display() {
+    let err = MoneyError::OverflowError;
+    assert_eq!(err.to_string(), "[MONEYLIB] got overflowed");
 }
 
 #[test]
-fn test_display_arithmetic_overflow() {
-    let error = MoneyError::ArithmeticOverflow;
-    let expected = "[MONEYLIB] arithmetic overflow";
-    assert_eq!(error.to_string(), expected);
+fn test_currency_mismatch_error_display() {
+    let err = MoneyError::CurrencyMismatchError("EUR".to_string(), "USD".to_string());
+    assert_eq!(
+        err.to_string(),
+        "[MONEYLIB] currency mismatch: got EUR, expected USD"
+    );
 }
 
+#[cfg(feature = "locale")]
 #[test]
-fn test_error_trait_implementation() {
-    // Test that MoneyError implements std::error::Error
-    let error = MoneyError::ArithmeticOverflow;
-    let _: &dyn std::error::Error = &error;
+fn test_parse_locale_error_display() {
+    let err = MoneyError::ParseLocale("invalid locale".to_string().into());
+    assert!(err.to_string().contains("[MONEYLIB]"));
+    assert!(err.to_string().contains("invalid locale"));
 }
 
+#[cfg(feature = "exchange")]
 #[test]
-fn test_display_format_with_formatter() {
-    // Test that Display format works with formatter
-    let error = MoneyError::ParseStr;
-    let formatted = format!("{}", error);
-    assert!(formatted.starts_with("[MONEYLIB]"));
-}
-
-#[test]
-fn test_all_errors_have_prefix() {
-    // Verify all error messages start with the expected prefix
-    let errors = vec![
-        MoneyError::ParseStr,
-        MoneyError::DecimalConversion,
-        MoneyError::ArithmeticOverflow,
-        MoneyError::CurrencyMismatch,
-        #[cfg(feature = "locale")]
-        MoneyError::ParseLocale,
-    ];
-
-    for error in errors {
-        let message = error.to_string();
-        assert!(
-            message.starts_with("[MONEYLIB]"),
-            "Error message should start with [MONEYLIB]: {}",
-            message
-        );
-    }
-}
-
-#[test]
-fn test_error_is_clone() {
-    // Test that MoneyError is Clone
-    let error = MoneyError::CurrencyMismatch;
-    let _cloned = error.clone();
+fn test_exchange_error_display() {
+    let err = MoneyError::ExchangeError("rate not found".to_string().into());
+    assert!(err.to_string().contains("[MONEYLIB]"));
+    assert!(err.to_string().contains("rate not found"));
 }
