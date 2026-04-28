@@ -141,8 +141,7 @@ fn test_raw_money_new_overflow() {
 
 #[test]
 fn test_overflow_parsing_raw_code_comma_thousands() {
-    let money =
-        RawMoney::<USD>::from_code_comma_thousands(format!("USD {}", i128::MAX).as_str());
+    let money = RawMoney::<USD>::from_code_comma_thousands(format!("USD {}", i128::MAX).as_str());
     assert!(money.is_err());
     assert!(matches!(money.unwrap_err(), MoneyError::ParseStrError(_)));
 }
