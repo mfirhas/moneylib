@@ -31,11 +31,14 @@ all:
 	@echo "Running cargo check---------------------------------------------"
 	@cargo check --all-features
 	@sleep 2
-	@echo "Running formatting---------------------------------------------"
+	@echo "Running formatting----------------------------------------------"
 	@cargo fmt --all
 	@sleep 2
-	@echo "Running clippy---------------------------------------------"
+	@echo "Running clippy--------------------------------------------------"
 	@cargo clippy --all-features
 	@sleep 2
-	@echo "Running tests---------------------------------------------"
+	@echo "Running doc"
+	@cargo doc --all-features
+	@sleep 2
+	@echo "Running tests---------------------------------------------------"
 	@cargo test --all-features
