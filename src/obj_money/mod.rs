@@ -1,9 +1,14 @@
 mod fmt;
 
-use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR};
+use std::any::Any;
+
+use crate::{
+    BaseMoney,
+    fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR},
+};
 use fmt::format_obj_money;
 
-use crate::{Decimal, MoneyError};
+use crate::{Currency, Decimal, MoneyError};
 
 /// Object-safe trait enabling dynamic dispatch (`dyn`) over different-currency money types.
 ///
@@ -76,6 +81,9 @@ pub trait ObjMoney {
     ///
     /// Returns [`MoneyError::OverflowError`] if the computation overflows.
     fn minor_amount(&self) -> Result<i128, MoneyError>;
+
+    /// Get object money as Any
+    fn as_any(&self) -> &dyn Any;
 
     // ---- Provided: derived from the required methods above ----
 
@@ -172,6 +180,35 @@ pub trait ObjMoney {
     }
 }
 
+/// Trait for exchange rates which object-safe.
+#[cfg(feature = "exchange")]
+pub trait ObjRate {
+    /// Get rate from `from_code` to `to_code`.
+    fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal>;
+}
+
+#[cfg(feature = "exchange")]
+use crate::ExchangeRates;
+
+#[cfg(feature = "exchange")]
+impl<Base: Currency> ObjRate for ExchangeRates<'_, Base> {
+    fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal> {
+        self.get_pair(from_code, to_code)
+    }
+}
+
+pub trait ObjIterOps {
+    /// Sum all ObjMoney inside iterable types.
+    ///
+    /// # Argument
+    /// rates: impl ObjRate, accepts `ExchangeRates`.
+    #[cfg(feature = "exchange")]
+    fn checked_sum<M, To>(&self, rates: impl ObjRate) -> Result<M, MoneyError>
+    where
+        M: BaseMoney<To>,
+        To: Currency;
+}
+
 // ---- Implementations for Money and RawMoney ----
 
 mod money_impl;
@@ -181,3 +218,41 @@ mod raw_money_impl;
 
 #[cfg(test)]
 mod obj_money_test;
+
+impl<I, T> ObjIterOps for I
+where
+    for<'a> &'a I: IntoIterator<Item = &'a T>,
+    T: ObjMoney,
+{
+    #[cfg(feature = "exchange")]
+    fn checked_sum<M, To>(&self, rates: impl ObjRate) -> Result<M, MoneyError>
+    where
+        M: BaseMoney<To>,
+        To: Currency,
+    {
+        let mut total = Decimal::ZERO;
+
+        for m in self {
+            total = total
+                .checked_add(
+                    m.amount()
+                        .checked_mul(
+                            rates
+                                .get_rate(m.code(), To::CODE)
+                                .ok_or(MoneyError::ExchangeError(
+                                format!(
+                                    "failed getting rate from: {} to: {}, please check the rates",
+                                    m.code(),
+                                    To::CODE
+                                )
+                                .into(),
+                            ))?,
+                        )
+                        .ok_or(MoneyError::OverflowError)?,
+                )
+                .ok_or(MoneyError::OverflowError)?;
+        }
+
+        M::new(total)
+    }
+}

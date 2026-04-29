@@ -142,7 +142,7 @@ mod parse;
 #[cfg(feature = "obj_money")]
 mod obj_money;
 #[cfg(feature = "obj_money")]
-pub use obj_money::ObjMoney;
+pub use obj_money::{ObjIterOps, ObjMoney, ObjRate};
 
 // ----------------- test modules -----------------
 

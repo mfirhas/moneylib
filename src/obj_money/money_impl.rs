@@ -1,6 +1,6 @@
 use crate::{BaseMoney, Currency, Decimal, Money};
 
-impl<C: Currency> super::ObjMoney for Money<C> {
+impl<C: Currency + 'static> super::ObjMoney for Money<C> {
     #[inline]
     fn amount(&self) -> Decimal {
         BaseMoney::amount(self)
@@ -37,5 +37,10 @@ impl<C: Currency> super::ObjMoney for Money<C> {
     #[inline]
     fn minor_amount(&self) -> Result<i128, crate::MoneyError> {
         BaseMoney::minor_amount(self)
+    }
+
+    #[inline]
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
