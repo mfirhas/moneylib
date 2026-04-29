@@ -99,8 +99,7 @@ jobs:
           override: true
 
       - name: Install cargo-llvm-cov
-        if: steps.ci-cache-test.outputs.cache-hit != 'true'
-        run: cargo install cargo-llvm-cov --locked
+        run: which cargo-llvm-cov || cargo install cargo-llvm-cov --locked
 
       - name: Run tests and generate lcov
         run: make lcov
