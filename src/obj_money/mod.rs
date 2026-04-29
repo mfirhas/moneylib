@@ -209,6 +209,60 @@ pub trait ObjIterOps {
         To: Currency;
 }
 
+// ---- Blanket impl for Box<dyn ObjMoney> ----
+
+impl ObjMoney for Box<dyn ObjMoney> {
+    #[inline]
+    fn amount(&self) -> Decimal {
+        (**self).amount()
+    }
+
+    #[inline]
+    fn code(&self) -> &str {
+        (**self).code()
+    }
+
+    #[inline]
+    fn symbol(&self) -> &str {
+        (**self).symbol()
+    }
+
+    #[inline]
+    fn name(&self) -> &str {
+        (**self).name()
+    }
+
+    #[inline]
+    fn minor_unit(&self) -> u16 {
+        (**self).minor_unit()
+    }
+
+    #[inline]
+    fn thousand_separator(&self) -> &str {
+        (**self).thousand_separator()
+    }
+
+    #[inline]
+    fn decimal_separator(&self) -> &str {
+        (**self).decimal_separator()
+    }
+
+    #[inline]
+    fn minor_unit_symbol(&self) -> &str {
+        (**self).minor_unit_symbol()
+    }
+
+    #[inline]
+    fn minor_amount(&self) -> Result<i128, MoneyError> {
+        (**self).minor_amount()
+    }
+
+    #[inline]
+    fn as_any(&self) -> &dyn std::any::Any {
+        (**self).as_any()
+    }
+}
+
 // ---- Implementations for Money and RawMoney ----
 
 mod money_impl;
