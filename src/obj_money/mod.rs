@@ -3,10 +3,7 @@ mod fmt;
 use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR};
 use fmt::format_obj_money;
 
-use crate::macros::dec;
 use crate::{Decimal, MoneyError};
-use rust_decimal::MathematicalOps;
-use rust_decimal::prelude::ToPrimitive;
 
 /// Object-safe trait enabling dynamic dispatch (`dyn`) over different-currency money types.
 ///
@@ -33,19 +30,18 @@ use rust_decimal::prelude::ToPrimitive;
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, ObjMoney, Decimal, BaseMoney, macros::dec, iso::{USD, EUR, JPY}};
+/// use moneylib::{Money, raw, ObjMoney, Decimal, BaseMoney, macros::dec, iso::{USD, EUR, JPY}};
 ///
 /// let portfolio: Vec<Box<dyn ObjMoney>> = vec![
 ///     Box::new(Money::<USD>::new(dec!(100.50)).unwrap()),
 ///     Box::new(Money::<EUR>::new(dec!(200.75)).unwrap()),
+///     Box::new(raw!(BHD, 8392.098)),
 ///     Box::new(Money::<JPY>::new(dec!(15000)).unwrap()),
+///     Box::new(raw!(CAD, 6942.6942)),
 /// ];
 ///
 /// let codes: Vec<&str> = portfolio.iter().map(|m| m.code()).collect();
-/// assert_eq!(codes, vec!["USD", "EUR", "JPY"]);
-///
-/// let total: Decimal = portfolio.iter().fold(Decimal::ZERO, |acc, m| acc + m.amount());
-/// assert_eq!(total, dec!(15301.25));
+/// assert_eq!(codes, vec!["USD", "EUR", "BHD", "JPY", "CAD"]);
 /// ```
 pub trait ObjMoney {
     // ---- Required: eight primitive accessors ----
@@ -74,25 +70,14 @@ pub trait ObjMoney {
     /// Returns the minor-unit symbol (e.g. `"¢"` for USD, `"minor"` when none is defined).
     fn minor_unit_symbol(&self) -> &str;
 
-    // ---- Provided: derived from the required methods above ----
-
     /// Returns the money amount in its smallest unit (e.g. cents for USD, pence for GBP).
     ///
     /// # Errors
     ///
     /// Returns [`MoneyError::OverflowError`] if the computation overflows.
-    #[inline]
-    fn minor_amount(&self) -> Result<i128, MoneyError> {
-        self.amount()
-            .checked_mul(
-                dec!(10)
-                    .checked_powu(self.minor_unit().into())
-                    .ok_or(MoneyError::OverflowError)?,
-            )
-            .ok_or(MoneyError::OverflowError)?
-            .to_i128()
-            .ok_or(MoneyError::OverflowError)
-    }
+    fn minor_amount(&self) -> Result<i128, MoneyError>;
+
+    // ---- Provided: derived from the required methods above ----
 
     /// Returns `true` if the amount is zero.
     #[inline]

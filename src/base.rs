@@ -279,7 +279,6 @@ pub trait BaseMoney<C: Currency>: Sized + Clone {
     /// # Errors
     ///
     /// Returns `MoneyError::ArithmeticOverflow` if the calculation exceeds the maximum value.
-    /// Returns `MoneyError::DecimalConversion` if the conversion to integer fails.
     #[inline]
     fn minor_amount(&self) -> Result<i128, MoneyError> {
         self.amount()

@@ -1,6 +1,6 @@
 use crate::{BaseMoney, Currency, Decimal, Money};
 
-impl<C: Currency + Clone> super::ObjMoney for Money<C> {
+impl<C: Currency> super::ObjMoney for Money<C> {
     #[inline]
     fn amount(&self) -> Decimal {
         BaseMoney::amount(self)
@@ -32,5 +32,10 @@ impl<C: Currency + Clone> super::ObjMoney for Money<C> {
     #[inline]
     fn minor_unit_symbol(&self) -> &str {
         C::MINOR_UNIT_SYMBOL
+    }
+
+    #[inline]
+    fn minor_amount(&self) -> Result<i128, crate::MoneyError> {
+        BaseMoney::minor_amount(self)
     }
 }
