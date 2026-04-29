@@ -660,6 +660,65 @@ fn test_obj_mixed_money_and_raw_money() {
     assert_eq!(mixed[2].minor_unit(), mixed[3].minor_unit());
 }
 
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_mixed_sum_amounts_by_currency() {
+    // Both Money (rounded) and RawMoney (precise) contribute to per-currency totals.
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(Money::<USD>::new(dec!(100.505)).unwrap()), // rounds to 100.50
+        Box::new(RawMoney::<USD>::new(dec!(50.123)).unwrap()), // keeps 50.123
+        Box::new(Money::<EUR>::new(dec!(200.999)).unwrap()), // rounds to 201.00
+        Box::new(RawMoney::<EUR>::new(dec!(10.001)).unwrap()), // keeps 10.001
+        Box::new(Money::<GBP>::new(dec!(75.00)).unwrap()),
+    ];
+
+    let usd_total = portfolio
+        .iter()
+        .filter(|m| m.code() == "USD")
+        .fold(Decimal::ZERO, |acc, m| acc + m.amount());
+    let eur_total = portfolio
+        .iter()
+        .filter(|m| m.code() == "EUR")
+        .fold(Decimal::ZERO, |acc, m| acc + m.amount());
+    let gbp_total = portfolio
+        .iter()
+        .filter(|m| m.code() == "GBP")
+        .fold(Decimal::ZERO, |acc, m| acc + m.amount());
+
+    // Money<USD>(100.505) rounds to 100.50; RawMoney<USD>(50.123) keeps 50.123
+    assert_eq!(usd_total, dec!(150.623));
+    // Money<EUR>(200.999) rounds to 201.00; RawMoney<EUR>(10.001) keeps 10.001
+    assert_eq!(eur_total, dec!(211.001));
+    assert_eq!(gbp_total, dec!(75.00));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_mixed_sign_checks() {
+    // is_positive / is_negative / is_zero work uniformly across Money and RawMoney.
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(Money::<USD>::new(dec!(50.00)).unwrap()), // positive
+        Box::new(RawMoney::<USD>::new(dec!(-0.001)).unwrap()), // negative (sub-cent)
+        Box::new(Money::<EUR>::new(dec!(0)).unwrap()),     // zero
+        Box::new(RawMoney::<GBP>::new(dec!(0.0001)).unwrap()), // positive (sub-penny)
+        Box::new(Money::<JPY>::new(dec!(-100)).unwrap()),  // negative
+    ];
+
+    assert!(portfolio[0].is_positive() && !portfolio[0].is_negative() && !portfolio[0].is_zero());
+    assert!(portfolio[1].is_negative() && !portfolio[1].is_positive() && !portfolio[1].is_zero());
+    assert!(portfolio[2].is_zero());
+    assert!(portfolio[3].is_positive() && !portfolio[3].is_negative());
+    assert!(portfolio[4].is_negative());
+
+    let positives = portfolio.iter().filter(|m| m.is_positive()).count();
+    let negatives = portfolio.iter().filter(|m| m.is_negative()).count();
+    let zeros = portfolio.iter().filter(|m| m.is_zero()).count();
+    // EUR(0) counts as zero; Decimal zero has a positive sign bit so is_positive() is also true for it
+    assert_eq!(positives, 3); // USD(50), EUR(0), GBP(0.0001)
+    assert_eq!(negatives, 2); // USD(-0.001), JPY(-100)
+    assert_eq!(zeros, 1); // EUR(0)
+}
+
 // ==================== RawMoney: name accessor ====================
 
 #[cfg(feature = "raw_money")]
