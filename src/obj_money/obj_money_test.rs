@@ -3,7 +3,7 @@
 use super::ObjMoney;
 use crate::iso::{CHF, EUR, GBP, INR, JPY, SGD, USD};
 use crate::macros::dec;
-use crate::{BaseMoney, BaseOps, Decimal, Money};
+use crate::{BaseMoney, BaseOps, Decimal, Money, money, raw};
 
 #[cfg(feature = "raw_money")]
 use crate::RawMoney;
@@ -1003,6 +1003,47 @@ fn test_format_obj_money_minor_overflow() {
     // Decimal::MAX * 100 (USD minor unit = 2) overflows → "OVERFLOWED_AMOUNT".
     let result = format_obj_money(Decimal::MAX, "USD", "$", "¢", 2, ",", ".", "c na m");
     assert_eq!(result, "USD OVERFLOWED_AMOUNT ¢");
+}
+
+#[test]
+fn test_any() {
+    let m: &dyn ObjMoney = &money!(IDR, 123498.128);
+
+    let money = m.as_any().downcast_ref::<Money<crate::iso::IDR>>();
+    assert!(money.is_some());
+    assert_eq!(BaseMoney::amount(money.unwrap()), dec!(123498.13));
+    assert_eq!(BaseMoney::code(money.unwrap()), "IDR");
+    assert_eq!(ObjMoney::amount(money.unwrap()), dec!(123498.13));
+    assert_eq!(ObjMoney::code(money.unwrap()), "IDR");
+
+    let curr_mismatch = m.as_any().downcast_ref::<Money<crate::iso::BRL>>();
+    assert!(curr_mismatch.is_none());
+
+    let wrong_type = m.as_any().downcast_ref::<RawMoney<crate::iso::IDR>>();
+    assert!(wrong_type.is_none());
+
+    let wrong_type_curr_mismatch = m.as_any().downcast_ref::<RawMoney<crate::iso::BRL>>();
+    assert!(wrong_type_curr_mismatch.is_none());
+
+    // ----
+
+    let m: Box<dyn ObjMoney> = Box::new(raw!(IDR, 123498.128));
+
+    let money = m.as_any().downcast_ref::<RawMoney<crate::iso::IDR>>();
+    assert!(money.is_some());
+    assert_eq!(BaseMoney::amount(money.unwrap()), dec!(123498.128));
+    assert_eq!(BaseMoney::code(money.unwrap()), "IDR");
+    assert_eq!(ObjMoney::amount(money.unwrap()), dec!(123498.128));
+    assert_eq!(ObjMoney::code(money.unwrap()), "IDR");
+
+    let curr_mismatch = m.as_any().downcast_ref::<RawMoney<crate::iso::BRL>>();
+    assert!(curr_mismatch.is_none());
+
+    let wrong_type = m.as_any().downcast_ref::<Money<crate::iso::IDR>>();
+    assert!(wrong_type.is_none());
+
+    let wrong_type_curr_mismatch = m.as_any().downcast_ref::<Money<crate::iso::BRL>>();
+    assert!(wrong_type_curr_mismatch.is_none());
 }
 
 // end of obj_money_test.rs

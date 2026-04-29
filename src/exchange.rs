@@ -180,8 +180,8 @@ impl<C: Currency, T: Currency> Convert<T> for RawMoney<C> {
 /// Trait to define rate amount for conversion input.
 ///
 /// It accepts:
-/// - Money<T> where T is target currency
-/// - RawMoney<T> where T is target currency
+/// - `Money<T>` where T is target currency
+/// - `RawMoney<T>` where T is target currency
 /// - Decimal
 /// - f64
 /// - i32
@@ -526,6 +526,20 @@ where
 {
     fn get_rate(&self) -> Option<Decimal> {
         <ExchangeRates<Base> as Rate<From, To>>::get_rate(self)
+    }
+}
+
+/// Object-safe trait for exchange rates.
+///
+/// Supports: `ExchangeRates`
+pub trait ObjRate {
+    /// Get rate from `from_code` to `to_code`.
+    fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal>;
+}
+
+impl<Base: Currency> ObjRate for ExchangeRates<'_, Base> {
+    fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal> {
+        self.get_pair(from_code, to_code)
     }
 }
 

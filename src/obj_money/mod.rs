@@ -180,30 +180,13 @@ pub trait ObjMoney {
     }
 }
 
-/// Trait for exchange rates which object-safe.
-#[cfg(feature = "exchange")]
-pub trait ObjRate {
-    /// Get rate from `from_code` to `to_code`.
-    fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal>;
-}
-
-#[cfg(feature = "exchange")]
-use crate::ExchangeRates;
-
-#[cfg(feature = "exchange")]
-impl<Base: Currency> ObjRate for ExchangeRates<'_, Base> {
-    fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal> {
-        self.get_pair(from_code, to_code)
-    }
-}
-
 pub trait ObjIterOps {
     /// Sum all ObjMoney inside iterable types.
     ///
     /// # Argument
     /// rates: impl ObjRate, accepts `ExchangeRates`.
     #[cfg(feature = "exchange")]
-    fn checked_sum<M, To>(&self, rates: impl ObjRate) -> Result<M, MoneyError>
+    fn checked_sum<M, To>(&self, rates: impl crate::exchange::ObjRate) -> Result<M, MoneyError>
     where
         M: BaseMoney<To>,
         To: Currency;
@@ -279,7 +262,7 @@ where
     T: ObjMoney,
 {
     #[cfg(feature = "exchange")]
-    fn checked_sum<M, To>(&self, rates: impl ObjRate) -> Result<M, MoneyError>
+    fn checked_sum<M, To>(&self, rates: impl crate::exchange::ObjRate) -> Result<M, MoneyError>
     where
         M: BaseMoney<To>,
         To: Currency,
