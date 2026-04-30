@@ -43,7 +43,7 @@ use crate::fmt::format_with_amount;
 /// assert_eq!(money.format_code(), "USD 1,234.56");
 /// assert_eq!(money.format_symbol(), "$1,234.56");
 /// ```
-pub trait BaseMoney<C: Currency>: Sized + Clone {
+pub trait BaseMoney<C: Currency>: Clone {
     // REQUIRED
 
     /// Creates a new `Money` instance with amount of `Decimal`, `f64`, `i32`, `i64`, `i128`.
