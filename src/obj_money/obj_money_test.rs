@@ -916,7 +916,7 @@ fn test_obj_money_convert_same_currency() {
 /// ExchangeRates<USD> stores EUR=0.8, so get_pair("USD","EUR")=0.8; 100*0.8=80.
 #[cfg(feature = "exchange")]
 #[test]
-fn test_obj_money_convert_to_eur() {
+fn test_obj_money_convert_usd_to_eur() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let mut rates = ExchangeRates::<USD>::new();
     rates.set("EUR", dec!(0.8)).unwrap();
@@ -1028,12 +1028,12 @@ fn test_obj_raw_money_convert_to_different_currency() {
 }
 
 /// RawMoney missing rate also returns ExchangeError.
+/// JPY is not in the rates table for ExchangeRates<USD>.
 #[cfg(all(feature = "exchange", feature = "raw_money"))]
 #[test]
 fn test_obj_raw_money_convert_missing_rate() {
     let money = RawMoney::<EUR>::new(dec!(50.00)).unwrap();
-    let rates = ExchangeRates::<USD>::new(); // EUR not present (EUR→USD would need EUR in rates)
-    // get_pair("EUR","JPY") → None (neither EUR nor JPY in a fresh USD-based rates)
+    let rates = ExchangeRates::<USD>::new(); // JPY not present in rates
     let err = money.convert("JPY", &rates);
     assert!(matches!(err, Err(MoneyError::ExchangeError(_))));
 }
@@ -1070,7 +1070,7 @@ fn test_obj_mixed_portfolio_convert_each() {
 /// Multiple currencies converted to USD via a shared rate table.
 /// JPY 1500, EUR 80, GBP 50 all converted to USD.
 /// Rates<USD>: JPY=150, EUR=0.8, GBP=0.5
-/// get_pair("JPY","USD")=1/150 ≈ 0.00666...; 1500*(1/150)=10
+/// get_pair("JPY","USD")=1/150; 1500*(1/150)=10
 /// get_pair("EUR","USD")=1/0.8=1.25; 80*1.25=100
 /// get_pair("GBP","USD")=1/0.5=2; 50*2=100
 #[cfg(feature = "exchange")]
