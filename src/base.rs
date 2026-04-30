@@ -1502,8 +1502,11 @@ pub trait MoneyFormatter<C: Currency>: BaseMoney<C> {
             self.amount().abs().to_string()
         };
 
-        let decimal =
-            LocaleDecimal::try_from_str(&abs_amount).map_err(|_| MoneyError::OverflowError)?;
+        let decimal = LocaleDecimal::try_from_str(&abs_amount).map_err(|_| {
+            MoneyError::ParseLocale(
+                format!("failed parsing {} into locale decimal", &abs_amount).into(),
+            )
+        })?;
 
         let formatted_decimal = formatter.format(&decimal).to_string();
 
