@@ -3,10 +3,9 @@ use crate::Decimal;
 use crate::MoneyError;
 use crate::fmt::format_with_separator;
 use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format};
-use crate::macros::dec;
 use crate::split_alloc_ops::Split;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
-use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive};
+use rust_decimal::prelude::FromPrimitive;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
@@ -100,6 +99,27 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// assert_eq!(money.amount(), dec!(100.50));
     /// ```
     fn amount(&self) -> Decimal;
+
+    /// Returns the money amount in its smallest unit (e.g., cents for USD, pence for GBP).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency, iso::{USD, JPY}};
+    /// use moneylib::macros::dec;
+    /// use moneylib::BaseMoney;
+    ///
+    /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
+    /// assert_eq!(money.minor_amount().unwrap(), 1050);
+    ///
+    /// let yen = Money::<JPY>::new(dec!(100)).unwrap();
+    /// assert_eq!(yen.minor_amount().unwrap(), 100);
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns `MoneyError::ArithmeticOverflow` if the calculation exceeds the maximum value.
+    fn minor_amount(&self) -> Result<i128, MoneyError>;
 
     /// Rounds the money amount using bankers rounding rule to the scale of the currency's minor unit.
     ///
@@ -258,38 +278,6 @@ pub trait BaseMoney<C: Currency>: Clone {
     #[inline]
     fn minor_unit(&self) -> u16 {
         C::MINOR_UNIT
-    }
-
-    /// Returns the money amount in its smallest unit (e.g., cents for USD, pence for GBP).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, iso::{USD, JPY}};
-    /// use moneylib::macros::dec;
-    /// use moneylib::BaseMoney;
-    ///
-    /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
-    /// assert_eq!(money.minor_amount().unwrap(), 1050);
-    ///
-    /// let yen = Money::<JPY>::new(dec!(100)).unwrap();
-    /// assert_eq!(yen.minor_amount().unwrap(), 100);
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::ArithmeticOverflow` if the calculation exceeds the maximum value.
-    #[inline]
-    fn minor_amount(&self) -> Result<i128, MoneyError> {
-        self.amount()
-            .checked_mul(
-                dec!(10)
-                    .checked_powu(self.minor_unit().into())
-                    .ok_or(MoneyError::OverflowError)?,
-            )
-            .ok_or(MoneyError::OverflowError)?
-            .to_i128()
-            .ok_or(MoneyError::OverflowError)
     }
 
     /// Returns the thousands separator used by the currency.

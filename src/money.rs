@@ -1,3 +1,4 @@
+use rust_decimal::prelude::ToPrimitive;
 use std::{
     fmt::{Debug, Display},
     iter::Sum,
@@ -511,6 +512,19 @@ where
     #[inline]
     fn amount(&self) -> Decimal {
         self.amount
+    }
+
+    #[inline]
+    fn minor_amount(&self) -> Result<i128, MoneyError> {
+        self.amount()
+            .checked_mul(
+                dec!(10)
+                    .checked_powu(self.minor_unit().into())
+                    .ok_or(MoneyError::OverflowError)?,
+            )
+            .ok_or(MoneyError::OverflowError)?
+            .to_i128()
+            .ok_or(MoneyError::OverflowError)
     }
 
     #[inline]
