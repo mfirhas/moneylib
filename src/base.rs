@@ -9,9 +9,6 @@ use rust_decimal::prelude::FromPrimitive;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-#[cfg(feature = "locale")]
-use crate::fmt::format_with_amount;
-
 /// Base trait for all money types in the library.
 ///
 /// This trait provides the fundamental operations and properties for working with monetary values.
@@ -1470,6 +1467,7 @@ pub trait MoneyFormatter<C: Currency>: BaseMoney<C> {
         locale_str: &str,
         format_str: &str,
     ) -> Result<String, MoneyError> {
+        use crate::fmt::format_with_amount;
         use icu_decimal::{DecimalFormatter, input::Decimal as LocaleDecimal};
         use icu_locale::Locale;
 
