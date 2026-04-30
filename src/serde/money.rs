@@ -746,13 +746,15 @@ pub mod minor {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{BaseMoney, Currency, Money, MoneyError};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        let minor = value.minor_amount().map_err(::serde::ser::Error::custom)?;
+        let minor = value
+            .minor_amount()
+            .ok_or(::serde::ser::Error::custom(MoneyError::OverflowError))?;
         serializer.serialize_i128(minor)
     }
 

@@ -119,7 +119,7 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// # Errors
     ///
     /// Returns `MoneyError::ArithmeticOverflow` if the calculation exceeds the maximum value.
-    fn minor_amount(&self) -> Result<i128, MoneyError>;
+    fn minor_amount(&self) -> Option<i128>;
 
     /// Rounds the money amount using bankers rounding rule to the scale of the currency's minor unit.
     ///

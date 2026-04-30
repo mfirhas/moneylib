@@ -439,8 +439,8 @@ fn test_format_minor_amount_overflow() {
 
     // When using 'm' in format string, it tries to convert to minor amount
     // which will overflow and return the error string
-    assert_eq!(format(&money, "a m"), "OVERFLOWED_AMOUNT ¢");
-    assert_eq!(format(&money, "c a m"), "USD OVERFLOWED_AMOUNT ¢");
+    assert_eq!(format(&money, "a m"), "OVERFLOWED ¢");
+    assert_eq!(format(&money, "c a m"), "USD OVERFLOWED ¢");
 }
 
 #[test]

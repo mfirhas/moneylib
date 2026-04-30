@@ -97,11 +97,11 @@ fn test_raw_money_new_overflow() {
 
     let money = RawMoney::<TooBig>::from_decimal(dec!(123.2348));
     let minor = money.minor_amount();
-    assert!(minor.is_err());
+    assert!(minor.is_none());
 
     let money = RawMoney::<EUR>::from_decimal(crate::Decimal::MAX);
     let minor = money.minor_amount();
-    assert!(minor.is_err());
+    assert!(minor.is_none());
 
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
     let ret = money.checked_add(crate::Decimal::MAX);

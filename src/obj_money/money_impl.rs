@@ -35,7 +35,7 @@ impl<C: Currency + Copy + 'static> super::ObjMoney for Money<C> {
     }
 
     #[inline]
-    fn minor_amount(&self) -> Result<i128, crate::MoneyError> {
+    fn minor_amount(&self) -> Option<i128> {
         BaseMoney::minor_amount(self)
     }
 

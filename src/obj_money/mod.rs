@@ -80,7 +80,7 @@ pub trait ObjMoney {
     /// # Errors
     ///
     /// Returns [`MoneyError::OverflowError`] if the computation overflows.
-    fn minor_amount(&self) -> Result<i128, MoneyError>;
+    fn minor_amount(&self) -> Option<i128>;
 
     /// Get object money as Any
     fn as_any(&self) -> &dyn Any;
@@ -244,7 +244,7 @@ impl ObjMoney for Box<dyn ObjMoney> {
     }
 
     #[inline]
-    fn minor_amount(&self) -> Result<i128, MoneyError> {
+    fn minor_amount(&self) -> Option<i128> {
         (**self).minor_amount()
     }
 

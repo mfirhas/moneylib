@@ -515,16 +515,10 @@ where
     }
 
     #[inline]
-    fn minor_amount(&self) -> Result<i128, MoneyError> {
+    fn minor_amount(&self) -> Option<i128> {
         self.amount()
-            .checked_mul(
-                dec!(10)
-                    .checked_powu(self.minor_unit().into())
-                    .ok_or(MoneyError::OverflowError)?,
-            )
-            .ok_or(MoneyError::OverflowError)?
+            .checked_mul(dec!(10).checked_powu(self.minor_unit().into())?)?
             .to_i128()
-            .ok_or(MoneyError::OverflowError)
     }
 
     #[inline]

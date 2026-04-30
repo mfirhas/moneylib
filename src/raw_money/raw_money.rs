@@ -561,17 +561,11 @@ where
     /// assert_eq!(raw.minor_amount().unwrap(), 12324_i128);
     /// ```
     #[inline]
-    fn minor_amount(&self) -> Result<i128, MoneyError> {
+    fn minor_amount(&self) -> Option<i128> {
         self.amount()
             .round_dp(C::MINOR_UNIT.into())
-            .checked_mul(
-                dec!(10)
-                    .checked_powu(C::MINOR_UNIT.into())
-                    .ok_or(MoneyError::OverflowError)?,
-            )
-            .ok_or(MoneyError::OverflowError)?
+            .checked_mul(dec!(10).checked_powu(C::MINOR_UNIT.into())?)?
             .to_i128()
-            .ok_or(MoneyError::OverflowError)
     }
 }
 

@@ -2033,7 +2033,7 @@ fn test_minor_amount_exponent_overflow() {
 
     let toobig = Money::<TooBig>::from_decimal(dec!(123123));
     let ret = toobig.minor_amount();
-    assert!(ret.is_err());
+    assert!(ret.is_none());
 }
 
 #[test]

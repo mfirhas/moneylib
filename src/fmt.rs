@@ -150,10 +150,10 @@ pub(crate) fn format_with_separator<C: Currency>(
 
     // Use absolute value for display if negative
     let display_amount = if contains_active_format_symbol(format_str, MINOR_FORMAT_SYMBOL) {
-        if let Ok(minor_amount) = money.minor_amount() {
+        if let Some(minor_amount) = money.minor_amount() {
             format_128_abs(minor_amount, thousand_separator)
         } else {
-            "OVERFLOWED_AMOUNT".into()
+            "OVERFLOWED".into()
         }
     } else {
         format_decimal_abs(
