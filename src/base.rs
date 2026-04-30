@@ -113,9 +113,7 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// assert_eq!(yen.minor_amount().unwrap(), 100);
     /// ```
     ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::ArithmeticOverflow` if the calculation exceeds the maximum value.
+    /// Returns `None` if overflowed.
     fn minor_amount(&self) -> Option<i128>;
 
     /// Rounds the money amount using bankers rounding rule to the scale of the currency's minor unit.
