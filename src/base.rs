@@ -985,7 +985,7 @@ pub trait IterOps<C: Currency> {
 /// assert_eq!(money, money2);
 /// assert_eq!(money.amount(), money2.amount());
 /// ```
-pub trait Amount<C: Currency>: Sized {
+pub trait Amount<C: Currency> {
     /// Get decimal amount of Self.
     ///
     /// Returns `None` if Self cannot be converted into Decimal.
@@ -1025,7 +1025,7 @@ impl<C: Currency> Amount<C> for i128 {
 /// Trait to represents numbers to work with money amounts.
 ///
 /// It supports Decimal, f64, i32, i64, i128.
-pub trait DecimalNumber: Sized {
+pub trait DecimalNumber {
     fn get_decimal(&self) -> Option<Decimal>;
 }
 
