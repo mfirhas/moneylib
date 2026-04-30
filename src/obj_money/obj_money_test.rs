@@ -899,6 +899,202 @@ fn test_obj_iter_ops_checked_sum_array_slice() {
     assert_eq!(BaseMoney::amount(&result), dec!(60.00));
 }
 
+// ==================== ObjMoney::convert Tests ====================
+
+/// Converting Money to the same currency is a no-op: amount is unchanged.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_same_currency() {
+    let money = Money::<USD>::new(dec!(100.00)).unwrap();
+    let rates = ExchangeRates::<USD>::new();
+    let result = money.convert("USD", &rates).unwrap();
+    assert_eq!(result.amount(), dec!(100.00));
+    assert_eq!(result.code(), "USD");
+}
+
+/// Converting Money<USD> to EUR multiplies the amount by the USD→EUR rate.
+/// ExchangeRates<USD> stores EUR=0.8, so get_pair("USD","EUR")=0.8; 100*0.8=80.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_to_eur() {
+    let money = Money::<USD>::new(dec!(100.00)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    let result = money.convert("EUR", &rates).unwrap();
+    assert_eq!(result.amount(), dec!(80.00));
+}
+
+/// Converting Money<EUR> to USD via ExchangeRates<USD>:
+/// get_pair("EUR","USD") = 1/0.8 = 1.25; 80*1.25 = 100.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_cross_currency() {
+    let money = Money::<EUR>::new(dec!(80.00)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    let result = money.convert("USD", &rates).unwrap();
+    assert_eq!(result.amount(), dec!(100.00));
+}
+
+/// When the target currency is not present in the rates map, convert returns ExchangeError.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_missing_rate() {
+    let money = Money::<USD>::new(dec!(100.00)).unwrap();
+    let rates = ExchangeRates::<USD>::new(); // JPY not set
+    let err = money.convert("JPY", &rates);
+    assert!(matches!(err, Err(MoneyError::ExchangeError(_))));
+}
+
+/// amount * rate overflowing the 28-digit Decimal precision yields OverflowError.
+/// rate stored as 0.00001 → get_pair("USD","EUR")=0.00001 (tiny), not enough;
+/// instead, store a rate that gives a large multiplier: EUR=2 means get_pair("USD","EUR")=2,
+/// and Decimal::MAX*2 overflows.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_overflow() {
+    let money = Money::<USD>::from_decimal(Decimal::MAX);
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(2)).unwrap(); // get_pair("USD","EUR")=2
+    let err = money.convert("EUR", &rates);
+    assert!(matches!(err, Err(MoneyError::OverflowError)));
+}
+
+/// Zero amount converted to a different currency stays zero.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_zero_amount() {
+    let money = Money::<USD>::new(dec!(0)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    let result = money.convert("EUR", &rates).unwrap();
+    assert_eq!(result.amount(), dec!(0));
+}
+
+/// Negative amount converts correctly (preserves sign).
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_negative_amount() {
+    let money = Money::<USD>::new(dec!(-50.00)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    let result = money.convert("EUR", &rates).unwrap();
+    assert_eq!(result.amount(), dec!(-40.00));
+}
+
+/// Convert through Box<dyn ObjMoney> uses the blanket impl that delegates to the inner type.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_via_box_dyn() {
+    let boxed: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(200.00)).unwrap());
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    let result = boxed.convert("EUR", &rates).unwrap();
+    assert_eq!(result.amount(), dec!(160.00));
+}
+
+/// Same-currency convert through Box<dyn ObjMoney> is also a no-op.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_via_box_dyn_same_currency() {
+    let boxed: Box<dyn ObjMoney> = Box::new(Money::<EUR>::new(dec!(75.00)).unwrap());
+    let rates = ExchangeRates::<USD>::new();
+    let result = boxed.convert("EUR", &rates).unwrap();
+    assert_eq!(result.amount(), dec!(75.00));
+    assert_eq!(result.code(), "EUR");
+}
+
+/// RawMoney converts to same currency without changing amount.
+#[cfg(all(feature = "exchange", feature = "raw_money"))]
+#[test]
+fn test_obj_raw_money_convert_same_currency() {
+    let money = RawMoney::<USD>::new(dec!(123.456789)).unwrap();
+    let rates = ExchangeRates::<USD>::new();
+    let result = money.convert("USD", &rates).unwrap();
+    assert_eq!(result.amount(), dec!(123.456789));
+    assert_eq!(result.code(), "USD");
+}
+
+/// RawMoney preserves full precision after conversion (no rounding).
+/// 100.123456 * 0.8 = 80.0987648
+#[cfg(all(feature = "exchange", feature = "raw_money"))]
+#[test]
+fn test_obj_raw_money_convert_to_different_currency() {
+    let money = RawMoney::<USD>::new(dec!(100.123456)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    let result = money.convert("EUR", &rates).unwrap();
+    assert_eq!(result.amount(), dec!(80.0987648));
+}
+
+/// RawMoney missing rate also returns ExchangeError.
+#[cfg(all(feature = "exchange", feature = "raw_money"))]
+#[test]
+fn test_obj_raw_money_convert_missing_rate() {
+    let money = RawMoney::<EUR>::new(dec!(50.00)).unwrap();
+    let rates = ExchangeRates::<USD>::new(); // EUR not present (EUR→USD would need EUR in rates)
+    // get_pair("EUR","JPY") → None (neither EUR nor JPY in a fresh USD-based rates)
+    let err = money.convert("JPY", &rates);
+    assert!(matches!(err, Err(MoneyError::ExchangeError(_))));
+}
+
+/// Convert each item in a heterogeneous dyn portfolio individually, then sum.
+/// Portfolio: USD 100, EUR 80. Rates<USD>: EUR=0.8.
+/// USD→EUR: get_pair("USD","EUR")=0.8 → 100*0.8=80.
+/// EUR→EUR: same currency → 80 unchanged.
+/// Sum = 80 + 80 = 160 EUR-equivalent.
+#[cfg(all(feature = "exchange", feature = "raw_money"))]
+#[test]
+fn test_obj_mixed_portfolio_convert_each() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(Money::<USD>::new(dec!(100.00)).unwrap()),
+        Box::new(Money::<EUR>::new(dec!(80.00)).unwrap()),
+    ];
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+
+    let converted: Vec<_> = portfolio
+        .iter()
+        .map(|m| m.convert("EUR", &rates).unwrap())
+        .collect();
+
+    assert_eq!(converted[0].amount(), dec!(80.00)); // USD 100 → EUR 80
+    assert_eq!(converted[1].amount(), dec!(80.00)); // EUR 80 same currency
+
+    let total = converted
+        .iter()
+        .fold(Decimal::ZERO, |acc, m| acc + m.amount());
+    assert_eq!(total, dec!(160.00));
+}
+
+/// Multiple currencies converted to USD via a shared rate table.
+/// JPY 1500, EUR 80, GBP 50 all converted to USD.
+/// Rates<USD>: JPY=150, EUR=0.8, GBP=0.5
+/// get_pair("JPY","USD")=1/150 ≈ 0.00666...; 1500*(1/150)=10
+/// get_pair("EUR","USD")=1/0.8=1.25; 80*1.25=100
+/// get_pair("GBP","USD")=1/0.5=2; 50*2=100
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_multiple_currencies_to_usd() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(Money::<JPY>::new(dec!(1500)).unwrap()),
+        Box::new(Money::<EUR>::new(dec!(80.00)).unwrap()),
+        Box::new(Money::<GBP>::new(dec!(50.00)).unwrap()),
+    ];
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("JPY", dec!(150)).unwrap();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    rates.set("GBP", dec!(0.5)).unwrap();
+
+    let jpy_converted = portfolio[0].convert("USD", &rates).unwrap();
+    let eur_converted = portfolio[1].convert("USD", &rates).unwrap();
+    let gbp_converted = portfolio[2].convert("USD", &rates).unwrap();
+
+    assert_eq!(jpy_converted.amount(), dec!(10));
+    assert_eq!(eur_converted.amount(), dec!(100.00));
+    assert_eq!(gbp_converted.amount(), dec!(100.00));
+}
+
 /// `RawMoney` preserves full precision; the sum must not be rounded.
 #[cfg(all(feature = "exchange", feature = "raw_money"))]
 #[test]
