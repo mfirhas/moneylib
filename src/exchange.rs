@@ -320,13 +320,9 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
 
     /// Upsert a rate of a pair.
     ///
-    /// If value already exist, it got updated and old value returned.
+    /// If one of the rate is in the rates, it sets.
     ///
-    /// If one or both `from_code` and `to_code` not in the rates, nothing happen, None returned.
-    ///
-    /// If one of the rate not exist, it fills it by calculating existing rate against the base rate.
-    ///
-    /// If both rates exist, it updates the target/quote currency, indirectly updating Base/to_code.
+    /// If both rate already exist, update the rate of "to_code".
     ///
     /// If both are not in the rates, error returned.
     ///
