@@ -20,11 +20,10 @@ use crate::{Currency, Decimal, MoneyError};
 /// `BaseMoney<C>` cannot be used as a trait object for three reasons:
 /// - It has a generic type parameter `C`, so `dyn BaseMoney<USD>` and `dyn BaseMoney<EUR>` are
 ///   different types and cannot be stored in the same collection.
-/// - It has `Sized` as a supertrait, which makes it non-object-safe.
 /// - Several methods return `Self` or take `impl Trait` arguments, both of which are
 ///   object-safety violations.
 ///
-/// `ObjMoney` solves all three: no type parameter, no `Sized`/`Clone` supertraits, and every
+/// `ObjMoney` solves all three: no type parameter, no `Clone` supertraits, and every
 /// method uses only concrete types (`Decimal`, `&str`, `String`, `bool`, etc.).
 ///
 /// # Required methods
