@@ -466,7 +466,7 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// assert_eq!(negative.format_code(), "USD -1,234.45");
     /// ```
     fn format_code(&self) -> String {
-        format(self.to_owned(), CODE_FORMAT)
+        format(self, CODE_FORMAT)
     }
 
     /// Formats money with currency symbol along with thousands and decimal separators.
@@ -487,7 +487,7 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// assert_eq!(negative.format_symbol(), "-€500,50");
     /// ```
     fn format_symbol(&self) -> String {
-        format(self.to_owned(), SYMBOL_FORMAT)
+        format(self, SYMBOL_FORMAT)
     }
 
     /// Formats money with currency code in the smallest unit along with thousands separators.
@@ -511,7 +511,7 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// assert_eq!(negative.format_code_minor(), "USD -123,445 ¢");
     /// ```
     fn format_code_minor(&self) -> String {
-        format(self.to_owned(), CODE_FORMAT_MINOR)
+        format(self, CODE_FORMAT_MINOR)
     }
 
     /// Formats money with currency symbol in the smallest unit along with thousands separators.
@@ -535,7 +535,7 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// assert_eq!(negative.format_symbol_minor(), "-$1,050 ¢");
     /// ```
     fn format_symbol_minor(&self) -> String {
-        format(self.to_owned(), SYMBOL_FORMAT_MINOR)
+        format(self, SYMBOL_FORMAT_MINOR)
     }
 
     /// Returns the default display format for money (same as `format_code`).
@@ -582,8 +582,7 @@ pub trait BaseMoney<C: Currency>: Clone {
 /// assert_eq!(m1.min(m2), m2);
 /// ```
 pub trait BaseOps<C: Currency>:
-    Sized
-    + BaseMoney<C>
+    BaseMoney<C>
     + Add<Output = Self>
     + Sub<Output = Self>
     + Mul<Output = Self>
@@ -817,7 +816,7 @@ pub trait BaseOps<C: Currency>:
     where
         R: Split<Self, C, P>,
     {
-        R::split(self.clone(), p)
+        R::split(self, p)
     }
 }
 
@@ -1218,7 +1217,7 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
 /// Trait for customizing money formatting.
 ///
 /// This trait extends `BaseMoney` with methods to customize how money is displayed.
-pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
+pub trait MoneyFormatter<C: Currency>: BaseMoney<C> {
     // PROVIDED
 
     /// Format money according to the provided format string `format_str`.
@@ -1311,7 +1310,7 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
     ///
     /// ```
     fn format(&self, format_str: &str) -> String {
-        format(self.to_owned(), format_str)
+        format(self, format_str)
     }
 
     /// Format money according to the provided format string `format_str`.
@@ -1391,12 +1390,7 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
         thousand_separator: &str,
         decimal_separator: &str,
     ) -> String {
-        format_with_separator(
-            self.to_owned(),
-            format_str,
-            thousand_separator,
-            decimal_separator,
-        )
+        format_with_separator(self, format_str, thousand_separator, decimal_separator)
     }
 
     /// Format money's amount using locale standard with `format_str` format.

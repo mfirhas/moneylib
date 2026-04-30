@@ -66,7 +66,7 @@ pub(crate) const SYMBOL_FORMAT_MINOR: &str = "nsa m"; // E.g. $100,023 cents or 
 ///
 /// * `money` - The Money value to format
 /// * `format_str` - The format string containing format symbols and optional literal text
-pub(crate) fn format<C: Currency>(money: impl BaseMoney<C>, format_str: &str) -> String {
+pub(crate) fn format<C: Currency>(money: &impl BaseMoney<C>, format_str: &str) -> String {
     format_with_separator(
         money,
         format_str,
@@ -141,7 +141,7 @@ pub(crate) fn format_decimal_abs(
 }
 
 pub(crate) fn format_with_separator<C: Currency>(
-    money: impl BaseMoney<C>,
+    money: &impl BaseMoney<C>,
     format_str: &str,
     thousand_separator: &str,
     decimal_separator: &str,

@@ -12,7 +12,7 @@ where
     Self: Sized,
 {
     /// split money by input without losing a single penny.
-    fn split(money: M, input: P) -> Option<Self>;
+    fn split(money: &M, input: P) -> Option<Self>;
 }
 
 impl<M, C> Split<M, C, u32> for (M, M)
@@ -20,8 +20,8 @@ where
     M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + Ord,
     C: Currency,
 {
-    fn split(money: M, input: u32) -> Option<Self> {
-        split(&money, input)
+    fn split(money: &M, input: u32) -> Option<Self> {
+        split(money, input)
     }
 }
 
@@ -30,8 +30,8 @@ where
     M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + Ord,
     C: Currency,
 {
-    fn split(money: M, input: u32) -> Option<Self> {
-        split_dist(&money, input)
+    fn split(money: &M, input: u32) -> Option<Self> {
+        split_dist(money, input)
     }
 }
 
@@ -43,8 +43,8 @@ macro_rules! impl_split_iterable {
             C: Currency,
             D: DecimalNumber + Copy,
         {
-            fn split(money: M, input: $input) -> Option<Self> {
-                allocate(&money, input)
+            fn split(money: &M, input: $input) -> Option<Self> {
+                allocate(money, input)
             }
         }
     };
