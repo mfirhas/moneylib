@@ -85,6 +85,14 @@ pub trait ObjMoney {
     /// Get object money as Any
     fn as_any(&self) -> &dyn Any;
 
+    /// Convert ObjMoney to `to_code` with `rate`
+    #[cfg(feature = "exchange")]
+    fn convert(
+        &self,
+        to_code: &str,
+        rate: &dyn crate::exchange::ObjRate,
+    ) -> Result<Box<dyn ObjMoney>, MoneyError>;
+
     // ---- Provided: derived from the required methods above ----
 
     /// Returns `true` if the amount is zero.
@@ -243,6 +251,15 @@ impl ObjMoney for Box<dyn ObjMoney> {
     #[inline]
     fn as_any(&self) -> &dyn std::any::Any {
         (**self).as_any()
+    }
+
+    #[cfg(feature = "exchange")]
+    fn convert(
+        &self,
+        to_code: &str,
+        rate: &dyn crate::exchange::ObjRate,
+    ) -> Result<Box<dyn ObjMoney>, MoneyError> {
+        (**self).convert(to_code, rate)
     }
 }
 

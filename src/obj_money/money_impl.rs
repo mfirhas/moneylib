@@ -1,6 +1,6 @@
 use crate::{BaseMoney, Currency, Decimal, Money};
 
-impl<C: Currency + 'static> super::ObjMoney for Money<C> {
+impl<C: Currency + Copy + 'static> super::ObjMoney for Money<C> {
     #[inline]
     fn amount(&self) -> Decimal {
         BaseMoney::amount(self)
@@ -42,5 +42,33 @@ impl<C: Currency + 'static> super::ObjMoney for Money<C> {
     #[inline]
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    #[cfg(feature = "exchange")]
+    fn convert(
+        &self,
+        to_code: &str,
+        rate: &dyn crate::exchange::ObjRate,
+    ) -> Result<Box<dyn super::ObjMoney>, crate::MoneyError> {
+        if BaseMoney::code(self) == to_code {
+            return Ok(Box::new(*self));
+        }
+
+        Ok(Box::new(Self::from_decimal(
+            BaseMoney::amount(self)
+                .checked_mul(
+                    rate.get_rate(BaseMoney::code(self), to_code).ok_or(
+                        crate::MoneyError::ExchangeError(
+                            format!(
+                                "overflowed or failed getting rate from: {} to: {}",
+                                BaseMoney::code(self),
+                                to_code
+                            )
+                            .into(),
+                        ),
+                    )?,
+                )
+                .ok_or(crate::MoneyError::OverflowError)?,
+        )))
     }
 }
