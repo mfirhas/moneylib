@@ -7,7 +7,6 @@ use std::{
 use crate::{
     BaseMoney, BaseOps, Currency, Decimal, Money, MoneyError, RawMoney,
     base::{Amount, DecimalNumber},
-    macros::dec,
 };
 
 // ========================= Exchange =========================
@@ -269,7 +268,7 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// ```
     pub fn new() -> Self {
         Self {
-            rates: HashMap::from([(Base::CODE, dec!(1))]),
+            rates: HashMap::from([(Base::CODE, Decimal::ONE)]),
             _base: PhantomData,
         }
     }
@@ -371,7 +370,7 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
             (from_base, _) if from_base == Base::CODE => self.set(to_code, rate),
             (_, to_base) if to_base == Base::CODE => self.set(
                 from_code,
-                dec!(1)
+                Decimal::ONE
                     .checked_div(rate.get_decimal().ok_or(MoneyError::OverflowError)?)
                     .ok_or(MoneyError::OverflowError)?,
             ),
@@ -402,7 +401,7 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
         }
     }
 
-    /// Get a rate for a currency exists in rates by code, e.g "USD", "EUR", etc.
+    /// Get a rate of a currency relative from Base currency, by code.
     ///
     /// # Examples
     ///
@@ -454,7 +453,7 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// assert!(cad_idr.is_none()); // CAD is not in the exchange rates `rates`
     /// ```
     pub fn get_pair(&self, from_code: &str, to_code: &str) -> Option<Decimal> {
-        dec!(1)
+        Decimal::ONE
             .checked_div(self.get(from_code)?)?
             .checked_mul(self.get(to_code)?)
     }
@@ -541,7 +540,12 @@ impl<Base: Currency> ObjRate for ExchangeRates<'_, Base> {
 
 fn exchange_rates_display<Base: Currency>(rates: &ExchangeRates<Base>) -> String {
     let mut ret = format!("Base: {}", Base::CODE);
-    ret.push_str(&format!("\n{}/{} = {}", Base::CODE, Base::CODE, dec!(1)));
+    ret.push_str(&format!(
+        "\n{}/{} = {}",
+        Base::CODE,
+        Base::CODE,
+        Decimal::ONE
+    ));
 
     for (k, v) in rates.rates.iter() {
         if *k != Base::CODE {
