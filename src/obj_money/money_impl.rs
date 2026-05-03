@@ -1,6 +1,6 @@
 use crate::{BaseMoney, Currency, Decimal, Money};
 
-impl<C: Currency + Copy + 'static> super::ObjMoney for Money<C> {
+impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
     #[inline]
     fn amount(&self) -> Decimal {
         BaseMoney::amount(self)

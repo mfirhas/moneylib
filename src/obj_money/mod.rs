@@ -47,7 +47,7 @@ use crate::{Currency, Decimal, MoneyError};
 /// let codes: Vec<&str> = portfolio.iter().map(|m| m.code()).collect();
 /// assert_eq!(codes, vec!["USD", "EUR", "BHD", "JPY", "CAD"]);
 /// ```
-pub trait ObjMoney {
+pub trait ObjMoney: Send + Sync {
     // ---- Required: eight primitive accessors ----
 
     /// Returns the decimal amount of this money value.
