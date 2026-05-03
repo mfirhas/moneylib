@@ -391,6 +391,7 @@ impl<C> Amount<C> for RawMoney<C>
 where
     C: Currency,
 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Some(self.amount())
     }

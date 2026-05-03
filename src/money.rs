@@ -399,6 +399,7 @@ impl<C> Amount<C> for Money<C>
 where
     C: Currency,
 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Some(self.amount())
     }

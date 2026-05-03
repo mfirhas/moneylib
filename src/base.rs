@@ -975,30 +975,35 @@ pub trait Amount<C: Currency> {
 }
 
 impl<C: Currency> Amount<C> for Decimal {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Some(*self)
     }
 }
 
 impl<C: Currency> Amount<C> for f64 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_f64(*self)
     }
 }
 
 impl<C: Currency> Amount<C> for i32 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i32(*self)
     }
 }
 
 impl<C: Currency> Amount<C> for i64 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i64(*self)
     }
 }
 
 impl<C: Currency> Amount<C> for i128 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i128(*self)
     }
@@ -1012,30 +1017,35 @@ pub trait DecimalNumber {
 }
 
 impl DecimalNumber for Decimal {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Some(*self)
     }
 }
 
 impl DecimalNumber for f64 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_f64(*self)
     }
 }
 
 impl DecimalNumber for i32 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i32(*self)
     }
 }
 
 impl DecimalNumber for i64 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i64(*self)
     }
 }
 
 impl DecimalNumber for i128 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i128(*self)
     }
