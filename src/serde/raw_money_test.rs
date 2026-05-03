@@ -1257,15 +1257,22 @@ fn test_default_deserialize_visit_f64_negative() {
 // Decimal::from_f64 which can produce binary-representation artifacts.
 #[test]
 fn test_default_deserialize_visit_f64_precision() {
-    // RawMoney has no fixed decimal places so precision is preserved as-is
-    let money: RawMoney<USD> = serde_yaml::from_str("1.10").unwrap();
-    assert_eq!(money.amount(), dec!(1.10));
+    use ::serde::Deserialize;
+    use ::serde::de::{IntoDeserializer, value::Error as SerdeError};
 
-    let money: RawMoney<USD> = serde_yaml::from_str("99.99").unwrap();
+    // Directly exercise visit_f64 by deserializing from an f64 value.
+    // v.to_string() uses Rust's Ryu algorithm (shortest round-trip), giving
+    // "1.1", "99.99", "-0.01" — parsed by Decimal::from_str exactly.
+    let d: ::serde::de::value::F64Deserializer<SerdeError> = (1.1_f64).into_deserializer();
+    let money: RawMoney<USD> = RawMoney::deserialize(d).unwrap();
+    assert_eq!(money.amount(), dec!(1.1));
+
+    let d: ::serde::de::value::F64Deserializer<SerdeError> = (99.99_f64).into_deserializer();
+    let money: RawMoney<USD> = RawMoney::deserialize(d).unwrap();
     assert_eq!(money.amount(), dec!(99.99));
 
-    // negative
-    let money: RawMoney<USD> = serde_yaml::from_str("-0.01").unwrap();
+    let d: ::serde::de::value::F64Deserializer<SerdeError> = (-0.01_f64).into_deserializer();
+    let money: RawMoney<USD> = RawMoney::deserialize(d).unwrap();
     assert_eq!(money.amount(), dec!(-0.01));
 }
 
