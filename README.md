@@ -27,9 +27,11 @@ Here are some features supported:
   - Compile-time check for arithmetics and operations.
   - Runtime check for overflowed/wrapped/truncated amount.
   - Prevents currencies mixing at compile-time.
-- Value type to represent money.
+- Value type to represent money:
   - `Money`: represents money in amount rounded to the currency's minor unit.
   - `RawMoney`: represents money in raw amount keeping the precisions and choose when to round. 
+- Object type to represent money:
+  - `ObjMoney`: represents money at runtime.
 - Helper macros:
   - `dec!(...)`: re-export from [Decimal](https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html) crate to instantiate hardcoded decimals.
   - `money!(...,...)`: instantiate `Money` with currency code and amount.
