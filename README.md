@@ -31,7 +31,7 @@ Here are some features supported:
   - `Money`: represents money in amount rounded to the currency's minor unit.
   - `RawMoney`: represents money in raw amount keeping the precisions and choose when to round. 
 - Object type to represent money:
-  - `ObjMoney`: represents money at runtime.
+  - `ObjMoney`: represents money at runtime implement by all money types.
 - Helper macros:
   - `dec!(...)`: re-export from [Decimal](https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html) crate to instantiate hardcoded decimals.
   - `money!(...,...)`: instantiate `Money` with currency code and amount.
