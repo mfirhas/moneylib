@@ -527,12 +527,12 @@ where
 /// Object-safe trait for exchange rates.
 ///
 /// Supports: `ExchangeRates`
-pub trait ObjRate {
+pub trait ObjRate: Send + Sync {
     /// Get rate from `from_code` to `to_code`.
     fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal>;
 }
 
-impl<Base: Currency> ObjRate for ExchangeRates<'_, Base> {
+impl<Base: Currency + Send + Sync> ObjRate for ExchangeRates<'_, Base> {
     fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal> {
         self.get_pair(from_code, to_code)
     }
