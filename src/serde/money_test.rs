@@ -1273,6 +1273,25 @@ fn test_default_deserialize_visit_f64_negative() {
     );
 }
 
+// visit_f64 now delegates to visit_str via v.to_string(), so values that have
+// exact decimal representations are parsed precisely rather than going through
+// Decimal::from_f64 which can produce binary-representation artifacts.
+#[test]
+fn test_default_deserialize_visit_f64_precision() {
+    // 1.10 parsed via visit_f64 (serde_yaml sends unquoted floats as f64)
+    // should round to 2 decimal places for USD, equal to dec!(1.10)
+    let money: Money<USD> = serde_yaml::from_str("1.10").unwrap();
+    assert_eq!(money.amount(), dec!(1.10));
+
+    // 99.99 should parse exactly
+    let money: Money<USD> = serde_yaml::from_str("99.99").unwrap();
+    assert_eq!(money.amount(), dec!(99.99));
+
+    // negative
+    let money: Money<USD> = serde_yaml::from_str("-0.01").unwrap();
+    assert_eq!(money.amount(), dec!(-0.01));
+}
+
 #[test]
 fn test_deserialize_expecting_message() {
     let err = serde_json::from_str::<Money<USD>>("true").unwrap_err();

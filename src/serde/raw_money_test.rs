@@ -1252,6 +1252,23 @@ fn test_default_deserialize_visit_f64_negative() {
     );
 }
 
+// visit_f64 now delegates to visit_str via v.to_string(), so values that have
+// exact decimal representations are parsed precisely rather than going through
+// Decimal::from_f64 which can produce binary-representation artifacts.
+#[test]
+fn test_default_deserialize_visit_f64_precision() {
+    // RawMoney has no fixed decimal places so precision is preserved as-is
+    let money: RawMoney<USD> = serde_yaml::from_str("1.10").unwrap();
+    assert_eq!(money.amount(), dec!(1.10));
+
+    let money: RawMoney<USD> = serde_yaml::from_str("99.99").unwrap();
+    assert_eq!(money.amount(), dec!(99.99));
+
+    // negative
+    let money: RawMoney<USD> = serde_yaml::from_str("-0.01").unwrap();
+    assert_eq!(money.amount(), dec!(-0.01));
+}
+
 #[test]
 fn test_deserialize_expecting_message() {
     let err = serde_json::from_str::<RawMoney<USD>>("true").unwrap_err();

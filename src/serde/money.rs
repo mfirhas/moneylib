@@ -28,7 +28,7 @@ impl<'de, C: Currency> de::Visitor<'de> for MoneyVisitor<C> {
     }
 
     fn visit_f64<E: de::Error>(self, v: f64) -> Result<Self::Value, E> {
-        Money::<C>::new(v).map_err(de::Error::custom)
+        self.visit_str(&v.to_string())
     }
 
     fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> {
