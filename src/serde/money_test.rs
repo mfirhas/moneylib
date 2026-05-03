@@ -1273,6 +1273,30 @@ fn test_default_deserialize_visit_f64_negative() {
     );
 }
 
+// visit_f64 now delegates to visit_str via v.to_string(), so values that have
+// exact decimal representations are parsed precisely rather than going through
+// Decimal::from_f64 which can produce binary-representation artifacts.
+#[test]
+fn test_default_deserialize_visit_f64_precision() {
+    use ::serde::Deserialize;
+    use ::serde::de::{IntoDeserializer, value::Error as SerdeError};
+
+    // Directly exercise visit_f64 by deserializing from an f64 value.
+    // v.to_string() uses Rust's Ryu algorithm (shortest round-trip), giving
+    // "1.1", "99.99", "-0.01" — parsed by Decimal::from_str exactly.
+    let d: ::serde::de::value::F64Deserializer<SerdeError> = (1.1_f64).into_deserializer();
+    let money: Money<USD> = Money::deserialize(d).unwrap();
+    assert_eq!(money.amount(), dec!(1.1));
+
+    let d: ::serde::de::value::F64Deserializer<SerdeError> = (99.99_f64).into_deserializer();
+    let money: Money<USD> = Money::deserialize(d).unwrap();
+    assert_eq!(money.amount(), dec!(99.99));
+
+    let d: ::serde::de::value::F64Deserializer<SerdeError> = (-0.01_f64).into_deserializer();
+    let money: Money<USD> = Money::deserialize(d).unwrap();
+    assert_eq!(money.amount(), dec!(-0.01));
+}
+
 #[test]
 fn test_deserialize_expecting_message() {
     let err = serde_json::from_str::<Money<USD>>("true").unwrap_err();
