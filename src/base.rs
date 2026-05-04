@@ -735,10 +735,7 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn checked_rem<RHS>(&self, rhs: RHS) -> Option<Self>
     where
-        RHS: DecimalNumber,
-    {
-        Self::new(self.amount().checked_rem(rhs.get_decimal()?)?).ok()
-    }
+        RHS: DecimalNumber;
 
     /// Split money without losing a single penny.
     ///

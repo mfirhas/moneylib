@@ -599,6 +599,16 @@ where
             self.amount.checked_div(rhs.get_decimal()?)?,
         ))
     }
+
+    #[inline]
+    fn checked_rem<RHS>(&self, rhs: RHS) -> Option<Self>
+    where
+        RHS: DecimalNumber,
+    {
+        Some(Self::from_decimal(
+            self.amount().checked_rem(rhs.get_decimal()?)?,
+        ))
+    }
 }
 
 impl<C> MoneyFormatter<C> for Money<C> where C: Currency {}
