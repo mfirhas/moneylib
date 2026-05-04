@@ -1,4 +1,4 @@
-use crate::{BaseMoney, Currency, Decimal, RawMoney};
+use crate::{BaseMoney, Currency, Decimal, MoneyError, RawMoney};
 
 impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C> {
     #[inline]
@@ -70,5 +70,44 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C>
                 )
                 .ok_or(crate::MoneyError::OverflowError)?,
         )))
+    }
+}
+
+/// Converts a reference to an [`ObjMoney`](super::ObjMoney) trait object into `RawMoney<C>`.
+///
+/// The conversion succeeds when the currency code of the trait object matches `C::CODE`.
+/// The amount is stored without any rounding, preserving full decimal precision, exactly as
+/// [`RawMoney::from_decimal`] does.
+///
+/// # Errors
+///
+/// Returns [`MoneyError::CurrencyMismatchError`] when the currency codes do not match.
+///
+/// # Examples
+///
+/// ```
+/// use moneylib::{RawMoney, ObjMoney, BaseMoney, MoneyError, macros::dec, iso::{USD, EUR}};
+///
+/// let obj: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.567)).unwrap());
+///
+/// // Successful conversion
+/// let raw = RawMoney::<USD>::try_from(obj.as_ref()).unwrap();
+/// assert_eq!(BaseMoney::amount(&raw), dec!(100.567));
+/// assert_eq!(BaseMoney::code(&raw), "USD");
+///
+/// // Currency mismatch returns an error
+/// assert!(RawMoney::<EUR>::try_from(obj.as_ref()).is_err());
+/// ```
+impl<C: Currency + Copy + 'static + Send + Sync> TryFrom<&dyn super::ObjMoney> for RawMoney<C> {
+    type Error = MoneyError;
+
+    fn try_from(value: &dyn super::ObjMoney) -> Result<Self, Self::Error> {
+        if value.code() != C::CODE {
+            return Err(MoneyError::CurrencyMismatchError(
+                value.code().into(),
+                C::CODE.into(),
+            ));
+        }
+        Ok(Self::from_decimal(value.amount()))
     }
 }

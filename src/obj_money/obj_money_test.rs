@@ -3,7 +3,7 @@
 use super::ObjMoney;
 use crate::iso::{CHF, EUR, GBP, INR, JPY, SGD, USD};
 use crate::macros::dec;
-use crate::{BaseMoney, BaseOps, Decimal, Money, money, raw};
+use crate::{BaseMoney, BaseOps, Decimal, Money, MoneyError, money, raw};
 
 #[cfg(feature = "raw_money")]
 use crate::RawMoney;
@@ -762,7 +762,7 @@ fn test_format_obj_money_literal_block_escape() {
 // ==================== ObjIterOps::checked_sum Tests ====================
 
 #[cfg(feature = "exchange")]
-use crate::{ExchangeRates, MoneyError, ObjIterOps};
+use crate::{ExchangeRates, ObjIterOps};
 
 /// All items are USD; the USD→USD rate is always 1, so the result is the simple sum.
 #[cfg(feature = "exchange")]
@@ -1240,6 +1240,165 @@ fn test_any() {
 
     let wrong_type_curr_mismatch = m.as_any().downcast_ref::<Money<crate::iso::BRL>>();
     assert!(wrong_type_curr_mismatch.is_none());
+}
+
+// ==================== TryFrom<&dyn ObjMoney> for Money<C> ====================
+
+#[test]
+fn test_tryfrom_obj_money_to_money_success() {
+    let obj: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.50)).unwrap());
+    let money = Money::<USD>::try_from(obj.as_ref()).unwrap();
+    assert_eq!(BaseMoney::amount(&money), dec!(100.50));
+    assert_eq!(BaseMoney::code(&money), "USD");
+}
+
+#[test]
+fn test_tryfrom_obj_money_to_money_currency_mismatch() {
+    let obj: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.50)).unwrap());
+    let result = Money::<EUR>::try_from(obj.as_ref());
+    assert!(matches!(
+        result,
+        Err(MoneyError::CurrencyMismatchError(ref got, ref exp))
+        if got == "USD" && exp == "EUR"
+    ));
+}
+
+#[test]
+fn test_tryfrom_obj_money_to_money_rounds_amount() {
+    // Money::from_decimal applies banker's rounding to the currency's minor unit.
+    let obj: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.505)).unwrap());
+    // Money<USD> already rounds on construction; amount stored is 100.50 (bankers rounding: 5 → even)
+    let money = Money::<USD>::try_from(obj.as_ref()).unwrap();
+    assert_eq!(BaseMoney::amount(&money), dec!(100.50));
+}
+
+#[test]
+fn test_tryfrom_obj_money_to_money_zero_amount() {
+    let obj: Box<dyn ObjMoney> = Box::new(Money::<JPY>::new(dec!(0)).unwrap());
+    let money = Money::<JPY>::try_from(obj.as_ref()).unwrap();
+    assert_eq!(BaseMoney::amount(&money), dec!(0));
+    assert!(ObjMoney::is_zero(&money));
+}
+
+#[test]
+fn test_tryfrom_obj_money_to_money_negative_amount() {
+    let obj: Box<dyn ObjMoney> = Box::new(Money::<EUR>::new(dec!(-42.99)).unwrap());
+    let money = Money::<EUR>::try_from(obj.as_ref()).unwrap();
+    assert_eq!(BaseMoney::amount(&money), dec!(-42.99));
+    assert!(ObjMoney::is_negative(&money));
+}
+
+#[test]
+fn test_tryfrom_obj_money_to_money_via_ref() {
+    // Works directly with a reference to a concrete Money value.
+    let m = Money::<GBP>::new(dec!(75.25)).unwrap();
+    let obj: &dyn ObjMoney = &m;
+    let money = Money::<GBP>::try_from(obj).unwrap();
+    assert_eq!(BaseMoney::amount(&money), dec!(75.25));
+}
+
+#[test]
+fn test_tryfrom_obj_money_to_money_multiple_currencies() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(Money::<USD>::new(dec!(10.00)).unwrap()),
+        Box::new(Money::<EUR>::new(dec!(20.00)).unwrap()),
+        Box::new(Money::<JPY>::new(dec!(3000)).unwrap()),
+    ];
+
+    let usd = Money::<USD>::try_from(portfolio[0].as_ref()).unwrap();
+    let eur = Money::<EUR>::try_from(portfolio[1].as_ref()).unwrap();
+    let jpy = Money::<JPY>::try_from(portfolio[2].as_ref()).unwrap();
+
+    assert_eq!(BaseMoney::amount(&usd), dec!(10.00));
+    assert_eq!(BaseMoney::amount(&eur), dec!(20.00));
+    assert_eq!(BaseMoney::amount(&jpy), dec!(3000));
+
+    // Wrong currency extracting first item as EUR must fail.
+    assert!(Money::<EUR>::try_from(portfolio[0].as_ref()).is_err());
+}
+
+// ==================== TryFrom<&dyn ObjMoney> for RawMoney<C> ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_tryfrom_obj_money_to_raw_money_success() {
+    let obj: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.567)).unwrap());
+    let raw = RawMoney::<USD>::try_from(obj.as_ref()).unwrap();
+    assert_eq!(BaseMoney::amount(&raw), dec!(100.567));
+    assert_eq!(BaseMoney::code(&raw), "USD");
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_tryfrom_obj_money_to_raw_money_currency_mismatch() {
+    let obj: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.567)).unwrap());
+    let result = RawMoney::<EUR>::try_from(obj.as_ref());
+    assert!(matches!(
+        result,
+        Err(MoneyError::CurrencyMismatchError(ref got, ref exp))
+        if got == "USD" && exp == "EUR"
+    ));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_tryfrom_obj_money_to_raw_money_preserves_precision() {
+    // RawMoney::from_decimal does NOT round; precision must survive the round-trip.
+    let obj: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(99.123456789)).unwrap());
+    let raw = RawMoney::<USD>::try_from(obj.as_ref()).unwrap();
+    assert_eq!(BaseMoney::amount(&raw), dec!(99.123456789));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_tryfrom_obj_money_to_raw_money_zero_amount() {
+    let obj: Box<dyn ObjMoney> = Box::new(RawMoney::<JPY>::new(dec!(0)).unwrap());
+    let raw = RawMoney::<JPY>::try_from(obj.as_ref()).unwrap();
+    assert_eq!(BaseMoney::amount(&raw), dec!(0));
+    assert!(ObjMoney::is_zero(&raw));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_tryfrom_obj_money_to_raw_money_negative_amount() {
+    let obj: Box<dyn ObjMoney> = Box::new(RawMoney::<GBP>::new(dec!(-3.14159)).unwrap());
+    let raw = RawMoney::<GBP>::try_from(obj.as_ref()).unwrap();
+    assert_eq!(BaseMoney::amount(&raw), dec!(-3.14159));
+    assert!(ObjMoney::is_negative(&raw));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_tryfrom_obj_money_to_raw_money_via_ref() {
+    let m = RawMoney::<CHF>::new(dec!(1234.5678)).unwrap();
+    let obj: &dyn ObjMoney = &m;
+    let raw = RawMoney::<CHF>::try_from(obj).unwrap();
+    assert_eq!(BaseMoney::amount(&raw), dec!(1234.5678));
+}
+
+// TryFrom Money → RawMoney and RawMoney → Money cross-type conversions via dyn ObjMoney
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_tryfrom_money_obj_to_raw_money() {
+    // A Money<USD> exposed as dyn ObjMoney can be turned into RawMoney<USD>.
+    let obj: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(50.75)).unwrap());
+    let raw = RawMoney::<USD>::try_from(obj.as_ref()).unwrap();
+    assert_eq!(BaseMoney::amount(&raw), dec!(50.75));
+    // Currency mismatch still errors.
+    assert!(RawMoney::<EUR>::try_from(obj.as_ref()).is_err());
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_tryfrom_raw_money_obj_to_money() {
+    // A RawMoney<EUR> exposed as dyn ObjMoney can be turned into Money<EUR> (with rounding).
+    let obj: Box<dyn ObjMoney> = Box::new(RawMoney::<EUR>::new(dec!(99.999)).unwrap());
+    let money = Money::<EUR>::try_from(obj.as_ref()).unwrap();
+    // Money::from_decimal rounds 99.999 → 100.00 (bankers rounding, EUR minor unit = 2).
+    assert_eq!(BaseMoney::amount(&money), dec!(100.00));
+    // Currency mismatch still errors.
+    assert!(Money::<USD>::try_from(obj.as_ref()).is_err());
 }
 
 // end of obj_money_test.rs
