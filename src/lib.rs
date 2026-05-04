@@ -65,7 +65,10 @@ where
 
 #[cfg(feature = "accounting")]
 /// Contains all ops traits inside accounting module
-pub trait AccountingOps<C>: accounting::interest::InterestOps<C> {}
+pub trait AccountingOps<C>:
+    accounting::interest::InterestOps<C> + accounting::dividend::DividendOps<C>
+{
+}
 
 #[cfg(all(feature = "accounting", not(feature = "exchange")))]
 /// MoneyOps\<C\> trait contains all traits on money instance.
