@@ -27,9 +27,11 @@ Here are some features supported:
   - Compile-time check for arithmetics and operations.
   - Runtime check for overflowed/wrapped/truncated amount.
   - Prevents currencies mixing at compile-time.
-- Value type to represent money.
+- Value type to represent money:
   - `Money`: represents money in amount rounded to the currency's minor unit.
   - `RawMoney`: represents money in raw amount keeping the precisions and choose when to round. 
+- Object type to represent money:
+  - `ObjMoney`: represents money at runtime implement by all money types.
 - Helper macros:
   - `dec!(...)`: re-export from [Decimal](https://docs.rs/rust_decimal/latest/rust_decimal/struct.Decimal.html) crate to instantiate hardcoded decimals.
   - `money!(...,...)`: instantiate `Money` with currency code and amount.
@@ -115,7 +117,7 @@ let mean = basket.mean().unwrap();        // USD 20.00
 // --- Split and allocate ---
 let bill = money!(USD, 10.00);
 let (base, remainder) = bill.split(3).unwrap(); // base = USD 3.33, remainder = USD 0.01
-let parts = bill.allocate(&[50_i32, 30, 20]).unwrap(); // [USD 5.00, USD 3.00, USD 2.00]
+let parts: Vec<_> = bill.split(&[50_i32, 30, 20]).unwrap(); // [USD 5.00, USD 3.00, USD 2.00]
 
 // --- Compile-time currency type safety ---
 let usd = money!(USD, 100.00);

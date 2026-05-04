@@ -97,11 +97,11 @@ fn test_raw_money_new_overflow() {
 
     let money = RawMoney::<TooBig>::from_decimal(dec!(123.2348));
     let minor = money.minor_amount();
-    assert!(minor.is_err());
+    assert!(minor.is_none());
 
     let money = RawMoney::<EUR>::from_decimal(crate::Decimal::MAX);
     let minor = money.minor_amount();
-    assert!(minor.is_err());
+    assert!(minor.is_none());
 
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
     let ret = money.checked_add(crate::Decimal::MAX);
@@ -135,6 +135,15 @@ fn test_raw_money_new_overflow() {
     let money = RawMoney::<SGD>::from_decimal(dec!(123234));
     let ret = money.checked_div(i128::MAX);
     assert!(ret.is_none());
+}
+
+// ==================== RawMoney overflow parsing Tests ====================
+
+#[test]
+fn test_overflow_parsing_raw_code_comma_thousands() {
+    let money = RawMoney::<USD>::from_code_comma_thousands(format!("USD {}", i128::MAX).as_str());
+    assert!(money.is_err());
+    assert!(matches!(money.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 // ==================== RawMoney::from_decimal() Tests ====================
@@ -643,14 +652,14 @@ fn test_from_str_dot_thousands_keep_precision() {
 fn test_from_str_dot_thousands_invalid_format() {
     let result = RawMoney::<EUR>::from_code_dot_thousands("EUR 1,234.578396");
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err(), MoneyError::ParseStr);
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
 }
 
 #[test]
 fn test_from_str_dot_thousands_invalid_format_2() {
     let result = RawMoney::<EUR>::from_code_dot_thousands("EUR 1234.578396");
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err(), MoneyError::ParseStr);
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
 }
 
 #[test]
@@ -1357,7 +1366,7 @@ fn test_from_str_raw_plain_rejects_currency_prefix() {
     // New from_str only accepts plain decimal numbers, not "CCC amount" format
     let result = RawMoney::<USD>::from_str("USD 12.34");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
@@ -1365,21 +1374,21 @@ fn test_from_str_raw_plain_rejects_comma_thousands() {
     // Comma thousands separator is not accepted by from_str
     let result = RawMoney::<USD>::from_str("1,234.56");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
 fn test_from_str_raw_plain_rejects_empty() {
     let result = RawMoney::<USD>::from_str("");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
 fn test_from_str_raw_plain_rejects_non_numeric() {
     let result = RawMoney::<USD>::from_str("abc");
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), MoneyError::ParseStr));
+    assert!(matches!(result.unwrap_err(), MoneyError::ParseStrError(_)));
 }
 
 #[test]
@@ -1799,7 +1808,7 @@ fn test_format_locale_amount_negative() {
 fn test_format_locale_amount_invalid_locale() {
     let money = RawMoney::<USD>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("!!!invalid", "c na");
-    assert_eq!(result.unwrap_err(), MoneyError::ParseLocale);
+    assert!(matches!(result, Err(MoneyError::ParseLocale(_))));
 }
 
 #[cfg(feature = "locale")]

@@ -1,4 +1,8 @@
-use crate::parse::{parse_comma_thousands_separator, parse_dot_thousands_separator};
+use crate::iso::CHF;
+use crate::parse::{
+    parse_code_locale_separator, parse_comma_thousands_separator, parse_dot_thousands_separator,
+    parse_symbol_locale_separator,
+};
 
 // Tests for parse_comma_thousands_separator
 
@@ -449,5 +453,56 @@ fn test_dot_max_length_currency() {
 fn test_dot_over_max_length_currency() {
     // 16-char currency code exceeds the 15-char limit
     let result = parse_dot_thousands_separator("ABCDEFGHIJKLMNOP 100,50");
+    assert_eq!(result, None);
+}
+
+// ==================== validate_and_build_result: uncovered paths ====================
+
+#[test]
+fn test_comma_trailing_dot_empty_decimal_with_separator() {
+    // "USD 1,234." has a thousands separator in the integer part and an empty decimal
+    // part after the dot → validate_and_build_result reaches the `dec.is_empty()` branch
+    let result = parse_comma_thousands_separator("USD 1,234.");
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_comma_non_digit_decimal_with_separator() {
+    // "USD 1,234.ab" has a thousands separator and a non-digit decimal part
+    // → validate_and_build_result reaches the non-digit decimal branch
+    let result = parse_comma_thousands_separator("USD 1,234.ab");
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_comma_non_digit_integer_no_separator() {
+    // "USD ab.50" has no thousands separator but non-digit characters in the integer part
+    // → validate_and_build_result reaches the non-digit integer branch (no separator path)
+    let result = parse_comma_thousands_separator("USD ab.50");
+    assert_eq!(result, None);
+}
+
+// ==================== parse_code_locale_separator: uncovered paths ====================
+
+#[test]
+fn test_code_locale_separator_invalid_currency_code_with_digit() {
+    // "1CHF" contains a digit → currency code validation fails
+    let result = parse_code_locale_separator::<CHF>("1CHF 1'234.56");
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_code_locale_separator_multiple_decimal_separators() {
+    // "1'234.56.78" has two decimal separators → decimal_parts.len() > 2
+    let result = parse_code_locale_separator::<CHF>("CHF 1'234.56.78");
+    assert_eq!(result, None);
+}
+
+// ==================== parse_symbol_locale_separator: uncovered paths ====================
+
+#[test]
+fn test_symbol_locale_separator_multiple_decimal_separators() {
+    // "₣1'234.56.78" has two decimal separators → decimal_parts.len() > 2
+    let result = parse_symbol_locale_separator::<CHF>("₣1'234.56.78");
     assert_eq!(result, None);
 }

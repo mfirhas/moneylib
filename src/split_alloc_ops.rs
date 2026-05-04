@@ -1,9 +1,61 @@
 use crate::base::Amount;
-use crate::{BaseMoney, BaseOps, IterOps, MoneyFormatter};
-use crate::{Currency, Decimal, base::DecimalNumber, macros::dec};
+use crate::{BaseMoney, BaseOps, IterOps};
+use crate::{Currency, Decimal, base::DecimalNumber};
 use rust_decimal::prelude::FromPrimitive;
-
 use std::sync::LazyLock;
+
+/// Split trait containing split function implemented by return types.
+///
+/// This is for generic parameters and return type of split and allocation operations.
+pub trait Split<M, C, P>
+where
+    Self: Sized,
+{
+    /// split money by input without losing a single penny.
+    fn split(money: &M, input: P) -> Option<Self>;
+}
+
+impl<M, C> Split<M, C, u32> for (M, M)
+where
+    M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + Ord,
+    C: Currency,
+{
+    fn split(money: &M, input: u32) -> Option<Self> {
+        split(money, input)
+    }
+}
+
+impl<M, C> Split<M, C, u32> for Vec<M>
+where
+    M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + Ord,
+    C: Currency,
+{
+    fn split(money: &M, input: u32) -> Option<Self> {
+        split_dist(money, input)
+    }
+}
+
+macro_rules! impl_split_iterable {
+    ($input:ty $(, const $n:ident: usize)?) => {
+        impl<M, C, D $(, const $n: usize)?> Split<M, C, $input> for Vec<M>
+        where
+            M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + Ord,
+            C: Currency,
+            D: DecimalNumber + Copy,
+        {
+            fn split(money: &M, input: $input) -> Option<Self> {
+                allocate(money, input)
+            }
+        }
+    };
+}
+
+impl_split_iterable!(Vec<D>);
+impl_split_iterable!(&Vec<D>);
+impl_split_iterable!(&[D]);
+impl_split_iterable!([D; N], const N: usize);
+impl_split_iterable!(&[D; N], const N: usize);
+
 // max mantissa digits
 static DECIMAL_MAX_DIGITS: LazyLock<usize> =
     LazyLock::new(|| crate::Decimal::MAX.mantissa().to_string().len());
@@ -170,44 +222,15 @@ where
     Some(parts)
 }
 
-/// Allocate money by percentages.
-pub(crate) fn allocate<M, C, D>(money: &M, pcns: &[D]) -> Option<Vec<M>>
-where
-    M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + MoneyFormatter<C>,
-    C: Currency,
-    D: DecimalNumber + Copy,
-{
-    if pcns.is_empty() {
-        return None;
-    }
-
-    let is_negative = money.is_negative();
-    let money = money.abs();
-
-    let mut total = Decimal::ZERO;
-    for p in pcns {
-        total = total.checked_add(p.get_decimal()?)?;
-    }
-    if total != dec!(100) {
-        return None;
-    }
-    let mut ret = allocate_by_ratios::<M, C, _>(&money, pcns);
-
-    if is_negative && let Some(m) = ret {
-        ret = Some(m.into_iter().map(|r| -r).collect::<Vec<_>>());
-    }
-
-    ret
-}
-
 /// Allocate money by ratios.
-pub(crate) fn allocate_by_ratios<M, C, D>(money: &M, ratios: &[D]) -> Option<Vec<M>>
+pub(crate) fn allocate<M, C, I, D>(money: &M, ratios: I) -> Option<Vec<M>>
 where
-    M: BaseMoney<C> + BaseOps<C> + Default + Amount<C> + MoneyFormatter<C>,
+    M: BaseMoney<C> + BaseOps<C> + Default + Amount<C>,
     C: Currency,
+    I: AsRef<[D]>,
     D: DecimalNumber + Copy,
 {
-    if ratios.is_empty() {
+    if ratios.as_ref().is_empty() {
         return None;
     }
 
@@ -216,7 +239,7 @@ where
 
     let total_ratio: Decimal = {
         let mut total = Decimal::ZERO;
-        for d in ratios {
+        for d in ratios.as_ref() {
             total = total.checked_add(d.get_decimal().unwrap_or_default())?;
         }
         total
@@ -232,6 +255,7 @@ where
 
     // allocate base for each ratio
     let mut parts: Vec<M> = ratios
+        .as_ref()
         .iter()
         .map(|r| {
             let share = money.checked_mul(*r)?.checked_div(total_ratio)?;

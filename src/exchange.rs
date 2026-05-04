@@ -1,9 +1,12 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display},
+    marker::PhantomData,
+};
 
 use crate::{
-    BaseMoney, BaseOps, Currency, Decimal, Money, RawMoney,
+    BaseMoney, BaseOps, Currency, Decimal, Money, MoneyError, RawMoney,
     base::{Amount, DecimalNumber},
-    macros::dec,
 };
 
 // ========================= Exchange =========================
@@ -111,9 +114,12 @@ pub trait Exchange<From: Currency> {
     /// assert_eq!(money.convert::<EUR>(&rates).unwrap().amount(), dec!(0.01));
     ///
     /// // CAD is not in the rates, so None returned.
-    /// assert!(money.convert::<CAD>(rates).is_none());
+    /// assert!(money.convert::<CAD>(rates).is_err());
     /// ```
-    fn convert<To: Currency + Clone>(&self, rate: impl Rate<From, To>) -> Option<Self::Target<To>>
+    fn convert<To: Currency>(
+        &self,
+        rate: impl Rate<From, To>,
+    ) -> Result<Self::Target<To>, MoneyError>
     where
         Self: Convert<To>;
 }
@@ -128,15 +134,29 @@ where
     where
         M: Convert<T>;
 
-    fn convert<To: Currency + Clone>(&self, rate: impl Rate<From, To>) -> Option<Self::Target<To>>
+    fn convert<To: Currency>(
+        &self,
+        rate: impl Rate<From, To>,
+    ) -> Result<Self::Target<To>, MoneyError>
     where
         M: Convert<To>,
     {
         match From::CODE == To::CODE {
-            false => {
-                <M as Convert<To>>::Output::new(self.checked_mul(rate.get_rate()?)?.amount()).ok()
-            }
-            true => <M as Convert<To>>::Output::new(self.amount()).ok(),
+            false => <M as Convert<To>>::Output::new(
+                self.checked_mul(
+                    rate.get_rate().ok_or(MoneyError::ExchangeError(
+                        format!(
+                            "overflowed or rate from {} to {} not found",
+                            From::CODE,
+                            To::CODE
+                        )
+                        .into(),
+                    ))?,
+                )
+                .ok_or(MoneyError::OverflowError)?
+                .amount(),
+            ),
+            true => <M as Convert<To>>::Output::new(self.amount()),
         }
     }
 }
@@ -146,11 +166,11 @@ pub trait Convert<T: Currency> {
     type Output: BaseMoney<T>;
 }
 
-impl<C: Currency, T: Currency + Clone> Convert<T> for Money<C> {
+impl<C: Currency, T: Currency> Convert<T> for Money<C> {
     type Output = Money<T>;
 }
 
-impl<C: Currency, T: Currency + Clone> Convert<T> for RawMoney<C> {
+impl<C: Currency, T: Currency> Convert<T> for RawMoney<C> {
     type Output = RawMoney<T>;
 }
 
@@ -159,8 +179,8 @@ impl<C: Currency, T: Currency + Clone> Convert<T> for RawMoney<C> {
 /// Trait to define rate amount for conversion input.
 ///
 /// It accepts:
-/// - Money<T> where T is target currency
-/// - RawMoney<T> where T is target currency
+/// - `Money<T>` where T is target currency
+/// - `RawMoney<T>` where T is target currency
 /// - Decimal
 /// - f64
 /// - i32
@@ -168,26 +188,26 @@ impl<C: Currency, T: Currency + Clone> Convert<T> for RawMoney<C> {
 /// - i128
 /// - ExchangeRates<'a, C> where C is base currency of exchange rates
 ///
-pub trait Rate<From: Currency, To: Currency + Clone>: Amount<To> {
+pub trait Rate<From: Currency, To: Currency>: Amount<To> {
     /// Get T's rate relative to C.
     fn get_rate(&self) -> Option<Decimal> {
         self.get_decimal()
     }
 }
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for Money<To> {}
+impl<From: Currency, To: Currency> Rate<From, To> for Money<To> {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for RawMoney<To> {}
+impl<From: Currency, To: Currency> Rate<From, To> for RawMoney<To> {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for Decimal {}
+impl<From: Currency, To: Currency> Rate<From, To> for Decimal {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for f64 {}
+impl<From: Currency, To: Currency> Rate<From, To> for f64 {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for i32 {}
+impl<From: Currency, To: Currency> Rate<From, To> for i32 {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for i64 {}
+impl<From: Currency, To: Currency> Rate<From, To> for i64 {}
 
-impl<From: Currency, To: Currency + Clone> Rate<From, To> for i128 {}
+impl<From: Currency, To: Currency> Rate<From, To> for i128 {}
 
 // ========================= ExchangeRates =========================
 
@@ -229,13 +249,13 @@ impl<From: Currency, To: Currency + Clone> Rate<From, To> for i128 {}
 /// assert_eq!(rates.get(CAD::CODE).unwrap(), dec!(1.8));
 ///
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ExchangeRates<'a, Base: Currency> {
     rates: HashMap<&'a str, Decimal>,
     _base: PhantomData<Base>,
 }
 
-impl<'a, Base: Currency + Clone> ExchangeRates<'a, Base> {
+impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// Initiate new ExchangeRates with base currency and 1 entry to the base with value 1.
     ///
     /// # Examples
@@ -248,7 +268,7 @@ impl<'a, Base: Currency + Clone> ExchangeRates<'a, Base> {
     /// ```
     pub fn new() -> Self {
         Self {
-            rates: HashMap::from([(Base::CODE, dec!(1))]),
+            rates: HashMap::from([(Base::CODE, Decimal::ONE)]),
             _base: PhantomData,
         }
     }
@@ -268,9 +288,9 @@ impl<'a, Base: Currency + Clone> ExchangeRates<'a, Base> {
         Base::CODE
     }
 
-    /// Upsert rate into exchange rates.
+    /// Upsert rate into exchange rates relative to Base rate.
     ///
-    /// If value already exist, it got updated and old value returned.
+    /// Return error if overflowed.
     ///
     /// # Argument
     /// - code: &str, currency code, e.g. "USD", "EUR", etc.
@@ -282,25 +302,106 @@ impl<'a, Base: Currency + Clone> ExchangeRates<'a, Base> {
     /// use moneylib::{Currency, ExchangeRates, iso::{USD, IDR, EUR}, macros::dec};
     ///
     /// let mut rates = ExchangeRates::<USD>::new();
-    /// let entry = rates.set(IDR::CODE, 16000);
+    /// rates.set(IDR::CODE, 16000).unwrap();
     /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(16000));
-    /// let updated_entry = rates.set(IDR::CODE, dec!(17000.23));
+    /// rates.set(IDR::CODE, dec!(17000.23)).unwrap();
     /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(17000.23));
-    /// let another = rates.set(EUR::CODE, dec!(0.8));
+    /// rates.set(EUR::CODE, dec!(0.8)).unwrap();
     /// assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(0.8));
-    ///
-    /// assert!(entry.is_none());
-    /// assert_eq!(updated_entry.unwrap(), dec!(16000));
-    /// assert!(another.is_none());
     /// ```
-    pub fn set(&mut self, code: &'a str, rate: impl DecimalNumber) -> Option<Decimal> {
+    pub fn set(&mut self, code: &'a str, rate: impl DecimalNumber) -> Result<(), MoneyError> {
         if code != Base::CODE {
-            return self.rates.insert(code, rate.get_decimal()?);
+            self.rates
+                .insert(code, rate.get_decimal().ok_or(MoneyError::OverflowError)?);
         }
-        None
+        Ok(())
     }
 
-    /// Get a rate for a currency exists in rates by code, e.g "USD", "EUR", etc.
+    /// Upsert a rate of a pair.
+    ///
+    /// If one of the rate is in the rates, it sets.
+    ///
+    /// If both rate already exist, update the rate of "to_code".
+    ///
+    /// If both are not in the rates, error returned.
+    ///
+    /// The rate is updated relative to base currency.
+    ///
+    /// # Argument
+    /// - from_code: currency's code of source conversion(base currency).
+    /// - to_code: currency's code of target conversion(quote currency).
+    ///
+    /// # Examples
+    /// ```rust
+    /// use moneylib::{ExchangeRates, Exchange, iso::{USD, IDR, JPY, CNY}, dec, money, Currency};
+    ///
+    /// let mut rates = ExchangeRates::<USD>::new();
+    /// assert_eq!(rates.len(), 1);
+    /// assert_eq!(rates.get(USD::CODE).unwrap(), dec!(1));
+    ///
+    /// rates.set("EUR", dec!(0.8)).unwrap();
+    /// rates.set("IDR", dec!(17_000)).unwrap();
+    /// rates.set("CAD", dec!(1.2)).unwrap();
+    /// assert_eq!(rates.len(), 4);
+    ///
+    /// rates.set_pair("CNY", "IDR", i128::MAX).unwrap_err(); // wont set
+    /// rates.set_pair("CNY", "IDR", 2500).unwrap();
+    /// assert_eq!(rates.len(), 5);
+    /// assert_eq!(rates.get("CNY").unwrap(), dec!(6.8));
+    ///
+    /// let cny_idr_rate = money!(CNY, 5262.657).convert::<IDR>(2500).unwrap();
+    /// let cny_idr_rates = money!(CNY, 5262.657).convert::<IDR>(&rates).unwrap();
+    /// assert_eq!(cny_idr_rate, cny_idr_rates);
+    ///
+    /// rates.set_pair("CNY", "IDR", 3000).unwrap();
+    /// let cny_idr_new_rate = money!(CNY, 34989.123).convert::<IDR>(3000).unwrap();
+    /// let cny_idr_new_rates = money!(CNY, 34989.123).convert::<IDR>(&rates).unwrap();
+    /// assert_eq!(cny_idr_new_rate, cny_idr_new_rates);
+    /// ```
+    pub fn set_pair(
+        &mut self,
+        from_code: &'a str,
+        to_code: &'a str,
+        rate: impl DecimalNumber,
+    ) -> Result<(), MoneyError> {
+        match (from_code, to_code) {
+            // if setting the pair for Base/Base, do nothing
+            (from_base, to_base) if from_base == Base::CODE && to_base == Base::CODE => Ok(()),
+            (from_base, _) if from_base == Base::CODE => self.set(to_code, rate),
+            (_, to_base) if to_base == Base::CODE => self.set(
+                from_code,
+                Decimal::ONE
+                    .checked_div(rate.get_decimal().ok_or(MoneyError::OverflowError)?)
+                    .ok_or(MoneyError::OverflowError)?,
+            ),
+            (from, to) => match (self.get(from), self.get(to)) {
+                (Some(base_from_rate), None) => {
+                    let base_to_rate = base_from_rate
+                        .checked_mul(rate.get_decimal().ok_or(MoneyError::OverflowError)?)
+                        .ok_or(MoneyError::OverflowError)?;
+                    self.set(to, base_to_rate)
+                }
+                (None, Some(base_to_rate)) => {
+                    let base_from_rate = base_to_rate
+                        .checked_div(rate.get_decimal().ok_or(MoneyError::OverflowError)?)
+                        .ok_or(MoneyError::OverflowError)?;
+                    self.set(from, base_from_rate)
+                }
+                // update Base/to_code rate
+                (Some(base_from_rate), Some(_)) => {
+                    let new_base_to_rate = base_from_rate
+                        .checked_mul(rate.get_decimal().ok_or(MoneyError::OverflowError)?)
+                        .ok_or(MoneyError::OverflowError)?;
+                    self.set(to, new_base_to_rate)
+                }
+                _ => Err(MoneyError::ExchangeError(
+                    "both rates are not found inside exchange rates".into(),
+                )),
+            },
+        }
+    }
+
+    /// Get a rate of a currency relative from Base currency, by code.
     ///
     /// # Examples
     ///
@@ -352,7 +453,7 @@ impl<'a, Base: Currency + Clone> ExchangeRates<'a, Base> {
     /// assert!(cad_idr.is_none()); // CAD is not in the exchange rates `rates`
     /// ```
     pub fn get_pair(&self, from_code: &str, to_code: &str) -> Option<Decimal> {
-        dec!(1)
+        Decimal::ONE
             .checked_div(self.get(from_code)?)?
             .checked_mul(self.get(to_code)?)
     }
@@ -364,15 +465,18 @@ impl<'a, Base: Currency + Clone> ExchangeRates<'a, Base> {
     }
 }
 
-impl<'a, I, Base: Currency + Clone> From<I> for ExchangeRates<'a, Base>
+impl<'a, I, Base: Currency> From<I> for ExchangeRates<'a, Base>
 where
     I: IntoIterator<Item = (&'a str, Decimal)>,
 {
+    /// Set exchange rates from list of rates.
+    ///
+    /// If some of the sets failed, will be skipped.
     fn from(value: I) -> Self {
         let mut exchange_rates = Self::new();
         for (k, v) in value {
             if k != Base::CODE {
-                exchange_rates.set(k, v);
+                let _ = exchange_rates.set(k, v);
             }
         }
 
@@ -380,7 +484,7 @@ where
     }
 }
 
-impl<'a, Base: Currency + Clone> Default for ExchangeRates<'a, Base> {
+impl<'a, Base: Currency> Default for ExchangeRates<'a, Base> {
     fn default() -> Self {
         Self::new()
     }
@@ -400,9 +504,9 @@ impl<'a, Base: Currency, To: Currency> Amount<To> for &ExchangeRates<'a, Base> {
 
 impl<'a, Base, From, To> Rate<From, To> for ExchangeRates<'a, Base>
 where
-    Base: Currency + Clone,
-    From: Currency + Clone,
-    To: Currency + Clone,
+    Base: Currency,
+    From: Currency,
+    To: Currency,
 {
     fn get_rate(&self) -> Option<Decimal> {
         self.get_pair(From::CODE, To::CODE)
@@ -411,11 +515,55 @@ where
 
 impl<'a, Base, From, To> Rate<From, To> for &ExchangeRates<'a, Base>
 where
-    Base: Currency + Clone,
-    From: Currency + Clone,
-    To: Currency + Clone,
+    Base: Currency,
+    From: Currency,
+    To: Currency,
 {
     fn get_rate(&self) -> Option<Decimal> {
         <ExchangeRates<Base> as Rate<From, To>>::get_rate(self)
+    }
+}
+
+/// Object-safe trait for exchange rates.
+///
+/// Supports: `ExchangeRates`
+pub trait ObjRate: Send + Sync {
+    /// Get rate from `from_code` to `to_code`.
+    fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal>;
+}
+
+impl<Base: Currency + Send + Sync> ObjRate for ExchangeRates<'_, Base> {
+    fn get_rate(&self, from_code: &str, to_code: &str) -> Option<Decimal> {
+        self.get_pair(from_code, to_code)
+    }
+}
+
+fn exchange_rates_display<Base: Currency>(rates: &ExchangeRates<Base>) -> String {
+    let mut ret = format!("Base: {}", Base::CODE);
+    ret.push_str(&format!(
+        "\n{}/{} = {}",
+        Base::CODE,
+        Base::CODE,
+        Decimal::ONE
+    ));
+
+    for (k, v) in rates.rates.iter() {
+        if *k != Base::CODE {
+            ret.push_str(&format!("\n{}/{} = {}", Base::CODE, k, v));
+        }
+    }
+
+    ret
+}
+
+impl<Base: Currency> Display for ExchangeRates<'_, Base> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", exchange_rates_display::<Base>(self))
+    }
+}
+
+impl<Base: Currency> Debug for ExchangeRates<'_, Base> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", exchange_rates_display::<Base>(self))
     }
 }

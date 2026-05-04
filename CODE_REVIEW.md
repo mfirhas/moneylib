@@ -1,187 +1,274 @@
 # Code Review — `moneylib`
 
-This document summarizes findings from a review of the `moneylib` crate (v0.12.0). Items are grouped by severity.
+This document summarizes findings from a review of the `moneylib` crate (v0.13.0, current `master`).
+It supersedes the earlier review made against v0.12.0.
+Items are grouped by severity; a "Previously noted / Addressed" section records fixed issues.
 
 ---
 
 ## Critical / Bugs
 
-### 1. `Money * Money` and `Money / Money` semantics are incorrect
+### 1. `ObjMoney::convert()` returns the source currency type, not the target
 
-**Files:** `src/ops.rs` (lines 46–79), `src/raw_money/ops.rs` (lines 46–79)
+**Files:** `src/obj_money/money_impl.rs` (lines 57–72), `src/obj_money/raw_money_impl.rs` (lines 57–72)
 
-Multiplying two monetary values together (`$10 × $5 = $50` in "dollars-squared"?) and dividing two monetary values to get a monetary value (`$10 / $5 = $2`?) are not financially meaningful operations. The result of `Money<USD> / Money<USD>` should be a dimensionless ratio (`Decimal`), not another `Money<USD>`. And `Money<USD> * Money<USD>` has no real-world meaning at all.
-
-These operator implementations will silently produce nonsensical results if users accidentally use them.
-
-**Suggestion:** Remove `Mul<Self>` and `Div<Self>` for `Money`/`RawMoney`. If division of two money values is needed (e.g. for ratios), return `Decimal` instead of `Money<C>`. If `Mul<Self>` and `Div<Self>` are required by the `BaseOps` trait bound, consider relaxing those bounds.
-
----
-
-### 2. `calendar.rs` — `next_day` returns wrong `days_in_next` for non-overflow case
-
-**File:** `src/calendar.rs` (line 93)
+Both `Money<C>` and `RawMoney<C>` implement `convert(to_code, rate)` by calling `Self::from_decimal(...)`.
+`Self` is always the *source* currency type, so the returned `Box<dyn ObjMoney>` is internally a
+`Money<C>` (or `RawMoney<C>`) with the *source* currency code — despite having the converted amount.
+Calling `.code()` on the result will return the **source** currency code instead of `to_code`.
 
 ```rust
-if self < days_in_current {
-    let days_in_next = days_in_month(year, month)?; // BUG: should be days_in_month for next day's month
-    Some((year, month, self + 1, days_in_next))
-}
+// In money_impl.rs – converts USD->EUR but the box is still Money<USD>
+Ok(Box::new(Self::from_decimal(   // Self = Money<USD>
+    BaseMoney::amount(self)
+        .checked_mul(rate.get_rate(BaseMoney::code(self), to_code)...)?
+)))
 ```
 
-When the current day is **not** the last day of the month, the code calculates `days_in_next` by calling `days_in_month(year, month)` — the **same** month, not the next. The returned tuple's 4th element (`days_in_next`) is supposed to represent the number of days in the month of the **resulting** day, but this is actually fine for the non-overflow case (the resulting day is still in the same month). However, the variable name `days_in_next` is misleading since it's `days_in_current`. If the intent is "days in the month of the returned date," the current code is functionally correct but confusingly named.
+This is a silent correctness bug: the caller cannot distinguish the original currency from the
+converted one by inspecting the returned object.
+
+**Suggestion:** The erased-type `ObjMoney` conversion cannot create a strongly-typed `Money<To>` without
+knowing `To` at compile time. One approach is to store the target currency code as metadata inside
+a wrapper newtype; another is to restrict `ObjMoney::convert` to a set of well-known currencies via
+an enum, or return `(Box<dyn ObjMoney>, String)` where the `String` is the confirmed target code
+and document that `.code()` on the result will reflect the source type. At minimum, the current
+behavior must be clearly documented as a known limitation.
 
 ---
 
-### 3. `is_positive()` / `is_negative()` treat zero inconsistently
+### 2. `is_positive()` returns `true` for zero (both `BaseMoney` and `ObjMoney`)
 
-**File:** `src/base.rs` (lines 370–392)
+**Files:** `src/base.rs` (line 353), `src/obj_money/mod.rs` (line 105)
 
-`is_sign_positive()` from `rust_decimal` returns `true` for zero, and `is_sign_negative()` returns `false` for zero. This means `Money::new(0).is_positive()` returns `true`, which is mathematically wrong — zero is neither positive nor negative. Users checking `is_positive()` to guard against zero amounts will be surprised.
+Both traits delegate to `Decimal::is_sign_positive()`, which returns `true` for zero.
+`BaseMoney::is_positive()` documentation only shows examples with non-zero values; a caller
+reading the docs would reasonably expect `Money::new(0).unwrap().is_positive()` to be `false`.
 
-**Suggestion:** Change to `self.amount() > Decimal::ZERO` and `self.amount() < Decimal::ZERO`, or at minimum clearly document that zero is considered positive.
+`ObjMoney` at least documents "(or zero)" in the method comment, but this inconsistency between the
+two traits is confusing.
+
+**Suggestion:** Use `self.amount() > Decimal::ZERO` (and `< Decimal::ZERO` for `is_negative()`), or
+align the documentation of `BaseMoney::is_positive` to state explicitly that zero is considered positive.
+
+---
+
+### 3. `Money * Money` and `Money / Money` have incorrect financial semantics
+
+**Files:** `src/ops.rs` (lines 45–79), `src/raw_money/ops.rs` (lines 45–79)
+
+`Money<USD> * Money<USD>` produces a "dollars-squared" result that has no financial meaning.
+`Money<USD> / Money<USD>` should yield a dimensionless `Decimal` ratio, not another `Money<USD>`.
+These operators are still present and will silently produce nonsensical results.
+
+**Suggestion:** Remove `Mul<Self>` and `Div<Self>` for money×money. If a ratio is needed, return
+`Decimal`. See also item #4 below: the `BaseOps` trait super-bounds force these operators to exist,
+so fixing this requires relaxing `BaseOps`.
 
 ---
 
 ## High Severity
 
-### 4. All `std::ops` implementations panic on overflow instead of returning `Result`/`Option`
+### 4. All `std::ops` implementations panic on overflow
 
 **Files:** `src/ops.rs`, `src/dec_ops.rs`, `src/raw_money/ops.rs`, `src/raw_money/dec_ops.rs`
 
-Every `Add`, `Sub`, `Mul`, `Div`, `AddAssign`, `SubAssign`, `MulAssign`, `DivAssign` implementation calls `.expect(...)`, which will panic at runtime on overflow or division by zero. While the library also provides `checked_*` methods that return `Option`, users reaching for the natural `+`, `-`, `*`, `/` operators will get panics instead of errors.
+Every `Add`, `Sub`, `Mul`, `Div`, and their `*Assign` variants call `.expect("... overflow")`.
+Division by a zero-amount money panics with `"division operation failed"` or
+`"division operation overflow"` — not a clear "division by zero" message.
+`Sum` (lines 482–498 in `money.rs`) also panics.
 
-For a financial library where correctness is paramount, this is a significant footgun. The `WARN: PANIC!` comments show awareness, but don't prevent the issue.
+The `WARN: PANIC!` comments show awareness, but library users reaching for `+`, `-`, `*`, `/`
+naturally get panics with no opportunity to recover.
 
-**Suggestion:** Consider at least:
-- Adding `#[must_use]` and prominent doc-comments on the operator traits warning about panics.
-- Providing a `TryAdd`, `TrySub`, etc. trait that returns `Result` (or guiding users strongly toward the `checked_*` methods).
-- `Sum` also panics (line 427–429 of `money.rs`).
-
----
-
-### 5. `Div` by zero-amount `Money` panics without a clear error
-
-**Files:** `src/ops.rs` (line 75), `src/raw_money/ops.rs` (line 75)
-
-`money / Money::default()` will panic with `"division operation overflow"` rather than a clear "division by zero" message.
-
-**Suggestion:** At minimum, improve the panic message. Ideally, don't offer `Div<Self>` at all (see item #1).
+**Suggestion:**
+- Add prominent doc-comments at the trait and operator-impl level that panics are possible.
+- Consider deprecating these operators in favour of the `checked_*` methods, or add a
+  `saturating_*` / `try_*` set that returns `Result`.
+- Fix the division-by-zero panic message to be explicit.
 
 ---
 
-### 6. `ExchangeRates` uses `&str` keys — no validation of currency codes
+### 5. `allocate` silently treats invalid ratios as zero
 
-**File:** `src/exchange.rs` (line 296)
-
-`ExchangeRates::set()` accepts arbitrary `&str` as a currency code key with no validation. Typos like `rates.set("USE", dec!(0.8))` will silently succeed, and later `convert` calls will return `None` with no indication of the typo.
-
-**Suggestion:** Validate that the code is a known ISO 4217 code, or accept a type-safe `C::CODE` instead of a raw string. At minimum, document this pitfall.
-
----
-
-## Medium Severity
-
-### 7. Significant code duplication between `Money` and `RawMoney`
-
-**Files:** `src/money.rs` vs `src/raw_money/raw_money.rs`, `src/ops.rs` vs `src/raw_money/ops.rs`, `src/dec_ops.rs` vs `src/raw_money/dec_ops.rs`
-
-The `Money` and `RawMoney` types share nearly identical implementations for operator traits, parsing, formatting, serde, etc. The only real difference is whether `from_decimal` calls `.round()` or not. This duplication is a maintenance burden — any bug fix or new feature must be applied in two places.
-
-**Suggestion:** Consider a shared inner type parameterized by a rounding policy, or use a macro to generate the shared implementations.
-
----
-
-### 8. `allocate_by_ratios` — `unwrap_or_default` silently swallows errors
-
-**File:** `src/split_alloc_ops.rs` (line 220)
+**File:** `src/split_alloc_ops.rs` (line 243)
 
 ```rust
 total = total.checked_add(d.get_decimal().unwrap_or_default())?;
 ```
 
-If `get_decimal()` returns `None` (e.g. `f64::NAN` or `f64::INFINITY`), this silently treats it as zero instead of propagating the error. A ratio of zero may produce unexpected allocation results.
+If a ratio value cannot be converted to `Decimal` (e.g. `f64::NAN`, `f64::INFINITY`), it is
+silently replaced with `Decimal::ZERO`. This can cause the total ratio to be less than the
+sum of the intended ratios, silently skewing all allocations.
 
-**Suggestion:** Replace `unwrap_or_default()` with `?` (returning `None` on failure) to be consistent with the rest of the function.
-
----
-
-### 9. `split_alloc_ops` functions recalculate `checked_sum()` in a loop — O(n²) complexity
-
-**File:** `src/split_alloc_ops.rs` (lines 101–108, 280–288, 303–310)
-
-Several loops call `parts.checked_sum()?.amount()` on every iteration to compare against the target. Since `checked_sum` iterates the entire vector, this creates O(n²) behavior. For large numbers of parts this is unnecessarily slow.
-
-**Suggestion:** Track a running total incrementally instead of recalculating the full sum each iteration.
+**Suggestion:** Replace `.unwrap_or_default()` with `?` and propagate `None` as a failure signal,
+consistent with every other `checked_*` usage in the codebase.
 
 ---
 
-### 10. `allocate_by_ratios` sorts results, losing correspondence with input ratios
+### 6. `ExchangeRates::set()` accepts unvalidated `&str` currency codes
 
-**File:** `src/split_alloc_ops.rs` (line 290)
+**File:** `src/exchange.rs` (line 312)
 
-When `allocated_total > money`, the function adjusts parts and then sorts them in descending order by amount. This means the output order no longer corresponds to the input ratio order, which is surprising and may break callers who expect `parts[i]` to correspond to `ratios[i]`.
+Arbitrary strings (e.g. `"USE"` instead of `"USD"`) are accepted without validation.
+Later `convert` / `get_pair` calls will simply return `None`/`Err` with no clue about
+the root cause.
 
-**Suggestion:** Distribute the adjustment without sorting, or document this behavior explicitly.
+**Suggestion:** Validate that the code is a known ISO 4217 alphabetic code (e.g. against
+`currencylib`), or accept a type-safe `C: Currency` parameter and use `C::CODE` instead of `&str`.
 
 ---
 
-### 11. `parse_symbol_comma_thousands_separator` doesn't handle negative amounts correctly for symbol-prefixed format
+### 7. `ExchangeRates::From` silently discards `set()` errors
 
-**File:** `src/parse.rs` (lines 174–199)
+**File:** `src/exchange.rs` (lines 475–484)
 
-The negative sign is expected **before** the symbol: `-$1,234.56`. But some locales and conventions place the negative sign after the symbol or use parentheses. Also, the function strips the `-` then strips the symbol, so `$-1,234.56` would fail to parse, while `-$1,234.56` works. This is inconsistent with `from_code_comma_thousands` which supports `CODE -amount`.
+```rust
+fn from(value: I) -> Self {
+    // ...
+    for (k, v) in value {
+        if k != Base::CODE {
+            let _ = exchange_rates.set(k, v);  // ← errors silently dropped
+        }
+    }
+    exchange_rates
+}
+```
 
-**Suggestion:** Support both `-$` and `$-` orderings, or clearly document the expected format.
+`set()` now returns `Result<(), MoneyError>`, but all errors are discarded with `let _ = ...`.
+An overflow during rate conversion (unlikely but possible with extreme values) will silently
+produce an incomplete `ExchangeRates` with no indication of failure.
+
+**Suggestion:** Return `Result<ExchangeRates<Base>, MoneyError>` from a fallible constructor, or
+at minimum use a `TryFrom` impl. The infallible `From` impl should only be used for value types
+that truly cannot fail.
+
+---
+
+## Medium Severity
+
+### 8. `allocate` sorts the output when adjusting, breaking ratio correspondence
+
+**File:** `src/split_alloc_ops.rs` (lines 313–315)
+
+```rust
+parts.sort_by_key(|b| std::cmp::Reverse(b.amount()));
+```
+
+When `allocated_total > money`, the surplus-adjustment loop reduces values and then sorts them
+in descending order. After this sort, `parts[i]` no longer corresponds to `ratios[i]`. Callers
+reasonably expect `parts[i]` to be the allocation for `ratios[i]`.
+
+**Suggestion:** Distribute the adjustment (subtract ULP from the largest parts first) without
+changing the order, so the correspondence is preserved.
+
+---
+
+### 9. `ExchangeRates<'a, Base>` has an unnecessary lifetime parameter
+
+**File:** `src/exchange.rs` (line 253)
+
+```rust
+pub struct ExchangeRates<'a, Base: Currency> {
+    rates: HashMap<&'a str, Decimal>,
+    ...
+}
+```
+
+Currency codes used as keys are always `&'static str` (they come from `C::CODE`). The `'a`
+lifetime propagates into every type that holds `ExchangeRates`, requiring annotations like
+`ExchangeRates<'static, USD>` in structs. Using `&'static str` directly (or `String`) would
+simplify the public API.
+
+---
+
+### 10. `ObjIterOps` trait is only meaningful behind the `exchange` feature
+
+**File:** `src/obj_money/mod.rs` (lines 190–200)
+
+```rust
+pub trait ObjIterOps {
+    #[cfg(feature = "exchange")]
+    fn checked_sum<M, To>(&self, rates: impl crate::exchange::ObjRate) -> Result<M, MoneyError>
+    where ...;
+}
+```
+
+The `ObjIterOps` trait has exactly one method and that method is `#[cfg(feature = "exchange")]`.
+Without the `exchange` feature the trait is empty (zero methods), making the blanket `impl`
+meaningless and the trait name misleading.
+
+**Suggestion:** Gate the entire `ObjIterOps` trait and its `impl` behind `#[cfg(feature = "exchange")]`.
+
+---
+
+### 11. Significant code duplication between `Money` and `RawMoney`
+
+**Files:** `src/money.rs` vs `src/raw_money/raw_money.rs`, `src/ops.rs` vs `src/raw_money/ops.rs`, `src/dec_ops.rs` vs `src/raw_money/dec_ops.rs`, `src/serde/money.rs` vs `src/serde/raw_money.rs`
+
+The two types share nearly identical operator, parsing, formatting, and serde implementations.
+The only real difference is whether `from_decimal` applies rounding. This duplication is a
+maintenance burden: every bug fix and new feature must be applied twice.
+
+**Suggestion:** Parameterise a shared inner implementation by a rounding policy (a zero-sized type
+or a const bool), or use a declarative macro to stamp out the shared implementations once.
 
 ---
 
 ## Low Severity / Style
 
-### 12. Typos in doc comments
+### 12. `allocate` in `split_alloc_ops.rs` has O(n²) sum recalculation
 
-- `src/ops.rs` line 39: `"substraction"` → `"subtraction"` (already correct on line 109)
+**File:** `src/split_alloc_ops.rs` (lines 303–315, 154–160)
+
+Adjustment loops call `parts.checked_sum()?` on every iteration. Since `checked_sum` iterates
+the entire vector, these loops are O(n²). For large allocations this is unnecessarily slow.
+
+**Suggestion:** Track a running total incrementally instead of re-summing on every iteration.
+
+---
+
+### 13. Typos in doc comments
+
+- `src/ops.rs` line 38: `"substraction"` → `"subtraction"`
 - `src/percent_ops.rs` line 112: `"Substracts"` → `"Subtracts"`
 - `src/percent_ops.rs` line 133: `"Substracts"` → `"Subtracts"`
 
 ---
 
-### 13. `#[allow(clippy::len_without_is_empty)]` on `ExchangeRates`
+### 14. `#[allow(clippy::len_without_is_empty)]` on `ExchangeRates`
 
-**File:** `src/exchange.rs` (line 360)
+**File:** `src/exchange.rs` (line 461)
 
-The `is_empty` method is suppressed. An `ExchangeRates` always has at least one entry (the base currency), so it can never be empty, but it's better practice to add the `is_empty` method that returns `false` rather than suppressing the lint.
-
----
-
-### 14. `MoneyError` variants lack context information
-
-**File:** `src/error.rs`
-
-Error variants like `ParseStr` and `CurrencyMismatch` carry no context about what was being parsed or which currencies were mismatched. This makes debugging harder, especially when errors are propagated through several layers.
-
-**Suggestion:** Add fields to carry context, e.g.:
-```rust
-CurrencyMismatch { expected: &'static str, got: String }
-```
+`ExchangeRates` can never be empty (the base currency is always present), so an `is_empty()`
+method could simply return `false`. Adding it removes the need for the suppression attribute
+and makes the struct consistent with Rust's collection conventions.
 
 ---
 
-### 15. `format_decimal_abs` — minor `into()` readability
+### 15. `Interest` builder accepts invalid date combinations silently
 
-**File:** `src/fmt.rs` (lines 125, 130)
+**File:** `src/accounting/interest.rs`
 
-The expression `frac.len() >= minor_unit.into()` uses a bare `.into()` for `u16 → usize` conversion. While correct, `usize::from(minor_unit)` would be more readable and explicit.
+The `year()`, `month()`, `day()` builder methods accept arbitrary `u32` values. An impossible
+date like (February 30) will produce a `None` only deep inside the calculation, making
+debugging difficult.
+
+**Suggestion:** Validate the day against the month (and year for leap-year aware checks)
+in `day()` and return `Option<Self>` on invalid input.
 
 ---
 
-### 16. `calendar.rs` — `current_date()` depends on system clock
+### 16. `calendar.rs` — `current_date()` depends on the system clock
 
-**File:** `src/calendar.rs` (line 2)
+**File:** `src/calendar.rs`
 
-The `current_date()` function uses `SystemTime::now()`, making it non-deterministic and hard to test. The interest calculation defaults use this, meaning test results depend on when they run.
+The default start date for interest calculations is taken from `SystemTime::now()`.
+Tests that use the default date are non-deterministic and can produce different results on
+different days (e.g. leap-year boundaries, month-length differences).
 
-**Suggestion:** Accept a date parameter with a default fallback, or make the system clock injectable for testing.
+**Suggestion:** Accept an explicit date parameter and use the "current date" only as a
+convenience default, or make the clock injectable.
 
 ---
 
@@ -189,35 +276,29 @@ The `current_date()` function uses `SystemTime::now()`, making it non-determinis
 
 **File:** `src/error.rs`
 
-Adding new error variants in the future will be a breaking change for downstream match arms. Adding `#[non_exhaustive]` would allow safe extension.
+Adding a new error variant in a future version will be a breaking change for downstream users
+who exhaustively `match` on `MoneyError`. Adding `#[non_exhaustive]` prevents this.
 
 ---
 
-### 18. `Interest` builder accepts invalid date combinations silently
+### 18. `clone()` called on `Copy` types
 
-**File:** `src/accounting/interest.rs`
+**Files:** `src/percent_ops.rs` (lines 219, 221, 240, 241), `src/iter_ops.rs` (various), `src/money.rs` (line 496)
 
-The builder allows setting arbitrary year/month/day combinations. There's no validation that the day is valid for the given month (e.g., February 30). Invalid dates will only surface as `None` deep inside the calculation.
+`Money` and `RawMoney` derive `Copy`, so `.clone()` is a no-op copy. While harmless, it adds
+noise and implies the type might not be `Copy`.
 
-**Suggestion:** Validate dates when they are set in the builder.
-
----
-
-### 19. `Decimal` is re-exported but `rust_decimal` is a hidden dependency
-
-**File:** `src/lib.rs` (line 78)
-
-`pub use rust_decimal::Decimal;` re-exports `Decimal`, but users who want to use `Decimal`-specific methods (like `MathematicalOps`) must add `rust_decimal` to their own `Cargo.toml`. Consider documenting this or re-exporting commonly needed traits.
+**Suggestion:** Replace `.clone()` with direct use or `let binding =` of the `Copy` value.
 
 ---
 
-### 20. `clone()` on `Copy` types
+### 19. `BaseMoney::is_positive()` documentation inconsistency
 
-**Files:** Various (e.g., `money.rs` line 437, `iter_ops.rs` line 38, `percent_ops.rs` lines 219, 221, 240, 241)
+**File:** `src/base.rs` (line 337)
 
-Both `Money` and `RawMoney` derive `Copy`, so calling `.clone()` is unnecessary. While not harmful (it compiles to the same code), it adds noise and suggests the type might not be `Copy`.
-
-**Suggestion:** Replace `.clone()` with direct copies for `Copy` types.
+The doc comment says "Returns `true` if the amount is positive" and the example only shows
+non-zero cases. `ObjMoney::is_positive()` (line 103) correctly documents "(or zero)".
+These should be aligned to say the same thing.
 
 ---
 
@@ -226,13 +307,26 @@ Both `Money` and `RawMoney` derive `Copy`, so calling `.clone()` is unnecessary.
 | Severity | Count |
 |----------|-------|
 | Critical / Bug | 3 |
-| High | 3 |
-| Medium | 5 |
-| Low / Style | 9 |
+| High | 4 |
+| Medium | 4 |
+| Low / Style | 7 |
 
-The library has a solid foundation with good type safety, strong use of `forbid(unsafe_code)` and clippy lints, comprehensive documentation, and thorough test coverage. The most impactful improvements would be:
+### Previously noted issues — now addressed ✅
 
-1. Removing or fixing `Mul<Self>` / `Div<Self>` for money types (incorrect semantics).
-2. Addressing the pervasive panic-on-overflow in operator implementations.
-3. Reducing code duplication between `Money` and `RawMoney`.
-4. Fixing the `is_positive()`/`is_negative()` zero handling.
+The following items from the v0.12.0 review have been resolved:
+
+| # | Issue | Resolution |
+|---|-------|-----------|
+| 14 | `MoneyError` variants lacked context | ✅ `CurrencyMismatchError(String, String)`, `ParseStrError(ErrVal)`, `ExchangeError(ErrVal)`, `ParseLocale(ErrVal)` added |
+| Old | `ExchangeRates::set()` returned `()` silently | ✅ Now returns `Result<(), MoneyError>` |
+| Old | `BaseMoney` required `Sized + FromStr` | ✅ Only `Clone` required now |
+| Old | No `ObjMoney` / dynamic dispatch support | ✅ New `ObjMoney` trait added (v0.13.0) |
+| Old | No `Send + Sync` on object-safe traits | ✅ `ObjMoney: Send + Sync`, `ObjRate: Send + Sync` added |
+
+### Top priorities
+
+1. **`ObjMoney::convert()` returns wrong currency type** — silent correctness bug that undermines the whole feature.
+2. **`is_positive()` returns `true` for zero** — mathematical incorrectness; at minimum fix the documentation mismatch.
+3. **Operators panic on overflow** — `checked_*` exists and should be the primary API; panicking operators are dangerous in financial code.
+4. **`allocate` uses `unwrap_or_default()`** — silent swallowing of invalid inputs.
+5. **`ExchangeRates::From` discards errors** — broken rates inserted silently from bulk construction.

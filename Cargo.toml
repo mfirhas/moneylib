@@ -1,6 +1,6 @@
 [package]
 name = "moneylib"
-version = "0.12.0"
+version = "0.13.0"
 edition = "2024"
 authors = ["Muhammad Fathir Irhas <fathir.irhas@gmail.com>"]
 description = "Library to deal with money in Rust."
@@ -23,6 +23,7 @@ all-features = true
 [features]
 default = []
 raw_money = []
+obj_money = []
 serde = ["dep:serde", "dep:serde_json"]
 locale = ["dep:icu_locale", "dep:icu_decimal"]
 exchange = []

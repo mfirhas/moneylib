@@ -11,11 +11,16 @@
 /// Contains all types and traits of moneylib.
 pub mod prelude {
     pub use crate::BaseMoney;
+    pub use crate::BaseOps;
     pub use crate::Currency;
     pub use crate::IterOps;
+    pub use crate::MoneyFormatter;
     pub use crate::MoneyOps;
+    pub use crate::PercentOps;
     pub use crate::RoundingStrategy;
     pub use crate::{Decimal, Money, MoneyError};
+
+    pub use crate::iso;
 
     pub use crate::macros::{dec, money};
 
@@ -25,7 +30,13 @@ pub mod prelude {
     pub use crate::macros::raw;
 
     #[cfg(feature = "exchange")]
-    pub use crate::exchange::{Exchange, ExchangeRates};
+    pub use crate::exchange::{Exchange, ExchangeRates, ObjRate, Rate};
+
+    #[cfg(feature = "obj_money")]
+    pub use crate::ObjMoney;
+
+    #[cfg(feature = "accounting")]
+    pub use crate::AccountingOps;
 
     #[cfg(feature = "accounting")]
     pub use crate::accounting;
@@ -127,6 +138,11 @@ pub mod serde;
 mod fmt;
 
 mod parse;
+
+#[cfg(feature = "obj_money")]
+mod obj_money;
+#[cfg(feature = "obj_money")]
+pub use obj_money::{ObjIterOps, ObjMoney};
 
 // ----------------- test modules -----------------
 

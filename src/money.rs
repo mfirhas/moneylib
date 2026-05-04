@@ -1,3 +1,4 @@
+use rust_decimal::prelude::ToPrimitive;
 use std::{
     fmt::{Debug, Display},
     iter::Sum,
@@ -55,7 +56,7 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 /// - [`BaseMoney`] trait for core money operations and accessors
 /// - [`BaseOps`] trait for arithmetic and comparison operations
 /// - [`MoneyFormatter`] trait for custom formatting and rounding
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Copy, PartialEq, Eq)]
 pub struct Money<C: Currency> {
     amount: Decimal,
     _currency: PhantomData<C>,
@@ -63,7 +64,7 @@ pub struct Money<C: Currency> {
 
 impl<C> Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     /// Creates a new `Money` instance from Decimal
     ///
@@ -98,13 +99,13 @@ where
     pub fn from_minor(minor_amount: i128) -> Result<Self, MoneyError> {
         Ok(Self {
             amount: Decimal::from_i128(minor_amount)
-                .ok_or(MoneyError::DecimalConversion)?
+                .ok_or(MoneyError::OverflowError)?
                 .checked_div(
                     dec!(10)
                         .checked_powu(C::MINOR_UNIT.into())
-                        .ok_or(MoneyError::ArithmeticOverflow)?,
+                        .ok_or(MoneyError::OverflowError)?,
                 )
-                .ok_or(MoneyError::ArithmeticOverflow)?,
+                .ok_or(MoneyError::OverflowError)?,
             _currency: PhantomData,
         }
         .round())
@@ -158,14 +159,20 @@ where
 
         if let Some((currency_code, amount_str)) = parse_comma_thousands_separator(s) {
             if currency_code != C::CODE {
-                return Err(MoneyError::CurrencyMismatch);
+                return Err(MoneyError::CurrencyMismatchError(
+                    currency_code.into(),
+                    C::CODE.into(),
+                ));
             }
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
+            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
+                |err| MoneyError::ParseStrError(err.to_string().into()),
+            )?));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <CODE> <AMOUNT> where <CODE> is defined and <AMOUNT> is comma-separated thousands(optional) and dot-separated decimal",
+            s
+        ).into()))
     }
 
     /// Creates a new `Money` instance by parsing a string that uses dot as the
@@ -181,10 +188,10 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`MoneyError::CurrencyMismatch`] if the currency code in the string does
+    /// Returns [`MoneyError::CurrencyMismatchError`] if the currency code in the string does
     /// not match the currency type parameter `C`.
     ///
-    /// Returns [`MoneyError::ParseStr`] if the string is not in the expected format.
+    /// Returns [`MoneyError::ParseStrError`] if the string is not in the expected format.
     ///
     /// Accepts negative amount CCC -amount
     ///
@@ -221,14 +228,20 @@ where
 
         if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {
             if currency_code != C::CODE {
-                return Err(MoneyError::CurrencyMismatch);
+                return Err(MoneyError::CurrencyMismatchError(
+                    currency_code.into(),
+                    C::CODE.into(),
+                ));
             }
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
+            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
+                |err| MoneyError::ParseStrError(err.to_string().into()),
+            )?));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <CODE> <AMOUNT> where <CODE> is defined and <AMOUNT> is dot-separated thousands(optional) and comma-separated decimal",
+            s
+        ).into()))
     }
 
     /// Parse from string with symbol, comma-separated thousands and dot-separated decimal.
@@ -236,15 +249,23 @@ where
     pub fn from_symbol_comma_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((symbol, amount_str)) = parse_symbol_comma_thousands_separator::<C>(s)
-            && symbol == C::SYMBOL
-        {
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
+        if let Some((symbol, amount_str)) = parse_symbol_comma_thousands_separator::<C>(s) {
+            if symbol != C::SYMBOL {
+                return Err(MoneyError::CurrencyMismatchError(
+                    symbol.into(),
+                    C::SYMBOL.into(),
+                ));
+            }
+
+            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
+                |err| MoneyError::ParseStrError(err.to_string().into()),
+            )?));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <SYMBOL><AMOUNT> where <SYMBOL> is defined and <AMOUNT> is comma-separated thousands(optional) and dot-separated decimal",
+            s
+        ).into()))
     }
 
     /// Parse from string with symbol, dot-separated thousands and comma-separated decimal.
@@ -252,15 +273,23 @@ where
     pub fn from_symbol_dot_thousands(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((symbol, amount_str)) = parse_symbol_dot_thousands_separator::<C>(s)
-            && symbol == C::SYMBOL
-        {
-            return Ok(Self::from_decimal(
-                Decimal::from_str(&amount_str).map_err(|_| MoneyError::ParseStr)?,
-            ));
+        if let Some((symbol, amount_str)) = parse_symbol_dot_thousands_separator::<C>(s) {
+            if symbol != C::SYMBOL {
+                return Err(MoneyError::CurrencyMismatchError(
+                    symbol.into(),
+                    C::SYMBOL.into(),
+                ));
+            }
+
+            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
+                |err| MoneyError::ParseStrError(err.to_string().into()),
+            )?));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <SYMBOL><AMOUNT> where <SYMBOL> is defined and <AMOUNT> is dot-separated thousands(optional) and comma-separated decimal",
+            s
+        ).into()))
     }
 
     /// Parse from string with code, locale thousands and decimal separators.
@@ -282,13 +311,22 @@ where
     pub fn from_code_locale_separator(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((code, amount_str)) = parse_code_locale_separator::<C>(s)
-            && code == C::CODE
-        {
-            return Self::from_str(&amount_str).map_err(|_| MoneyError::ParseStr);
+        if let Some((code, amount_str)) = parse_code_locale_separator::<C>(s) {
+            if code != C::CODE {
+                return Err(MoneyError::CurrencyMismatchError(
+                    code.into(),
+                    C::CODE.into(),
+                ));
+            }
+
+            return Self::from_str(&amount_str)
+                .map_err(|err| MoneyError::ParseStrError(err.to_string().into()));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <CODE> <AMOUNT> where <CODE> is defined and <AMOUNT> is separated by locale separators",
+            s
+        ).into()))
     }
 
     /// Parse from string with symbol, locale thousands and decimal separators.
@@ -310,13 +348,22 @@ where
     pub fn from_symbol_locale_separator(s: &str) -> Result<Self, MoneyError> {
         let s = s.trim();
 
-        if let Some((symbol, amount_str)) = parse_symbol_locale_separator::<C>(s)
-            && symbol == C::SYMBOL
-        {
-            return Self::from_str(&amount_str).map_err(|_| MoneyError::ParseStr);
+        if let Some((symbol, amount_str)) = parse_symbol_locale_separator::<C>(s) {
+            if symbol != C::SYMBOL {
+                return Err(MoneyError::CurrencyMismatchError(
+                    symbol.into(),
+                    C::SYMBOL.into(),
+                ));
+            }
+
+            return Self::from_str(&amount_str)
+                .map_err(|err| MoneyError::ParseStrError(err.to_string().into()));
         }
 
-        Err(MoneyError::ParseStr)
+        Err(MoneyError::ParseStrError(format!(
+            "failed parsing {}, use format: <SYMBOL><AMOUNT> where <SYMBOL> is defined and <AMOUNT> is separated by locale separators",
+            s
+        ).into()))
     }
 }
 
@@ -350,8 +397,9 @@ where
 
 impl<C> Amount<C> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Some(self.amount())
     }
@@ -359,7 +407,7 @@ where
 
 impl<C> FromStr for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     type Err = MoneyError;
 
@@ -377,8 +425,19 @@ where
     /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
-        let dec_num = Decimal::from_str(s).map_err(|_| MoneyError::ParseStr)?;
+        let dec_num = Decimal::from_str(s).map_err(|err| {
+            MoneyError::ParseStrError(format!("failed parsing money from string: {}", err).into())
+        })?;
         Ok(Self::from_decimal(dec_num))
+    }
+}
+
+impl<C: Currency> Clone for Money<C> {
+    fn clone(&self) -> Self {
+        Self {
+            amount: self.amount,
+            _currency: PhantomData,
+        }
     }
 }
 
@@ -404,7 +463,7 @@ where
 /// ```
 impl<C> Display for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
@@ -420,7 +479,7 @@ where
     }
 }
 
-impl<C: Currency + Clone> Sum for Money<C> {
+impl<C: Currency> Sum for Money<C> {
     /// Sum all moneys
     ///
     /// WARN: PANIC!!! if overflowed.
@@ -429,7 +488,7 @@ impl<C: Currency + Clone> Sum for Money<C> {
     }
 }
 
-impl<'a, C: Currency + Clone> Sum<&'a Money<C>> for Money<C> {
+impl<'a, C: Currency> Sum<&'a Money<C>> for Money<C> {
     /// Sum all moneys(borrowed)
     ///
     /// WARN: PANIC!!! if overflowed.
@@ -440,12 +499,12 @@ impl<'a, C: Currency + Clone> Sum<&'a Money<C>> for Money<C> {
 
 impl<C> BaseMoney<C> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     #[inline]
     fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
         Ok(Self {
-            amount: amount.get_decimal().ok_or(MoneyError::DecimalConversion)?,
+            amount: amount.get_decimal().ok_or(MoneyError::OverflowError)?,
             _currency: PhantomData,
         }
         .round())
@@ -454,6 +513,13 @@ where
     #[inline]
     fn amount(&self) -> Decimal {
         self.amount
+    }
+
+    #[inline]
+    fn minor_amount(&self) -> Option<i128> {
+        self.amount()
+            .checked_mul(dec!(10).checked_powu(self.minor_unit().into())?)?
+            .to_i128()
     }
 
     #[inline]
@@ -487,7 +553,7 @@ where
 
 impl<C> BaseOps<C> for Money<C>
 where
-    C: Currency + Clone,
+    C: Currency,
 {
     #[inline]
     fn abs(&self) -> Self {
@@ -533,11 +599,21 @@ where
             self.amount.checked_div(rhs.get_decimal()?)?,
         ))
     }
+
+    #[inline]
+    fn checked_rem<RHS>(&self, rhs: RHS) -> Option<Self>
+    where
+        RHS: DecimalNumber,
+    {
+        Some(Self::from_decimal(
+            self.amount().checked_rem(rhs.get_decimal()?)?,
+        ))
+    }
 }
 
-impl<C> MoneyFormatter<C> for Money<C> where C: Currency + Clone {}
+impl<C> MoneyFormatter<C> for Money<C> where C: Currency {}
 
 #[cfg(feature = "accounting")]
-impl<C> AccountingOps<C> for Money<C> where C: Currency + Clone {}
+impl<C> AccountingOps<C> for Money<C> where C: Currency {}
 
-impl<C> MoneyOps<C> for Money<C> where C: Currency + Clone {}
+impl<C> MoneyOps<C> for Money<C> where C: Currency {}

@@ -3,14 +3,11 @@ use crate::Decimal;
 use crate::MoneyError;
 use crate::fmt::format_with_separator;
 use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format};
-use crate::macros::dec;
+use crate::split_alloc_ops::Split;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
-use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive};
+use rust_decimal::prelude::FromPrimitive;
+use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use std::{fmt::Debug, str::FromStr};
-
-#[cfg(feature = "locale")]
-use crate::fmt::format_with_amount;
 
 /// Base trait for all money types in the library.
 ///
@@ -42,7 +39,7 @@ use crate::fmt::format_with_amount;
 /// assert_eq!(money.format_code(), "USD 1,234.56");
 /// assert_eq!(money.format_symbol(), "$1,234.56");
 /// ```
-pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
+pub trait BaseMoney<C: Currency>: Clone {
     // REQUIRED
 
     /// Creates a new `Money` instance with amount of `Decimal`, `f64`, `i32`, `i64`, `i128`.
@@ -99,6 +96,25 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// assert_eq!(money.amount(), dec!(100.50));
     /// ```
     fn amount(&self) -> Decimal;
+
+    /// Returns the money amount in its smallest unit (e.g., cents for USD, pence for GBP).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency, iso::{USD, JPY}};
+    /// use moneylib::macros::dec;
+    /// use moneylib::BaseMoney;
+    ///
+    /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
+    /// assert_eq!(money.minor_amount().unwrap(), 1050);
+    ///
+    /// let yen = Money::<JPY>::new(dec!(100)).unwrap();
+    /// assert_eq!(yen.minor_amount().unwrap(), 100);
+    /// ```
+    ///
+    /// Returns `None` if overflowed.
+    fn minor_amount(&self) -> Option<i128>;
 
     /// Rounds the money amount using bankers rounding rule to the scale of the currency's minor unit.
     ///
@@ -257,39 +273,6 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     #[inline]
     fn minor_unit(&self) -> u16 {
         C::MINOR_UNIT
-    }
-
-    /// Returns the money amount in its smallest unit (e.g., cents for USD, pence for GBP).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, iso::{USD, JPY}};
-    /// use moneylib::macros::dec;
-    /// use moneylib::BaseMoney;
-    ///
-    /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
-    /// assert_eq!(money.minor_amount().unwrap(), 1050);
-    ///
-    /// let yen = Money::<JPY>::new(dec!(100)).unwrap();
-    /// assert_eq!(yen.minor_amount().unwrap(), 100);
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns `MoneyError::ArithmeticOverflow` if the calculation exceeds the maximum value.
-    /// Returns `MoneyError::DecimalConversion` if the conversion to integer fails.
-    #[inline]
-    fn minor_amount(&self) -> Result<i128, MoneyError> {
-        self.amount()
-            .checked_mul(
-                dec!(10)
-                    .checked_powu(self.minor_unit().into())
-                    .ok_or(MoneyError::ArithmeticOverflow)?,
-            )
-            .ok_or(MoneyError::ArithmeticOverflow)?
-            .to_i128()
-            .ok_or(MoneyError::DecimalConversion)
     }
 
     /// Returns the thousands separator used by the currency.
@@ -466,7 +449,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// assert_eq!(negative.format_code(), "USD -1,234.45");
     /// ```
     fn format_code(&self) -> String {
-        format(self.to_owned(), CODE_FORMAT)
+        format(self, CODE_FORMAT)
     }
 
     /// Formats money with currency symbol along with thousands and decimal separators.
@@ -487,7 +470,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// assert_eq!(negative.format_symbol(), "-€500,50");
     /// ```
     fn format_symbol(&self) -> String {
-        format(self.to_owned(), SYMBOL_FORMAT)
+        format(self, SYMBOL_FORMAT)
     }
 
     /// Formats money with currency code in the smallest unit along with thousands separators.
@@ -511,7 +494,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// assert_eq!(negative.format_code_minor(), "USD -123,445 ¢");
     /// ```
     fn format_code_minor(&self) -> String {
-        format(self.to_owned(), CODE_FORMAT_MINOR)
+        format(self, CODE_FORMAT_MINOR)
     }
 
     /// Formats money with currency symbol in the smallest unit along with thousands separators.
@@ -535,7 +518,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
     /// assert_eq!(negative.format_symbol_minor(), "-$1,050 ¢");
     /// ```
     fn format_symbol_minor(&self) -> String {
-        format(self.to_owned(), SYMBOL_FORMAT_MINOR)
+        format(self, SYMBOL_FORMAT_MINOR)
     }
 
     /// Returns the default display format for money (same as `format_code`).
@@ -582,8 +565,7 @@ pub trait BaseMoney<C: Currency>: Sized + Clone + FromStr {
 /// assert_eq!(m1.min(m2), m2);
 /// ```
 pub trait BaseOps<C: Currency>:
-    Sized
-    + BaseMoney<C>
+    BaseMoney<C>
     + Add<Output = Self>
     + Sub<Output = Self>
     + Mul<Output = Self>
@@ -753,135 +735,68 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn checked_rem<RHS>(&self, rhs: RHS) -> Option<Self>
     where
-        RHS: DecimalNumber,
-    {
-        Self::new(self.amount().checked_rem(rhs.get_decimal()?)?).ok()
-    }
+        RHS: DecimalNumber;
 
-    /// Split money into equal same parts leaving a remainder(if any).
+    /// Split money without losing a single penny.
     ///
-    /// # Argument
-    /// n: u32, how many parts splitted.
+    /// `P` is the number of split or ratios, supporting `u32` or `impl AsRef<[D]>` respectively.
     ///
-    /// # Return
-    /// `Option<(Self, Self)>`, returns equal parts of split(0) and remainder(1) if any, if no remainder, it defaults to zero.
+    /// `R` is return type supporting `Option<(M, M)>` or `Option<Vec<M>>`.
     ///
-    /// # Example
+    /// 3 modes:
+    /// - `P: u32` -> `R: (M, M)` => split into `P` equal parts(0) with a remainder(1) if any.
+    /// - `P: u32` -> `R: Vec<M>` => split into vector of `P` parts where remainder(if any) is distributed equally across parts.
+    /// - `P: impl AsRef<[D]>` -> `R: Vec<M>` => split by ratios where remainder(if any) is distributed equally across parts.
+    ///
+    /// Where:
+    /// - `M`: `BaseMoney<C>`
+    /// - `D`: `DecimalNumber`
+    ///
+    /// # Examples
     /// ```rust
-    /// use moneylib::money;
-    /// use moneylib::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
+    /// use moneylib::{money, Money, BaseMoney, BaseOps, dec, iso::USD};
     ///
+    /// //---- split into 3 returning equal part and remainder.
     /// let money = money!(USD, 100);
-    /// let split3 = money.split(3).unwrap();
+    /// let split3: (_,_) = money.split(3).unwrap();
     /// assert_eq!(split3.0.amount(), dec!(33.33)); // all equal parts after split.
     /// assert_eq!(split3.1.amount(), dec!(0.01)); // remainder 1 cent.
     /// // result: 100 = 33.33 + 33.33 + 33.33 + 0.01
     ///
     /// let money = money!(USD, 500);
-    /// let split4 = money.split(4).unwrap();
+    /// let split4: (_,_) = money.split(4).unwrap();
     /// assert_eq!(split4.0.amount(), dec!(125.00)); // all equal parts
     /// assert!(split4.1.is_zero()); // no remainder
-    /// ```
-    fn split(&self, n: u32) -> Option<(Self, Self)>
-    where
-        Self: Default + Amount<C> + Ord,
-    {
-        crate::split_alloc_ops::split(self, n)
-    }
-
-    /// Split money into equal parts and distribute the remainder(if any) equally into parts.
     ///
-    /// # Argument
-    /// n: u32, how many parts splitted.
-    ///
-    /// # Return
-    /// `Option<Vec<T>>`, returns list of parts where remainder distribute among them(beginning from first).
-    ///
-    /// # Example
-    /// ```rust
-    /// use moneylib::money;
-    /// use moneylib::dec;
-    /// use moneylib::{BaseMoney, BaseOps};
-    ///
+    /// //---- split into 3 returning vector of 3 parts with remainder distributed across parts.
     /// let money = money!(USD, 100);
-    /// let split3 = money.split_dist(3).unwrap();
+    /// let split3: Vec<_> = money.split(3).unwrap();
     /// assert_eq!(split3, vec![money!(USD, 33.34), money!(USD, 33.33), money!(USD, 33.33)]); // all equal parts after split and remainder distributed starting from first element.
     /// assert_eq!(split3.len(), 3);
     ///
     /// let money = money!(USD, 500);
-    /// let split4 = money.split_dist(4).unwrap();
+    /// let split4: Vec<_> = money.split(4).unwrap();
     /// assert_eq!(split4, vec![money!(USD, 125), money!(USD, 125), money!(USD, 125), money!(USD, 125)]); // all equal parts after split and leave no remainder.
     /// assert_eq!(split4.len(), 4);
-    /// ```
-    fn split_dist(&self, n: u32) -> Option<Vec<Self>>
-    where
-        Self: Default + Amount<C> + Ord,
-    {
-        crate::split_alloc_ops::split_dist(self, n)
-    }
-
-    /// Allocate money by percentages and distribute the remainder(if any).
     ///
-    /// Total percentages must be equal to 100.
-    ///
-    /// # Argument
-    /// pcns: list of DecimalNumber: Decimal, f64, i32, i64, i128 -> denoting percentage, e.g. 20% -> 20.
-    ///
-    /// # Return
-    /// Return list of allocated money all summed back into original amount.
-    /// Returns `None` if the percentages list is empty or does not sum to 100.
-    ///
-    /// # Example
-    /// ```rust
-    /// use moneylib::{Money, BaseMoney, BaseOps, macros::dec, iso::USD};
-    ///
-    /// // percentage ratios: 60%, 40%
-    /// let profit = Money::<USD>::new(dec!(10000.00)).unwrap();
-    /// let shares = profit.allocate(&[60, 40]).unwrap();  // 60/40 split
-    /// assert_eq!(shares[0].amount(), dec!(6000.00));
-    /// assert_eq!(shares[1].amount(), dec!(4000.00));
-    ///
-    /// // Budget allocation by priority weights
-    /// let budget = Money::<USD>::new(dec!(100000.00)).unwrap();
-    /// let depts = budget.allocate(&[35, 25, 20, 15, 5]).unwrap();
-    /// assert_eq!(depts[0].amount(), dec!(35000.00));
-    /// assert_eq!(depts[4].amount(), dec!(5000.00));
-    /// ```
-    fn allocate<D>(&self, pcns: &[D]) -> Option<Vec<Self>>
-    where
-        Self: Default + Amount<C> + MoneyFormatter<C>,
-        D: DecimalNumber + Copy,
-    {
-        crate::split_alloc_ops::allocate(self, pcns)
-    }
-
-    /// Allocate money by ratios and distribute the remainder(if any).
-    ///
-    /// # Argument
-    /// ratios: list of DecimalNumber: Decimal, f64, i32, i64, i128 -> denoting ratios.
-    ///
-    /// # Return
-    /// Return list of allocated money all summed back into original amount.
-    /// Returns `None` if the ratios list is empty or all ratios are zero.
-    ///
-    /// # Example
-    /// ```rust
-    /// use moneylib::{Money, BaseMoney, BaseOps, macros::dec, iso::USD};
-    ///
-    /// // Unequal ratios: 1:2:1 means 25%, 50%, 25%
+    /// //---- allocate money by ratios
     /// let amount = Money::<USD>::new(dec!(400.00)).unwrap();
-    /// let parts = amount.allocate_by_ratios(&[1, 2, 1]).unwrap();
+    /// let parts: Vec<_> = amount.split([1, 2, 1].as_slice()).unwrap();
     /// assert_eq!(parts[0].amount(), dec!(100.00));
     /// assert_eq!(parts[1].amount(), dec!(200.00));
     /// assert_eq!(parts[2].amount(), dec!(100.00));
+    ///
+    /// // percentage ratios: 60%, 40%
+    /// let profit = Money::<USD>::new(dec!(10000.00)).unwrap();
+    /// let shares: Vec<_> = profit.split(&[60, 40]).unwrap();  // 60/40 split
+    /// assert_eq!(shares[0].amount(), dec!(6000.00));
+    /// assert_eq!(shares[1].amount(), dec!(4000.00));
     /// ```
-    fn allocate_by_ratios<D>(&self, ratios: &[D]) -> Option<Vec<Self>>
+    fn split<P, R>(&self, p: P) -> Option<R>
     where
-        Self: Default + Amount<C> + MoneyFormatter<C>,
-        D: DecimalNumber + Copy,
+        R: Split<Self, C, P>,
     {
-        crate::split_alloc_ops::allocate_by_ratios(self, ratios)
+        R::split(self, p)
     }
 }
 
@@ -1049,7 +964,7 @@ pub trait IterOps<C: Currency> {
 /// assert_eq!(money, money2);
 /// assert_eq!(money.amount(), money2.amount());
 /// ```
-pub trait Amount<C: Currency>: Sized {
+pub trait Amount<C: Currency> {
     /// Get decimal amount of Self.
     ///
     /// Returns `None` if Self cannot be converted into Decimal.
@@ -1057,30 +972,35 @@ pub trait Amount<C: Currency>: Sized {
 }
 
 impl<C: Currency> Amount<C> for Decimal {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Some(*self)
     }
 }
 
 impl<C: Currency> Amount<C> for f64 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_f64(*self)
     }
 }
 
 impl<C: Currency> Amount<C> for i32 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i32(*self)
     }
 }
 
 impl<C: Currency> Amount<C> for i64 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i64(*self)
     }
 }
 
 impl<C: Currency> Amount<C> for i128 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i128(*self)
     }
@@ -1089,35 +1009,40 @@ impl<C: Currency> Amount<C> for i128 {
 /// Trait to represents numbers to work with money amounts.
 ///
 /// It supports Decimal, f64, i32, i64, i128.
-pub trait DecimalNumber: Sized {
+pub trait DecimalNumber {
     fn get_decimal(&self) -> Option<Decimal>;
 }
 
 impl DecimalNumber for Decimal {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Some(*self)
     }
 }
 
 impl DecimalNumber for f64 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_f64(*self)
     }
 }
 
 impl DecimalNumber for i32 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i32(*self)
     }
 }
 
 impl DecimalNumber for i64 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i64(*self)
     }
 }
 
 impl DecimalNumber for i128 {
+    #[inline(always)]
     fn get_decimal(&self) -> Option<Decimal> {
         Decimal::from_i128(*self)
     }
@@ -1282,7 +1207,7 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
 /// Trait for customizing money formatting.
 ///
 /// This trait extends `BaseMoney` with methods to customize how money is displayed.
-pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
+pub trait MoneyFormatter<C: Currency>: BaseMoney<C> {
     // PROVIDED
 
     /// Format money according to the provided format string `format_str`.
@@ -1375,7 +1300,7 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
     ///
     /// ```
     fn format(&self, format_str: &str) -> String {
-        format(self.to_owned(), format_str)
+        format(self, format_str)
     }
 
     /// Format money according to the provided format string `format_str`.
@@ -1455,15 +1380,9 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
         thousand_separator: &str,
         decimal_separator: &str,
     ) -> String {
-        format_with_separator(
-            self.to_owned(),
-            format_str,
-            thousand_separator,
-            decimal_separator,
-        )
+        format_with_separator(self, format_str, thousand_separator, decimal_separator)
     }
 
-    #[cfg(feature = "locale")]
     /// Format money's amount using locale standard with `format_str` format.
     ///
     /// `locale_str` supports ISO 639 lowercase language code, ISO 639 with ISO 3166-1 alpha‑2 uppercase region code,
@@ -1547,24 +1466,34 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
     /// let money = Money::<USD>::new(dec!(1234.56)).unwrap();
     /// assert!(money.format_locale_amount("!!!invalid", "c na").is_err());
     /// ```
+    #[cfg(feature = "locale")]
     fn format_locale_amount(
         &self,
         locale_str: &str,
         format_str: &str,
     ) -> Result<String, MoneyError> {
+        use crate::fmt::format_with_amount;
         use icu_decimal::{DecimalFormatter, input::Decimal as LocaleDecimal};
         use icu_locale::Locale;
 
-        let loc: Locale = locale_str.parse().map_err(|_| MoneyError::ParseLocale)?;
+        let loc: Locale = locale_str.parse().map_err(|_| {
+            MoneyError::ParseLocale(
+                format!(
+                    "failed parsing locale {} , invalid or not found",
+                    locale_str
+                )
+                .into(),
+            )
+        })?;
         let formatter = DecimalFormatter::try_new(loc.into(), Default::default())
-            .map_err(|_| MoneyError::ParseLocale)?;
+            .map_err(|_| MoneyError::ParseLocale("failed initiating decimal formatter".into()))?;
 
         let is_negative = self.is_negative();
         let curr_minor_unit = C::MINOR_UNIT.into();
         let abs_amount = if self.scale() < curr_minor_unit {
             let remaining_scale: usize = (curr_minor_unit - self.scale())
                 .try_into()
-                .map_err(|_| MoneyError::ParseLocale)?;
+                .map_err(|_| MoneyError::ParseLocale("invalid minor unit".into()))?;
             let minor_amount = "0".repeat(remaining_scale);
             let fract = if self.scale() == 0 {
                 format!(".{}", minor_amount)
@@ -1578,8 +1507,11 @@ pub trait MoneyFormatter<C: Currency>: Sized + BaseMoney<C> {
             self.amount().abs().to_string()
         };
 
-        let decimal =
-            LocaleDecimal::try_from_str(&abs_amount).map_err(|_| MoneyError::DecimalConversion)?;
+        let decimal = LocaleDecimal::try_from_str(&abs_amount).map_err(|_| {
+            MoneyError::ParseLocale(
+                format!("failed parsing {} into locale decimal", &abs_amount).into(),
+            )
+        })?;
 
         let formatted_decimal = formatter.format(&decimal).to_string();
 

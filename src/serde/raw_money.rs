@@ -10,7 +10,7 @@ use crate::{BaseMoney, Currency, Decimal, RawMoney};
 // Default: Serialize/Deserialize as precise number
 // ---------------------------------------------------------------------------
 
-impl<C: Currency + Clone> Serialize for RawMoney<C> {
+impl<C: Currency> Serialize for RawMoney<C> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let n = serde_json::Number::from_str(&self.amount().to_string())
             .map_err(|_| ::serde::ser::Error::custom("cannot convert Decimal to JSON Number"))?;
@@ -20,7 +20,7 @@ impl<C: Currency + Clone> Serialize for RawMoney<C> {
 
 struct RawMoneyVisitor<C>(PhantomData<C>);
 
-impl<'de, C: Currency + Clone> de::Visitor<'de> for RawMoneyVisitor<C> {
+impl<'de, C: Currency> de::Visitor<'de> for RawMoneyVisitor<C> {
     type Value = RawMoney<C>;
 
     fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -28,7 +28,7 @@ impl<'de, C: Currency + Clone> de::Visitor<'de> for RawMoneyVisitor<C> {
     }
 
     fn visit_f64<E: de::Error>(self, v: f64) -> Result<Self::Value, E> {
-        RawMoney::<C>::new(v).map_err(de::Error::custom)
+        self.visit_str(&v.to_string())
     }
 
     fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> {
@@ -70,7 +70,7 @@ impl<'de, C: Currency + Clone> de::Visitor<'de> for RawMoneyVisitor<C> {
     }
 }
 
-impl<'de, C: Currency + Clone> Deserialize<'de> for RawMoney<C> {
+impl<'de, C: Currency> Deserialize<'de> for RawMoney<C> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         deserializer.deserialize_any(RawMoneyVisitor(PhantomData))
     }
@@ -100,7 +100,7 @@ pub mod comma_str_code {
 
     use crate::{Currency, MoneyFormatter, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -109,7 +109,7 @@ pub mod comma_str_code {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = RawMoney<C>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -121,7 +121,7 @@ pub mod comma_str_code {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<RawMoney<C>, D::Error> {
         deserializer.deserialize_str(Visitor(PhantomData))
@@ -148,7 +148,7 @@ pub mod option_comma_str_code {
 
     use crate::{BaseMoney, Currency, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<RawMoney<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -160,7 +160,7 @@ pub mod option_comma_str_code {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = Option<RawMoney<C>>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -180,7 +180,7 @@ pub mod option_comma_str_code {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<RawMoney<C>>, D::Error> {
         deserializer.deserialize_option(Visitor(PhantomData))
@@ -211,7 +211,7 @@ pub mod comma_str_symbol {
 
     use crate::{Currency, MoneyFormatter, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -220,7 +220,7 @@ pub mod comma_str_symbol {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = RawMoney<C>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -232,7 +232,7 @@ pub mod comma_str_symbol {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<RawMoney<C>, D::Error> {
         deserializer.deserialize_str(Visitor(PhantomData))
@@ -259,7 +259,7 @@ pub mod option_comma_str_symbol {
 
     use crate::{BaseMoney, Currency, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<RawMoney<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -271,7 +271,7 @@ pub mod option_comma_str_symbol {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = Option<RawMoney<C>>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -291,7 +291,7 @@ pub mod option_comma_str_symbol {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<RawMoney<C>>, D::Error> {
         deserializer.deserialize_option(Visitor(PhantomData))
@@ -322,7 +322,7 @@ pub mod dot_str_code {
 
     use crate::{Currency, MoneyFormatter, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -331,7 +331,7 @@ pub mod dot_str_code {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = RawMoney<C>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -343,7 +343,7 @@ pub mod dot_str_code {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<RawMoney<C>, D::Error> {
         deserializer.deserialize_str(Visitor(PhantomData))
@@ -370,7 +370,7 @@ pub mod option_dot_str_code {
 
     use crate::{BaseMoney, Currency, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<RawMoney<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -382,7 +382,7 @@ pub mod option_dot_str_code {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = Option<RawMoney<C>>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -402,7 +402,7 @@ pub mod option_dot_str_code {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<RawMoney<C>>, D::Error> {
         deserializer.deserialize_option(Visitor(PhantomData))
@@ -433,7 +433,7 @@ pub mod dot_str_symbol {
 
     use crate::{Currency, MoneyFormatter, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -442,7 +442,7 @@ pub mod dot_str_symbol {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = RawMoney<C>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -454,7 +454,7 @@ pub mod dot_str_symbol {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<RawMoney<C>, D::Error> {
         deserializer.deserialize_str(Visitor(PhantomData))
@@ -481,7 +481,7 @@ pub mod option_dot_str_symbol {
 
     use crate::{BaseMoney, Currency, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<RawMoney<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -493,7 +493,7 @@ pub mod option_dot_str_symbol {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = Option<RawMoney<C>>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -513,7 +513,7 @@ pub mod option_dot_str_symbol {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<RawMoney<C>>, D::Error> {
         deserializer.deserialize_option(Visitor(PhantomData))
@@ -540,7 +540,7 @@ pub mod str_code {
 
     use crate::{BaseMoney, Currency, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -549,7 +549,7 @@ pub mod str_code {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = RawMoney<C>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -561,7 +561,7 @@ pub mod str_code {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<RawMoney<C>, D::Error> {
         deserializer.deserialize_str(Visitor(PhantomData))
@@ -585,7 +585,7 @@ pub mod option_str_code {
 
     use crate::{BaseMoney, Currency, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<RawMoney<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -597,7 +597,7 @@ pub mod option_str_code {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = Option<RawMoney<C>>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -617,7 +617,7 @@ pub mod option_str_code {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<RawMoney<C>>, D::Error> {
         deserializer.deserialize_option(Visitor(PhantomData))
@@ -644,7 +644,7 @@ pub mod str_symbol {
 
     use crate::{BaseMoney, Currency, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -653,7 +653,7 @@ pub mod str_symbol {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = RawMoney<C>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -665,7 +665,7 @@ pub mod str_symbol {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<RawMoney<C>, D::Error> {
         deserializer.deserialize_str(Visitor(PhantomData))
@@ -689,7 +689,7 @@ pub mod option_str_symbol {
 
     use crate::{BaseMoney, Currency, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<RawMoney<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -701,7 +701,7 @@ pub mod option_str_symbol {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = Option<RawMoney<C>>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -721,7 +721,7 @@ pub mod option_str_symbol {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<RawMoney<C>>, D::Error> {
         deserializer.deserialize_option(Visitor(PhantomData))
@@ -746,19 +746,21 @@ pub mod minor {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, RawMoney};
+    use crate::{BaseMoney, Currency, MoneyError, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        let minor = value.minor_amount().map_err(::serde::ser::Error::custom)?;
+        let minor = value
+            .minor_amount()
+            .ok_or(::serde::ser::Error::custom(MoneyError::OverflowError))?;
         serializer.serialize_i128(minor)
     }
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = RawMoney<C>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -784,7 +786,7 @@ pub mod minor {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<RawMoney<C>, D::Error> {
         deserializer.deserialize_any(Visitor(PhantomData))
@@ -807,7 +809,7 @@ pub mod option_minor {
 
     use crate::{Currency, RawMoney};
 
-    pub fn serialize<C: Currency + Clone, S: Serializer>(
+    pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<RawMoney<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
@@ -819,7 +821,7 @@ pub mod option_minor {
 
     struct Visitor<C>(PhantomData<C>);
 
-    impl<'de, C: Currency + Clone> de::Visitor<'de> for Visitor<C> {
+    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
         type Value = Option<RawMoney<C>>;
 
         fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -839,7 +841,7 @@ pub mod option_minor {
         }
     }
 
-    pub fn deserialize<'de, C: Currency + Clone, D: Deserializer<'de>>(
+    pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<RawMoney<C>>, D::Error> {
         deserializer.deserialize_option(Visitor(PhantomData))

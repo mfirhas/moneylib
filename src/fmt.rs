@@ -66,7 +66,7 @@ pub(crate) const SYMBOL_FORMAT_MINOR: &str = "nsa m"; // E.g. $100,023 cents or 
 ///
 /// * `money` - The Money value to format
 /// * `format_str` - The format string containing format symbols and optional literal text
-pub(crate) fn format<C: Currency>(money: impl BaseMoney<C>, format_str: &str) -> String {
+pub(crate) fn format<C: Currency>(money: &impl BaseMoney<C>, format_str: &str) -> String {
     format_with_separator(
         money,
         format_str,
@@ -141,7 +141,7 @@ pub(crate) fn format_decimal_abs(
 }
 
 pub(crate) fn format_with_separator<C: Currency>(
-    money: impl BaseMoney<C>,
+    money: &impl BaseMoney<C>,
     format_str: &str,
     thousand_separator: &str,
     decimal_separator: &str,
@@ -150,10 +150,10 @@ pub(crate) fn format_with_separator<C: Currency>(
 
     // Use absolute value for display if negative
     let display_amount = if contains_active_format_symbol(format_str, MINOR_FORMAT_SYMBOL) {
-        if let Ok(minor_amount) = money.minor_amount() {
+        if let Some(minor_amount) = money.minor_amount() {
             format_128_abs(minor_amount, thousand_separator)
         } else {
-            "OVERFLOWED_AMOUNT".into()
+            "OVERFLOWED".into()
         }
     } else {
         format_decimal_abs(

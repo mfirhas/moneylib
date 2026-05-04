@@ -1273,6 +1273,30 @@ fn test_default_deserialize_visit_f64_negative() {
     );
 }
 
+// visit_f64 now delegates to visit_str via v.to_string(), so values that have
+// exact decimal representations are parsed precisely rather than going through
+// Decimal::from_f64 which can produce binary-representation artifacts.
+#[test]
+fn test_default_deserialize_visit_f64_precision() {
+    use ::serde::Deserialize;
+    use ::serde::de::{IntoDeserializer, value::Error as SerdeError};
+
+    // Directly exercise visit_f64 by deserializing from an f64 value.
+    // v.to_string() uses Rust's Ryu algorithm (shortest round-trip), giving
+    // "1.1", "99.99", "-0.01" — parsed by Decimal::from_str exactly.
+    let d: ::serde::de::value::F64Deserializer<SerdeError> = (1.1_f64).into_deserializer();
+    let money: Money<USD> = Money::deserialize(d).unwrap();
+    assert_eq!(money.amount(), dec!(1.1));
+
+    let d: ::serde::de::value::F64Deserializer<SerdeError> = (99.99_f64).into_deserializer();
+    let money: Money<USD> = Money::deserialize(d).unwrap();
+    assert_eq!(money.amount(), dec!(99.99));
+
+    let d: ::serde::de::value::F64Deserializer<SerdeError> = (-0.01_f64).into_deserializer();
+    let money: Money<USD> = Money::deserialize(d).unwrap();
+    assert_eq!(money.amount(), dec!(-0.01));
+}
+
 #[test]
 fn test_deserialize_expecting_message() {
     let err = serde_json::from_str::<Money<USD>>("true").unwrap_err();
@@ -2321,4 +2345,98 @@ fn test_option_str_symbol_visit_unit() {
     let d: serde::de::value::UnitDeserializer<serde_yaml::Error> = ().into_deserializer();
     let result = crate::serde::money::option_str_symbol::deserialize::<CHF, _>(d);
     assert!(result.unwrap().is_none());
+}
+
+// ---------------------------------------------------------------------------
+// expecting: triggered by BoolDeserializer (no visit_bool → default calls expecting)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_option_comma_str_code_expecting() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::BoolDeserializer<E> = true.into_deserializer();
+    let result = crate::serde::money::option_comma_str_code::deserialize::<USD, _>(d);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_option_comma_str_symbol_expecting() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::BoolDeserializer<E> = true.into_deserializer();
+    let result = crate::serde::money::option_comma_str_symbol::deserialize::<USD, _>(d);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_option_dot_str_code_expecting() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::BoolDeserializer<E> = true.into_deserializer();
+    let result = crate::serde::money::option_dot_str_code::deserialize::<EUR, _>(d);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_option_dot_str_symbol_expecting() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::BoolDeserializer<E> = true.into_deserializer();
+    let result = crate::serde::money::option_dot_str_symbol::deserialize::<EUR, _>(d);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_option_str_code_expecting() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::BoolDeserializer<E> = true.into_deserializer();
+    let result = crate::serde::money::option_str_code::deserialize::<CHF, _>(d);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_option_str_symbol_expecting() {
+    use serde::de::IntoDeserializer;
+    type E = serde::de::value::Error;
+    let d: serde::de::value::BoolDeserializer<E> = true.into_deserializer();
+    let result = crate::serde::money::option_str_symbol::deserialize::<CHF, _>(d);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_str_code_expecting() {
+    // Passing an integer where a string is expected triggers Visitor::expecting for str_code
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::money::str_code")]
+        amount: Money<CHF>,
+    }
+    let result: Result<W, _> = serde_json::from_str(r#"{"amount":123}"#);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_str_symbol_expecting() {
+    // Passing an integer where a string is expected triggers Visitor::expecting for str_symbol
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::money::str_symbol")]
+        amount: Money<CHF>,
+    }
+    let result: Result<W, _> = serde_json::from_str(r#"{"amount":123}"#);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_minor_expecting() {
+    // Passing a string where an integer is expected triggers Visitor::expecting for minor
+    #[derive(::serde::Serialize, ::serde::Deserialize)]
+    struct W {
+        #[serde(with = "crate::serde::money::minor")]
+        amount: Money<USD>,
+    }
+    let result: Result<W, _> = serde_json::from_str(r#"{"amount":"not-a-number"}"#);
+    assert!(result.is_err());
 }

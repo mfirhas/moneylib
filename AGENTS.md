@@ -43,6 +43,7 @@ All suggestions, warnings and errors from this command **must** be addressed bef
 make lcov
 ```
 
+- If `llvm-cov` not installed, install it using `cargo install cargo-llvm-cov`.
 - If coverage has decreased, the AI **must** add the necessary tests to restore or exceed the previous coverage level before proceeding.
 - If some of code sections are unreachable by tests, skip it and make report in PR's description.
 
