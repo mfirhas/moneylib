@@ -34,6 +34,10 @@ pub mod prelude {
 
     #[cfg(feature = "obj_money")]
     pub use crate::ObjMoney;
+    #[cfg(feature = "obj_money")]
+    pub use crate::make_money_from_code;
+    #[cfg(all(feature = "obj_money", feature = "raw_money"))]
+    pub use crate::make_raw_money_from_code;
 
     #[cfg(feature = "accounting")]
     pub use crate::AccountingOps;
@@ -140,7 +144,11 @@ mod fmt;
 mod parse;
 
 #[cfg(feature = "obj_money")]
-mod obj_money;
+pub mod obj_money;
+#[cfg(feature = "obj_money")]
+pub use obj_money::make_money_from_code;
+#[cfg(all(feature = "obj_money", feature = "raw_money"))]
+pub use obj_money::make_raw_money_from_code;
 #[cfg(feature = "obj_money")]
 pub use obj_money::{ObjIterOps, ObjMoney};
 

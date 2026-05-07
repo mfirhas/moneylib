@@ -1402,3 +1402,109 @@ fn test_tryfrom_raw_money_obj_to_money() {
 }
 
 // end of obj_money_test.rs
+
+// ==================== make_money_from_code / make_raw_money_from_code factory tests ====================
+
+/// `make_money_from_code` creates a Money-backed ObjMoney with the correct currency code.
+#[test]
+fn test_make_money_from_code_correct_code() {
+    use crate::obj_money::make_money_from_code;
+
+    let usd = make_money_from_code("USD", dec!(100.50)).unwrap();
+    assert_eq!(usd.code(), "USD");
+    assert_eq!(usd.amount(), dec!(100.50));
+
+    let eur = make_money_from_code("EUR", dec!(200.75)).unwrap();
+    assert_eq!(eur.code(), "EUR");
+    assert_eq!(eur.amount(), dec!(200.75));
+
+    let jpy = make_money_from_code("JPY", dec!(1500.9)).unwrap();
+    assert_eq!(jpy.code(), "JPY");
+    // JPY has 0 minor units, so amount rounds to whole number
+    assert_eq!(jpy.amount(), dec!(1501));
+}
+
+/// `make_money_from_code` returns `None` for an unknown currency code.
+#[test]
+fn test_make_money_from_code_unknown_returns_none() {
+    use crate::obj_money::make_money_from_code;
+
+    assert!(make_money_from_code("INVALID", dec!(1)).is_none());
+    assert!(make_money_from_code("", dec!(1)).is_none());
+    assert!(make_money_from_code("usd", dec!(1)).is_none()); // lowercase
+}
+
+/// `make_raw_money_from_code` creates a RawMoney-backed ObjMoney without rounding.
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_make_raw_money_from_code_correct_code() {
+    use crate::obj_money::make_raw_money_from_code;
+
+    let usd = make_raw_money_from_code("USD", dec!(100.56789)).unwrap();
+    assert_eq!(usd.code(), "USD");
+    // RawMoney preserves full precision
+    assert_eq!(usd.amount(), dec!(100.56789));
+
+    let eur = make_raw_money_from_code("EUR", dec!(0.123456789)).unwrap();
+    assert_eq!(eur.code(), "EUR");
+    assert_eq!(eur.amount(), dec!(0.123456789));
+}
+
+/// `make_raw_money_from_code` returns `None` for an unknown currency code.
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_make_raw_money_from_code_unknown_returns_none() {
+    use crate::obj_money::make_raw_money_from_code;
+
+    assert!(make_raw_money_from_code("INVALID", dec!(1)).is_none());
+}
+
+// ==================== ObjMoney::convert result currency code correctness ====================
+
+/// After converting USD → EUR, the result must carry code "EUR", not "USD".
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_result_code_is_target() {
+    let money = Money::<USD>::new(dec!(100.00)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    let result = money.convert("EUR", &rates).unwrap();
+    assert_eq!(result.code(), "EUR");
+    assert_eq!(result.amount(), dec!(80.00));
+}
+
+/// After converting EUR → JPY, the result must carry code "JPY".
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_result_code_cross_currency() {
+    let money = Money::<EUR>::new(dec!(100.00)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    rates.set("JPY", dec!(150)).unwrap();
+    let result = money.convert("JPY", &rates).unwrap();
+    assert_eq!(result.code(), "JPY");
+}
+
+/// `RawMoney::convert` result must carry the target currency code.
+#[cfg(all(feature = "exchange", feature = "raw_money"))]
+#[test]
+fn test_obj_raw_money_convert_result_code_is_target() {
+    let money = RawMoney::<USD>::new(dec!(100.00)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("EUR", dec!(0.8)).unwrap();
+    let result = money.convert("EUR", &rates).unwrap();
+    assert_eq!(result.code(), "EUR");
+    assert_eq!(result.amount(), dec!(80.00));
+}
+
+/// Converting to an unknown currency code returns ExchangeError.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_unknown_target_code_returns_error() {
+    let money = Money::<USD>::new(dec!(100.00)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    // Inject a fake rate; the real error comes from the unknown currency struct
+    rates.set("XYZ", dec!(2.0)).unwrap();
+    let err = money.convert("XYZ", &rates);
+    assert!(matches!(err, Err(MoneyError::ExchangeError(_))));
+}

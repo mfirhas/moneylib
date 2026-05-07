@@ -1,4 +1,8 @@
+pub mod factory;
 mod fmt;
+pub use factory::make_money_from_code;
+#[cfg(feature = "raw_money")]
+pub use factory::make_raw_money_from_code;
 
 use std::any::Any;
 

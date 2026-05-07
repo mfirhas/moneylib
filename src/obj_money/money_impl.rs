@@ -54,22 +54,26 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
             return Ok(Box::new(*self));
         }
 
-        Ok(Box::new(Self::from_decimal(
-            BaseMoney::amount(self)
-                .checked_mul(
-                    rate.get_rate(BaseMoney::code(self), to_code).ok_or(
-                        crate::MoneyError::ExchangeError(
-                            format!(
-                                "overflowed or failed getting rate from: {} to: {}",
-                                BaseMoney::code(self),
-                                to_code
-                            )
-                            .into(),
-                        ),
-                    )?,
-                )
-                .ok_or(crate::MoneyError::OverflowError)?,
-        )))
+        let converted_amount = BaseMoney::amount(self)
+            .checked_mul(
+                rate.get_rate(BaseMoney::code(self), to_code).ok_or(
+                    crate::MoneyError::ExchangeError(
+                        format!(
+                            "overflowed or failed getting rate from: {} to: {}",
+                            BaseMoney::code(self),
+                            to_code
+                        )
+                        .into(),
+                    ),
+                )?,
+            )
+            .ok_or(crate::MoneyError::OverflowError)?;
+
+        super::factory::make_money_from_code(to_code, converted_amount).ok_or(
+            crate::MoneyError::ExchangeError(
+                format!("unknown target currency code: {}", to_code).into(),
+            ),
+        )
     }
 }
 
