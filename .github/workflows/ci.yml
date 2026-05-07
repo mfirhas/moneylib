@@ -1,7 +1,6 @@
 name: ci
 
 env:
-  PROJECT_NAME: moneylib
   RUST_VERSION: 1.91.1
 
 on:
@@ -11,7 +10,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: ${{ env.PROJECT_NAME }}-ci
+  group: ${{ github.repository }}-ci
   cancel-in-progress: false
 
 jobs:
