@@ -1497,13 +1497,17 @@ fn test_obj_raw_money_convert_result_code_is_target() {
     assert_eq!(result.amount(), dec!(80.00));
 }
 
-/// Converting to an unknown currency code returns ExchangeError.
+/// Converting to an unknown currency code returns ExchangeError even when a rate exists.
+/// This specifically tests the factory's `None` return path inside `convert`: the rate
+/// lookup for "XYZ" succeeds (we inject it), but the factory cannot create a
+/// `Box<dyn ObjMoney>` for the non-ISO code "XYZ", so `ExchangeError` is returned.
 #[cfg(feature = "exchange")]
 #[test]
 fn test_obj_money_convert_unknown_target_code_returns_error() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let mut rates = ExchangeRates::<USD>::new();
-    // Inject a fake rate; the real error comes from the unknown currency struct
+    // Inject a fake rate so the rate-lookup step succeeds; the error originates from
+    // the factory being unable to instantiate a currency for the non-ISO code "XYZ".
     rates.set("XYZ", dec!(2.0)).unwrap();
     let err = money.convert("XYZ", &rates);
     assert!(matches!(err, Err(MoneyError::ExchangeError(_))));
