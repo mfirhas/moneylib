@@ -2027,8 +2027,11 @@ fn test_minor_amount_exponent_overflow() {
         const NUMERIC: u16 = 69;
         const MINOR_UNIT: u16 = 98;
         const MINOR_UNIT_SYMBOL: &'static str = "*";
+        const MINOR_UNIT_NAME: &'static str = "b";
         const THOUSAND_SEPARATOR: &'static str = ",";
         const DECIMAL_SEPARATOR: &'static str = ".";
+        const ORIGIN: &'static str = "Big Land";
+        const LOCALE: &'static str = "bg-BG";
     }
 
     let toobig = Money::<TooBig>::from_decimal(dec!(123123));
@@ -3200,8 +3203,11 @@ fn test_from_minor_error() {
         const NUMERIC: u16 = 69;
         const MINOR_UNIT: u16 = 98;
         const MINOR_UNIT_SYMBOL: &'static str = "*";
+        const MINOR_UNIT_NAME: &'static str = "b";
         const THOUSAND_SEPARATOR: &'static str = ",";
         const DECIMAL_SEPARATOR: &'static str = ".";
+        const ORIGIN: &'static str = "Big Land";
+        const LOCALE: &'static str = "bg-BG";
     }
 
     let toobig = Money::<TooBig>::from_minor(123123);
@@ -3457,8 +3463,11 @@ impl crate::Currency for MyCurrency {
     const NUMERIC: u16 = 999;
     const MINOR_UNIT: u16 = 3;
     const MINOR_UNIT_SYMBOL: &'static str = "m";
+    const MINOR_UNIT_NAME: &'static str = "my";
     const THOUSAND_SEPARATOR: &'static str = ",";
     const DECIMAL_SEPARATOR: &'static str = ".";
+    const ORIGIN: &'static str = "My Land";
+    const LOCALE: &'static str = "my-MY";
 }
 
 #[test]

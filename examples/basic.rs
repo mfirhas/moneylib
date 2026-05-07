@@ -321,8 +321,11 @@ fn main() {
         const NUMERIC: u16 = 0; // Bitcoin has no official ISO 4217 numeric code
         const MINOR_UNIT: u16 = 8;
         const MINOR_UNIT_SYMBOL: &'static str = "sat";
+        const MINOR_UNIT_NAME: &'static str = "Satoshi";
         const THOUSAND_SEPARATOR: &'static str = ",";
         const DECIMAL_SEPARATOR: &'static str = ".";
+        const ORIGIN: &'static str = "Satoshi Nakamoto";
+        const LOCALE: &'static str = "en-US";
     }
 
     println!(
@@ -346,8 +349,11 @@ fn main() {
         const NUMERIC: u16 = 0;
         const MINOR_UNIT: u16 = 0;
         const MINOR_UNIT_SYMBOL: &'static str = "";
+        const MINOR_UNIT_NAME: &'static str = "pts";
         const THOUSAND_SEPARATOR: &'static str = ",";
         const DECIMAL_SEPARATOR: &'static str = ".";
+        const ORIGIN: &'static str = "Anu";
+        const LOCALE: &'static str = "nganu";
     }
 
     let points_money = Money::<PTS>::new(dec!(1500)).unwrap();

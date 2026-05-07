@@ -72,8 +72,11 @@ fn test_raw_money_new_overflow() {
         const NUMERIC: u16 = 69;
         const MINOR_UNIT: u16 = 98;
         const MINOR_UNIT_SYMBOL: &'static str = "*";
+        const MINOR_UNIT_NAME: &'static str = "b";
         const THOUSAND_SEPARATOR: &'static str = ",";
         const DECIMAL_SEPARATOR: &'static str = ".";
+        const ORIGIN: &'static str = "Big Land";
+        const LOCALE: &'static str = "bg-BG";
     }
 
     let money = RawMoney::<TooBig>::from_minor(123);
@@ -1970,8 +1973,11 @@ impl crate::Currency for MyCurrency {
     const NUMERIC: u16 = 999;
     const MINOR_UNIT: u16 = 4;
     const MINOR_UNIT_SYMBOL: &'static str = "m";
+    const MINOR_UNIT_NAME: &'static str = "my";
     const THOUSAND_SEPARATOR: &'static str = ",";
     const DECIMAL_SEPARATOR: &'static str = ".";
+    const ORIGIN: &'static str = "MyLand";
+    const LOCALE: &'static str = "my-MY";
 }
 
 #[test]
