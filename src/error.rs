@@ -5,6 +5,7 @@ pub type ErrVal = Box<dyn Error + Send + Sync + 'static>;
 const ERROR_PREFIX: &str = "[MONEYLIB]";
 
 /// Error type for moneylib.
+#[non_exhaustive]
 #[derive(Debug)]
 pub enum MoneyError {
     ParseStrError(ErrVal),
