@@ -473,14 +473,19 @@ where
     ///
     /// If some of the sets failed, will be skipped.
     fn from(value: I) -> Self {
-        let mut exchange_rates = Self::new();
+        let mut rates = HashMap::new();
+        rates.insert(Base::CODE, Decimal::ONE);
+
         for (k, v) in value {
             if k != Base::CODE {
-                let _ = exchange_rates.set(k, v);
+                rates.insert(k, v);
             }
         }
 
-        exchange_rates
+        Self {
+            rates,
+            _base: PhantomData,
+        }
     }
 }
 
