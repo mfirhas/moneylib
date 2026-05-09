@@ -463,6 +463,18 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     pub fn len(&self) -> usize {
         self.rates.len()
     }
+
+    fn try_from_iter(
+        iter: impl IntoIterator<Item = (&'a str, Decimal)>,
+    ) -> Result<Self, MoneyError> {
+        let mut exchange_rates = Self::new();
+        for (k, v) in iter {
+            if k != Base::CODE {
+                exchange_rates.set(k, v)?;
+            }
+        }
+        Ok(exchange_rates)
+    }
 }
 
 impl<'a, Base: Currency, const N: usize> TryFrom<[(&'a str, Decimal); N]>
@@ -472,16 +484,9 @@ impl<'a, Base: Currency, const N: usize> TryFrom<[(&'a str, Decimal); N]>
 
     /// Try to set exchange rates from an array of rate pairs.
     ///
-    /// Returns an error if any rate conversion overflows.
+    /// Returns an error if any rate conversion fails.
     fn try_from(value: [(&'a str, Decimal); N]) -> Result<Self, Self::Error> {
-        let mut exchange_rates = Self::new();
-        for (k, v) in value {
-            if k != Base::CODE {
-                exchange_rates.set(k, v)?;
-            }
-        }
-
-        Ok(exchange_rates)
+        Self::try_from_iter(value)
     }
 }
 
@@ -490,16 +495,9 @@ impl<'a, Base: Currency> TryFrom<Vec<(&'a str, Decimal)>> for ExchangeRates<'a, 
 
     /// Try to set exchange rates from a Vec of rate pairs.
     ///
-    /// Returns an error if any rate conversion overflows.
+    /// Returns an error if any rate conversion fails.
     fn try_from(value: Vec<(&'a str, Decimal)>) -> Result<Self, Self::Error> {
-        let mut exchange_rates = Self::new();
-        for (k, v) in value {
-            if k != Base::CODE {
-                exchange_rates.set(k, v)?;
-            }
-        }
-
-        Ok(exchange_rates)
+        Self::try_from_iter(value)
     }
 }
 

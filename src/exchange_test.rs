@@ -220,7 +220,7 @@ fn test_exchange_rates() {
 
 #[test]
 fn test_try_from_exchange_rates() {
-    // Successful construction from an iterator.
+    // Successful construction from an array.
     let rates = ExchangeRates::<USD>::try_from([
         ("EUR", dec!(0.8)),
         ("IDR", dec!(17_000)),
@@ -234,10 +234,12 @@ fn test_try_from_exchange_rates() {
     assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(17_000));
     assert_eq!(rates.get(IRR::CODE).unwrap(), dec!(1_321_700));
 
-    // An overflowing rate must cause try_from to return an error
-    // (i128::MAX cannot be converted to Decimal without overflow).
-    let result = ExchangeRates::<USD>::try_from([("EUR", dec!(0.8)), ("IDR", dec!(17_000))]);
+    // Successful construction from a Vec.
+    let result = ExchangeRates::<USD>::try_from(vec![("EUR", dec!(0.8)), ("IDR", dec!(17_000))]);
     assert!(result.is_ok());
+    let rates_vec = result.unwrap();
+    assert_eq!(rates_vec.get("EUR").unwrap(), dec!(0.8));
+    assert_eq!(rates_vec.get("IDR").unwrap(), dec!(17_000));
 
     // Construct with valid rates and verify no rate is silently dropped.
     let rates2 =
