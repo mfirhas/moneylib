@@ -109,7 +109,7 @@ pub trait PercentOps<C: Currency> {
         for<'a> &'a I: IntoIterator<Item = &'a D>,
         D: DecimalNumber;
 
-    /// Substracts amount by percentage(discount)
+    /// Subtracts amount by percentage(discount)
     ///
     /// `pcn` is the percentage, 20% -> pcn = 20.
     ///
@@ -130,7 +130,7 @@ pub trait PercentOps<C: Currency> {
     where
         D: DecimalNumber;
 
-    /// Substracts self by multiple percentages in sequence.
+    /// Subtracts self by multiple percentages in sequence.
     ///
     /// Each items in `pcns` are percentage, 20% -> 20.
     ///

@@ -36,7 +36,7 @@ where
         let ret = self
             .amount()
             .checked_sub(rhs.amount())
-            .expect("substraction operation overflow");
+            .expect("subtraction operation overflow");
 
         Self::from_decimal(ret)
     }
