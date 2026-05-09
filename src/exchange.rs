@@ -464,7 +464,25 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
         self.rates.len()
     }
 
-    fn try_from_iter(
+    /// Try to build `ExchangeRates` from any iterator of `(&str, Decimal)` pairs.
+    ///
+    /// This is the generic fallible constructor for any type implementing
+    /// `IntoIterator<Item = (&'a str, Decimal)>`.
+    ///
+    /// Returns an error if any rate conversion fails (e.g. overflow).
+    /// The base currency entry is silently skipped (its rate is always 1).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{ExchangeRates, iso::{USD, EUR, IDR}, macros::dec};
+    ///
+    /// let pairs = vec![("EUR", dec!(0.8)), ("IDR", dec!(17_000))];
+    /// let rates = ExchangeRates::<USD>::try_from_iter(pairs).unwrap();
+    /// assert_eq!(rates.get("EUR").unwrap(), dec!(0.8));
+    /// assert_eq!(rates.get("IDR").unwrap(), dec!(17_000));
+    /// ```
+    pub fn try_from_iter(
         iter: impl IntoIterator<Item = (&'a str, Decimal)>,
     ) -> Result<Self, MoneyError> {
         let mut exchange_rates = Self::new();
