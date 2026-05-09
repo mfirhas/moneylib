@@ -151,8 +151,10 @@ where
 
         let ulp = ulp(total.amount());
         let mut i: usize = 0;
-        while parts.checked_sum()?.amount() > money.amount() {
+        let mut current_sum = total.clone();
+        while current_sum.amount() > money.amount() {
             parts[i] = parts[i].checked_sub(ulp)?;
+            current_sum = current_sum.checked_sub(ulp)?;
             i += 1;
             if i >= parts.len() {
                 i = 0;
@@ -301,10 +303,12 @@ where
     let allocated_total = parts.checked_sum()?;
 
     if allocated_total.amount() > money.amount() {
+        let mut current_sum = allocated_total;
         let mut i = 0;
-        while parts.checked_sum()?.amount() > money.amount() {
+        while current_sum.amount() > money.amount() {
             let ulp = ulp(parts[i].amount());
             parts[i] = parts[i].checked_sub(ulp)?;
+            current_sum = current_sum.checked_sub(ulp)?;
             i += 1;
             if i >= parts.len() {
                 i = 0;
