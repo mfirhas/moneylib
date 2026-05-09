@@ -511,12 +511,12 @@ assert_eq!(ret.unwrap().amount(), dec!(98.4));
 let ret = money.convert::<IDR>(&rates);
 assert_eq!(ret.unwrap().amount(), dec!(2_091_000));
 
-let rates = ExchangeRates::<EUR>::from([
+let rates = ExchangeRates::<EUR>::try_from([
     ("IDR", dec!(21_250)),
     ("IRR", dec!(1_652_125)),
     ("USD", dec!(1.25)),
     ("EUR", dec!(0.8)), // will be ignored since base already in eur and forced into 1.
-]);
+]).unwrap();
 assert_eq!(rates.base(), "EUR");
 assert_eq!(rates.len(), 4);
 assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(1));

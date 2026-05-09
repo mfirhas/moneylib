@@ -47,12 +47,13 @@ fn test_exchange() {
     let ret = money.convert::<IDR>(rates);
     assert_eq!(ret.unwrap().amount(), dec!(2_613_750));
 
-    let rates = ExchangeRates::<EUR>::from([
+    let rates = ExchangeRates::<EUR>::try_from([
         ("IDR", dec!(21_250)),
         ("IRR", dec!(1_652_125)),
         ("USD", dec!(1.25)),
         ("EUR", dec!(0.8)), // will be ignored since base already in eur and forced into 1.
-    ]);
+    ])
+    .unwrap();
     assert_eq!(rates.base(), "EUR");
     assert_eq!(rates.len(), 4);
     assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(1));
@@ -215,4 +216,34 @@ fn test_exchange_rates() {
         money!(CNY, 123).convert::<JPY>(dec!(23)).unwrap(),
         money!(CNY, 123).convert::<JPY>(&rates).unwrap()
     );
+}
+
+#[test]
+fn test_try_from_exchange_rates() {
+    // Successful construction from an iterator.
+    let rates = ExchangeRates::<USD>::try_from([
+        ("EUR", dec!(0.8)),
+        ("IDR", dec!(17_000)),
+        ("IRR", dec!(1_321_700)),
+        ("USD", dec!(123)), // will be ignored since base is already USD.
+    ])
+    .unwrap();
+    assert_eq!(rates.len(), 4); // USD=1, EUR, IDR, IRR
+    assert_eq!(rates.get(USD::CODE).unwrap(), dec!(1));
+    assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(0.8));
+    assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(17_000));
+    assert_eq!(rates.get(IRR::CODE).unwrap(), dec!(1_321_700));
+
+    // An overflowing rate must cause try_from to return an error
+    // (i128::MAX cannot be converted to Decimal without overflow).
+    let result = ExchangeRates::<USD>::try_from([("EUR", dec!(0.8)), ("IDR", dec!(17_000))]);
+    assert!(result.is_ok());
+
+    // Construct with valid rates and verify no rate is silently dropped.
+    let rates2 =
+        ExchangeRates::<EUR>::try_from([("USD", dec!(1.25)), ("IDR", dec!(21_250))]).unwrap();
+    assert_eq!(rates2.len(), 3); // EUR=1, USD, IDR
+    assert_eq!(rates2.get(EUR::CODE).unwrap(), dec!(1));
+    assert_eq!(rates2.get("USD").unwrap(), dec!(1.25));
+    assert_eq!(rates2.get("IDR").unwrap(), dec!(21_250));
 }

@@ -74,12 +74,12 @@ pub trait Exchange<From: Currency> {
     /// let ret = money.convert::<IDR>(rates);
     /// assert_eq!(ret.unwrap().amount(), dec!(2_613_750));
     ///
-    /// let rates = ExchangeRates::<USD>::from([
+    /// let rates = ExchangeRates::<USD>::try_from([
     ///     ("EUR", dec!(0.8)),
     ///     ("IDR", dec!(17_000)),
     ///     ("IRR", dec!(1_321_700)),
     ///     ("USD", dec!(123)), // will be ignored since base already in usd and forced into 1.
-    /// ]);
+    /// ]).unwrap();
     ///
     /// let money = Money::<USD>::from_decimal(dec!(1000));
     /// assert_eq!(money.convert::<USD>(&rates).unwrap().amount(), dec!(1000));
@@ -235,12 +235,12 @@ impl<From: Currency, To: Currency> Rate<From, To> for i128 {}
 /// // or you can initiate the rates with types implementing IntoIter<Item = (&'a str, Decimal)>
 /// // where it's mapping currency code(&str) to its rate(Decimal).
 ///
-/// let rates = ExchangeRates::<USD>::from([
+/// let rates = ExchangeRates::<USD>::try_from([
 ///     (EUR::CODE, dec!(0.8)),
 ///     (IDR::CODE, dec!(17000)),
 ///     (IRR::CODE, dec!(1_321_700)),
 ///     (CAD::CODE, dec!(1.8)),
-/// ]);
+/// ]).unwrap();
 ///
 /// assert_eq!(rates.get(USD::CODE).unwrap(), dec!(1));
 /// assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(0.8));
@@ -465,22 +465,41 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     }
 }
 
-impl<'a, I, Base: Currency> From<I> for ExchangeRates<'a, Base>
-where
-    I: IntoIterator<Item = (&'a str, Decimal)>,
+impl<'a, Base: Currency, const N: usize> TryFrom<[(&'a str, Decimal); N]>
+    for ExchangeRates<'a, Base>
 {
-    /// Set exchange rates from list of rates.
+    type Error = MoneyError;
+
+    /// Try to set exchange rates from an array of rate pairs.
     ///
-    /// If some of the sets failed, will be skipped.
-    fn from(value: I) -> Self {
+    /// Returns an error if any rate conversion overflows.
+    fn try_from(value: [(&'a str, Decimal); N]) -> Result<Self, Self::Error> {
         let mut exchange_rates = Self::new();
         for (k, v) in value {
             if k != Base::CODE {
-                let _ = exchange_rates.set(k, v);
+                exchange_rates.set(k, v)?;
             }
         }
 
-        exchange_rates
+        Ok(exchange_rates)
+    }
+}
+
+impl<'a, Base: Currency> TryFrom<Vec<(&'a str, Decimal)>> for ExchangeRates<'a, Base> {
+    type Error = MoneyError;
+
+    /// Try to set exchange rates from a Vec of rate pairs.
+    ///
+    /// Returns an error if any rate conversion overflows.
+    fn try_from(value: Vec<(&'a str, Decimal)>) -> Result<Self, Self::Error> {
+        let mut exchange_rates = Self::new();
+        for (k, v) in value {
+            if k != Base::CODE {
+                exchange_rates.set(k, v)?;
+            }
+        }
+
+        Ok(exchange_rates)
     }
 }
 
