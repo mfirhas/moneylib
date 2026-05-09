@@ -336,6 +336,8 @@ pub trait BaseMoney<C: Currency>: Clone {
 
     /// Returns `true` if the amount is positive.
     ///
+    /// Zero returns false.
+    ///
     /// # Examples
     ///
     /// ```
@@ -351,10 +353,15 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// ```
     #[inline]
     fn is_positive(&self) -> bool {
+        if self.is_zero() {
+            return false;
+        }
         self.amount().is_sign_positive()
     }
 
     /// Returns `true` if the amount is negative.
+    ///
+    /// Zero returns false.
     ///
     /// # Examples
     ///
@@ -371,6 +378,9 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// ```
     #[inline]
     fn is_negative(&self) -> bool {
+        if self.is_zero() {
+            return false;
+        }
         self.amount().is_sign_negative()
     }
 

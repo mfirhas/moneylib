@@ -197,7 +197,7 @@ fn test_obj_money_vec_positive_negative_zero() {
 
     assert!(portfolio[2].is_zero());
     // Decimal::ZERO has a positive sign bit, so is_positive() returns true for zero amounts
-    assert!(portfolio[2].is_positive());
+    assert!(!portfolio[2].is_positive());
     assert!(!portfolio[2].is_negative());
 
     assert!(portfolio[3].is_positive());
@@ -221,7 +221,7 @@ fn test_obj_money_count_by_sign() {
 
     // JPY(0) is_positive() returns true because Decimal zero has a positive sign bit;
     // positives = USD, JPY(0), GBP, INR = 4
-    assert_eq!(positives, 4);
+    assert_eq!(positives, 3);
     assert_eq!(negatives, 2);
     assert_eq!(zeros, 1);
 }
@@ -713,8 +713,7 @@ fn test_obj_mixed_sign_checks() {
     let positives = portfolio.iter().filter(|m| m.is_positive()).count();
     let negatives = portfolio.iter().filter(|m| m.is_negative()).count();
     let zeros = portfolio.iter().filter(|m| m.is_zero()).count();
-    // EUR(0) counts as zero; Decimal zero has a positive sign bit so is_positive() is also true for it
-    assert_eq!(positives, 3); // USD(50), EUR(0), GBP(0.0001)
+    assert_eq!(positives, 2); // USD(50), EUR(0), GBP(0.0001)
     assert_eq!(negatives, 2); // USD(-0.001), JPY(-100)
     assert_eq!(zeros, 1); // EUR(0)
 }

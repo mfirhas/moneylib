@@ -2847,10 +2847,9 @@ fn test_is_zero_with_very_small_amount() {
 }
 
 #[test]
-fn test_is_positive_zero() {
+fn test_zero_neither_positive_negative() {
     let money = Money::<USD>::new(dec!(0)).unwrap();
-    // Zero is considered positive in Decimal
-    assert!(money.is_positive());
+    assert!(!money.is_positive());
     assert!(!money.is_negative());
 }
 

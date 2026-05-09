@@ -100,15 +100,27 @@ pub trait ObjMoney: Send + Sync {
         self.amount().is_zero()
     }
 
-    /// Returns `true` if the amount is positive (or zero).
+    /// Returns `true` if the amount is positive.
+    ///
+    /// Zero returns false.
+    ///
     #[inline]
     fn is_positive(&self) -> bool {
+        if self.is_zero() {
+            return false;
+        }
         self.amount().is_sign_positive()
     }
 
     /// Returns `true` if the amount is negative.
+    ///
+    /// Zero returns false.
+    ///
     #[inline]
     fn is_negative(&self) -> bool {
+        if self.is_zero() {
+            return false;
+        }
         self.amount().is_sign_negative()
     }
 
