@@ -240,7 +240,7 @@ where
     let total_ratio: Decimal = {
         let mut total = Decimal::ZERO;
         for d in ratios.as_ref() {
-            total = total.checked_add(d.get_decimal().unwrap_or_default())?;
+            total = total.checked_add(d.get_decimal()?)?;
         }
         total
     };
