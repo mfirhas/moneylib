@@ -256,15 +256,4 @@ fn test_try_from_exchange_rates() {
     assert_eq!(rates2.get(EUR::CODE).unwrap(), dec!(1));
     assert_eq!(rates2.get("USD").unwrap(), dec!(1.25));
     assert_eq!(rates2.get("IDR").unwrap(), dec!(21_250));
-
-    // try_from_iter accepts any IntoIterator — e.g. a map chain or filter.
-    let pairs = vec![
-        ("EUR", dec!(0.8)),
-        ("IDR", dec!(17_000)),
-        ("USD", dec!(1)), // skipped — matches base currency
-    ];
-    let rates3 = ExchangeRates::<USD>::try_from_iter(pairs.into_iter()).unwrap();
-    assert_eq!(rates3.len(), 3); // USD=1, EUR, IDR
-    assert_eq!(rates3.get("EUR").unwrap(), dec!(0.8));
-    assert_eq!(rates3.get("IDR").unwrap(), dec!(17_000));
 }

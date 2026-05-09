@@ -463,36 +463,6 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     pub fn len(&self) -> usize {
         self.rates.len()
     }
-
-    /// Try to build `ExchangeRates` from any iterator of `(&str, Decimal)` pairs.
-    ///
-    /// This is the generic fallible constructor for any type implementing
-    /// `IntoIterator<Item = (&'a str, Decimal)>`.
-    ///
-    /// Returns an error if any rate conversion fails (e.g. overflow).
-    /// The base currency entry is silently skipped (its rate is always 1).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{ExchangeRates, iso::{USD, EUR, IDR}, macros::dec};
-    ///
-    /// let pairs = vec![("EUR", dec!(0.8)), ("IDR", dec!(17_000))];
-    /// let rates = ExchangeRates::<USD>::try_from_iter(pairs).unwrap();
-    /// assert_eq!(rates.get("EUR").unwrap(), dec!(0.8));
-    /// assert_eq!(rates.get("IDR").unwrap(), dec!(17_000));
-    /// ```
-    pub fn try_from_iter(
-        iter: impl IntoIterator<Item = (&'a str, Decimal)>,
-    ) -> Result<Self, MoneyError> {
-        let mut exchange_rates = Self::new();
-        for (k, v) in iter {
-            if k != Base::CODE {
-                exchange_rates.set(k, v)?;
-            }
-        }
-        Ok(exchange_rates)
-    }
 }
 
 /// Generates `TryFrom` impls for `ExchangeRates` from common collection types.
@@ -512,7 +482,13 @@ macro_rules! impl_try_from_exchange_rates {
             ///
             /// Returns an error if any rate conversion fails (e.g. overflow).
             fn try_from(value: [(&'a str, Decimal); N]) -> Result<Self, Self::Error> {
-                Self::try_from_iter(value)
+                let mut exchange_rates = Self::new();
+                for (k, v) in value {
+                    if k != Base::CODE {
+                        exchange_rates.set(k, v)?;
+                    }
+                }
+                Ok(exchange_rates)
             }
         }
     };
@@ -524,7 +500,13 @@ macro_rules! impl_try_from_exchange_rates {
             ///
             /// Returns an error if any rate conversion fails (e.g. overflow).
             fn try_from(value: &'b [(&'a str, Decimal)]) -> Result<Self, Self::Error> {
-                Self::try_from_iter(value.iter().copied())
+                let mut exchange_rates = Self::new();
+                for &(k, v) in value {
+                    if k != Base::CODE {
+                        exchange_rates.set(k, v)?;
+                    }
+                }
+                Ok(exchange_rates)
             }
         }
     };
@@ -536,7 +518,13 @@ macro_rules! impl_try_from_exchange_rates {
             ///
             /// Returns an error if any rate conversion fails (e.g. overflow).
             fn try_from(value: Vec<(&'a str, Decimal)>) -> Result<Self, Self::Error> {
-                Self::try_from_iter(value)
+                let mut exchange_rates = Self::new();
+                for (k, v) in value {
+                    if k != Base::CODE {
+                        exchange_rates.set(k, v)?;
+                    }
+                }
+                Ok(exchange_rates)
             }
         }
     };
