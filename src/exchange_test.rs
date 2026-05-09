@@ -26,6 +26,7 @@ fn test_exchange() {
     let money = Money::<USD>::new(123).unwrap();
     let mut rates = ExchangeRates::<USD>::default();
     assert_eq!(rates.len(), 1);
+    assert!(!rates.is_empty());
     assert_eq!(rates.get(USD::CODE).unwrap(), dec!(1));
     rates.set(EUR::CODE, dec!(0.8)).unwrap();
     rates.set(IDR::CODE, 17_000).unwrap();

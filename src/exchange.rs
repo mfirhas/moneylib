@@ -458,10 +458,16 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
             .checked_mul(self.get(to_code)?)
     }
 
-    #[allow(clippy::len_without_is_empty)]
     /// Get length of exchange rates list.
     pub fn len(&self) -> usize {
         self.rates.len()
+    }
+
+    /// Check if rates is empty.
+    ///
+    /// Rates is atleast contains base rate, so this always return false.
+    pub fn is_empty(&self) -> bool {
+        self.rates.is_empty()
     }
 }
 
