@@ -495,29 +495,56 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     }
 }
 
-impl<'a, Base: Currency, const N: usize> TryFrom<[(&'a str, Decimal); N]>
-    for ExchangeRates<'a, Base>
-{
-    type Error = MoneyError;
+/// Generates `TryFrom` impls for `ExchangeRates` from common collection types.
+///
+/// Three variants are supported:
+/// - `array`  — `[(&'a str, Decimal); N]`  (const-generic fixed-size array)
+/// - `slice`  — `&'b [(&'a str, Decimal)]` (borrowed slice)
+/// - `vec`    — `Vec<(&'a str, Decimal)>`
+macro_rules! impl_try_from_exchange_rates {
+    (array) => {
+        impl<'a, Base: Currency, const N: usize> TryFrom<[(&'a str, Decimal); N]>
+            for ExchangeRates<'a, Base>
+        {
+            type Error = MoneyError;
 
-    /// Try to set exchange rates from an array of rate pairs.
-    ///
-    /// Returns an error if any rate conversion fails.
-    fn try_from(value: [(&'a str, Decimal); N]) -> Result<Self, Self::Error> {
-        Self::try_from_iter(value)
-    }
+            /// Try to build `ExchangeRates` from a fixed-size array of rate pairs.
+            ///
+            /// Returns an error if any rate conversion fails (e.g. overflow).
+            fn try_from(value: [(&'a str, Decimal); N]) -> Result<Self, Self::Error> {
+                Self::try_from_iter(value)
+            }
+        }
+    };
+    (slice) => {
+        impl<'a, 'b, Base: Currency> TryFrom<&'b [(&'a str, Decimal)]> for ExchangeRates<'a, Base> {
+            type Error = MoneyError;
+
+            /// Try to build `ExchangeRates` from a borrowed slice of rate pairs.
+            ///
+            /// Returns an error if any rate conversion fails (e.g. overflow).
+            fn try_from(value: &'b [(&'a str, Decimal)]) -> Result<Self, Self::Error> {
+                Self::try_from_iter(value.iter().copied())
+            }
+        }
+    };
+    (vec) => {
+        impl<'a, Base: Currency> TryFrom<Vec<(&'a str, Decimal)>> for ExchangeRates<'a, Base> {
+            type Error = MoneyError;
+
+            /// Try to build `ExchangeRates` from a `Vec` of rate pairs.
+            ///
+            /// Returns an error if any rate conversion fails (e.g. overflow).
+            fn try_from(value: Vec<(&'a str, Decimal)>) -> Result<Self, Self::Error> {
+                Self::try_from_iter(value)
+            }
+        }
+    };
 }
 
-impl<'a, Base: Currency> TryFrom<Vec<(&'a str, Decimal)>> for ExchangeRates<'a, Base> {
-    type Error = MoneyError;
-
-    /// Try to set exchange rates from a Vec of rate pairs.
-    ///
-    /// Returns an error if any rate conversion fails.
-    fn try_from(value: Vec<(&'a str, Decimal)>) -> Result<Self, Self::Error> {
-        Self::try_from_iter(value)
-    }
-}
+impl_try_from_exchange_rates!(array);
+impl_try_from_exchange_rates!(slice);
+impl_try_from_exchange_rates!(vec);
 
 impl<'a, Base: Currency> Default for ExchangeRates<'a, Base> {
     fn default() -> Self {

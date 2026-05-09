@@ -1,5 +1,5 @@
 use crate::{
-    BaseMoney, Currency, Exchange, ExchangeRates, Money, RawMoney,
+    BaseMoney, Currency, Decimal, Exchange, ExchangeRates, Money, RawMoney,
     base::Amount,
     iso::{CAD, EUR, IDR, IRR, JPY, USD},
     macros::dec,
@@ -240,6 +240,14 @@ fn test_try_from_exchange_rates() {
     let rates_vec = result.unwrap();
     assert_eq!(rates_vec.get("EUR").unwrap(), dec!(0.8));
     assert_eq!(rates_vec.get("IDR").unwrap(), dec!(17_000));
+
+    // Successful construction from a slice.
+    let pairs: &[(&str, Decimal)] = &[("EUR", dec!(0.8)), ("IDR", dec!(17_000))];
+    let result_slice = ExchangeRates::<USD>::try_from(pairs);
+    assert!(result_slice.is_ok());
+    let rates_slice = result_slice.unwrap();
+    assert_eq!(rates_slice.get("EUR").unwrap(), dec!(0.8));
+    assert_eq!(rates_slice.get("IDR").unwrap(), dec!(17_000));
 
     // Construct with valid rates and verify no rate is silently dropped.
     let rates2 =
