@@ -1,6 +1,6 @@
 //--------- Ops for RawMoney (without automatic rounding)
 
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
 
 use crate::{BaseMoney, Currency};
 
@@ -42,42 +42,6 @@ where
     }
 }
 
-/// RawMoney * RawMoney = RawMoney (no auto-rounding)
-impl<C> Mul for RawMoney<C>
-where
-    C: Currency,
-{
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .amount()
-            .checked_mul(rhs.amount())
-            .expect("multiplication operation overflow");
-
-        Self::from_decimal(ret)
-    }
-}
-
-/// RawMoney / RawMoney = RawMoney (no auto-rounding)
-impl<C> Div for RawMoney<C>
-where
-    C: Currency,
-{
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .amount()
-            .checked_div(rhs.amount())
-            .expect("division operation overflow");
-
-        Self::from_decimal(ret)
-    }
-}
-
 /// RawMoney += RawMoney (no auto-rounding)
 impl<C> AddAssign for RawMoney<C>
 where
@@ -103,36 +67,6 @@ where
             .amount()
             .checked_sub(other.amount())
             .expect("subtraction operation overflow");
-
-        *self = Self::from_decimal(ret);
-    }
-}
-
-/// RawMoney *= RawMoney (no auto-rounding)
-impl<C> MulAssign for RawMoney<C>
-where
-    C: Currency,
-{
-    fn mul_assign(&mut self, other: Self) {
-        let ret = self
-            .amount()
-            .checked_mul(other.amount())
-            .expect("multiplication operation overflow");
-
-        *self = Self::from_decimal(ret);
-    }
-}
-
-/// RawMoney /= RawMoney (no auto-rounding)
-impl<C> DivAssign for RawMoney<C>
-where
-    C: Currency,
-{
-    fn div_assign(&mut self, other: Self) {
-        let ret = self
-            .amount()
-            .checked_div(other.amount())
-            .expect("division operation overflow");
 
         *self = Self::from_decimal(ret);
     }

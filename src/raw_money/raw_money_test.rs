@@ -253,23 +253,6 @@ fn test_subtraction_no_rounding() {
     assert_eq!(result.amount(), dec!(100.333));
 }
 
-#[test]
-fn test_multiplication_no_rounding() {
-    let raw = RawMoney::<USD>::new(dec!(100.123)).unwrap();
-    let raw2 = RawMoney::<USD>::new(dec!(2)).unwrap();
-    let result = raw * raw2;
-    assert_eq!(result.amount(), dec!(200.246));
-}
-
-#[test]
-fn test_division_no_rounding() {
-    let raw = RawMoney::<USD>::new(dec!(100)).unwrap();
-    let raw2 = RawMoney::<USD>::new(dec!(3)).unwrap();
-    let result = raw / raw2;
-    let expected = dec!(100) / dec!(3);
-    assert_eq!(result.amount(), expected);
-}
-
 // ==================== Decimal Operations Tests ====================
 
 #[test]
@@ -317,24 +300,10 @@ fn test_decimal_add_raw_money() {
 }
 
 #[test]
-fn test_decimal_sub_raw_money() {
-    let raw = RawMoney::<USD>::new(dec!(50.123)).unwrap();
-    let result = dec!(100.456) - raw;
-    assert_eq!(result.amount(), dec!(50.333));
-}
-
-#[test]
 fn test_decimal_mul_raw_money() {
     let raw = RawMoney::<USD>::new(dec!(100.123)).unwrap();
     let result = dec!(1.5) * raw;
     assert_eq!(result.amount(), dec!(150.1845));
-}
-
-#[test]
-fn test_decimal_div_raw_money() {
-    let raw = RawMoney::<USD>::new(dec!(4)).unwrap();
-    let result = dec!(100) / raw;
-    assert_eq!(result.amount(), dec!(25));
 }
 
 // ==================== Assignment Operations Tests ====================
@@ -351,20 +320,6 @@ fn test_sub_assign() {
     let mut raw = RawMoney::<USD>::new(dec!(100.123)).unwrap();
     raw -= RawMoney::<USD>::new(dec!(50.456)).unwrap();
     assert_eq!(raw.amount(), dec!(49.667));
-}
-
-#[test]
-fn test_mul_assign() {
-    let mut raw = RawMoney::<USD>::new(dec!(100.123)).unwrap();
-    raw *= RawMoney::<USD>::new(dec!(2)).unwrap();
-    assert_eq!(raw.amount(), dec!(200.246));
-}
-
-#[test]
-fn test_div_assign() {
-    let mut raw = RawMoney::<USD>::new(dec!(100)).unwrap();
-    raw /= RawMoney::<USD>::new(dec!(4)).unwrap();
-    assert_eq!(raw.amount(), dec!(25));
 }
 
 // ==================== Negation Tests ====================
@@ -1997,16 +1952,16 @@ fn test_raw_macro_operators() {
     let ret = raw!(XAU, 12) + raw!(XAU, 5);
     assert_eq!(ret.amount(), dec!(17));
 
-    let ret = raw!(CAD, 100) * raw!(CAD, 123.22222);
+    let ret = raw!(CAD, 100) * dec!(123.22222);
     assert_eq!(ret.amount(), dec!(12322.222));
 
     let ret = raw!(ZWG, 123_000_444) - raw!(ZWG, 400000);
     assert_eq!(ret.amount(), dec!(122600444));
 
-    let ret = raw!(XAG, 50) / raw!(XAG, 4);
+    let ret = raw!(XAG, 50) / dec!(4);
     assert_eq!(ret.amount(), dec!(12.5));
 
-    let ret = -raw!(CNY, 40) * raw!(CNY, 2);
+    let ret = -raw!(CNY, 40) * dec!(2);
     assert_eq!(ret.amount(), dec!(-80));
 
     let ret = raw!(BHD, 20).checked_add(raw!(BHD, 2));

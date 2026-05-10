@@ -92,23 +92,6 @@ where
     }
 }
 
-// Decimal - Money = Money
-impl<C> Sub<Money<C>> for Decimal
-where
-    C: Currency,
-{
-    type Output = Money<C>;
-
-    fn sub(self, rhs: Money<C>) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .checked_sub(rhs.amount())
-            .expect("subtraction operation overflow");
-
-        Money::from_decimal(ret)
-    }
-}
-
 // Decimal * Money = Money
 impl<C> Mul<Money<C>> for Decimal
 where
@@ -121,23 +104,6 @@ where
         let ret = self
             .checked_mul(rhs.amount())
             .expect("multiplication operation overflow");
-
-        Money::from_decimal(ret)
-    }
-}
-
-// Decimal / Money = Money
-impl<C> Div<Money<C>> for Decimal
-where
-    C: Currency,
-{
-    type Output = Money<C>;
-
-    fn div(self, rhs: Money<C>) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .checked_div(rhs.amount())
-            .expect("division operation overflow");
 
         Money::from_decimal(ret)
     }

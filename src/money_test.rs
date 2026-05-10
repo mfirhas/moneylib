@@ -1731,46 +1731,6 @@ fn test_sub_money_negative_result() {
 }
 
 #[test]
-fn test_mul_money_by_money() {
-    let money1 = Money::<USD>::new(dec!(10.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(5.00)).unwrap();
-    let result = money1 * money2;
-    assert_eq!(result.amount(), dec!(50.00));
-}
-
-#[test]
-fn test_mul_money_negative() {
-    let money1 = Money::<USD>::new(dec!(10.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(-5.00)).unwrap();
-    let result = money1 * money2;
-    assert_eq!(result.amount(), dec!(-50.00));
-}
-
-#[test]
-fn test_div_money_by_money() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(5.00)).unwrap();
-    let result = money1 / money2;
-    assert_eq!(result.amount(), dec!(20.00));
-}
-
-#[test]
-fn test_div_money_negative() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(-5.00)).unwrap();
-    let result = money1 / money2;
-    assert_eq!(result.amount(), dec!(-20.00));
-}
-
-#[test]
-#[should_panic(expected = "division operation")]
-fn test_div_money_by_zero_panic() {
-    let money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(0)).unwrap();
-    let _ = money1 / money2;
-}
-
-#[test]
 fn test_remainder() {
     let money = money!(USD, 100);
     let ret = money % dec!(3);
@@ -1824,31 +1784,10 @@ fn test_add_money_to_decimal() {
 }
 
 #[test]
-fn test_sub_money_from_decimal() {
-    let money = Money::<USD>::new(dec!(50.00)).unwrap();
-    let result = dec!(100.00) - money;
-    assert_eq!(result.amount(), dec!(50.00));
-}
-
-#[test]
 fn test_mul_decimal_by_money() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let result = dec!(2.5) * money;
     assert_eq!(result.amount(), dec!(250.00));
-}
-
-#[test]
-fn test_div_decimal_by_money() {
-    let money = Money::<USD>::new(dec!(5.00)).unwrap();
-    let result = dec!(100.00) / money;
-    assert_eq!(result.amount(), dec!(20.00));
-}
-
-#[test]
-#[should_panic(expected = "division operation")]
-fn test_div_decimal_by_money_zero_panic() {
-    let money = Money::<USD>::new(dec!(0)).unwrap();
-    let _ = dec!(100.00) / money;
 }
 
 // ==================== Assignment Operator Tests ====================
@@ -1867,30 +1806,6 @@ fn test_sub_assign_money() {
     let money2 = Money::<USD>::new(dec!(50.00)).unwrap();
     money1 -= money2;
     assert_eq!(money1.amount(), dec!(50.00));
-}
-
-#[test]
-fn test_mul_assign_money() {
-    let mut money1 = Money::<USD>::new(dec!(10.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(5.00)).unwrap();
-    money1 *= money2;
-    assert_eq!(money1.amount(), dec!(50.00));
-}
-
-#[test]
-fn test_div_assign_money() {
-    let mut money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(5.00)).unwrap();
-    money1 /= money2;
-    assert_eq!(money1.amount(), dec!(20.00));
-}
-
-#[test]
-#[should_panic(expected = "division operation")]
-fn test_div_assign_zero_panic() {
-    let mut money1 = Money::<USD>::new(dec!(100.00)).unwrap();
-    let money2 = Money::<USD>::new(dec!(0)).unwrap();
-    money1 /= money2;
 }
 
 // ==================== Negation Operator Tests ====================
@@ -2058,7 +1973,7 @@ fn test_zero_amount_operations() {
     let result = hundred - hundred;
     assert_eq!(result.amount(), dec!(0));
 
-    let result = zero * hundred;
+    let result = zero * hundred.amount();
     assert_eq!(result.amount(), dec!(0));
 }
 
@@ -3486,16 +3401,16 @@ fn test_money_macro_operators() {
     let ret = money!(XAU, 12) + money!(XAU, 5);
     assert_eq!(ret.amount(), dec!(17));
 
-    let ret = money!(CAD, 100) * money!(CAD, 123.22222);
+    let ret = money!(CAD, 100) * dec!(123.22);
     assert_eq!(ret.amount(), dec!(12322.00));
 
     let ret = money!(ZWG, 123_000_444) - money!(ZWG, 400000);
     assert_eq!(ret.amount(), dec!(122600444));
 
-    let ret = money!(XAG, 50) / money!(XAG, 4);
+    let ret = money!(XAG, 50) / dec!(4);
     assert_eq!(ret.amount(), dec!(12));
 
-    let ret = -money!(CNY, 40) * money!(CNY, 2);
+    let ret = -money!(CNY, 40) * dec!(2);
     assert_eq!(ret.amount(), dec!(-80));
 
     let ret = money!(BHD, 20).checked_add(money!(BHD, 2));

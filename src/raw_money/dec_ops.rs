@@ -92,23 +92,6 @@ where
     }
 }
 
-// Decimal - RawMoney = RawMoney (no auto-rounding)
-impl<C> Sub<RawMoney<C>> for Decimal
-where
-    C: Currency,
-{
-    type Output = RawMoney<C>;
-
-    fn sub(self, rhs: RawMoney<C>) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .checked_sub(rhs.amount())
-            .expect("subtraction operation overflow");
-
-        RawMoney::from_decimal(ret)
-    }
-}
-
 // Decimal * RawMoney = RawMoney (no auto-rounding)
 impl<C> Mul<RawMoney<C>> for Decimal
 where
@@ -121,23 +104,6 @@ where
         let ret = self
             .checked_mul(rhs.amount())
             .expect("multiplication operation overflow");
-
-        RawMoney::from_decimal(ret)
-    }
-}
-
-// Decimal / RawMoney = RawMoney (no auto-rounding)
-impl<C> Div<RawMoney<C>> for Decimal
-where
-    C: Currency,
-{
-    type Output = RawMoney<C>;
-
-    fn div(self, rhs: RawMoney<C>) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .checked_div(rhs.amount())
-            .expect("division operation overflow");
 
         RawMoney::from_decimal(ret)
     }

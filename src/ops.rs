@@ -1,6 +1,6 @@
 //--------- Ops
 
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
 
 use crate::Currency;
 
@@ -42,42 +42,6 @@ where
     }
 }
 
-/// Money * Money = Money
-impl<C> Mul for Money<C>
-where
-    C: Currency,
-{
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .amount()
-            .checked_mul(rhs.amount())
-            .expect("multiplication operation overflow");
-
-        Self::from_decimal(ret)
-    }
-}
-
-/// Money / Money = Money
-impl<C> Div for Money<C>
-where
-    C: Currency,
-{
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .amount()
-            .checked_div(rhs.amount())
-            .expect("division operation overflow");
-
-        Self::from_decimal(ret)
-    }
-}
-
 /// Money += Money
 impl<C> AddAssign for Money<C>
 where
@@ -107,42 +71,6 @@ where
             .amount()
             .checked_sub(other.amount())
             .expect("subtraction operation overflow");
-
-        let ret = Self::from_decimal(ret);
-
-        *self = ret
-    }
-}
-
-/// Money *= Money
-impl<C> MulAssign for Money<C>
-where
-    C: Currency,
-{
-    fn mul_assign(&mut self, other: Self) {
-        // WARN: PANIC!
-        let ret = self
-            .amount()
-            .checked_mul(other.amount())
-            .expect("multiplication operation overflow");
-
-        let ret = Self::from_decimal(ret);
-
-        *self = ret
-    }
-}
-
-/// Money /= Money
-impl<C> DivAssign for Money<C>
-where
-    C: Currency,
-{
-    fn div_assign(&mut self, other: Self) {
-        // WARN: PANIC!
-        let ret = self
-            .amount()
-            .checked_div(other.amount())
-            .expect("division operation failed");
 
         let ret = Self::from_decimal(ret);
 
