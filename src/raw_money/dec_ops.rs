@@ -126,23 +126,6 @@ where
     }
 }
 
-// Decimal / RawMoney = RawMoney (no auto-rounding)
-impl<C> Div<RawMoney<C>> for Decimal
-where
-    C: Currency,
-{
-    type Output = RawMoney<C>;
-
-    fn div(self, rhs: RawMoney<C>) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .checked_div(rhs.amount())
-            .expect("division operation overflow");
-
-        RawMoney::from_decimal(ret)
-    }
-}
-
 impl<C> Rem<Decimal> for RawMoney<C>
 where
     C: Currency,

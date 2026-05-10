@@ -313,13 +313,6 @@ fn test_decimal_mul_raw_money() {
     assert_eq!(result.amount(), dec!(150.1845));
 }
 
-#[test]
-fn test_decimal_div_raw_money() {
-    let raw = RawMoney::<USD>::new(dec!(4)).unwrap();
-    let result = dec!(100) / raw;
-    assert_eq!(result.amount(), dec!(25));
-}
-
 // ==================== Assignment Operations Tests ====================
 
 #[test]

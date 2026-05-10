@@ -126,23 +126,6 @@ where
     }
 }
 
-// Decimal / Money = Money
-impl<C> Div<Money<C>> for Decimal
-where
-    C: Currency,
-{
-    type Output = Money<C>;
-
-    fn div(self, rhs: Money<C>) -> Self::Output {
-        // WARN: PANIC!
-        let ret = self
-            .checked_div(rhs.amount())
-            .expect("division operation overflow");
-
-        Money::from_decimal(ret)
-    }
-}
-
 impl<C> Rem<Decimal> for Money<C>
 where
     C: Currency,

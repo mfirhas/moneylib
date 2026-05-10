@@ -1797,20 +1797,6 @@ fn test_mul_decimal_by_money() {
     assert_eq!(result.amount(), dec!(250.00));
 }
 
-#[test]
-fn test_div_decimal_by_money() {
-    let money = Money::<USD>::new(dec!(5.00)).unwrap();
-    let result = dec!(100.00) / money;
-    assert_eq!(result.amount(), dec!(20.00));
-}
-
-#[test]
-#[should_panic(expected = "division operation")]
-fn test_div_decimal_by_money_zero_panic() {
-    let money = Money::<USD>::new(dec!(0)).unwrap();
-    let _ = dec!(100.00) / money;
-}
-
 // ==================== Assignment Operator Tests ====================
 
 #[test]
