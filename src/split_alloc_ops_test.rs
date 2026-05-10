@@ -209,11 +209,13 @@ fn test_allocate() {
                 money!(USD, 33.34),
             ]),
         },
-        // small amount
+        // small amount — over-allocation: both shares round to 0.02 (sum 0.04 > 0.03),
+        // so one ULP is subtracted from the first (largest-index-0) share.
+        // The output order is preserved: parts[i] corresponds to pcns[i].
         AllocateCase {
             money: money!(USD, 0.03),
             pcns: vec![dec!(50), dec!(50)],
-            expected: Some(vec![money!(USD, 0.02), money!(USD, 0.01)]),
+            expected: Some(vec![money!(USD, 0.01), money!(USD, 0.02)]),
         },
         // zero money
         AllocateCase {
@@ -1964,11 +1966,48 @@ fn test_allocate_by_ratios_negative_over_allocation() {
     let sum: Money<USD> = parts.iter().sum();
     assert_eq!(sum, money);
 
-    // After over-allocation correction and negation, total over-allocation was 0.01,
-    // so exactly one part is reduced by 0.01: expected [-3.34, -3.34, -3.33]
-    assert_eq!(parts[0].amount(), dec!(-3.34));
+    // After over-allocation correction, the largest part is reduced first.
+    // All shares are equal (3.34), so the first one (index 0) is reduced by 0.01.
+    // After negation: [-3.33, -3.34, -3.34]
+    assert_eq!(parts[0].amount(), dec!(-3.33));
     assert_eq!(parts[1].amount(), dec!(-3.34));
-    assert_eq!(parts[2].amount(), dec!(-3.33));
+    assert_eq!(parts[2].amount(), dec!(-3.34));
+}
+
+// -------------------- allocate: ratio order preserved after over-allocation ---
+//
+// When the sum of rounded shares exceeds the original amount (over-allocation),
+// the surplus must be subtracted from the largest shares first, but the output
+// must remain in the same order as the input ratios.  Callers rely on parts[i]
+// corresponding to ratios[i].
+
+#[test]
+fn test_allocate_preserves_ratio_order() {
+    // $0.05 by [3, 7]:
+    //   share[0] = 0.05 * 3/10 = 0.015 → rounds to 0.02 (bankers)
+    //   share[1] = 0.05 * 7/10 = 0.035 → rounds to 0.04 (bankers)
+    //   sum = 0.06 > 0.05 → over-allocation by 0.01
+    //
+    // Correct fix: subtract from the largest part (share[1] = 0.04) first,
+    // giving [0.02, 0.03].  The order matches the input ratios [3, 7].
+    let money = money!(USD, 0.05);
+    let parts: Vec<_> = money.split(&[3, 7]).unwrap();
+    assert_eq!(parts.len(), 2);
+
+    // Sum invariant must hold.
+    let sum: Money<USD> = parts.iter().sum();
+    assert_eq!(sum, money);
+
+    // parts[0] corresponds to ratio 3, parts[1] to ratio 7.
+    // The smaller ratio must receive the smaller (or equal) amount.
+    assert!(
+        parts[0].amount() <= parts[1].amount(),
+        "ratio correspondence broken: parts[0]={} should be <= parts[1]={}",
+        parts[0],
+        parts[1]
+    );
+    assert_eq!(parts[0].amount(), dec!(0.02));
+    assert_eq!(parts[1].amount(), dec!(0.03));
 }
 
 // -------------------- get_equal_part: negative money (private helper) ---
