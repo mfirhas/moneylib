@@ -303,19 +303,21 @@ where
     let allocated_total = parts.checked_sum()?;
 
     if allocated_total.amount() > money.amount() {
+        // Sort indices by part value descending so the largest parts are reduced
+        // first, while keeping `parts` in its original index order so that
+        // `parts[i]` continues to correspond to `ratios[i]`.
+        let mut indices: Vec<usize> = (0..parts.len()).collect();
+        indices.sort_by(|&a, &b| parts[b].amount().cmp(&parts[a].amount()));
+
         let mut current_sum = allocated_total;
-        let mut i = 0;
+        let mut idx = 0;
         while current_sum.amount() > money.amount() {
+            let i = indices[idx % indices.len()];
             let ulp = ulp(parts[i].amount());
             parts[i] = parts[i].checked_sub(ulp)?;
             current_sum = current_sum.checked_sub(ulp)?;
-            i += 1;
-            if i >= parts.len() {
-                i = 0;
-            }
+            idx += 1;
         }
-
-        parts.sort_by_key(|b| std::cmp::Reverse(b.amount()));
 
         if is_negative {
             parts = parts.into_iter().map(|r| -r).collect::<Vec<_>>();
