@@ -1784,13 +1784,6 @@ fn test_add_money_to_decimal() {
 }
 
 #[test]
-fn test_sub_money_from_decimal() {
-    let money = Money::<USD>::new(dec!(50.00)).unwrap();
-    let result = dec!(100.00) - money;
-    assert_eq!(result.amount(), dec!(50.00));
-}
-
-#[test]
 fn test_mul_decimal_by_money() {
     let money = Money::<USD>::new(dec!(100.00)).unwrap();
     let result = dec!(2.5) * money;

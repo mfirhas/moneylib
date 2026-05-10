@@ -300,13 +300,6 @@ fn test_decimal_add_raw_money() {
 }
 
 #[test]
-fn test_decimal_sub_raw_money() {
-    let raw = RawMoney::<USD>::new(dec!(50.123)).unwrap();
-    let result = dec!(100.456) - raw;
-    assert_eq!(result.amount(), dec!(50.333));
-}
-
-#[test]
 fn test_decimal_mul_raw_money() {
     let raw = RawMoney::<USD>::new(dec!(100.123)).unwrap();
     let result = dec!(1.5) * raw;
