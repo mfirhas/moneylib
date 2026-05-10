@@ -36,7 +36,7 @@ fn test_multiple_arithmetics() {
     let money2 = Money::<IDR>::new(dec!(5000.00)).unwrap();
     let money3 = Money::<IDR>::from_decimal(dec!(123_000_000));
 
-    let ret = (money1 * money2) + money3;
+    let ret = (money1 * money2.amount()) + money3;
     assert_eq!(ret.amount(), dec!(128_000_000));
 }
 
@@ -50,7 +50,7 @@ fn test_arithmetics_with_decimals() {
     let a = money1 - amount;
     let b = money2 + a;
     let c = amount2 - b;
-    let d = a * c + b / amount - dec!(2);
+    let d = a * c.amount() + b / amount - dec!(2);
     assert_eq!(c.amount(), dec!(39876766));
     assert_eq!(d.amount(), dec!(4865124959162.19));
 }

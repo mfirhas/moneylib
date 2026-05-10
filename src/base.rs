@@ -7,7 +7,7 @@ use crate::split_alloc_ops::Split;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::prelude::FromPrimitive;
 use std::fmt::Debug;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
 
 /// Base trait for all money types in the library.
 ///
@@ -575,16 +575,7 @@ pub trait BaseMoney<C: Currency>: Clone {
 /// assert_eq!(m1.min(m2), m2);
 /// ```
 pub trait BaseOps<C: Currency>:
-    BaseMoney<C>
-    + Add<Output = Self>
-    + Sub<Output = Self>
-    + Mul<Output = Self>
-    + Div<Output = Self>
-    + AddAssign
-    + SubAssign
-    + MulAssign
-    + DivAssign
-    + Neg<Output = Self>
+    BaseMoney<C> + Add<Output = Self> + Sub<Output = Self> + AddAssign + SubAssign + Neg<Output = Self>
 {
     // PROVIDED
 
