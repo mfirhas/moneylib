@@ -35,19 +35,13 @@ pub mod prelude {
     #[cfg(feature = "obj_money")]
     pub use crate::ObjMoney;
 
-    #[cfg(feature = "accounting")]
-    pub use crate::AccountingOps;
-
-    #[cfg(feature = "accounting")]
-    pub use crate::accounting;
-
     #[cfg(feature = "serde")]
     pub use crate::serde;
 }
 
 // ------------------ MoneyOps contains all ops traits for money instance ------------------
 
-#[cfg(not(any(feature = "exchange", feature = "accounting")))]
+#[cfg(not(feature = "exchange"))]
 /// MoneyOps\<C\> trait contains all traits on money instance.
 pub trait MoneyOps<C>: BaseOps<C> + MoneyFormatter<C> + PercentOps<C>
 where
@@ -55,30 +49,9 @@ where
 {
 }
 
-#[cfg(all(feature = "exchange", not(feature = "accounting")))]
+#[cfg(feature = "exchange")]
 /// MoneyOps\<C\> trait contains all traits on money instance.
 pub trait MoneyOps<C>: BaseOps<C> + MoneyFormatter<C> + PercentOps<C> + Exchange<C>
-where
-    C: Currency,
-{
-}
-
-#[cfg(feature = "accounting")]
-/// Contains all ops traits inside accounting module
-pub trait AccountingOps<C>: accounting::interest::InterestOps<C> {}
-
-#[cfg(all(feature = "accounting", not(feature = "exchange")))]
-/// MoneyOps\<C\> trait contains all traits on money instance.
-pub trait MoneyOps<C>: BaseOps<C> + MoneyFormatter<C> + PercentOps<C> + AccountingOps<C>
-where
-    C: Currency,
-{
-}
-
-#[cfg(all(feature = "exchange", feature = "accounting"))]
-/// MoneyOps\<C\> trait contains all traits on money instance.
-pub trait MoneyOps<C>:
-    BaseOps<C> + MoneyFormatter<C> + PercentOps<C> + Exchange<C> + AccountingOps<C>
 where
     C: Currency,
 {
@@ -124,13 +97,6 @@ mod exchange;
 #[cfg(feature = "exchange")]
 pub use exchange::{Exchange, ExchangeRates};
 
-#[cfg(feature = "accounting")]
-/// Accounting module
-pub mod accounting;
-
-#[cfg(feature = "accounting")]
-mod calendar;
-
 #[cfg(feature = "serde")]
 /// Serde implementations
 pub mod serde;
@@ -172,6 +138,3 @@ mod split_alloc_ops_test;
 
 #[cfg(all(test, feature = "exchange"))]
 mod exchange_test;
-
-#[cfg(all(test, feature = "accounting"))]
-mod calendar_test;
