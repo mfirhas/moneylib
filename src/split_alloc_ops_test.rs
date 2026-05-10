@@ -2046,3 +2046,33 @@ fn test_allocate_returns() {
     dbg!(&split_ratios);
     assert_eq!(split, split_ratios);
 }
+
+// ==================== running-total adjustment loop correctness ====================
+
+/// Verify the `split` adjustment loop (the branch where equal_part * n > money)
+/// produces a correct result when the running `current_sum` is tracked incrementally.
+/// A non-zero-scale RawMoney triggers the branch reliably.
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_split_adjustment_loop_running_total() {
+    // 100 / 3: equal_part rounds up, so equal_part * 3 > 100 before adjustment.
+    let money = raw!(USD, 100);
+    let (equal, remainder) = money.split(3).unwrap();
+    // Invariant: equal * 3 + remainder == original
+    assert_eq!((equal * dec!(3)) + remainder, money);
+    // Wrapping check: try with n=7 to force multiple wrap-around iterations
+    let (eq7, rem7) = money.split(7).unwrap();
+    assert_eq!((eq7 * dec!(7)) + rem7, money);
+}
+
+/// Verify the `allocate` adjustment loop (the branch where allocated_total > money)
+/// produces a correct result when the running `current_sum` is tracked incrementally.
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_allocate_adjustment_loop_running_total() {
+    // High-precision amount whose parts sum above the original before adjustment.
+    let money = raw!(USD, 79.228162514264337593543950335);
+    let parts: Vec<_> = money.split(&[10, 10, 80]).unwrap();
+    let sum: RawMoney<USD> = parts.iter().sum();
+    assert_eq!(sum, money);
+}

@@ -151,8 +151,10 @@ where
 
         let ulp = ulp(total.amount());
         let mut i: usize = 0;
-        while parts.checked_sum()?.amount() > money.amount() {
+        let mut current_sum = total.clone();
+        while current_sum.amount() > money.amount() {
             parts[i] = parts[i].checked_sub(ulp)?;
+            current_sum = current_sum.checked_sub(ulp)?;
             i += 1;
             if i >= parts.len() {
                 i = 0;
@@ -307,11 +309,13 @@ where
         let mut indices: Vec<usize> = (0..parts.len()).collect();
         indices.sort_by(|&a, &b| parts[b].amount().cmp(&parts[a].amount()));
 
+        let mut current_sum = allocated_total;
         let mut idx = 0;
-        while parts.checked_sum()?.amount() > money.amount() {
+        while current_sum.amount() > money.amount() {
             let i = indices[idx % indices.len()];
             let ulp = ulp(parts[i].amount());
             parts[i] = parts[i].checked_sub(ulp)?;
+            current_sum = current_sum.checked_sub(ulp)?;
             idx += 1;
         }
 
