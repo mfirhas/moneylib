@@ -50,10 +50,7 @@ Here are some features supported:
 - Supports locale formatting.
 - Exchange rates for conversions.
 - Split and Allocation.
-- Some accounting operations:
-    - Percentage calculations.
-    - Interest calculations.
-    - etc.
+- Percentage calculations.
 
 ## Example
 
@@ -532,15 +529,5 @@ assert_eq!(
     money.convert::<IDR>(&rates).unwrap().amount(),
     dec!(17_000_000)
 );
-```
-
-### `accounting`
-
-Contains several features:
-- Interest calculations(FV, PV, PMT).
-
-```toml
-[dependencies]
-moneylib = { version = "...", features = ["accounting"] }
 ```
 

@@ -6,9 +6,6 @@ use std::{
     str::FromStr,
 };
 
-#[cfg(feature = "accounting")]
-use crate::AccountingOps;
-
 use crate::{
     BaseMoney, BaseOps, Decimal, MoneyError, MoneyOps,
     base::{Amount, DecimalNumber},
@@ -612,8 +609,5 @@ where
 }
 
 impl<C> MoneyFormatter<C> for Money<C> where C: Currency {}
-
-#[cfg(feature = "accounting")]
-impl<C> AccountingOps<C> for Money<C> where C: Currency {}
 
 impl<C> MoneyOps<C> for Money<C> where C: Currency {}
