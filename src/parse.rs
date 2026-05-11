@@ -113,13 +113,9 @@ pub(crate) fn parse_str_code<C: Currency>(
     let amount_str = parts[1];
 
     if currency_code != C::CODE {
-        return Err(MoneyError::ParseStrError(
-            format!(
-                "invalid currency code, expected {}, found {}",
-                C::CODE,
-                currency_code
-            )
-            .into(),
+        return Err(MoneyError::CurrencyMismatchError(
+            currency_code.into(),
+            C::CODE.into(),
         ));
     }
 
@@ -171,8 +167,9 @@ pub(crate) fn parse_str_symbol<C: Currency>(
     {
         amount
     } else {
-        return Err(MoneyError::ParseStrError(
-            format!("invalid amount: {}", str_symbol).into(),
+        return Err(MoneyError::CurrencyMismatchError(
+            str_symbol.into(),
+            C::SYMBOL.into(),
         ));
     };
 

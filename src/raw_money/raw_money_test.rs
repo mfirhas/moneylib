@@ -608,6 +608,10 @@ fn test_from_str_dot_thousands() {
 fn test_from_str_dot_thousands_currency_mismatch() {
     let result = RawMoney::<USD>::from_str_code_with("EUR 1.234,56", ".", ",");
     assert!(result.is_err());
+    assert!(matches!(
+        result,
+        Err(MoneyError::CurrencyMismatchError(ref got, ref exp)) if got == "EUR" && exp == "USD"
+    ));
 }
 
 #[test]
