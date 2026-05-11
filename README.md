@@ -55,7 +55,7 @@ Here are some features supported:
 ## Example
 
 ```rust
-use moneylib::{BaseMoney, BaseOps, IterOps, Money, PercentOps, RoundingStrategy,
+use moneylib::{BaseMoney, BaseOps, IterOps, Money, MoneyParser, PercentOps, RoundingStrategy,
                iso::{BHD, EUR, JPY, USD}, macros::{dec, money}};
 
 // --- Creating money ---
@@ -68,7 +68,7 @@ let tax   = money!(USD, 8.50);
 let rounded = Money::<USD>::new(dec!(9.995)).unwrap(); // USD 10.00 (bankers rounding)
 
 // From a string with thousand separators
-let parsed = Money::<USD>::from_code_comma_thousands("USD 1,234.56").unwrap();
+let parsed = Money::<USD>::from_str_code_with("USD 1,234.56", ",", ".").unwrap();
 
 // From minor units (cents for USD: 12345 cents = USD 123.45)
 let from_cents = Money::<USD>::from_minor(12345).unwrap();

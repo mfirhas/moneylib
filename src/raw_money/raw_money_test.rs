@@ -2,7 +2,8 @@ use crate::iso::{AUD, BDT, BHD, CHF, EUR, GBP, IDR, INR, JPY, SAR, SGD, USD};
 
 use crate::macros::dec;
 use crate::{
-    BaseMoney, BaseOps, Money, MoneyError, MoneyFormatter, RawMoney, RoundingStrategy, raw,
+    BaseMoney, BaseOps, Money, MoneyError, MoneyFormatter, MoneyParser, RawMoney, RoundingStrategy,
+    raw,
 };
 use std::str::FromStr;
 
@@ -85,17 +86,25 @@ fn test_raw_money_new_overflow() {
     let money = RawMoney::<EUR>::from_str(format!("EUR {}", i128::MAX.to_string()).as_str());
     assert!(money.is_err());
 
-    let money =
-        RawMoney::<EUR>::from_code_dot_thousands(format!("EUR {}", i128::MAX.to_string()).as_str());
-    assert!(money.is_err());
-
-    let money = RawMoney::<EUR>::from_symbol_comma_thousands(
-        format!("€{}", i128::MAX.to_string()).as_str(),
+    let money = RawMoney::<EUR>::from_str_code_with(
+        format!("EUR {}", i128::MAX.to_string()).as_str(),
+        ".",
+        ",",
     );
     assert!(money.is_err());
 
-    let money =
-        RawMoney::<EUR>::from_symbol_dot_thousands(format!("€{}", i128::MAX.to_string()).as_str());
+    let money = RawMoney::<EUR>::from_str_symbol_with(
+        format!("€{}", i128::MAX.to_string()).as_str(),
+        ",",
+        ".",
+    );
+    assert!(money.is_err());
+
+    let money = RawMoney::<EUR>::from_str_symbol_with(
+        format!("€{}", i128::MAX.to_string()).as_str(),
+        ".",
+        ",",
+    );
     assert!(money.is_err());
 
     let money = RawMoney::<TooBig>::from_decimal(dec!(123.2348));
@@ -144,7 +153,8 @@ fn test_raw_money_new_overflow() {
 
 #[test]
 fn test_overflow_parsing_raw_code_comma_thousands() {
-    let money = RawMoney::<USD>::from_code_comma_thousands(format!("USD {}", i128::MAX).as_str());
+    let money =
+        RawMoney::<USD>::from_str_code_with(format!("USD {}", i128::MAX).as_str(), ",", ".");
     assert!(money.is_err());
     assert!(matches!(money.unwrap_err(), MoneyError::ParseStrError(_)));
 }
@@ -558,20 +568,20 @@ fn test_display_negative() {
 
 #[test]
 fn test_from_str_simple() {
-    let raw = RawMoney::<USD>::from_code_comma_thousands("USD 100.50").unwrap();
+    let raw = RawMoney::<USD>::from_str_code_with("USD 100.50", ",", ".").unwrap();
     assert_eq!(raw.amount(), dec!(100.50));
     assert_eq!(raw.code(), "USD");
 }
 
 #[test]
 fn test_from_str_with_thousands() {
-    let raw = RawMoney::<USD>::from_code_comma_thousands("USD 1,234.56").unwrap();
+    let raw = RawMoney::<USD>::from_str_code_with("USD 1,234.56", ",", ".").unwrap();
     assert_eq!(raw.amount(), dec!(1234.56));
 }
 
 #[test]
 fn test_from_str_many_decimals() {
-    let raw = RawMoney::<USD>::from_code_comma_thousands("USD 100.123456789").unwrap();
+    let raw = RawMoney::<USD>::from_str_code_with("USD 100.123456789", ",", ".").unwrap();
     assert_eq!(raw.amount(), dec!(100.123456789));
 }
 
@@ -589,120 +599,121 @@ fn test_from_str_currency_mismatch() {
 
 #[test]
 fn test_from_str_dot_thousands() {
-    let raw = RawMoney::<EUR>::from_code_dot_thousands("EUR 1.234,56").unwrap();
+    let raw = RawMoney::<EUR>::from_str_code_with("EUR 1.234,56", ".", ",").unwrap();
     assert_eq!(raw.amount(), dec!(1234.56));
     assert_eq!(raw.code(), "EUR");
 }
 
 #[test]
 fn test_from_str_dot_thousands_currency_mismatch() {
-    let result = RawMoney::<USD>::from_code_dot_thousands("EUR 1.234,56");
+    let result = RawMoney::<USD>::from_str_code_with("EUR 1.234,56", ".", ",");
     assert!(result.is_err());
 }
 
 #[test]
 fn test_from_str_dot_thousands_keep_precision() {
-    let result = RawMoney::<EUR>::from_code_dot_thousands("EUR 1.234,578396").unwrap();
+    let result = RawMoney::<EUR>::from_str_code_with("EUR 1.234,578396", ".", ",").unwrap();
     assert_eq!(result.amount(), dec!(1_234.578396));
 }
 
 #[test]
 fn test_from_str_dot_thousands_invalid_format() {
-    let result = RawMoney::<EUR>::from_code_dot_thousands("EUR 1,234.578396");
+    let result = RawMoney::<EUR>::from_str_code_with("EUR 1,234.578396", ".", ",");
     assert!(result.is_err());
     assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
 }
 
 #[test]
 fn test_from_str_dot_thousands_invalid_format_2() {
-    let result = RawMoney::<EUR>::from_code_dot_thousands("EUR 1234.578396");
+    let result = RawMoney::<EUR>::from_str_code_with("EUR 1234.578396", ".", ",");
     assert!(result.is_err());
     assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
 }
 
 #[test]
 fn test_parsing_negative_money_no_separator() {
-    let money = RawMoney::<USD>::from_code_comma_thousands("USD -1234567.8924").unwrap();
+    let money = RawMoney::<USD>::from_str_code_with("USD -1234567.8924", ",", ".").unwrap();
     assert_eq!(money.amount(), dec!(-1_234_567.8924));
 }
 
 #[test]
 fn test_parsing_negative_money() {
-    let money = RawMoney::<USD>::from_code_comma_thousands("USD -1,234,567.8999").unwrap();
+    let money = RawMoney::<USD>::from_str_code_with("USD -1,234,567.8999", ",", ".").unwrap();
     assert_eq!(money.amount(), dec!(-1_234_567.8999));
 }
 
 #[test]
 fn test_parsing_negative_dot_separator_money() {
-    let money = RawMoney::<USD>::from_code_dot_thousands("USD -1.234.567,8942").unwrap();
+    let money = RawMoney::<USD>::from_str_code_with("USD -1.234.567,8942", ".", ",").unwrap();
     assert_eq!(money.amount(), dec!(-1_234_567.8942));
 }
 
 #[test]
 fn test_parsing_all_raw() {
     //! from code comma thousands positive (NO rounding, keep full precision)
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 12").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 12", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 12.2").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 12.2", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.2));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 12.23").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 12.23", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.23));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 12.239489").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 12.239489", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.239489));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1,234").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1,234", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1,234.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1,234.3", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1,234.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1,234.38", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1,269.34983").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1,269.34983", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1234").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1234", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1234.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1234.3", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1234.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1234.38", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1269.34983").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1269.34983", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1269.34983));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1,234,000").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1,234,000", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1,234,000.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1,234,000.3", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1,234,111.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD 1,234,111.38", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234111.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD 1,269,899.34983").unwrap();
+    let money: RawMoney<USD> =
+        RawMoney::from_str_code_with("USD 1,269,899.34983", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1269899.34983));
     println!("{} | {}", money, money.amount());
@@ -710,68 +721,69 @@ fn test_parsing_all_raw() {
     println!("----------------------------------------");
 
     // from code comma thousands negative (NO rounding)
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -12").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -12", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -12.2").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -12.2", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.2));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -12.23").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -12.23", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.23));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -12.239489").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -12.239489", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.239489));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1,234").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1,234", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1,234.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1,234.3", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1,234.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1,234.38", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1,269.34983").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1,269.34983", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1234").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1234", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1234.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1234.3", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1234.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1234.38", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1269.34983").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1269.34983", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1269.34983));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1,234,000").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1,234,000", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1,234,000.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1,234,000.3", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1,234,111.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_code_with("USD -1,234,111.38", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234111.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<USD> = RawMoney::from_code_comma_thousands("USD -1,269,899.34983").unwrap();
+    let money: RawMoney<USD> =
+        RawMoney::from_str_code_with("USD -1,269,899.34983", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1269899.34983));
     println!("{} | {}", money, money.amount());
@@ -779,68 +791,69 @@ fn test_parsing_all_raw() {
     println!("----------------------------------------");
 
     // from code dot thousands positive (EUR, NO rounding)
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 12").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 12", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 12,2").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 12,2", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.2));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 12,23").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 12,23", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.23));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 12,239489").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 12,239489", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.239489));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1.234").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1.234", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1.234,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1.234,3", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1.234,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1.234,38", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1.269,34983").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1.269,34983", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1234").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1234", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1234,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1234,3", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1234,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1234,38", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1269,34983").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1269,34983", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1269.34983));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1.234.000").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1.234.000", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1.234.000,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1.234.000,3", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1.234.111,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR 1.234.111,38", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234111.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR 1.269.899,34983").unwrap();
+    let money: RawMoney<EUR> =
+        RawMoney::from_str_code_with("EUR 1.269.899,34983", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1269899.34983));
     println!("{} | {}", money, money.amount());
@@ -848,68 +861,69 @@ fn test_parsing_all_raw() {
     println!("----------------------------------------");
 
     // from code dot thousands negative (EUR, NO rounding)
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -12").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -12", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -12,2").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -12,2", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.2));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -12,23").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -12,23", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.23));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -12,239489").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -12,239489", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.239489));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1.234").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1.234", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1.234,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1.234,3", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1.234,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1.234,38", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1.269,34983").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1.269,34983", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1234").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1234", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1234,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1234,3", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1234,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1234,38", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1269,34983").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1269,34983", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1269.34983));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1.234.000").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1.234.000", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1.234.000,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1.234.000,3", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000.3));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1.234.111,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_code_with("EUR -1.234.111,38", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234111.38));
     println!("{} | {}", money, money.amount());
-    let money: RawMoney<EUR> = RawMoney::from_code_dot_thousands("EUR -1.269.899,34983").unwrap();
+    let money: RawMoney<EUR> =
+        RawMoney::from_str_code_with("EUR -1.269.899,34983", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1269899.34983));
     println!("{} | {}", money, money.amount());
@@ -917,85 +931,86 @@ fn test_parsing_all_raw() {
     println!("----------------------------------------");
 
     // from symbol comma thousands positive
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$12").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$12", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$12.2").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$12.2", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.2));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$12.23").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$12.23", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.23));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$12.239489").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$12.239489", ",", ".").unwrap();
     assert!(money.is_positive());
     // USD: round to 2 decimal places using bankers rounding -> 12.24
     assert_eq!(money.amount(), dec!(12.239489));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1,234").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1,234", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1,234.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1,234.3", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1,234.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1,234.38", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1,269.34983").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1,269.34983", ",", ".").unwrap();
     assert!(money.is_positive());
     // USD: round to 2 decimal places using bankers rounding -> 1269.35
     assert_eq!(money.amount(), dec!(1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1234").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1234", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1234.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1234.3", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1234.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1234.38", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1269.34983").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1269.34983", ",", ".").unwrap();
     assert!(money.is_positive());
     // USD: round to 2 decimal places using bankers rounding -> 1269.35
     assert_eq!(money.amount(), dec!(1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1,234,000").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1,234,000", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1,234,000.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1,234,000.3", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1,234,111.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("$1,234,111.38", ",", ".").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234111.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("$1,269,899.34983").unwrap();
+    let money: RawMoney<USD> =
+        RawMoney::from_str_symbol_with("$1,269,899.34983", ",", ".").unwrap();
     assert!(money.is_positive());
     // USD: round to 2 decimal places using bankers rounding -> 1269899.35
     assert_eq!(money.amount(), dec!(1269899.34983));
@@ -1004,85 +1019,86 @@ fn test_parsing_all_raw() {
     println!("----------------------------------------");
 
     // from symbol comma thousands negative
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$12").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$12", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$12.2").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$12.2", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.2));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$12.23").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$12.23", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.23));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$12.239489").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$12.239489", ",", ".").unwrap();
     assert!(money.is_negative());
     // USD: round to 2 decimal places using bankers rounding -> -12.24
     assert_eq!(money.amount(), dec!(-12.239489));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1,234").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1,234", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1,234.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1,234.3", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1,234.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1,234.38", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1,269.34983").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1,269.34983", ",", ".").unwrap();
     assert!(money.is_negative());
     // USD: round to 2 decimal places using bankers rounding -> -1269.35
     assert_eq!(money.amount(), dec!(-1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1234").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1234", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1234.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1234.3", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1234.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1234.38", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1269.34983").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1269.34983", ",", ".").unwrap();
     assert!(money.is_negative());
     // USD: round to 2 decimal places using bankers rounding -> -1269.35
     assert_eq!(money.amount(), dec!(-1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1,234,000").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1,234,000", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1,234,000.3").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1,234,000.3", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1,234,111.38").unwrap();
+    let money: RawMoney<USD> = RawMoney::from_str_symbol_with("-$1,234,111.38", ",", ".").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234111.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<USD> = RawMoney::from_symbol_comma_thousands("-$1,269,899.34983").unwrap();
+    let money: RawMoney<USD> =
+        RawMoney::from_str_symbol_with("-$1,269,899.34983", ",", ".").unwrap();
     assert!(money.is_negative());
     // USD: round to 2 decimal places using bankers rounding -> -1269899.35
     assert_eq!(money.amount(), dec!(-1269899.34983));
@@ -1091,85 +1107,86 @@ fn test_parsing_all_raw() {
     println!("----------------------------------------");
 
     // from symbol dot thousands positive
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€12").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€12", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€12,2").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€12,2", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.2));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€12,23").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€12,23", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(12.23));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€12,239489").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€12,239489", ".", ",").unwrap();
     assert!(money.is_positive());
     // EUR: round to 2 decimal places using bankers rounding -> 12.24
     assert_eq!(money.amount(), dec!(12.239489));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1.234").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1.234", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1.234,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1.234,3", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1.234,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1.234,38", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1.269,34983").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1.269,34983", ".", ",").unwrap();
     assert!(money.is_positive());
     // EUR: round to 2 decimal places using bankers rounding -> 1269.35
     assert_eq!(money.amount(), dec!(1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1234").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1234", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1234,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1234,3", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1234,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1234,38", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1269,34983").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1269,34983", ".", ",").unwrap();
     assert!(money.is_positive());
     // EUR: round to 2 decimal places using bankers rounding -> 1269.35
     assert_eq!(money.amount(), dec!(1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1.234.000").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1.234.000", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1.234.000,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1.234.000,3", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234000.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1.234.111,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("€1.234.111,38", ".", ",").unwrap();
     assert!(money.is_positive());
     assert_eq!(money.amount(), dec!(1234111.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("€1.269.899,34983").unwrap();
+    let money: RawMoney<EUR> =
+        RawMoney::from_str_symbol_with("€1.269.899,34983", ".", ",").unwrap();
     assert!(money.is_positive());
     // EUR: round to 2 decimal places using bankers rounding -> 1269899.35
     assert_eq!(money.amount(), dec!(1269899.34983));
@@ -1178,85 +1195,86 @@ fn test_parsing_all_raw() {
     println!("----------------------------------------");
 
     // from symbol dot thousands negative
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€12").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€12", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€12,2").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€12,2", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.2));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€12,23").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€12,23", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-12.23));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€12,239489").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€12,239489", ".", ",").unwrap();
     assert!(money.is_negative());
     // EUR: round to 2 decimal places using bankers rounding -> -12.24
     assert_eq!(money.amount(), dec!(-12.239489));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1.234").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1.234", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1.234,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1.234,3", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1.234,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1.234,38", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1.269,34983").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1.269,34983", ".", ",").unwrap();
     assert!(money.is_negative());
     // EUR: round to 2 decimal places using bankers rounding -> -1269.35
     assert_eq!(money.amount(), dec!(-1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1234").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1234", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1234,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1234,3", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1234,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1234,38", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1269,34983").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1269,34983", ".", ",").unwrap();
     assert!(money.is_negative());
     // EUR: round to 2 decimal places using bankers rounding -> -1269.35
     assert_eq!(money.amount(), dec!(-1269.34983));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1.234.000").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1.234.000", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1.234.000,3").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1.234.000,3", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234000.3));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1.234.111,38").unwrap();
+    let money: RawMoney<EUR> = RawMoney::from_str_symbol_with("-€1.234.111,38", ".", ",").unwrap();
     assert!(money.is_negative());
     assert_eq!(money.amount(), dec!(-1234111.38));
     println!("{} | {}", money, money.amount());
 
-    let money: RawMoney<EUR> = RawMoney::from_symbol_dot_thousands("-€1.269.899,34983").unwrap();
+    let money: RawMoney<EUR> =
+        RawMoney::from_str_symbol_with("-€1.269.899,34983", ".", ",").unwrap();
     assert!(money.is_negative());
     // EUR: round to 2 decimal places using bankers rounding -> -1269899.35
     assert_eq!(money.amount(), dec!(-1269899.34983));
@@ -1366,112 +1384,112 @@ fn test_from_str_raw_plain_negative_high_precision() {
 
 #[test]
 fn test_from_symbol_comma_thousands_basic() {
-    let money = RawMoney::<USD>::from_symbol_comma_thousands("$1,234.56").unwrap();
+    let money = RawMoney::<USD>::from_str_symbol_with("$1,234.56", ",", ".").unwrap();
     assert_eq!(money.code(), "USD");
     assert_eq!(money.amount(), dec!(1234.56));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_no_thousands_separator() {
-    let money = RawMoney::<AUD>::from_symbol_comma_thousands("$100.50").unwrap();
+    let money = RawMoney::<AUD>::from_str_symbol_with("$100.50", ",", ".").unwrap();
     assert_eq!(money.amount(), dec!(100.50));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_integer_only() {
-    let money = RawMoney::<USD>::from_symbol_comma_thousands("$100").unwrap();
+    let money = RawMoney::<USD>::from_str_symbol_with("$100", ",", ".").unwrap();
     assert_eq!(money.amount(), dec!(100));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_large_amount() {
-    let money = RawMoney::<USD>::from_symbol_comma_thousands("$1,000,000.99").unwrap();
+    let money = RawMoney::<USD>::from_str_symbol_with("$1,000,000.99", ",", ".").unwrap();
     assert_eq!(money.amount(), dec!(1000000.99));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_zero() {
-    let money = RawMoney::<USD>::from_symbol_comma_thousands("$0").unwrap();
+    let money = RawMoney::<USD>::from_str_symbol_with("$0", ",", ".").unwrap();
     assert_eq!(money.amount(), dec!(0.00));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_zero_point_zeros() {
-    let money = RawMoney::<USD>::from_symbol_comma_thousands("$0.00").unwrap();
+    let money = RawMoney::<USD>::from_str_symbol_with("$0.00", ",", ".").unwrap();
     assert_eq!(money.amount(), dec!(0.00));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_negative() {
-    let money = RawMoney::<USD>::from_symbol_comma_thousands("-$1,234.56").unwrap();
+    let money = RawMoney::<USD>::from_str_symbol_with("-$1,234.56", ",", ".").unwrap();
     assert_eq!(money.amount(), dec!(-1234.56));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_with_whitespace() {
-    let money = RawMoney::<USD>::from_symbol_comma_thousands("  $1,234.56  ").unwrap();
+    let money = RawMoney::<USD>::from_str_symbol_with("  $1,234.56  ", ",", ".").unwrap();
     assert_eq!(money.amount(), dec!(1234.56));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_currency_mismatch() {
     // EUR symbol (€) doesn't match USD parser ($), so it returns ParseStr
-    let result = RawMoney::<EUR>::from_symbol_comma_thousands("$1,234.56");
+    let result = RawMoney::<EUR>::from_str_symbol_with("$1,234.56", ",", ".");
     assert!(result.is_err());
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_invalid_empty() {
-    assert!(RawMoney::<USD>::from_symbol_comma_thousands("").is_err());
+    assert!(RawMoney::<USD>::from_str_symbol_with("", ",", ".").is_err());
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_invalid_format() {
     // dot-thousands / comma-decimal format is rejected
-    assert!(RawMoney::<EUR>::from_symbol_comma_thousands("€1.234,56").is_err());
+    assert!(RawMoney::<EUR>::from_str_symbol_with("€1.234,56", ",", ".").is_err());
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_optional_separator() {
-    let with_sep = RawMoney::<USD>::from_symbol_comma_thousands("$1,234.56").unwrap();
-    let without_sep = RawMoney::<USD>::from_symbol_comma_thousands("$1234.56").unwrap();
+    let with_sep = RawMoney::<USD>::from_str_symbol_with("$1,234.56", ",", ".").unwrap();
+    let without_sep = RawMoney::<USD>::from_str_symbol_with("$1234.56", ",", ".").unwrap();
     assert_eq!(with_sep.amount(), without_sep.amount());
     assert_eq!(with_sep.amount(), dec!(1234.56));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_optional_separator_rounded() {
-    let with_sep = RawMoney::<USD>::from_symbol_comma_thousands("$1,234.56988").unwrap();
-    let without_sep = RawMoney::<USD>::from_symbol_comma_thousands("$1234.56672").unwrap();
+    let with_sep = RawMoney::<USD>::from_str_symbol_with("$1,234.56988", ",", ".").unwrap();
+    let without_sep = RawMoney::<USD>::from_str_symbol_with("$1234.56672", ",", ".").unwrap();
     assert_ne!(with_sep.amount(), without_sep.amount());
     assert_eq!(with_sep.amount(), dec!(1_234.56988));
 }
 
 #[test]
 fn test_from_symbol_comma_thousands_optional_separator_rounded_negative() {
-    let with_sep = RawMoney::<USD>::from_symbol_comma_thousands("-$1,234.56988").unwrap();
-    let without_sep = RawMoney::<USD>::from_symbol_comma_thousands("-$1234.56672").unwrap();
+    let with_sep = RawMoney::<USD>::from_str_symbol_with("-$1,234.56988", ",", ".").unwrap();
+    let without_sep = RawMoney::<USD>::from_str_symbol_with("-$1234.56672", ",", ".").unwrap();
     assert_ne!(with_sep.amount(), without_sep.amount());
     assert_eq!(with_sep.amount(), dec!(-1_234.56988));
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_optional_separator_rounded_negative() {
-    let with_sep = RawMoney::<USD>::from_symbol_dot_thousands("-$1.234,56988").unwrap();
-    let without_sep = RawMoney::<USD>::from_symbol_dot_thousands("-$1234,56672").unwrap();
+    let with_sep = RawMoney::<USD>::from_str_symbol_with("-$1.234,56988", ".", ",").unwrap();
+    let without_sep = RawMoney::<USD>::from_str_symbol_with("-$1234,56672", ".", ",").unwrap();
     assert_ne!(with_sep.amount(), without_sep.amount());
     assert_eq!(with_sep.amount(), dec!(-1_234.56988));
 }
 
 #[test]
 fn test_from_symbol_comma_currency_mismatch() {
-    let money = RawMoney::<SGD>::from_symbol_comma_thousands("$1,234.56");
+    let money = RawMoney::<SGD>::from_str_symbol_with("$1,234.56", ",", ".");
     assert!(money.is_err());
 }
 
 #[test]
 fn test_from_symbol_dot_currency_mismatch() {
-    let money = RawMoney::<SGD>::from_symbol_comma_thousands("$1,234.56988");
+    let money = RawMoney::<SGD>::from_str_symbol_with("$1,234.56988", ",", ".");
     assert!(money.is_err());
 }
 
@@ -1479,77 +1497,77 @@ fn test_from_symbol_dot_currency_mismatch() {
 
 #[test]
 fn test_from_symbol_dot_thousands_basic() {
-    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€1.234,56").unwrap();
+    let money = RawMoney::<EUR>::from_str_symbol_with("€1.234,56", ".", ",").unwrap();
     assert_eq!(money.code(), "EUR");
     assert_eq!(money.amount(), dec!(1234.56));
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_no_thousands_separator() {
-    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€100,50").unwrap();
+    let money = RawMoney::<EUR>::from_str_symbol_with("€100,50", ".", ",").unwrap();
     assert_eq!(money.amount(), dec!(100.50));
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_integer_only() {
-    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€100").unwrap();
+    let money = RawMoney::<EUR>::from_str_symbol_with("€100", ".", ",").unwrap();
     assert_eq!(money.amount(), dec!(100));
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_large_amount() {
-    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€1.000.000,99").unwrap();
+    let money = RawMoney::<EUR>::from_str_symbol_with("€1.000.000,99", ".", ",").unwrap();
     assert_eq!(money.amount(), dec!(1000000.99));
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_zero() {
-    let money = RawMoney::<EUR>::from_symbol_dot_thousands("€0,00").unwrap();
+    let money = RawMoney::<EUR>::from_str_symbol_with("€0,00", ".", ",").unwrap();
     assert_eq!(money.amount(), dec!(0.00));
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_negative() {
-    let money = RawMoney::<EUR>::from_symbol_dot_thousands("-€1.234,56").unwrap();
+    let money = RawMoney::<EUR>::from_str_symbol_with("-€1.234,56", ".", ",").unwrap();
     assert_eq!(money.amount(), dec!(-1234.56));
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_with_whitespace() {
-    let money = RawMoney::<EUR>::from_symbol_dot_thousands("  €1.234,56  ").unwrap();
+    let money = RawMoney::<EUR>::from_str_symbol_with("  €1.234,56  ", ".", ",").unwrap();
     assert_eq!(money.amount(), dec!(1234.56));
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_currency_mismatch() {
     // USD symbol ($) doesn't match EUR parser (€), so it returns ParseStr
-    let result = RawMoney::<USD>::from_symbol_dot_thousands("€1.234,56");
+    let result = RawMoney::<USD>::from_str_symbol_with("€1.234,56", ".", ",");
     assert!(result.is_err());
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_invalid_empty() {
-    assert!(RawMoney::<EUR>::from_symbol_dot_thousands("").is_err());
+    assert!(RawMoney::<EUR>::from_str_symbol_with("", ".", ",").is_err());
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_invalid_format() {
     // comma-thousands / dot-decimal format is rejected
-    assert!(RawMoney::<USD>::from_symbol_dot_thousands("$1,234.56").is_err());
+    assert!(RawMoney::<USD>::from_str_symbol_with("$1,234.56", ".", ",").is_err());
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_optional_separator() {
-    let with_sep = RawMoney::<EUR>::from_symbol_dot_thousands("€1.234,56").unwrap();
-    let without_sep = RawMoney::<EUR>::from_symbol_dot_thousands("€1234,56").unwrap();
+    let with_sep = RawMoney::<EUR>::from_str_symbol_with("€1.234,56", ".", ",").unwrap();
+    let without_sep = RawMoney::<EUR>::from_str_symbol_with("€1234,56", ".", ",").unwrap();
     assert_eq!(with_sep.amount(), without_sep.amount());
     assert_eq!(with_sep.amount(), dec!(1234.56));
 }
 
 #[test]
 fn test_from_symbol_dot_thousands_optional_separator_rounded() {
-    let with_sep = RawMoney::<EUR>::from_symbol_dot_thousands("€1.234,56988").unwrap();
-    let without_sep = RawMoney::<EUR>::from_symbol_dot_thousands("€1234,56672").unwrap();
+    let with_sep = RawMoney::<EUR>::from_str_symbol_with("€1.234,56988", ".", ",").unwrap();
+    let without_sep = RawMoney::<EUR>::from_str_symbol_with("€1234,56672", ".", ",").unwrap();
     assert_ne!(with_sep.amount(), without_sep.amount());
     assert_eq!(with_sep.amount(), dec!(1_234.56988));
 }
@@ -2066,121 +2084,121 @@ fn test_raw_money_remainder() {
 #[test]
 fn test_raw_code_locale_separator_chf_basic() {
     // CHF: thousands='\'', decimal='.'
-    let raw = RawMoney::<CHF>::from_code_locale_separator("CHF 1'234.56789").unwrap();
+    let raw = RawMoney::<CHF>::from_str_code("CHF 1'234.56789").unwrap();
     assert_eq!(raw.code(), "CHF");
     assert_eq!(raw.amount(), dec!(1234.56789));
 }
 
 #[test]
 fn test_raw_code_locale_separator_chf_large_amount() {
-    let raw = RawMoney::<CHF>::from_code_locale_separator("CHF 1'123'456.2223").unwrap();
+    let raw = RawMoney::<CHF>::from_str_code("CHF 1'123'456.2223").unwrap();
     assert_eq!(raw.code(), "CHF");
     assert_eq!(raw.amount(), dec!(1123456.2223));
 }
 
 #[test]
 fn test_raw_code_locale_separator_chf_no_thousands_separator() {
-    let raw = RawMoney::<CHF>::from_code_locale_separator("CHF 1234.56789").unwrap();
+    let raw = RawMoney::<CHF>::from_str_code("CHF 1234.56789").unwrap();
     assert_eq!(raw.amount(), dec!(1234.56789));
 }
 
 #[test]
 fn test_raw_code_locale_separator_chf_integer_only() {
-    let raw = RawMoney::<CHF>::from_code_locale_separator("CHF 1'234").unwrap();
+    let raw = RawMoney::<CHF>::from_str_code("CHF 1'234").unwrap();
     assert_eq!(raw.amount(), dec!(1234));
 }
 
 #[test]
 fn test_raw_code_locale_separator_chf_zero() {
-    let raw = RawMoney::<CHF>::from_code_locale_separator("CHF 0").unwrap();
+    let raw = RawMoney::<CHF>::from_str_code("CHF 0").unwrap();
     assert_eq!(raw.amount(), dec!(0));
 }
 
 #[test]
 fn test_raw_code_locale_separator_chf_negative() {
-    let raw = RawMoney::<CHF>::from_code_locale_separator("CHF -1'234.5678").unwrap();
+    let raw = RawMoney::<CHF>::from_str_code("CHF -1'234.5678").unwrap();
     assert_eq!(raw.amount(), dec!(-1234.5678));
 }
 
 #[test]
 fn test_raw_code_locale_separator_preserves_precision() {
     // RawMoney does NOT round even if extra decimal places exceed minor unit
-    let raw = RawMoney::<CHF>::from_code_locale_separator("CHF 1'234.999999").unwrap();
+    let raw = RawMoney::<CHF>::from_str_code("CHF 1'234.999999").unwrap();
     assert_eq!(raw.amount(), dec!(1234.999999));
 }
 
 #[test]
 fn test_raw_code_locale_separator_usd_basic() {
     // USD: thousands=',', decimal='.'
-    let raw = RawMoney::<USD>::from_code_locale_separator("USD 1,234.56789").unwrap();
+    let raw = RawMoney::<USD>::from_str_code("USD 1,234.56789").unwrap();
     assert_eq!(raw.code(), "USD");
     assert_eq!(raw.amount(), dec!(1234.56789));
 }
 
 #[test]
 fn test_raw_code_locale_separator_usd_large_amount() {
-    let raw = RawMoney::<USD>::from_code_locale_separator("USD 1,000,000.99").unwrap();
+    let raw = RawMoney::<USD>::from_str_code("USD 1,000,000.99").unwrap();
     assert_eq!(raw.amount(), dec!(1000000.99));
 }
 
 #[test]
 fn test_raw_code_locale_separator_eur_basic() {
     // EUR: thousands='.', decimal=','
-    let raw = RawMoney::<EUR>::from_code_locale_separator("EUR 1.234,56789").unwrap();
+    let raw = RawMoney::<EUR>::from_str_code("EUR 1.234,56789").unwrap();
     assert_eq!(raw.code(), "EUR");
     assert_eq!(raw.amount(), dec!(1234.56789));
 }
 
 #[test]
 fn test_raw_code_locale_separator_eur_large_amount() {
-    let raw = RawMoney::<EUR>::from_code_locale_separator("EUR 1.000.000,99").unwrap();
+    let raw = RawMoney::<EUR>::from_str_code("EUR 1.000.000,99").unwrap();
     assert_eq!(raw.amount(), dec!(1000000.99));
 }
 
 #[test]
 fn test_raw_code_locale_separator_with_whitespace() {
-    let raw = RawMoney::<CHF>::from_code_locale_separator("  CHF 1'234.5678  ").unwrap();
+    let raw = RawMoney::<CHF>::from_str_code("  CHF 1'234.5678  ").unwrap();
     assert_eq!(raw.amount(), dec!(1234.5678));
 }
 
 #[test]
 fn test_raw_code_locale_separator_currency_mismatch() {
     // When code in string doesn't match the type parameter, returns ParseStr
-    let result = RawMoney::<USD>::from_code_locale_separator("EUR 1,234.56");
+    let result = RawMoney::<USD>::from_str_code("EUR 1,234.56");
     assert!(result.is_err());
 }
 
 #[test]
 fn test_raw_code_locale_separator_empty_string() {
-    assert!(RawMoney::<CHF>::from_code_locale_separator("").is_err());
+    assert!(RawMoney::<CHF>::from_str_code("").is_err());
 }
 
 #[test]
 fn test_raw_code_locale_separator_invalid_no_space() {
-    assert!(RawMoney::<CHF>::from_code_locale_separator("CHF1'234.56").is_err());
+    assert!(RawMoney::<CHF>::from_str_code("CHF1'234.56").is_err());
 }
 
 #[test]
 fn test_raw_code_locale_separator_invalid_wrong_grouping() {
-    assert!(RawMoney::<CHF>::from_code_locale_separator("CHF 1'23.56").is_err());
+    assert!(RawMoney::<CHF>::from_str_code("CHF 1'23.56").is_err());
 }
 
 #[test]
 fn test_raw_code_locale_separator_large_number() {
     assert_eq!(
-        RawMoney::<CHF>::from_code_locale_separator("CHF 1'234'434'123.56234").unwrap(),
+        RawMoney::<CHF>::from_str_code("CHF 1'234'434'123.56234").unwrap(),
         raw!(CHF, 1_234_434_123.56234)
     );
 }
 
 #[test]
 fn test_raw_code_locale_separator_invalid_separator() {
-    assert!(RawMoney::<EUR>::from_code_locale_separator("EUR 1'234.56").is_err());
+    assert!(RawMoney::<EUR>::from_str_code("EUR 1'234.56").is_err());
 }
 
 #[test]
 fn test_raw_code_locale_separator_overflow() {
-    let result = RawMoney::<CHF>::from_code_locale_separator(format!("CHF {}", i128::MAX).as_str());
+    let result = RawMoney::<CHF>::from_str_code(format!("CHF {}", i128::MAX).as_str());
     assert!(result.is_err());
 }
 
@@ -2189,7 +2207,7 @@ fn test_raw_code_locale_separator_overflow() {
 #[test]
 fn test_raw_symbol_locale_separator_chf_basic() {
     // CHF symbol='₣', thousands='\'', decimal='.'
-    let raw = RawMoney::<CHF>::from_symbol_locale_separator("₣1'234.56789").unwrap();
+    let raw = RawMoney::<CHF>::from_str_symbol("₣1'234.56789").unwrap();
     assert_eq!(raw.code(), "CHF");
     assert_eq!(raw.symbol(), "₣");
     assert_eq!(raw.amount(), dec!(1234.56789));
@@ -2197,58 +2215,58 @@ fn test_raw_symbol_locale_separator_chf_basic() {
 
 #[test]
 fn test_raw_symbol_locale_separator_chf_large_amount() {
-    let raw = RawMoney::<CHF>::from_symbol_locale_separator("₣1'123'456.2223").unwrap();
+    let raw = RawMoney::<CHF>::from_str_symbol("₣1'123'456.2223").unwrap();
     assert_eq!(raw.amount(), dec!(1123456.2223));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_chf_no_thousands_separator() {
-    let raw = RawMoney::<CHF>::from_symbol_locale_separator("₣1234.56789").unwrap();
+    let raw = RawMoney::<CHF>::from_str_symbol("₣1234.56789").unwrap();
     assert_eq!(raw.amount(), dec!(1234.56789));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_chf_integer_only() {
-    let raw = RawMoney::<CHF>::from_symbol_locale_separator("₣1'234").unwrap();
+    let raw = RawMoney::<CHF>::from_str_symbol("₣1'234").unwrap();
     assert_eq!(raw.amount(), dec!(1234));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_chf_zero() {
-    let raw = RawMoney::<CHF>::from_symbol_locale_separator("₣0").unwrap();
+    let raw = RawMoney::<CHF>::from_str_symbol("₣0").unwrap();
     assert_eq!(raw.amount(), dec!(0));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_chf_negative() {
-    let raw = RawMoney::<CHF>::from_symbol_locale_separator("-₣1'234.5678").unwrap();
+    let raw = RawMoney::<CHF>::from_str_symbol("-₣1'234.5678").unwrap();
     assert_eq!(raw.amount(), dec!(-1234.5678));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_preserves_precision() {
-    let raw = RawMoney::<CHF>::from_symbol_locale_separator("₣1'234.999999").unwrap();
+    let raw = RawMoney::<CHF>::from_str_symbol("₣1'234.999999").unwrap();
     assert_eq!(raw.amount(), dec!(1234.999999));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_eur_basic() {
     // EUR symbol='€', thousands='.', decimal=','
-    let raw = RawMoney::<EUR>::from_symbol_locale_separator("€1.234,56789").unwrap();
+    let raw = RawMoney::<EUR>::from_str_symbol("€1.234,56789").unwrap();
     assert_eq!(raw.code(), "EUR");
     assert_eq!(raw.amount(), dec!(1234.56789));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_eur_large_amount() {
-    let raw = RawMoney::<EUR>::from_symbol_locale_separator("€1.000.000,99").unwrap();
+    let raw = RawMoney::<EUR>::from_str_symbol("€1.000.000,99").unwrap();
     assert_eq!(raw.amount(), dec!(1000000.99));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_usd_basic() {
     // USD symbol='$', thousands=',', decimal='.'
-    let raw = RawMoney::<USD>::from_symbol_locale_separator("$1,234.56789").unwrap();
+    let raw = RawMoney::<USD>::from_str_symbol("$1,234.56789").unwrap();
     assert_eq!(raw.code(), "USD");
     assert_eq!(raw.amount(), dec!(1234.56789));
 }
@@ -2256,7 +2274,7 @@ fn test_raw_symbol_locale_separator_usd_basic() {
 #[test]
 fn test_raw_symbol_locale_separator_jpy_basic() {
     // JPY symbol='¥', thousands=',', decimal='.'
-    let raw = RawMoney::<JPY>::from_symbol_locale_separator("¥1,234").unwrap();
+    let raw = RawMoney::<JPY>::from_str_symbol("¥1,234").unwrap();
     assert_eq!(raw.code(), "JPY");
     assert_eq!(raw.amount(), dec!(1234));
 }
@@ -2264,48 +2282,48 @@ fn test_raw_symbol_locale_separator_jpy_basic() {
 #[test]
 fn test_raw_symbol_locale_separator_gbp_basic() {
     // GBP symbol='£', thousands=',', decimal='.'
-    let raw = RawMoney::<GBP>::from_symbol_locale_separator("£1,234.56789").unwrap();
+    let raw = RawMoney::<GBP>::from_str_symbol("£1,234.56789").unwrap();
     assert_eq!(raw.code(), "GBP");
     assert_eq!(raw.amount(), dec!(1234.56789));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_with_whitespace() {
-    let raw = RawMoney::<CHF>::from_symbol_locale_separator("  ₣1'234.5678  ").unwrap();
+    let raw = RawMoney::<CHF>::from_str_symbol("  ₣1'234.5678  ").unwrap();
     assert_eq!(raw.amount(), dec!(1234.5678));
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_currency_mismatch() {
-    let result = RawMoney::<CHF>::from_symbol_locale_separator("€1.234,56");
+    let result = RawMoney::<CHF>::from_str_symbol("€1.234,56");
     assert!(result.is_err());
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_empty_string() {
-    assert!(RawMoney::<CHF>::from_symbol_locale_separator("").is_err());
+    assert!(RawMoney::<CHF>::from_str_symbol("").is_err());
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_symbol_only() {
-    assert!(RawMoney::<CHF>::from_symbol_locale_separator("₣").is_err());
+    assert!(RawMoney::<CHF>::from_str_symbol("₣").is_err());
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_overflow() {
-    let result = RawMoney::<CHF>::from_symbol_locale_separator(format!("₣{}", i128::MAX).as_str());
+    let result = RawMoney::<CHF>::from_str_symbol(format!("₣{}", i128::MAX).as_str());
     assert!(result.is_err());
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_large_number() {
     assert_eq!(
-        RawMoney::<CHF>::from_symbol_locale_separator("₣1'234'434'123.56666").unwrap(),
+        RawMoney::<CHF>::from_str_symbol("₣1'234'434'123.56666").unwrap(),
         raw!(CHF, 1_234_434_123.56666)
     );
 }
 
 #[test]
 fn test_raw_symbol_locale_separator_invalid_separator() {
-    assert!(RawMoney::<EUR>::from_symbol_locale_separator("€1'234.56").is_err());
+    assert!(RawMoney::<EUR>::from_str_symbol("€1'234.56").is_err());
 }

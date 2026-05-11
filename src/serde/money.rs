@@ -524,7 +524,7 @@ pub mod option_dot_str_symbol {
 /// The separators used are from currency's locale separator.
 ///
 /// Uses [`BaseMoney::format_code`] for serialization (e.g. `"USD 1,234.56"` or `"CHF 1'234.56"`).
-/// Deserializes via [`Money::from_code_locale_separator`].
+/// Deserializes via [`Money::from_str_code`].
 ///
 /// # Usage
 ///
@@ -628,7 +628,7 @@ pub mod option_str_code {
 /// The separators used are from currency's locale separator.
 ///
 /// Uses [`BaseMoney::format_symbol`] for serialization (e.g. `"$1,234.56"` or `"₣1'234.56"`).
-/// Deserializes via [`Money::from_symbol_locale_separator`].
+/// Deserializes via [`Money::from_str_symbol`].
 ///
 /// # Usage
 ///
