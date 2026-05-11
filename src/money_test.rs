@@ -3770,3 +3770,75 @@ fn test_symbol_locale_separator_large_number() {
 fn test_symbol_locale_separator_invalid_separator() {
     assert!(Money::<EUR>::from_str_symbol("€1'234.56").is_err());
 }
+
+// ==================== parse.rs coverage: previously-uncovered paths ====================
+
+// Line 13: integer part is empty after stripping the negative sign.
+// "-.5" splits by "." into ["-", "5"]; stripping "-" from "-" yields an empty integer part.
+#[test]
+fn test_parse_empty_integer_part_via_code() {
+    let result = Money::<USD>::from_str_code_with("USD -.5", ",", ".");
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
+}
+
+#[test]
+fn test_parse_empty_integer_part_via_symbol() {
+    // "$-.5": after stripping "$", amount is "-.5"; split by "." gives ["-","5"];
+    // stripping "-" leaves an empty integer part.
+    let result = Money::<USD>::from_str_symbol_with("$-.5", ",", ".");
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
+}
+
+// Lines 42-44: decimal part is empty or not all ASCII digits, in the with-separator branch
+// (i.e. the integer part contains the thousand separator).
+#[test]
+fn test_parse_empty_decimal_part_with_thousand_separator_via_code() {
+    // "1,234." -> decimal part is "" (trailing decimal separator)
+    let result = Money::<USD>::from_str_code_with("USD 1,234.", ",", ".");
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
+}
+
+#[test]
+fn test_parse_nondigit_decimal_part_with_thousand_separator_via_code() {
+    // "1,234.abc" -> decimal part "abc" is not all ASCII digits
+    let result = Money::<USD>::from_str_code_with("USD 1,234.abc", ",", ".");
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
+}
+
+#[test]
+fn test_parse_empty_decimal_part_with_thousand_separator_via_symbol() {
+    // "$1,234." -> decimal part is "" (trailing decimal separator)
+    let result = Money::<USD>::from_str_symbol_with("$1,234.", ",", ".");
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
+}
+
+#[test]
+fn test_parse_nondigit_decimal_part_with_thousand_separator_via_symbol() {
+    // "$1,234.abc" -> decimal part "abc" is not all ASCII digits
+    let result = Money::<USD>::from_str_symbol_with("$1,234.abc", ",", ".");
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
+}
+
+// Lines 59-61: integer part not all ASCII digits, in the no-separator branch
+// (i.e. the integer part does NOT contain the thousand separator).
+#[test]
+fn test_parse_nondigit_integer_no_separator_via_code() {
+    // "1a2" has no "," (thousand sep), but contains non-digit 'a'
+    let result = Money::<USD>::from_str_code_with("USD 1a2", ",", ".");
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
+}
+
+#[test]
+fn test_parse_nondigit_integer_no_separator_via_symbol() {
+    // "$1a2": after stripping "$", "1a2" has no "," and contains non-digit 'a'
+    let result = Money::<USD>::from_str_symbol_with("$1a2", ",", ".");
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
+}
+
+// Lines 125-131: more than two parts when splitting amount by the decimal separator.
+#[test]
+fn test_parse_multiple_decimal_separators_via_code() {
+    // "1.2.3" splits by "." into ["1","2","3"] (3 parts > 2)
+    let result = Money::<USD>::from_str_code_with("USD 1.2.3", ",", ".");
+    assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
+}
