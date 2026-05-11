@@ -44,7 +44,7 @@ pub mod prelude {
 
 #[cfg(not(feature = "exchange"))]
 /// MoneyOps\<C\> trait contains all traits on money instance.
-pub trait MoneyOps<C>: BaseOps<C> + MoneyFormatter<C> + PercentOps<C>
+pub trait MoneyOps<C>: BaseOps<C> + MoneyFormatter<C> + MoneyParser<C> + PercentOps<C>
 where
     C: Currency,
 {
@@ -52,7 +52,8 @@ where
 
 #[cfg(feature = "exchange")]
 /// MoneyOps\<C\> trait contains all traits on money instance.
-pub trait MoneyOps<C>: BaseOps<C> + MoneyFormatter<C> + PercentOps<C> + Exchange<C>
+pub trait MoneyOps<C>:
+    BaseOps<C> + MoneyFormatter<C> + MoneyParser<C> + PercentOps<C> + Exchange<C>
 where
     C: Currency,
 {
