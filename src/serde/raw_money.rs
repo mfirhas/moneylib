@@ -98,7 +98,7 @@ pub mod comma_str_code {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{Currency, MoneyFormatter, RawMoney};
+    use crate::{Currency, MoneyFormatter, MoneyParser, RawMoney};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
@@ -117,7 +117,7 @@ pub mod comma_str_code {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            RawMoney::<C>::from_code_comma_thousands(v).map_err(de::Error::custom)
+            RawMoney::<C>::from_str_code_with(v, ",", ".").map_err(de::Error::custom)
         }
     }
 
@@ -209,7 +209,7 @@ pub mod comma_str_symbol {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{Currency, MoneyFormatter, RawMoney};
+    use crate::{Currency, MoneyFormatter, MoneyParser, RawMoney};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
@@ -228,7 +228,7 @@ pub mod comma_str_symbol {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            RawMoney::<C>::from_symbol_comma_thousands(v).map_err(|err| E::custom(err))
+            RawMoney::<C>::from_str_symbol_with(v, ",", ".").map_err(|err| E::custom(err))
         }
     }
 
@@ -320,7 +320,7 @@ pub mod dot_str_code {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{Currency, MoneyFormatter, RawMoney};
+    use crate::{Currency, MoneyFormatter, MoneyParser, RawMoney};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
@@ -339,7 +339,7 @@ pub mod dot_str_code {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            RawMoney::<C>::from_code_dot_thousands(v).map_err(de::Error::custom)
+            RawMoney::<C>::from_str_code_with(v, ".", ",").map_err(de::Error::custom)
         }
     }
 
@@ -431,7 +431,7 @@ pub mod dot_str_symbol {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{Currency, MoneyFormatter, RawMoney};
+    use crate::{Currency, MoneyFormatter, MoneyParser, RawMoney};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
@@ -450,7 +450,7 @@ pub mod dot_str_symbol {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            RawMoney::<C>::from_symbol_dot_thousands(v).map_err(|err| E::custom(err))
+            RawMoney::<C>::from_str_symbol_with(v, ".", ",").map_err(|err| E::custom(err))
         }
     }
 
@@ -538,7 +538,7 @@ pub mod str_code {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, RawMoney};
+    use crate::{BaseMoney, Currency, MoneyParser, RawMoney};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
@@ -557,7 +557,7 @@ pub mod str_code {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            RawMoney::<C>::from_code_locale_separator(v).map_err(de::Error::custom)
+            RawMoney::<C>::from_str_code(v).map_err(de::Error::custom)
         }
     }
 
@@ -642,7 +642,7 @@ pub mod str_symbol {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, RawMoney};
+    use crate::{BaseMoney, Currency, MoneyParser, RawMoney};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &RawMoney<C>,
@@ -661,7 +661,7 @@ pub mod str_symbol {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            RawMoney::<C>::from_symbol_locale_separator(v).map_err(de::Error::custom)
+            RawMoney::<C>::from_str_symbol(v).map_err(de::Error::custom)
         }
     }
 

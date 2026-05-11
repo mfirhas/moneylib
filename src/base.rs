@@ -1205,6 +1205,48 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
     }
 }
 
+pub trait MoneyParser<C: Currency>: BaseMoney<C> + std::str::FromStr<Err = MoneyError> {
+    fn from_str_code_with(
+        amount_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> Result<Self, MoneyError> {
+        Self::from_str(&crate::parse::parse_str_code::<C>(
+            amount_str,
+            thousand_separator,
+            decimal_separator,
+        )?)
+    }
+
+    fn from_str_symbol_with(
+        amount_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> Result<Self, MoneyError> {
+        Self::from_str(&crate::parse::parse_str_symbol::<C>(
+            amount_str,
+            thousand_separator,
+            decimal_separator,
+        )?)
+    }
+
+    fn from_str_code(amount_str: &str) -> Result<Self, MoneyError> {
+        Self::from_str(&crate::parse::parse_str_code::<C>(
+            amount_str,
+            C::THOUSAND_SEPARATOR,
+            C::DECIMAL_SEPARATOR,
+        )?)
+    }
+
+    fn from_str_symbol(amount_str: &str) -> Result<Self, MoneyError> {
+        Self::from_str(&crate::parse::parse_str_symbol::<C>(
+            amount_str,
+            C::THOUSAND_SEPARATOR,
+            C::DECIMAL_SEPARATOR,
+        )?)
+    }
+}
+
 /// Trait for customizing money formatting.
 ///
 /// This trait extends `BaseMoney` with methods to customize how money is displayed.
