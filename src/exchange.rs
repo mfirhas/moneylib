@@ -189,7 +189,7 @@ impl<C: Currency, T: Currency> Convert<T> for RawMoney<C> {
 /// - ExchangeRates<'a, C> where C is base currency of exchange rates
 ///
 pub trait Rate<From: Currency, To: Currency>: Amount<To> {
-    /// Get T's rate relative to C.
+    /// Get rate for From/To
     fn get_rate(&self) -> Option<Decimal> {
         self.get_decimal()
     }
