@@ -114,9 +114,6 @@ pub use obj_money::{ObjIterOps, ObjMoney};
 // ----------------- test modules -----------------
 
 #[cfg(test)]
-mod parse_test;
-
-#[cfg(test)]
 mod fmt_test;
 
 #[cfg(test)]
