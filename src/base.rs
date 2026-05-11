@@ -1205,6 +1205,185 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
     }
 }
 
+/// Trait for parsing money values from formatted strings.
+///
+/// Provides methods to parse money from strings that include a currency code or
+/// currency symbol prefix, with either explicit separator characters or the
+/// currency's locale-specific defaults.
+///
+/// The expected input formats are:
+/// - Code format: `"<CODE> <AMOUNT>"` — e.g. `"USD 1,234.56"`
+/// - Symbol format: `"<SYMBOL><AMOUNT>"` — e.g. `"$1,234.56"` or `"-$1,234.56"`
+///
+/// # Examples
+///
+/// ```
+/// use moneylib::{Money, MoneyParser, iso::USD};
+///
+/// // Parse with explicit separators (comma thousands, dot decimal)
+/// let m = Money::<USD>::from_str_code_with("USD 1,234.56", ",", ".").unwrap();
+///
+/// // Parse using USD's locale separators (comma thousands, dot decimal)
+/// let m = Money::<USD>::from_str_code("USD 1,234.56").unwrap();
+///
+/// // Parse with symbol prefix
+/// let m = Money::<USD>::from_str_symbol("$1,234.56").unwrap();
+/// ```
+pub trait MoneyParser<C: Currency>: BaseMoney<C> + std::str::FromStr<Err = MoneyError> {
+    /// Parse money from a string in `"<CODE> <AMOUNT>"` format with explicit separators.
+    ///
+    /// The `<CODE>` must match the currency's alpha code (e.g. `"USD"`)  and the `<AMOUNT>`
+    /// may use `thousand_separator` to group digits and `decimal_separator` to separate the
+    /// integer and fractional parts.
+    ///
+    /// # Arguments
+    ///
+    /// * `amount_str` - Input string in `"<CODE> <AMOUNT>"` format (e.g. `"USD 1,234.56"`)
+    /// * `thousand_separator` - Character(s) used to group digits (e.g. `","` or `"."`)
+    /// * `decimal_separator` - Character(s) separating integer and fractional parts (e.g. `"."` or `","`)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MoneyError::CurrencyMismatchError`] if the code in the string does not match
+    /// the expected currency. Returns [`MoneyError::ParseStrError`] for any other malformed input.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, MoneyParser, iso::USD};
+    ///
+    /// // Comma thousands, dot decimal
+    /// let m = Money::<USD>::from_str_code_with("USD 1,234.56", ",", ".").unwrap();
+    ///
+    /// // Dot thousands, comma decimal
+    /// let m = Money::<USD>::from_str_code_with("USD 1.234,56", ".", ",").unwrap();
+    ///
+    /// // No thousands separator
+    /// let m = Money::<USD>::from_str_code_with("USD 1234.56", ",", ".").unwrap();
+    /// ```
+    fn from_str_code_with(
+        amount_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> Result<Self, MoneyError> {
+        Self::from_str(&crate::parse::parse_str_code::<C>(
+            amount_str,
+            thousand_separator,
+            decimal_separator,
+        )?)
+    }
+
+    /// Parse money from a string in `"<SYMBOL><AMOUNT>"` format with explicit separators.
+    ///
+    /// The `<SYMBOL>` must match the currency's symbol (e.g. `"$"` for USD) and the `<AMOUNT>`
+    /// may use `thousand_separator` to group digits and `decimal_separator` to separate the
+    /// integer and fractional parts. Negative amounts may be prefixed with `"-"` before the
+    /// symbol (e.g. `"-$1,234.56"`).
+    ///
+    /// # Arguments
+    ///
+    /// * `amount_str` - Input string in `"<SYMBOL><AMOUNT>"` format (e.g. `"$1,234.56"`)
+    /// * `thousand_separator` - Character(s) used to group digits (e.g. `","` or `"."`)
+    /// * `decimal_separator` - Character(s) separating integer and fractional parts (e.g. `"."` or `","`)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MoneyError::CurrencyMismatchError`] if the symbol in the string does not match
+    /// the expected currency. Returns [`MoneyError::ParseStrError`] for any other malformed input.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, MoneyParser, iso::USD};
+    ///
+    /// // Comma thousands, dot decimal
+    /// let m = Money::<USD>::from_str_symbol_with("$1,234.56", ",", ".").unwrap();
+    ///
+    /// // Dot thousands, comma decimal
+    /// let m = Money::<USD>::from_str_symbol_with("$1.234,56", ".", ",").unwrap();
+    ///
+    /// // Negative amount
+    /// let m = Money::<USD>::from_str_symbol_with("-$1,234.56", ",", ".").unwrap();
+    /// ```
+    fn from_str_symbol_with(
+        amount_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> Result<Self, MoneyError> {
+        Self::from_str(&crate::parse::parse_str_symbol::<C>(
+            amount_str,
+            thousand_separator,
+            decimal_separator,
+        )?)
+    }
+
+    /// Parse money from a string in `"<CODE> <AMOUNT>"` format using the currency's locale separators.
+    ///
+    /// This is a convenience wrapper around [`Self::from_str_code_with`] that automatically
+    /// uses [`Currency::THOUSAND_SEPARATOR`] and [`Currency::DECIMAL_SEPARATOR`] for the
+    /// currency type `C`.
+    ///
+    /// # Arguments
+    ///
+    /// * `amount_str` - Input string in `"<CODE> <AMOUNT>"` format (e.g. `"USD 1,234.56"`)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MoneyError::CurrencyMismatchError`] if the code in the string does not match
+    /// the expected currency. Returns [`MoneyError::ParseStrError`] for any other malformed input.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, MoneyParser, iso::USD};
+    ///
+    /// let m = Money::<USD>::from_str_code("USD 1,234.56").unwrap();
+    ///
+    /// // Negative amount
+    /// let m = Money::<USD>::from_str_code("USD -1,234.56").unwrap();
+    /// ```
+    fn from_str_code(amount_str: &str) -> Result<Self, MoneyError> {
+        Self::from_str(&crate::parse::parse_str_code::<C>(
+            amount_str,
+            C::THOUSAND_SEPARATOR,
+            C::DECIMAL_SEPARATOR,
+        )?)
+    }
+
+    /// Parse money from a string in `"<SYMBOL><AMOUNT>"` format using the currency's locale separators.
+    ///
+    /// This is a convenience wrapper around [`Self::from_str_symbol_with`] that automatically
+    /// uses [`Currency::THOUSAND_SEPARATOR`] and [`Currency::DECIMAL_SEPARATOR`] for the
+    /// currency type `C`.
+    ///
+    /// # Arguments
+    ///
+    /// * `amount_str` - Input string in `"<SYMBOL><AMOUNT>"` format (e.g. `"$1,234.56"`)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MoneyError::CurrencyMismatchError`] if the symbol in the string does not match
+    /// the expected currency. Returns [`MoneyError::ParseStrError`] for any other malformed input.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, MoneyParser, iso::USD};
+    ///
+    /// let m = Money::<USD>::from_str_symbol("$1,234.56").unwrap();
+    ///
+    /// // Negative amount
+    /// let m = Money::<USD>::from_str_symbol("-$1,234.56").unwrap();
+    /// ```
+    fn from_str_symbol(amount_str: &str) -> Result<Self, MoneyError> {
+        Self::from_str(&crate::parse::parse_str_symbol::<C>(
+            amount_str,
+            C::THOUSAND_SEPARATOR,
+            C::DECIMAL_SEPARATOR,
+        )?)
+    }
+}
+
 /// Trait for customizing money formatting.
 ///
 /// This trait extends `BaseMoney` with methods to customize how money is displayed.

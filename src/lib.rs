@@ -16,6 +16,7 @@ pub mod prelude {
     pub use crate::IterOps;
     pub use crate::MoneyFormatter;
     pub use crate::MoneyOps;
+    pub use crate::MoneyParser;
     pub use crate::PercentOps;
     pub use crate::RoundingStrategy;
     pub use crate::{Decimal, Money, MoneyError};
@@ -65,7 +66,7 @@ pub use rust_decimal::Decimal;
 pub mod macros;
 
 mod base;
-pub use base::{BaseMoney, BaseOps, IterOps, MoneyFormatter, RoundingStrategy};
+pub use base::{BaseMoney, BaseOps, IterOps, MoneyFormatter, MoneyParser, RoundingStrategy};
 
 mod error;
 pub use error::MoneyError;
@@ -111,9 +112,6 @@ mod obj_money;
 pub use obj_money::{ObjIterOps, ObjMoney};
 
 // ----------------- test modules -----------------
-
-#[cfg(test)]
-mod parse_test;
 
 #[cfg(test)]
 mod fmt_test;

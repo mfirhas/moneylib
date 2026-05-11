@@ -7,13 +7,8 @@ use std::{
 
 use crate::{
     BaseMoney, BaseOps, Decimal, Money, MoneyError, MoneyOps,
-    base::{Amount, DecimalNumber},
+    base::{Amount, DecimalNumber, MoneyParser},
     macros::dec,
-    parse::{
-        parse_code_locale_separator, parse_comma_thousands_separator,
-        parse_dot_thousands_separator, parse_symbol_comma_thousands_separator,
-        parse_symbol_dot_thousands_separator, parse_symbol_locale_separator,
-    },
 };
 use crate::{Currency, MoneyFormatter};
 use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive};
@@ -155,204 +150,6 @@ where
     #[inline]
     pub fn finish(self) -> Money<C> {
         Money::from_decimal(self.amount())
-    }
-
-    /// Parses a string in the format `"CCC amount"` (comma thousands separator and dot decimal separator).
-    ///
-    /// The format is `"CCC amount"` where `CCC` is a currency code (1-15 letters).
-    ///
-    /// For dot thousands separator format (e.g., `"EUR 1.234,56"`), use
-    /// [`RawMoney::from_code_dot_thousands`] instead.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
-    /// use std::str::FromStr;
-    ///
-    /// let raw = RawMoney::<USD>::from_code_comma_thousands("USD 1,234.56789").unwrap();
-    /// assert_eq!(raw.amount(), dec!(1234.56789));
-    /// assert_eq!(raw.code(), "USD");
-    ///
-    /// assert!(RawMoney::<USD>::from_code_comma_thousands("EUR 100.00").is_err());
-    /// ```
-    pub fn from_code_comma_thousands(s: &str) -> Result<Self, MoneyError> {
-        let s = s.trim();
-
-        if let Some((currency_code, amount_str)) = parse_comma_thousands_separator(s) {
-            if currency_code != C::CODE {
-                return Err(MoneyError::CurrencyMismatchError(
-                    currency_code.into(),
-                    C::CODE.into(),
-                ));
-            }
-            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
-                |err| MoneyError::ParseStrError(err.to_string().into()),
-            )?));
-        }
-
-        Err(MoneyError::ParseStrError(format!(
-            "failed parsing {}, use format: <CODE> <AMOUNT> where <CODE> is defined and <AMOUNT> is comma-separated thousands(optional) and dot-separated decimal",
-            s
-        ).into()))
-    }
-
-    /// Creates a new `RawMoney` from a string with dot as the thousands separator
-    /// and comma as the decimal separator (e.g., `"EUR 1.234,56"`).
-    ///
-    /// The format is `"CCC amount"` where `CCC` is a currency code (1-15 letters) and
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{RawMoney, BaseMoney, iso::{EUR, USD}};
-    ///
-    /// let raw = RawMoney::<EUR>::from_code_dot_thousands("EUR 1.234,56").unwrap();
-    /// assert_eq!(raw.code(), "EUR");
-    ///
-    /// assert!(RawMoney::<USD>::from_code_dot_thousands("EUR 1.234,56").is_err());
-    /// ```
-    pub fn from_code_dot_thousands(s: &str) -> Result<Self, MoneyError> {
-        let s = s.trim();
-
-        if let Some((currency_code, amount_str)) = parse_dot_thousands_separator(s) {
-            if currency_code != C::CODE {
-                return Err(MoneyError::CurrencyMismatchError(
-                    currency_code.into(),
-                    C::CODE.into(),
-                ));
-            }
-            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
-                |err| MoneyError::ParseStrError(err.to_string().into()),
-            )?));
-        }
-
-        Err(MoneyError::ParseStrError(format!(
-            "failed parsing {}, use format: <CODE> <AMOUNT> where <CODE> is defined and <AMOUNT> is dot-separated thousands(optional) and comma-separated decimal",
-            s
-        ).into()))
-    }
-
-    /// Parse from string with symbol, comma-separated thousands, dot-separated decimal, no rounding
-    /// Example: $1,234.2249 into USD 1234.2249
-    pub fn from_symbol_comma_thousands(s: &str) -> Result<Self, MoneyError> {
-        let s = s.trim();
-
-        if let Some((symbol, amount_str)) = parse_symbol_comma_thousands_separator::<C>(s) {
-            if symbol != C::SYMBOL {
-                return Err(MoneyError::CurrencyMismatchError(
-                    symbol.into(),
-                    C::SYMBOL.into(),
-                ));
-            }
-
-            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
-                |err| MoneyError::ParseStrError(err.to_string().into()),
-            )?));
-        }
-
-        Err(MoneyError::ParseStrError(format!(
-            "failed parsing {}, use format: <SYMBOL><AMOUNT> where <SYMBOL> is defined and <AMOUNT> is comma-separated thousands(optional) and dot-separated decimal",
-            s
-        ).into()))
-    }
-
-    /// Parse from string with symbol, dot-separated thousands, comma-separated decimal, no rounding
-    /// Example: $1.234,2249 into USD 1234.2249
-    pub fn from_symbol_dot_thousands(s: &str) -> Result<Self, MoneyError> {
-        let s = s.trim();
-
-        if let Some((symbol, amount_str)) = parse_symbol_dot_thousands_separator::<C>(s) {
-            if symbol != C::SYMBOL {
-                return Err(MoneyError::CurrencyMismatchError(
-                    symbol.into(),
-                    C::SYMBOL.into(),
-                ));
-            }
-
-            return Ok(Self::from_decimal(Decimal::from_str(&amount_str).map_err(
-                |err| MoneyError::ParseStrError(err.to_string().into()),
-            )?));
-        }
-
-        Err(MoneyError::ParseStrError(format!(
-            "failed parsing {}, use format: <SYMBOL><AMOUNT> where <SYMBOL> is defined and <AMOUNT> is dot-separated thousands(optional) and comma-separated decimal",
-            s
-        ).into()))
-    }
-
-    /// Parse from string with code, locale thousands and decimal separators.
-    ///
-    /// Code is space separated with amount.
-    ///
-    /// Currencies locale separators are from here: <https://docs.rs/currencylib>
-    ///
-    /// # Example
-    /// ```
-    /// use moneylib::{RawMoney, raw, iso::CHF, dec, BaseMoney};
-    ///
-    /// let money = RawMoney::<CHF>::from_code_locale_separator("CHF 1'123'456.2223").unwrap();
-    /// assert_eq!(money.code(), "CHF");
-    /// assert_eq!(money.symbol(), "₣");
-    /// assert_eq!(money.amount(), dec!(1123456.2223));
-    /// assert_eq!(money, raw!(CHF, 1123456.2223));
-    /// ```
-    pub fn from_code_locale_separator(s: &str) -> Result<Self, MoneyError> {
-        let s = s.trim();
-
-        if let Some((code, amount_str)) = parse_code_locale_separator::<C>(s) {
-            if code != C::CODE {
-                return Err(MoneyError::CurrencyMismatchError(
-                    code.into(),
-                    C::CODE.into(),
-                ));
-            }
-
-            return Self::from_str(&amount_str)
-                .map_err(|err| MoneyError::ParseStrError(err.to_string().into()));
-        }
-
-        Err(MoneyError::ParseStrError(format!(
-            "failed parsing {}, use format: <CODE> <AMOUNT> where <CODE> is defined and <AMOUNT> is separated by locale separators",
-            s
-        ).into()))
-    }
-
-    /// Parse from string with symbol, locale thousands and decimal separators.
-    ///
-    /// There's no space between symbol and amount.
-    ///
-    /// Currencies locale separators are from here: <https://docs.rs/currencylib>
-    ///
-    /// # Example
-    /// ```
-    /// use moneylib::{RawMoney, raw, iso::CHF, dec, BaseMoney};
-    ///
-    /// let money = RawMoney::<CHF>::from_symbol_locale_separator("₣1'123'456.2223").unwrap();
-    /// assert_eq!(money.code(), "CHF");
-    /// assert_eq!(money.symbol(), "₣");
-    /// assert_eq!(money.amount(), dec!(1123456.2223));
-    /// assert_eq!(money, raw!(CHF, 1123456.2223));
-    /// ```
-    pub fn from_symbol_locale_separator(s: &str) -> Result<Self, MoneyError> {
-        let s = s.trim();
-
-        if let Some((symbol, amount_str)) = parse_symbol_locale_separator::<C>(s) {
-            if symbol != C::SYMBOL {
-                return Err(MoneyError::CurrencyMismatchError(
-                    symbol.into(),
-                    C::SYMBOL.into(),
-                ));
-            }
-
-            return Self::from_str(&amount_str)
-                .map_err(|err| MoneyError::ParseStrError(err.to_string().into()));
-        }
-
-        Err(MoneyError::ParseStrError(format!(
-            "failed parsing {}, use format: <SYMBOL><AMOUNT> where <SYMBOL> is defined and <AMOUNT> is separated by locale separators",
-            s
-        ).into()))
     }
 }
 
@@ -626,6 +423,8 @@ where
         ))
     }
 }
+
+impl<C> MoneyParser<C> for RawMoney<C> where C: Currency {}
 
 impl<C> MoneyFormatter<C> for RawMoney<C> where C: Currency {}
 

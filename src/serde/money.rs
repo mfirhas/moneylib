@@ -98,7 +98,7 @@ pub mod comma_str_code {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{Currency, Money, MoneyFormatter};
+    use crate::{Currency, Money, MoneyFormatter, MoneyParser};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
@@ -117,7 +117,7 @@ pub mod comma_str_code {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_code_comma_thousands(v).map_err(de::Error::custom)
+            Money::<C>::from_str_code_with(v, ",", ".").map_err(de::Error::custom)
         }
     }
 
@@ -209,7 +209,7 @@ pub mod comma_str_symbol {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{Currency, Money, MoneyFormatter};
+    use crate::{Currency, Money, MoneyFormatter, MoneyParser};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
@@ -228,7 +228,7 @@ pub mod comma_str_symbol {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_symbol_comma_thousands(v).map_err(|err| E::custom(err))
+            Money::<C>::from_str_symbol_with(v, ",", ".").map_err(|err| E::custom(err))
         }
     }
 
@@ -320,7 +320,7 @@ pub mod dot_str_code {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{Currency, Money, MoneyFormatter};
+    use crate::{Currency, Money, MoneyFormatter, MoneyParser};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
@@ -339,7 +339,7 @@ pub mod dot_str_code {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_code_dot_thousands(v).map_err(de::Error::custom)
+            Money::<C>::from_str_code_with(v, ".", ",").map_err(de::Error::custom)
         }
     }
 
@@ -431,7 +431,7 @@ pub mod dot_str_symbol {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{Currency, Money, MoneyFormatter};
+    use crate::{Currency, Money, MoneyFormatter, MoneyParser};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
@@ -450,7 +450,7 @@ pub mod dot_str_symbol {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_symbol_dot_thousands(v).map_err(|err| E::custom(err))
+            Money::<C>::from_str_symbol_with(v, ".", ",").map_err(|err| E::custom(err))
         }
     }
 
@@ -524,7 +524,7 @@ pub mod option_dot_str_symbol {
 /// The separators used are from currency's locale separator.
 ///
 /// Uses [`BaseMoney::format_code`] for serialization (e.g. `"USD 1,234.56"` or `"CHF 1'234.56"`).
-/// Deserializes via [`Money::from_code_locale_separator`].
+/// Deserializes via [`crate::MoneyParser::from_str_code`].
 ///
 /// # Usage
 ///
@@ -538,7 +538,7 @@ pub mod str_code {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{BaseMoney, Currency, Money, MoneyParser};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
@@ -557,7 +557,7 @@ pub mod str_code {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_code_locale_separator(v).map_err(de::Error::custom)
+            Money::<C>::from_str_code(v).map_err(de::Error::custom)
         }
     }
 
@@ -628,7 +628,7 @@ pub mod option_str_code {
 /// The separators used are from currency's locale separator.
 ///
 /// Uses [`BaseMoney::format_symbol`] for serialization (e.g. `"$1,234.56"` or `"₣1'234.56"`).
-/// Deserializes via [`Money::from_symbol_locale_separator`].
+/// Deserializes via [`crate::MoneyParser::from_str_symbol`].
 ///
 /// # Usage
 ///
@@ -642,7 +642,7 @@ pub mod str_symbol {
 
     use ::serde::{Deserializer, Serializer, de};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{BaseMoney, Currency, Money, MoneyParser};
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
@@ -661,7 +661,7 @@ pub mod str_symbol {
         }
 
         fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_symbol_locale_separator(v).map_err(de::Error::custom)
+            Money::<C>::from_str_symbol(v).map_err(de::Error::custom)
         }
     }
 
