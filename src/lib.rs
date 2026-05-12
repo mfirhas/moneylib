@@ -87,7 +87,6 @@ mod raw_money;
 #[cfg(feature = "raw_money")]
 pub use raw_money::RawMoney;
 
-mod dec_ops;
 mod iter_ops;
 mod ops;
 mod percent_ops;
