@@ -1,7 +1,7 @@
 //! Shared serde building blocks for `Money<C>` and `RawMoney<C>`.
 //!
 //! This module provides generic serialize/deserialize helpers parameterised over
-//! any `M` that implements [`BaseMoney<C>`] (plus formatter / parser traits as
+//! any `M` that implements [`crate::BaseMoney`] (plus formatter / parser traits as
 //! appropriate).  The concrete `money` and `raw_money` modules are thin wrappers
 //! that delegate to these helpers.
 

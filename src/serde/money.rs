@@ -27,7 +27,7 @@ impl<'de, C: Currency> Deserialize<'de> for Money<C> {
 /// Serialize/deserialize `Money<C>` as a string with currency code prefix,
 /// using comma as thousands separator and dot as decimal separator.
 ///
-/// Uses [`BaseMoney::format_code`] for serialization (e.g. `"USD 1,234.56"`).
+/// Uses [`crate::BaseMoney::format_code`] for serialization (e.g. `"USD 1,234.56"`).
 /// Deserializes via comma thousands separator parser.
 ///
 /// # Usage
@@ -99,13 +99,13 @@ pub mod option_comma_str_code {
 /// Serialize/deserialize `Money<C>` as a string with currency symbol prefix,
 /// using comma as thousands separator and dot as decimal separator.
 ///
-/// Uses [`BaseMoney::format_symbol`] for serialization (e.g. `"$1,234.56"`).
+/// Uses [`crate::BaseMoney::format_symbol`] for serialization (e.g. `"$1,234.56"`).
 /// Deserializes by stripping the symbol and parsing with comma thousands separator.
 ///
 /// # Usage
 ///
 /// ```ignore
-/// #[serde(with = "moneylib::serde::money::comma_str_symbol"]
+/// #[serde(with = "moneylib::serde::money::comma_str_symbol")]
 /// amount: Money<USD>,
 /// ```
 pub mod comma_str_symbol {
@@ -171,7 +171,7 @@ pub mod option_comma_str_symbol {
 /// Serialize/deserialize `Money<C>` as a string with currency code prefix,
 /// using dot as thousands separator and comma as decimal separator.
 ///
-/// Uses [`BaseMoney::format_code`] for serialization (e.g. `"EUR 1.234,56"`).
+/// Uses [`crate::BaseMoney::format_code`] for serialization (e.g. `"EUR 1.234,56"`).
 /// Deserializes via dot thousands separator parser.
 ///
 /// # Usage
@@ -243,7 +243,7 @@ pub mod option_dot_str_code {
 /// Serialize/deserialize `Money<C>` as a string with currency symbol prefix,
 /// using dot as thousands separator and comma as decimal separator.
 ///
-/// Uses [`BaseMoney::format_symbol`] for serialization (e.g. `"€1.234,56"`).
+/// Uses [`crate::BaseMoney::format_symbol`] for serialization (e.g. `"€1.234,56"`).
 /// Deserializes by stripping the symbol and parsing with dot thousands separator.
 ///
 /// # Usage
@@ -311,7 +311,7 @@ pub mod option_dot_str_symbol {
 /// Serialize/deserialize money as string with code formatting like `CCC amount`.
 /// The separators used are from currency's locale separator.
 ///
-/// Uses [`BaseMoney::format_code`] for serialization (e.g. `"USD 1,234.56"` or `"CHF 1'234.56"`).
+/// Uses [`crate::BaseMoney::format_code`] for serialization (e.g. `"USD 1,234.56"` or `"CHF 1'234.56"`).
 /// Deserializes via [`crate::MoneyParser::from_str_code`].
 ///
 /// # Usage
@@ -376,13 +376,13 @@ pub mod option_str_code {
 /// Serialize/deserialize money as string with symbol formatting like `S<amount>`.
 /// The separators used are from currency's locale separator.
 ///
-/// Uses [`BaseMoney::format_symbol`] for serialization (e.g. `"$1,234.56"` or `"₣1'234.56"`).
+/// Uses [`crate::BaseMoney::format_symbol`] for serialization (e.g. `"$1,234.56"` or `"₣1'234.56"`).
 /// Deserializes via [`crate::MoneyParser::from_str_symbol`].
 ///
 /// # Usage
 ///
 /// ```ignore
-/// #[serde(with = "moneylib::serde::money::str_symbol"]
+/// #[serde(with = "moneylib::serde::money::str_symbol")]
 /// amount: Money<USD>,
 /// ```
 pub mod str_symbol {
