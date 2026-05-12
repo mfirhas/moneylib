@@ -9,9 +9,15 @@ use crate::Money;
 /// `Mul<$T<C>> for Decimal`, and `Rem<Decimal>` impls for `$T<C>` where
 /// `C: Currency`.
 ///
-/// # Usage
+/// This is an internal code-generation macro. It is exported only to allow
+/// use across modules within this crate (e.g. for `RawMoney`). Do not call
+/// it from external crates.
+///
+/// # Usage (crate-internal)
 ///
 /// ```ignore
+/// // `ignore` because invoking the macro a second time for `Money` would
+/// // produce duplicate impl errors; the actual call lives in src/ops.rs.
 /// impl_money_ops!(Money);
 /// impl_money_ops!(RawMoney);
 /// ```
