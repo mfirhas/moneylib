@@ -333,7 +333,7 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     ///
     /// # Examples
     /// ```rust
-    /// use moneylib::{ExchangeRates, Exchange, iso::{USD, IDR, JPY, CNY}, dec, money, Currency};
+    /// use moneylib::{ExchangeRates, Exchange, iso::{USD, IDR, JPY, CNY}, dec, money, BaseMoney, Currency};
     ///
     /// let mut rates = ExchangeRates::<USD>::new();
     /// assert_eq!(rates.len(), 1);

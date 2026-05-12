@@ -180,7 +180,7 @@ impl<C: Currency> Clone for RawMoney<C> {
 /// # Examples
 ///
 /// ```
-/// use moneylib::{RawMoney, macros::dec, iso::USD};
+/// use moneylib::{BaseMoney, RawMoney, macros::dec, iso::USD};
 ///
 /// let raw = RawMoney::<USD>::from_decimal(dec!(1234.567));
 /// assert_eq!(format!("{}", raw), "USD 1,234.567");

@@ -1620,7 +1620,7 @@ pub trait MoneyFormatter<C: Currency>: BaseMoney<C> {
     /// # Examples
     ///
     /// ```rust
-    /// use moneylib::{Money, RawMoney, Currency, iso::{USD, EUR}};
+    /// use moneylib::{Money, BaseMoney, RawMoney, Currency, iso::{USD, EUR}};
     /// use moneylib::macros::dec;
     /// use moneylib::MoneyFormatter;
     ///
