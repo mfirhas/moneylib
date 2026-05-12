@@ -103,7 +103,7 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, RawMoney, Currency, macros::dec, BaseMoney, iso::{USD, EUR, JPY}};
+    /// use moneylib::{Money, Currency, macros::dec, BaseMoney, iso::{USD, EUR, JPY}};
     ///
     /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
     /// assert_eq!(money.amount(), dec!(100.50));
@@ -126,9 +126,6 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// // Amount is i128
     /// let money = Money::<USD>::new(3000_i128).unwrap();
     /// assert_eq!(money.amount(), dec!(3000));
-    ///
-    /// let raw_money = RawMoney::<EUR>::new(dec!(123.2323)).unwrap();
-    /// assert_eq!(raw_money.amount(), dec!(123.2323));
     /// ```
     #[inline]
     fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
@@ -223,13 +220,12 @@ pub trait BaseMoney<C: Currency>: Clone {
     ///
     /// # Examples
     /// ```
-    /// use moneylib::{Money, raw, Currency, RoundingStrategy, iso::USD};
+    /// use moneylib::{Money, Currency, BaseMoney, iso::USD};
     /// use moneylib::macros::dec;
-    /// use moneylib::{BaseMoney, MoneyFormatter};
     ///
-    /// let money = raw!(USD, 40.234845);
-    /// let truncated_money = money.truncate_with(3);
-    /// assert_eq!(truncated_money.amount(), dec!(40.234));
+    /// let money = Money::<USD>::from_decimal(dec!(40.79));
+    /// let truncated_money = money.truncate_with(1);
+    /// assert_eq!(truncated_money.amount(), dec!(40.7)); // truncates, not rounds
     /// ```
     #[inline]
     fn truncate_with(&self, scale: u32) -> Self {
@@ -464,15 +460,11 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{money, raw, BaseMoney, dec};
+    /// use moneylib::{money, BaseMoney, dec};
     ///
     /// let money = money!(USD, 123.456);
     /// let fract = money.fraction(); // 123.456 rounded into 123.46
     /// assert_eq!(fract, dec!(0.46));
-    ///
-    /// let raw_money = raw!(USD, 123.456);
-    /// let fract = raw_money.fraction();
-    /// assert_eq!(fract, dec!(0.456));
     /// ```
     #[inline]
     fn fraction(&self) -> Decimal {
@@ -484,15 +476,11 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{money, raw, BaseMoney, dec};
+    /// use moneylib::{money, BaseMoney, dec};
     ///
     /// let money = money!(USD, 123.456);
     /// let scale = money.scale();
     /// assert_eq!(scale, 2); // rounded to USD's minor unit = 2(cents)
-    ///
-    /// let raw_money = raw!(USD, 123.456);
-    /// let scale = raw_money.scale();
-    /// assert_eq!(scale, 3);
     /// ```
     #[inline]
     fn scale(&self) -> u32 {
@@ -1620,7 +1608,7 @@ pub trait MoneyFormatter<C: Currency>: BaseMoney<C> {
     /// # Examples
     ///
     /// ```rust
-    /// use moneylib::{Money, RawMoney, Currency, iso::{USD, EUR}};
+    /// use moneylib::{Money, Currency, BaseMoney, iso::{USD, EUR}};
     /// use moneylib::macros::dec;
     /// use moneylib::MoneyFormatter;
     ///
@@ -1631,14 +1619,6 @@ pub trait MoneyFormatter<C: Currency>: BaseMoney<C> {
     /// let money = Money::<EUR>::from_decimal(dec!(93009.446688));
     /// let ret = money.format_with_separator("s na", " ", ",");
     /// assert_eq!(ret, "€ 93 009,45");
-    ///
-    /// let money = RawMoney::<USD>::from_decimal(dec!(93009.446688));
-    /// let ret = money.format_with_separator("c na", "*", "#");
-    /// assert_eq!(ret, "USD 93*009#446688");
-    ///
-    /// let money = RawMoney::<EUR>::from_decimal(dec!(93009.446688));
-    /// let ret = money.format_with_separator("s na", " ", ",");
-    /// assert_eq!(ret, "€ 93 009,446688");
     /// ```
     fn format_with_separator(
         &self,
