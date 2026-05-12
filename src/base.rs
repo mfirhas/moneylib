@@ -1738,51 +1738,6 @@ pub trait MoneyFormatter<C: Currency>: BaseMoney<C> {
         locale_str: &str,
         format_str: &str,
     ) -> Result<String, MoneyError> {
-        use crate::fmt::format_with_amount;
-        use icu_decimal::{DecimalFormatter, input::Decimal as LocaleDecimal};
-        use icu_locale::Locale;
-
-        let loc: Locale = locale_str.parse().map_err(|_| {
-            MoneyError::ParseLocale(
-                format!(
-                    "failed parsing locale {} , invalid or not found",
-                    locale_str
-                )
-                .into(),
-            )
-        })?;
-        let formatter = DecimalFormatter::try_new(loc.into(), Default::default())
-            .map_err(|_| MoneyError::ParseLocale("failed initiating decimal formatter".into()))?;
-
-        let is_negative = self.is_negative();
-        let curr_minor_unit = C::MINOR_UNIT.into();
-        let abs_amount = if self.scale() < curr_minor_unit {
-            let remaining_scale: usize = (curr_minor_unit - self.scale())
-                .try_into()
-                .map_err(|_| MoneyError::ParseLocale("invalid minor unit".into()))?;
-            let minor_amount = "0".repeat(remaining_scale);
-            let fract = if self.scale() == 0 {
-                format!(".{}", minor_amount)
-            } else {
-                minor_amount
-            };
-            let mut ret = self.amount().abs().to_string();
-            ret.push_str(&fract);
-            ret
-        } else {
-            self.amount().abs().to_string()
-        };
-
-        let decimal = LocaleDecimal::try_from_str(&abs_amount).map_err(|_| {
-            MoneyError::ParseLocale(
-                format!("failed parsing {} into locale decimal", &abs_amount).into(),
-            )
-        })?;
-
-        let formatted_decimal = formatter.format(&decimal).to_string();
-
-        let ret = format_with_amount::<C>(&formatted_decimal, is_negative, format_str);
-
-        Ok(ret)
+        crate::fmt::format_locale_amount(self, locale_str, format_str)
     }
 }
