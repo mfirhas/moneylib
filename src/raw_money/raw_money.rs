@@ -7,11 +7,11 @@ use std::{
 
 use crate::{
     BaseMoney, BaseOps, Decimal, Money, MoneyError, MoneyOps,
-    base::{Amount, DecimalNumber, MoneyParser},
+    base::{Amount, MoneyParser},
     macros::dec,
 };
 use crate::{Currency, MoneyFormatter};
-use rust_decimal::{MathematicalOps, prelude::FromPrimitive, prelude::ToPrimitive};
+use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 
 /// Represents a monetary value without automatic rounding.
 ///
@@ -73,58 +73,6 @@ impl<C> RawMoney<C>
 where
     C: Currency,
 {
-    /// Creates a new `RawMoney` instance from Decimal without rounding.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
-    ///
-    /// let raw = RawMoney::<USD>::from_decimal(dec!(123.309));
-    /// assert_eq!(raw.amount(), dec!(123.309));
-    /// ```
-    #[inline]
-    pub const fn from_decimal(amount: Decimal) -> Self {
-        Self {
-            amount,
-            _currency: PhantomData,
-        }
-    }
-
-    /// Creates a new `RawMoney` from minor amount i128 without rounding.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::{USD, BHD, JPY}};
-    ///
-    /// // USD has 2 decimal places, so 12302 cents = $123.02
-    /// let raw = RawMoney::<USD>::from_minor(12302).unwrap();
-    /// assert_eq!(raw.amount(), dec!(123.02));
-    ///
-    /// // JPY has 0 decimal places
-    /// let raw = RawMoney::<JPY>::from_minor(1000).unwrap();
-    /// assert_eq!(raw.amount(), dec!(1000));
-    ///
-    /// // BHD has 3 decimal places
-    /// let raw = RawMoney::<BHD>::from_minor(12345).unwrap();
-    /// assert_eq!(raw.amount(), dec!(12.345));
-    /// ```
-    #[inline]
-    pub fn from_minor(minor_amount: i128) -> Result<Self, MoneyError> {
-        Ok(Self {
-            amount: Decimal::from_i128(minor_amount)
-                .ok_or(MoneyError::OverflowError)?
-                .checked_div(
-                    dec!(10)
-                        .checked_powu(C::MINOR_UNIT.into())
-                        .ok_or(MoneyError::OverflowError)?,
-                )
-                .ok_or(MoneyError::OverflowError)?,
-            _currency: PhantomData,
-        })
-    }
-
     /// Converts this `RawMoney` to `Money`, applying rounding.
     ///
     /// Rounds the amount to the currency's minor unit precision using the
@@ -149,7 +97,7 @@ where
     /// ```
     #[inline]
     pub fn finish(self) -> Money<C> {
-        Money::from_decimal(self.amount())
+        Money::from_decimal(self.amount)
     }
 }
 
@@ -280,82 +228,20 @@ impl<C> BaseMoney<C> for RawMoney<C>
 where
     C: Currency,
 {
-    #[inline]
-    fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
-        Ok(Self {
-            amount: amount.get_decimal().ok_or(MoneyError::OverflowError)?,
+    #[inline(always)]
+    fn from_decimal(amount: Decimal) -> Self {
+        Self {
+            amount,
             _currency: PhantomData,
-        })
+        }
     }
 
-    #[inline]
+    #[inline(always)]
     fn amount(&self) -> Decimal {
         self.amount
     }
 
-    /// Rounds explicitly to the currency's minor unit using bankers rounding.
-    ///
-    /// Unlike `Money`, this must be called explicitly. Returns `RawMoney`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
-    ///
-    /// let raw = RawMoney::<USD>::from_decimal(dec!(100.567));
-    /// let rounded = raw.round();
-    /// assert_eq!(rounded.amount(), dec!(100.57));
-    ///
-    /// // round() returns RawMoney, not Money
-    /// let rounded_again = rounded.round();
-    /// assert_eq!(rounded_again.amount(), dec!(100.57));
-    /// ```
-    #[inline]
-    fn round(self) -> Self {
-        Self {
-            amount: self.amount().round_dp(C::MINOR_UNIT.into()),
-            _currency: PhantomData,
-        }
-    }
-
-    #[inline]
-    fn round_with(self, decimal_points: u32, strategy: crate::base::RoundingStrategy) -> Self {
-        Self {
-            amount: self
-                .amount
-                .round_dp_with_strategy(decimal_points, strategy.into()),
-            _currency: PhantomData,
-        }
-    }
-
-    #[inline]
-    fn truncate(&self) -> Self {
-        Self::from_decimal(self.amount.trunc())
-    }
-
-    #[inline]
-    fn truncate_with(&self, scale: u32) -> Self {
-        Self::from_decimal(self.amount.trunc_with_scale(scale))
-    }
-
-    /// Returns the money amount in its smallest unit, rounding as needed.
-    ///
-    /// Since minor amounts must be integers, this rounds the raw amount
-    /// to the currency's minor unit precision before computing the minor amount.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{RawMoney, BaseMoney, macros::dec, iso::USD};
-    ///
-    /// let raw = RawMoney::<USD>::from_decimal(dec!(123.45));
-    /// assert_eq!(raw.minor_amount().unwrap(), 12345_i128);
-    ///
-    /// // Extra precision is rounded before computing minor amount
-    /// let raw = RawMoney::<USD>::from_decimal(dec!(123.238533));
-    /// assert_eq!(raw.minor_amount().unwrap(), 12324_i128);
-    /// ```
-    #[inline]
+    #[inline(always)]
     fn minor_amount(&self) -> Option<i128> {
         self.amount()
             .round_dp(C::MINOR_UNIT.into())
@@ -364,65 +250,7 @@ where
     }
 }
 
-impl<C> BaseOps<C> for RawMoney<C>
-where
-    C: Currency,
-{
-    #[inline]
-    fn abs(&self) -> Self {
-        Self::from_decimal(self.amount.abs())
-    }
-
-    #[inline]
-    fn checked_add<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: Amount<C>,
-    {
-        Some(Self::from_decimal(
-            self.amount.checked_add(rhs.get_decimal()?)?,
-        ))
-    }
-
-    #[inline]
-    fn checked_sub<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: Amount<C>,
-    {
-        Some(Self::from_decimal(
-            self.amount.checked_sub(rhs.get_decimal()?)?,
-        ))
-    }
-
-    #[inline]
-    fn checked_mul<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: DecimalNumber,
-    {
-        Some(Self::from_decimal(
-            self.amount.checked_mul(rhs.get_decimal()?)?,
-        ))
-    }
-
-    #[inline]
-    fn checked_div<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: DecimalNumber,
-    {
-        Some(Self::from_decimal(
-            self.amount.checked_div(rhs.get_decimal()?)?,
-        ))
-    }
-
-    #[inline]
-    fn checked_rem<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: DecimalNumber,
-    {
-        Some(Self::from_decimal(
-            self.amount().checked_rem(rhs.get_decimal()?)?,
-        ))
-    }
-}
+impl<C> BaseOps<C> for RawMoney<C> where C: Currency {}
 
 impl<C> MoneyParser<C> for RawMoney<C> where C: Currency {}
 

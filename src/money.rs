@@ -8,11 +8,11 @@ use std::{
 
 use crate::{
     BaseMoney, BaseOps, Decimal, MoneyError, MoneyOps,
-    base::{Amount, DecimalNumber, MoneyParser},
+    base::{Amount, MoneyParser},
     macros::dec,
 };
 use crate::{Currency, MoneyFormatter};
-use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
+use rust_decimal::MathematicalOps;
 
 /// Represents a monetary value with a specific currency and amount.
 ///
@@ -52,56 +52,6 @@ use rust_decimal::{MathematicalOps, prelude::FromPrimitive};
 pub struct Money<C: Currency> {
     amount: Decimal,
     _currency: PhantomData<C>,
-}
-
-impl<C> Money<C>
-where
-    C: Currency,
-{
-    /// Creates a new `Money` instance from Decimal
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, macros::dec, BaseMoney, iso::USD};
-    ///
-    /// let money = Money::<USD>::from_decimal(dec!(123.309));
-    /// assert_eq!(money.amount(), dec!(123.31));
-    /// ```
-    #[inline]
-    pub fn from_decimal(amount: Decimal) -> Self {
-        Self {
-            amount,
-            _currency: PhantomData,
-        }
-        .round()
-    }
-
-    /// Creates a new `Money` from minor amount i128.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, macros::dec, BaseMoney, iso::USD};
-    ///
-    /// let money = Money::<USD>::from_minor(12302).unwrap();
-    /// assert_eq!(money.amount(), dec!(123.02));
-    /// ```
-    #[inline]
-    pub fn from_minor(minor_amount: i128) -> Result<Self, MoneyError> {
-        Ok(Self {
-            amount: Decimal::from_i128(minor_amount)
-                .ok_or(MoneyError::OverflowError)?
-                .checked_div(
-                    dec!(10)
-                        .checked_powu(C::MINOR_UNIT.into())
-                        .ok_or(MoneyError::OverflowError)?,
-                )
-                .ok_or(MoneyError::OverflowError)?,
-            _currency: PhantomData,
-        }
-        .round())
-    }
 }
 
 impl<C: Currency> Default for Money<C> {
@@ -238,115 +188,28 @@ impl<C> BaseMoney<C> for Money<C>
 where
     C: Currency,
 {
-    #[inline]
-    fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
-        Ok(Self {
-            amount: amount.get_decimal().ok_or(MoneyError::OverflowError)?,
+    #[inline(always)]
+    fn from_decimal(amount: Decimal) -> Self {
+        Self {
+            amount: amount.round_dp(C::MINOR_UNIT.into()),
             _currency: PhantomData,
         }
-        .round())
     }
 
-    #[inline]
+    #[inline(always)]
     fn amount(&self) -> Decimal {
         self.amount
     }
 
-    #[inline]
+    #[inline(always)]
     fn minor_amount(&self) -> Option<i128> {
         self.amount()
             .checked_mul(dec!(10).checked_powu(self.minor_unit().into())?)?
             .to_i128()
     }
-
-    #[inline]
-    fn round(self) -> Self {
-        Self {
-            amount: self.amount().round_dp(C::MINOR_UNIT.into()),
-            _currency: PhantomData,
-        }
-    }
-
-    #[inline]
-    fn round_with(self, decimal_points: u32, strategy: crate::base::RoundingStrategy) -> Self {
-        Self {
-            amount: self
-                .amount
-                .round_dp_with_strategy(decimal_points, strategy.into()),
-            _currency: PhantomData,
-        }
-    }
-
-    #[inline]
-    fn truncate(&self) -> Self {
-        Self::from_decimal(self.amount.trunc())
-    }
-
-    #[inline]
-    fn truncate_with(&self, scale: u32) -> Self {
-        Self::from_decimal(self.amount.trunc_with_scale(scale))
-    }
 }
 
-impl<C> BaseOps<C> for Money<C>
-where
-    C: Currency,
-{
-    #[inline]
-    fn abs(&self) -> Self {
-        Self::from_decimal(self.amount.abs())
-    }
-
-    #[inline]
-    fn checked_add<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: Amount<C>,
-    {
-        Some(Self::from_decimal(
-            self.amount.checked_add(rhs.get_decimal()?)?,
-        ))
-    }
-
-    #[inline]
-    fn checked_sub<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: Amount<C>,
-    {
-        Some(Self::from_decimal(
-            self.amount.checked_sub(rhs.get_decimal()?)?,
-        ))
-    }
-
-    #[inline]
-    fn checked_mul<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: DecimalNumber,
-    {
-        Some(Self::from_decimal(
-            self.amount.checked_mul(rhs.get_decimal()?)?,
-        ))
-    }
-
-    #[inline]
-    fn checked_div<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: DecimalNumber,
-    {
-        Some(Self::from_decimal(
-            self.amount.checked_div(rhs.get_decimal()?)?,
-        ))
-    }
-
-    #[inline]
-    fn checked_rem<RHS>(&self, rhs: RHS) -> Option<Self>
-    where
-        RHS: DecimalNumber,
-    {
-        Some(Self::from_decimal(
-            self.amount().checked_rem(rhs.get_decimal()?)?,
-        ))
-    }
-}
+impl<C> BaseOps<C> for Money<C> where C: Currency {}
 
 impl<C> MoneyParser<C> for Money<C> where C: Currency {}
 

@@ -1,9 +1,11 @@
 use crate::Currency;
 use crate::Decimal;
 use crate::MoneyError;
+use crate::dec;
 use crate::fmt::format_with_separator;
 use crate::fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR, format};
 use crate::split_alloc_ops::Split;
+use rust_decimal::MathematicalOps;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::prelude::FromPrimitive;
 use std::fmt::Debug;
@@ -41,6 +43,53 @@ use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
 /// ```
 pub trait BaseMoney<C: Currency>: Clone {
     // REQUIRED
+
+    /// Creates a new `Money` instance from Decimal
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency, macros::dec, BaseMoney, iso::USD};
+    ///
+    /// let money = Money::<USD>::from_decimal(dec!(123.309));
+    /// assert_eq!(money.amount(), dec!(123.31));
+    /// ```
+    fn from_decimal(amount: Decimal) -> Self;
+
+    /// Returns the decimal amount of this money value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency, iso::USD};
+    /// use moneylib::macros::dec;
+    /// use moneylib::BaseMoney;
+    ///
+    /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
+    /// assert_eq!(money.amount(), dec!(100.50));
+    /// ```
+    fn amount(&self) -> Decimal;
+
+    /// Returns the money amount in its smallest unit (e.g., cents for USD, pence for GBP).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, Currency, iso::{USD, JPY}};
+    /// use moneylib::macros::dec;
+    /// use moneylib::BaseMoney;
+    ///
+    /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
+    /// assert_eq!(money.minor_amount().unwrap(), 1050);
+    ///
+    /// let yen = Money::<JPY>::new(dec!(100)).unwrap();
+    /// assert_eq!(yen.minor_amount().unwrap(), 100);
+    /// ```
+    ///
+    /// Returns `None` if overflowed.
+    fn minor_amount(&self) -> Option<i128>;
+
+    // PROVIDED
 
     /// Creates a new `Money` instance with amount of `Decimal`, `f64`, `i32`, `i64`, `i128`.
     ///
@@ -81,40 +130,36 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// let raw_money = RawMoney::<EUR>::new(dec!(123.2323)).unwrap();
     /// assert_eq!(raw_money.amount(), dec!(123.2323));
     /// ```
-    fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError>;
+    #[inline]
+    fn new(amount: impl DecimalNumber) -> Result<Self, MoneyError> {
+        Ok(Self::from_decimal(
+            amount.get_decimal().ok_or(MoneyError::OverflowError)?,
+        ))
+    }
 
-    /// Returns the decimal amount of this money value.
+    /// Creates a new `Money` from minor amount i128.
     ///
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, Currency, iso::USD};
-    /// use moneylib::macros::dec;
-    /// use moneylib::BaseMoney;
+    /// use moneylib::{Money, Currency, macros::dec, BaseMoney, iso::USD};
     ///
-    /// let money = Money::<USD>::new(dec!(100.50)).unwrap();
-    /// assert_eq!(money.amount(), dec!(100.50));
+    /// let money = Money::<USD>::from_minor(12302).unwrap();
+    /// assert_eq!(money.amount(), dec!(123.02));
     /// ```
-    fn amount(&self) -> Decimal;
-
-    /// Returns the money amount in its smallest unit (e.g., cents for USD, pence for GBP).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{Money, Currency, iso::{USD, JPY}};
-    /// use moneylib::macros::dec;
-    /// use moneylib::BaseMoney;
-    ///
-    /// let money = Money::<USD>::new(dec!(10.50)).unwrap();
-    /// assert_eq!(money.minor_amount().unwrap(), 1050);
-    ///
-    /// let yen = Money::<JPY>::new(dec!(100)).unwrap();
-    /// assert_eq!(yen.minor_amount().unwrap(), 100);
-    /// ```
-    ///
-    /// Returns `None` if overflowed.
-    fn minor_amount(&self) -> Option<i128>;
+    #[inline]
+    fn from_minor(minor_amount: i128) -> Result<Self, MoneyError> {
+        Ok(Self::from_decimal(
+            Decimal::from_i128(minor_amount)
+                .ok_or(MoneyError::OverflowError)?
+                .checked_div(
+                    dec!(10)
+                        .checked_powu(C::MINOR_UNIT.into())
+                        .ok_or(MoneyError::OverflowError)?,
+                )
+                .ok_or(MoneyError::OverflowError)?,
+        ))
+    }
 
     /// Rounds the money amount using bankers rounding rule to the scale of the currency's minor unit.
     ///
@@ -130,7 +175,10 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// let rounded = money.round();
     /// assert_eq!(rounded.amount(), dec!(123.46));
     /// ```
-    fn round(self) -> Self;
+    #[inline]
+    fn round(self) -> Self {
+        Self::from_decimal(self.amount().round_dp(C::MINOR_UNIT.into()))
+    }
 
     /// Rounds the money amount to a specified number of decimal places using the given strategy.
     ///
@@ -146,7 +194,13 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// let rounded = money.round_with(2, RoundingStrategy::Floor);
     /// assert_eq!(rounded.amount(), dec!(123.46));
     /// ```
-    fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self;
+    #[inline]
+    fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self {
+        Self::from_decimal(
+            self.amount()
+                .round_dp_with_strategy(decimal_points, strategy.into()),
+        )
+    }
 
     /// Truncates the money amount removing the fraction.
     ///
@@ -160,7 +214,10 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// let truncated_money = money.truncate();
     /// assert_eq!(truncated_money.amount(), dec!(40));
     /// ```
-    fn truncate(&self) -> Self;
+    #[inline]
+    fn truncate(&self) -> Self {
+        Self::from_decimal(self.amount().trunc())
+    }
 
     /// Truncates the money amount to certain scale.
     ///
@@ -174,9 +231,10 @@ pub trait BaseMoney<C: Currency>: Clone {
     /// let truncated_money = money.truncate_with(3);
     /// assert_eq!(truncated_money.amount(), dec!(40.234));
     /// ```
-    fn truncate_with(&self, scale: u32) -> Self;
-
-    // PROVIDED
+    #[inline]
+    fn truncate_with(&self, scale: u32) -> Self {
+        Self::from_decimal(self.amount().trunc_with_scale(scale))
+    }
 
     /// Returns the full name of the currency.
     ///
@@ -613,6 +671,7 @@ pub trait BaseOps<C: Currency>:
     /// assert!(matches);
     /// // Result: true (within 2 cent tolerance)
     /// ```
+    #[inline]
     fn is_approx<M, T>(&self, m: M, tolerance: T) -> bool
     where
         M: BaseMoney<C> + BaseOps<C> + Amount<C>,
@@ -624,8 +683,6 @@ pub trait BaseOps<C: Currency>:
                 .is_some_and(|tol| tol >= diff.abs().amount())
         })
     }
-
-    // REQUIRED
 
     /// Returns the absolute value of the money amount.
     ///
@@ -640,7 +697,10 @@ pub trait BaseOps<C: Currency>:
     /// let positive = negative.abs();
     /// assert_eq!(positive.amount(), dec!(100));
     /// ```
-    fn abs(&self) -> Self;
+    #[inline(always)]
+    fn abs(&self) -> Self {
+        Self::from_decimal(self.amount().abs())
+    }
 
     /// Adds another money value to this one.
     ///
@@ -659,9 +719,15 @@ pub trait BaseOps<C: Currency>:
     /// let sum = m1.checked_add(m2).unwrap();
     /// assert_eq!(sum.amount(), dec!(150));
     /// ```
+    #[inline(always)]
     fn checked_add<RHS>(&self, rhs: RHS) -> Option<Self>
     where
-        RHS: Amount<C>;
+        RHS: Amount<C>,
+    {
+        Some(Self::from_decimal(
+            self.amount().checked_add(rhs.get_decimal()?)?,
+        ))
+    }
 
     /// Subtracts another money value from this one.
     ///
@@ -682,7 +748,12 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn checked_sub<RHS>(&self, rhs: RHS) -> Option<Self>
     where
-        RHS: Amount<C>;
+        RHS: Amount<C>,
+    {
+        Some(Self::from_decimal(
+            self.amount().checked_sub(rhs.get_decimal()?)?,
+        ))
+    }
 
     /// Multiplies this money value by another value.
     ///
@@ -702,7 +773,12 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn checked_mul<RHS>(&self, rhs: RHS) -> Option<Self>
     where
-        RHS: DecimalNumber;
+        RHS: DecimalNumber,
+    {
+        Some(Self::from_decimal(
+            self.amount().checked_mul(rhs.get_decimal()?)?,
+        ))
+    }
 
     /// Divides this money value by another value.
     ///
@@ -722,7 +798,12 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn checked_div<RHS>(&self, rhs: RHS) -> Option<Self>
     where
-        RHS: DecimalNumber;
+        RHS: DecimalNumber,
+    {
+        Some(Self::from_decimal(
+            self.amount().checked_div(rhs.get_decimal()?)?,
+        ))
+    }
 
     /// Get remainder of self % rhs.
     ///
@@ -736,7 +817,12 @@ pub trait BaseOps<C: Currency>:
     /// ```
     fn checked_rem<RHS>(&self, rhs: RHS) -> Option<Self>
     where
-        RHS: DecimalNumber;
+        RHS: DecimalNumber,
+    {
+        Some(Self::from_decimal(
+            self.amount().checked_rem(rhs.get_decimal()?)?,
+        ))
+    }
 
     /// Split money without losing a single penny.
     ///
