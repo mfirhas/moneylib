@@ -1,10 +1,8 @@
-use std::fmt;
-use std::marker::PhantomData;
-use std::str::FromStr;
+use ::serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use ::serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use crate::{Currency, Money};
 
-use crate::{BaseMoney, Currency, Decimal, Money};
+use super::base;
 
 // ---------------------------------------------------------------------------
 // Default: Serialize/Deserialize as precise number
@@ -12,67 +10,13 @@ use crate::{BaseMoney, Currency, Decimal, Money};
 
 impl<C: Currency> Serialize for Money<C> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let n = serde_json::Number::from_str(&self.amount().to_string())
-            .map_err(|_| ::serde::ser::Error::custom("cannot convert Decimal to JSON Number"))?;
-        n.serialize(serializer)
-    }
-}
-
-struct MoneyVisitor<C>(PhantomData<C>);
-
-impl<'de, C: Currency> de::Visitor<'de> for MoneyVisitor<C> {
-    type Value = Money<C>;
-
-    fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("a number")
-    }
-
-    fn visit_f64<E: de::Error>(self, v: f64) -> Result<Self::Value, E> {
-        self.visit_str(&v.to_string())
-    }
-
-    fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> {
-        Money::<C>::new(v).map_err(de::Error::custom)
-    }
-
-    fn visit_u64<E: de::Error>(self, v: u64) -> Result<Self::Value, E> {
-        Money::<C>::new(i128::from(v)).map_err(de::Error::custom)
-    }
-
-    fn visit_i128<E: de::Error>(self, v: i128) -> Result<Self::Value, E> {
-        Money::<C>::new(v).map_err(de::Error::custom)
-    }
-
-    fn visit_u128<E: de::Error>(self, v: u128) -> Result<Self::Value, E> {
-        i128::try_from(v)
-            .map_err(|_| de::Error::custom("value too large for Money"))
-            .and_then(|n| Money::<C>::new(n).map_err(de::Error::custom))
-    }
-
-    fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-        Money::<C>::from_str(v).map_err(|_| de::Error::custom(format!("invalid decimal: {}", v)))
-    }
-
-    // Handles serde_json's arbitrary_precision number format
-    fn visit_map<A: de::MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
-        const ARBITRARY_NUMBER_KEY: &str = "$serde_json::private::Number";
-
-        if let Ok(Some(key)) = map.next_key::<String>()
-            && key == ARBITRARY_NUMBER_KEY
-        {
-            let value: String = map.next_value()?;
-            let d = Decimal::from_str(&value)
-                .map_err(|_| de::Error::custom(format!("invalid decimal: {}", value)))?;
-            Ok(Money::<C>::from_decimal(d))
-        } else {
-            Err(de::Error::custom("unexpected key"))
-        }
+        base::serialize_as_number::<C, Money<C>, S>(self, serializer)
     }
 }
 
 impl<'de, C: Currency> Deserialize<'de> for Money<C> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_any(MoneyVisitor(PhantomData))
+        base::deserialize_as_number::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -93,38 +37,24 @@ impl<'de, C: Currency> Deserialize<'de> for Money<C> {
 /// amount: Money<USD>,
 /// ```
 pub mod comma_str_code {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{Currency, Money, MoneyFormatter, MoneyParser};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_with_separator("c na", ",", "."))
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Money<C>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like 'USD 1,234.56'")
-        }
-
-        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_str_code_with(v, ",", ".").map_err(de::Error::custom)
-        }
+        base::comma_str_code::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Money<C>, D::Error> {
-        deserializer.deserialize_str(Visitor(PhantomData))
+        base::comma_str_code::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -141,49 +71,24 @@ pub mod comma_str_code {
 /// amount: Option<Money<USD>>,
 /// ```
 pub mod option_comma_str_code {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<Money<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        match value {
-            Some(m) => serializer.serialize_some(m.format_code().as_str()),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Option<Money<C>>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like 'USD 1,234.56' or null")
-        }
-
-        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
-            super::comma_str_code::deserialize(d).map(Some)
-        }
+        base::option_comma_str_code::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<Money<C>>, D::Error> {
-        deserializer.deserialize_option(Visitor(PhantomData))
+        base::option_comma_str_code::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -200,42 +105,28 @@ pub mod option_comma_str_code {
 /// # Usage
 ///
 /// ```ignore
-/// #[serde(with = "moneylib::serde::money::comma_str_symbol")]
+/// #[serde(with = "moneylib::serde::money::comma_str_symbol"]
 /// amount: Money<USD>,
 /// ```
 pub mod comma_str_symbol {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{Currency, Money, MoneyFormatter, MoneyParser};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_with_separator("nsa", ",", "."))
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Money<C>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like '$1,234.56'")
-        }
-
-        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_str_symbol_with(v, ",", ".").map_err(|err| E::custom(err))
-        }
+        base::comma_str_symbol::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Money<C>, D::Error> {
-        deserializer.deserialize_str(Visitor(PhantomData))
+        base::comma_str_symbol::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -252,49 +143,24 @@ pub mod comma_str_symbol {
 /// amount: Option<Money<USD>>,
 /// ```
 pub mod option_comma_str_symbol {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<Money<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        match value {
-            Some(m) => serializer.serialize_some(m.format_symbol().as_str()),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Option<Money<C>>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like '$1,234.56' or null")
-        }
-
-        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
-            super::comma_str_symbol::deserialize(d).map(Some)
-        }
+        base::option_comma_str_symbol::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<Money<C>>, D::Error> {
-        deserializer.deserialize_option(Visitor(PhantomData))
+        base::option_comma_str_symbol::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -315,38 +181,24 @@ pub mod option_comma_str_symbol {
 /// amount: Money<EUR>,
 /// ```
 pub mod dot_str_code {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{Currency, Money, MoneyFormatter, MoneyParser};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_with_separator("c na", ".", ","))
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Money<C>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like 'EUR 1.234,56'")
-        }
-
-        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_str_code_with(v, ".", ",").map_err(de::Error::custom)
-        }
+        base::dot_str_code::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Money<C>, D::Error> {
-        deserializer.deserialize_str(Visitor(PhantomData))
+        base::dot_str_code::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -363,49 +215,24 @@ pub mod dot_str_code {
 /// amount: Option<Money<EUR>>,
 /// ```
 pub mod option_dot_str_code {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<Money<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        match value {
-            Some(m) => serializer.serialize_some(m.format_code().as_str()),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Option<Money<C>>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like 'EUR 1.234,56' or null")
-        }
-
-        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
-            super::dot_str_code::deserialize(d).map(Some)
-        }
+        base::option_dot_str_code::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<Money<C>>, D::Error> {
-        deserializer.deserialize_option(Visitor(PhantomData))
+        base::option_dot_str_code::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -426,38 +253,24 @@ pub mod option_dot_str_code {
 /// amount: Money<EUR>,
 /// ```
 pub mod dot_str_symbol {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{Currency, Money, MoneyFormatter, MoneyParser};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_with_separator("nsa", ".", ","))
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Money<C>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like '€1.234,56'")
-        }
-
-        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_str_symbol_with(v, ".", ",").map_err(|err| E::custom(err))
-        }
+        base::dot_str_symbol::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Money<C>, D::Error> {
-        deserializer.deserialize_str(Visitor(PhantomData))
+        base::dot_str_symbol::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -474,49 +287,24 @@ pub mod dot_str_symbol {
 /// amount: Option<Money<EUR>>,
 /// ```
 pub mod option_dot_str_symbol {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<Money<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        match value {
-            Some(m) => serializer.serialize_some(m.format_symbol().as_str()),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Option<Money<C>>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like '€1.234,56' or null")
-        }
-
-        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
-            super::dot_str_symbol::deserialize(d).map(Some)
-        }
+        base::option_dot_str_symbol::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<Money<C>>, D::Error> {
-        deserializer.deserialize_option(Visitor(PhantomData))
+        base::option_dot_str_symbol::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -533,38 +321,24 @@ pub mod option_dot_str_symbol {
 /// amount: Money<USD>,
 /// ```
 pub mod str_code {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{BaseMoney, Currency, Money, MoneyParser};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_code())
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Money<C>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like 'CCC amount' with locale separators")
-        }
-
-        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_str_code(v).map_err(de::Error::custom)
-        }
+        base::str_code::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Money<C>, D::Error> {
-        deserializer.deserialize_str(Visitor(PhantomData))
+        base::str_code::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -578,49 +352,24 @@ pub mod str_code {
 /// amount: Option<Money<USD>>,
 /// ```
 pub mod option_str_code {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<Money<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        match value {
-            Some(m) => serializer.serialize_some(m.format_code().as_str()),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Option<Money<C>>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like 'CCC amount' with locale separators, or null")
-        }
-
-        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
-            super::str_code::deserialize(d).map(Some)
-        }
+        base::option_str_code::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<Money<C>>, D::Error> {
-        deserializer.deserialize_option(Visitor(PhantomData))
+        base::option_str_code::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -633,42 +382,28 @@ pub mod option_str_code {
 /// # Usage
 ///
 /// ```ignore
-/// #[serde(with = "moneylib::serde::money::str_symbol")]
+/// #[serde(with = "moneylib::serde::money::str_symbol"]
 /// amount: Money<USD>,
 /// ```
 pub mod str_symbol {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{BaseMoney, Currency, Money, MoneyParser};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&value.format_symbol())
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Money<C>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like 'S<amount>' with locale separators")
-        }
-
-        fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Money::<C>::from_str_symbol(v).map_err(de::Error::custom)
-        }
+        base::str_symbol::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Money<C>, D::Error> {
-        deserializer.deserialize_str(Visitor(PhantomData))
+        base::str_symbol::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -682,49 +417,24 @@ pub mod str_symbol {
 /// amount: Option<Money<USD>>,
 /// ```
 pub mod option_str_symbol {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{BaseMoney, Currency, Money};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<Money<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        match value {
-            Some(m) => serializer.serialize_some(m.format_symbol().as_str()),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Option<Money<C>>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("a string like 'S<amount>' with locale separators, or null")
-        }
-
-        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
-            super::str_symbol::deserialize(d).map(Some)
-        }
+        base::option_str_symbol::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<Money<C>>, D::Error> {
-        deserializer.deserialize_option(Visitor(PhantomData))
+        base::option_str_symbol::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -741,55 +451,24 @@ pub mod option_str_symbol {
 /// amount: Money<USD>,
 /// ```
 pub mod minor {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
-    use crate::{BaseMoney, Currency, Money, MoneyError};
+    use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Money<C>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        let minor = value
-            .minor_amount()
-            .ok_or(::serde::ser::Error::custom(MoneyError::OverflowError))?;
-        serializer.serialize_i128(minor)
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Money<C>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("an integer representing the minor amount")
-        }
-
-        fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> {
-            Money::<C>::from_minor(i128::from(v)).map_err(de::Error::custom)
-        }
-
-        fn visit_u64<E: de::Error>(self, v: u64) -> Result<Self::Value, E> {
-            Money::<C>::from_minor(i128::from(v)).map_err(de::Error::custom)
-        }
-
-        fn visit_i128<E: de::Error>(self, v: i128) -> Result<Self::Value, E> {
-            Money::<C>::from_minor(v).map_err(de::Error::custom)
-        }
-
-        fn visit_u128<E: de::Error>(self, v: u128) -> Result<Self::Value, E> {
-            i128::try_from(v)
-                .map_err(|_| de::Error::custom("value too large for minor amount"))
-                .and_then(|n| Money::<C>::from_minor(n).map_err(de::Error::custom))
-        }
+        base::minor::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Money<C>, D::Error> {
-        deserializer.deserialize_any(Visitor(PhantomData))
+        base::minor::deserialize::<C, Money<C>, D>(deserializer)
     }
 }
 
@@ -802,48 +481,23 @@ pub mod minor {
 /// amount: Option<Money<USD>>,
 /// ```
 pub mod option_minor {
-    use std::fmt;
-    use std::marker::PhantomData;
 
-    use ::serde::{Deserializer, Serializer, de};
+    use ::serde::{Deserializer, Serializer};
 
     use crate::{Currency, Money};
+
+    use crate::serde::base;
 
     pub fn serialize<C: Currency, S: Serializer>(
         value: &Option<Money<C>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        match value {
-            Some(m) => super::minor::serialize(m, serializer),
-            None => serializer.serialize_none(),
-        }
-    }
-
-    struct Visitor<C>(PhantomData<C>);
-
-    impl<'de, C: Currency> de::Visitor<'de> for Visitor<C> {
-        type Value = Option<Money<C>>;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            f.write_str("an integer representing the minor amount, or null")
-        }
-
-        fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_some<D: Deserializer<'de>>(self, d: D) -> Result<Self::Value, D::Error> {
-            super::minor::deserialize(d).map(Some)
-        }
+        base::option_minor::serialize::<C, Money<C>, S>(value, serializer)
     }
 
     pub fn deserialize<'de, C: Currency, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<Money<C>>, D::Error> {
-        deserializer.deserialize_option(Visitor(PhantomData))
+        base::option_minor::deserialize::<C, Money<C>, D>(deserializer)
     }
 }

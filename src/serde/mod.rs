@@ -1,3 +1,6 @@
+/// Shared serde building blocks for `Money<C>` and `RawMoney<C>`.
+pub mod base;
+
 /// `Money<C>` serde implementations
 pub mod money;
 
