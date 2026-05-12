@@ -211,3 +211,9 @@ macro_rules! impl_money_ops {
 }
 
 impl_money_ops!(Money);
+
+#[cfg(feature = "raw_money")]
+use crate::RawMoney;
+
+#[cfg(feature = "raw_money")]
+impl_money_ops!(RawMoney);
