@@ -2,7 +2,7 @@ use std::any::Any;
 
 use super::fmt::format_obj_money;
 use crate::{
-    BaseMoney,
+    BaseMoney, RoundingStrategy,
     fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR},
 };
 
@@ -89,6 +89,49 @@ pub trait ObjMoney: Send + Sync {
         to_code: &str,
         rate: &dyn crate::exchange::ObjRate,
     ) -> Result<Box<dyn ObjMoney>, MoneyError>;
+
+    /// Returns the ISO 4217 numeric code for the currency (e.g. `840` for USD).
+    fn numeric_code(&self) -> i32;
+
+    /// Returns the absolute value of the money amount, preserving currency.
+    fn abs(&self) -> Box<dyn ObjMoney>;
+
+    /// Rounds the money amount to the currency's minor unit using bankers rounding.
+    fn round(&self) -> Box<dyn ObjMoney>;
+
+    /// Rounds the money amount to `decimal_points` places using `strategy`.
+    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> Box<dyn ObjMoney>;
+
+    /// Truncates the money amount, removing the fractional part entirely.
+    fn truncate(&self) -> Box<dyn ObjMoney>;
+
+    /// Truncates the money amount to `scale` decimal places.
+    fn truncate_with(&self, scale: u32) -> Box<dyn ObjMoney>;
+
+    /// Adds `rhs` (a raw decimal amount) to this money value.
+    ///
+    /// Returns `None` on overflow.
+    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Subtracts `rhs` (a raw decimal amount) from this money value.
+    ///
+    /// Returns `None` on overflow.
+    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Multiplies this money value by `rhs`.
+    ///
+    /// Returns `None` on overflow.
+    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Divides this money value by `rhs`.
+    ///
+    /// Returns `None` on division by zero or overflow.
+    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Returns the remainder of dividing this money value by `rhs`.
+    ///
+    /// Returns `None` on division by zero or overflow.
+    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
 
     // ---- Provided: derived from the required methods above ----
 
@@ -195,6 +238,21 @@ pub trait ObjMoney: Send + Sync {
             SYMBOL_FORMAT_MINOR,
         )
     }
+
+    /// Returns the default display format for money (same as `format_code`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, ObjMoney, BaseMoney, macros::dec, iso::USD};
+    ///
+    /// let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(1234.45)).unwrap());
+    /// assert_eq!(m.display(), "USD 1,234.45");
+    /// ```
+    #[inline]
+    fn display(&self) -> String {
+        self.format_code()
+    }
 }
 
 // ---- Blanket impl for Box<dyn ObjMoney> ----
@@ -257,6 +315,61 @@ impl ObjMoney for Box<dyn ObjMoney> {
         rate: &dyn crate::exchange::ObjRate,
     ) -> Result<Box<dyn ObjMoney>, MoneyError> {
         (**self).convert(to_code, rate)
+    }
+
+    #[inline]
+    fn numeric_code(&self) -> i32 {
+        (**self).numeric_code()
+    }
+
+    #[inline]
+    fn abs(&self) -> Box<dyn ObjMoney> {
+        (**self).abs()
+    }
+
+    #[inline]
+    fn round(&self) -> Box<dyn ObjMoney> {
+        (**self).round()
+    }
+
+    #[inline]
+    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> Box<dyn ObjMoney> {
+        (**self).round_with(decimal_points, strategy)
+    }
+
+    #[inline]
+    fn truncate(&self) -> Box<dyn ObjMoney> {
+        (**self).truncate()
+    }
+
+    #[inline]
+    fn truncate_with(&self, scale: u32) -> Box<dyn ObjMoney> {
+        (**self).truncate_with(scale)
+    }
+
+    #[inline]
+    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_add(rhs)
+    }
+
+    #[inline]
+    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_sub(rhs)
+    }
+
+    #[inline]
+    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_mul(rhs)
+    }
+
+    #[inline]
+    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_div(rhs)
+    }
+
+    #[inline]
+    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_rem(rhs)
     }
 }
 

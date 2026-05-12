@@ -1,4 +1,5 @@
-use crate::{BaseMoney, Currency, Decimal, Money, MoneyError};
+use crate::{BaseMoney, Currency, Decimal, Money, MoneyError, RoundingStrategy};
+use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 
 impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
     #[inline]
@@ -42,6 +43,82 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
     #[inline]
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    #[inline]
+    fn numeric_code(&self) -> i32 {
+        C::NUMERIC.into()
+    }
+
+    #[inline]
+    fn abs(&self) -> Box<dyn super::ObjMoney> {
+        Box::new(Self::from_decimal(BaseMoney::amount(self).abs()))
+    }
+
+    #[inline]
+    fn round(&self) -> Box<dyn super::ObjMoney> {
+        Box::new(Self::from_decimal(
+            BaseMoney::amount(self).round_dp(C::MINOR_UNIT.into()),
+        ))
+    }
+
+    #[inline]
+    fn round_with(
+        &self,
+        decimal_points: u32,
+        strategy: RoundingStrategy,
+    ) -> Box<dyn super::ObjMoney> {
+        let rs: DecimalRoundingStrategy = strategy.into();
+        Box::new(Self::from_decimal(
+            BaseMoney::amount(self).round_dp_with_strategy(decimal_points, rs),
+        ))
+    }
+
+    #[inline]
+    fn truncate(&self) -> Box<dyn super::ObjMoney> {
+        Box::new(Self::from_decimal(BaseMoney::amount(self).trunc()))
+    }
+
+    #[inline]
+    fn truncate_with(&self, scale: u32) -> Box<dyn super::ObjMoney> {
+        Box::new(Self::from_decimal(
+            BaseMoney::amount(self).trunc_with_scale(scale),
+        ))
+    }
+
+    #[inline]
+    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(Self::from_decimal(
+            BaseMoney::amount(self).checked_add(rhs)?,
+        )))
+    }
+
+    #[inline]
+    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(Self::from_decimal(
+            BaseMoney::amount(self).checked_sub(rhs)?,
+        )))
+    }
+
+    #[inline]
+    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(Self::from_decimal(
+            BaseMoney::amount(self).checked_mul(rhs)?,
+        )))
+    }
+
+    #[inline]
+    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(Self::from_decimal(
+            BaseMoney::amount(self).checked_div(rhs)?,
+        )))
+    }
+
+    #[inline]
+    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(Self::from_decimal(
+            BaseMoney::amount(self).checked_rem(rhs)?,
+        )))
     }
 
     #[cfg(feature = "exchange")]

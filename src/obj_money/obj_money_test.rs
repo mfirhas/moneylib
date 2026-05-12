@@ -1,9 +1,9 @@
 /// Tests for heterogeneous collections of `Money` and `RawMoney` with different currencies,
 /// using the object-safe `ObjMoney` trait for dynamic dispatch (`dyn`).
 use super::ObjMoney;
-use crate::iso::{CHF, EUR, GBP, INR, JPY, SGD, USD};
+use crate::iso::{BHD, CHF, EUR, GBP, INR, JPY, SGD, USD};
 use crate::macros::dec;
-use crate::{BaseMoney, BaseOps, Decimal, Money, MoneyError, money, raw};
+use crate::{BaseMoney, BaseOps, Decimal, Money, MoneyError, RoundingStrategy, money, raw};
 
 #[cfg(feature = "raw_money")]
 use crate::RawMoney;
@@ -350,20 +350,20 @@ fn test_obj_money_same_currency_checked_ops_via_extraction() {
 
     // checked_add on the aggregated value
     let bonus = Money::<USD>::new(dec!(100.00)).unwrap();
-    let total = aggregated.checked_add(bonus).unwrap();
+    let total = BaseOps::checked_add(&aggregated, bonus).unwrap();
     assert_eq!(BaseMoney::amount(&total), dec!(1350.00));
 
     // checked_sub
     let fee = Money::<USD>::new(dec!(50.00)).unwrap();
-    let net = total.checked_sub(fee).unwrap();
+    let net = BaseOps::checked_sub(&total, fee).unwrap();
     assert_eq!(BaseMoney::amount(&net), dec!(1300.00));
 
     // checked_mul by a scalar
-    let doubled = net.checked_mul(dec!(2)).unwrap();
+    let doubled = BaseOps::checked_mul(&net, dec!(2)).unwrap();
     assert_eq!(BaseMoney::amount(&doubled), dec!(2600.00));
 
     // checked_div by a scalar
-    let halved = doubled.checked_div(dec!(4)).unwrap();
+    let halved = BaseOps::checked_div(&doubled, dec!(4)).unwrap();
     assert_eq!(BaseMoney::amount(&halved), dec!(650.00));
 }
 
@@ -573,20 +573,20 @@ fn test_obj_raw_money_same_currency_checked_ops_via_extraction() {
 
     // checked_add
     let extra = RawMoney::<USD>::new(dec!(49.19765)).unwrap();
-    let total = aggregated.checked_add(extra).unwrap();
+    let total = BaseOps::checked_add(&aggregated, extra).unwrap();
     assert_eq!(BaseMoney::amount(&total), dec!(800.00000));
 
     // checked_sub
     let fee = RawMoney::<USD>::new(dec!(0.00001)).unwrap();
-    let after_fee = total.checked_sub(fee).unwrap();
+    let after_fee = BaseOps::checked_sub(&total, fee).unwrap();
     assert_eq!(BaseMoney::amount(&after_fee), dec!(799.99999));
 
     // checked_mul
-    let scaled = after_fee.checked_mul(dec!(2)).unwrap();
+    let scaled = BaseOps::checked_mul(&after_fee, dec!(2)).unwrap();
     assert_eq!(BaseMoney::amount(&scaled), dec!(1599.99998));
 
     // checked_div
-    let halved = scaled.checked_div(dec!(2)).unwrap();
+    let halved = BaseOps::checked_div(&scaled, dec!(2)).unwrap();
     assert_eq!(BaseMoney::amount(&halved), dec!(799.99999));
 }
 
@@ -896,6 +896,328 @@ fn test_obj_iter_ops_checked_sum_array_slice() {
     let rates = ExchangeRates::<USD>::new();
     let result: Money<USD> = arr.checked_sum(rates).unwrap();
     assert_eq!(BaseMoney::amount(&result), dec!(60.00));
+}
+
+// ==================== Money: numeric_code ====================
+
+#[test]
+fn test_obj_money_numeric_code() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(Money::<USD>::new(dec!(1.00)).unwrap()),
+        Box::new(Money::<EUR>::new(dec!(1.00)).unwrap()),
+        Box::new(Money::<JPY>::new(dec!(100)).unwrap()),
+        Box::new(Money::<GBP>::new(dec!(1.00)).unwrap()),
+        Box::new(Money::<BHD>::new(dec!(1.00)).unwrap()),
+    ];
+
+    assert_eq!(portfolio[0].numeric_code(), 840); // USD
+    assert_eq!(portfolio[1].numeric_code(), 978); // EUR
+    assert_eq!(portfolio[2].numeric_code(), 392); // JPY
+    assert_eq!(portfolio[3].numeric_code(), 826); // GBP
+    assert_eq!(portfolio[4].numeric_code(), 48); // BHD
+}
+
+// ==================== Money: display ====================
+
+#[test]
+fn test_obj_money_display() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(1234.45)).unwrap());
+    assert_eq!(m.display(), "USD 1,234.45");
+
+    let neg: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(-1234.45)).unwrap());
+    assert_eq!(neg.display(), "USD -1,234.45");
+}
+
+// ==================== Money: round ====================
+
+#[test]
+fn test_obj_money_round() {
+    // Money is already rounded on construction, round() should be a no-op.
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(123.456)).unwrap());
+    // After construction, already 123.46 (bankers rounding).
+    assert_eq!(m.amount(), dec!(123.46));
+    let rounded = m.round();
+    assert_eq!(rounded.amount(), dec!(123.46));
+    assert_eq!(rounded.code(), "USD");
+}
+
+#[test]
+fn test_obj_money_round_preserves_currency() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<EUR>::new(dec!(99.99)).unwrap());
+    let rounded = m.round();
+    assert_eq!(rounded.code(), "EUR");
+    assert_eq!(rounded.amount(), dec!(99.99));
+}
+
+// ==================== Money: round_with ====================
+
+#[test]
+fn test_obj_money_round_with_half_up() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(2.5)).unwrap());
+    let rounded = m.round_with(0, RoundingStrategy::HalfUp);
+    assert_eq!(rounded.amount(), dec!(3));
+    assert_eq!(rounded.code(), "USD");
+}
+
+#[test]
+fn test_obj_money_round_with_bankers() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(2.5)).unwrap());
+    let rounded = m.round_with(0, RoundingStrategy::BankersRounding);
+    assert_eq!(rounded.amount(), dec!(2)); // rounds to even
+}
+
+#[test]
+fn test_obj_money_round_with_floor() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(2.9)).unwrap());
+    let rounded = m.round_with(0, RoundingStrategy::Floor);
+    assert_eq!(rounded.amount(), dec!(2));
+}
+
+#[test]
+fn test_obj_money_round_with_ceil() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(2.1)).unwrap());
+    let rounded = m.round_with(0, RoundingStrategy::Ceil);
+    assert_eq!(rounded.amount(), dec!(3));
+}
+
+// ==================== Money: truncate / truncate_with ====================
+
+#[test]
+fn test_obj_money_truncate() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(40.99)).unwrap());
+    let truncated = m.truncate();
+    assert_eq!(truncated.amount(), dec!(40));
+    assert_eq!(truncated.code(), "USD");
+}
+
+#[test]
+fn test_obj_money_truncate_negative() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(-40.99)).unwrap());
+    let truncated = m.truncate();
+    assert_eq!(truncated.amount(), dec!(-40));
+}
+
+// ==================== Money: abs ====================
+
+#[test]
+fn test_obj_money_abs() {
+    let neg: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(-100.50)).unwrap());
+    let pos = neg.abs();
+    assert_eq!(pos.amount(), dec!(100.50));
+    assert_eq!(pos.code(), "USD");
+    assert!(pos.is_positive());
+}
+
+#[test]
+fn test_obj_money_abs_already_positive() {
+    let pos: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(50.00)).unwrap());
+    let result = pos.abs();
+    assert_eq!(result.amount(), dec!(50.00));
+}
+
+// ==================== Money: checked arithmetic ====================
+
+#[test]
+fn test_obj_money_checked_add() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    let result = m.checked_add(dec!(50.00)).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
+    assert_eq!(result.code(), "USD");
+}
+
+#[test]
+fn test_obj_money_checked_sub() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    let result = m.checked_sub(dec!(30.00)).unwrap();
+    assert_eq!(result.amount(), dec!(70.00));
+    assert_eq!(result.code(), "USD");
+}
+
+#[test]
+fn test_obj_money_checked_mul() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(10.00)).unwrap());
+    let result = m.checked_mul(dec!(3)).unwrap();
+    assert_eq!(result.amount(), dec!(30.00));
+    assert_eq!(result.code(), "USD");
+}
+
+#[test]
+fn test_obj_money_checked_div() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    let result = m.checked_div(dec!(4)).unwrap();
+    assert_eq!(result.amount(), dec!(25.00));
+    assert_eq!(result.code(), "USD");
+}
+
+#[test]
+fn test_obj_money_checked_div_by_zero() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    assert!(m.checked_div(dec!(0)).is_none());
+}
+
+#[test]
+fn test_obj_money_checked_rem() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    let result = m.checked_rem(dec!(3)).unwrap();
+    assert_eq!(result.amount(), dec!(1.00));
+    assert_eq!(result.code(), "USD");
+}
+
+// ==================== Box<dyn ObjMoney> blanket forwarding ====================
+
+#[test]
+fn test_boxed_obj_money_new_methods_forward() {
+    // Ensure Box<dyn ObjMoney> blanket impl correctly forwards.
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(-50.75)).unwrap());
+    assert_eq!(m.numeric_code(), 840);
+    assert_eq!(m.display(), "USD -50.75");
+    assert_eq!(m.abs().amount(), dec!(50.75));
+    assert_eq!(m.round().amount(), dec!(-50.75));
+    assert_eq!(m.truncate().amount(), dec!(-50));
+    assert_eq!(m.checked_add(dec!(10)).unwrap().amount(), dec!(-40.75));
+    assert_eq!(m.checked_sub(dec!(10)).unwrap().amount(), dec!(-60.75));
+    assert_eq!(m.checked_mul(dec!(2)).unwrap().amount(), dec!(-101.50));
+    assert_eq!(m.checked_div(dec!(5)).unwrap().amount(), dec!(-10.15));
+}
+
+// ==================== RawMoney: numeric_code ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_numeric_code() {
+    let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(RawMoney::<USD>::new(dec!(1.00)).unwrap()),
+        Box::new(RawMoney::<EUR>::new(dec!(1.00)).unwrap()),
+        Box::new(RawMoney::<JPY>::new(dec!(100)).unwrap()),
+    ];
+
+    assert_eq!(portfolio[0].numeric_code(), 840);
+    assert_eq!(portfolio[1].numeric_code(), 978);
+    assert_eq!(portfolio[2].numeric_code(), 392);
+}
+
+// ==================== RawMoney: display ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_display() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(1234.5678)).unwrap());
+    assert_eq!(m.display(), "USD 1,234.5678");
+}
+
+// ==================== RawMoney: round ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_round() {
+    // RawMoney stores full precision; round() rounds to currency minor unit.
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(123.456)).unwrap());
+    assert_eq!(m.amount(), dec!(123.456));
+    let rounded = m.round();
+    assert_eq!(rounded.amount(), dec!(123.46)); // USD has 2 decimal places
+    assert_eq!(rounded.code(), "USD");
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_round_jpy() {
+    // JPY has 0 minor units.
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<JPY>::new(dec!(1234.567)).unwrap());
+    let rounded = m.round();
+    assert_eq!(rounded.amount(), dec!(1235)); // rounds to whole number
+    assert_eq!(rounded.code(), "JPY");
+}
+
+// ==================== RawMoney: round_with ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_round_with() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(123.456789)).unwrap());
+    let rounded = m.round_with(3, RoundingStrategy::HalfUp);
+    assert_eq!(rounded.amount(), dec!(123.457));
+    assert_eq!(rounded.code(), "USD");
+}
+
+// ==================== RawMoney: truncate / truncate_with ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_truncate() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(40.999999)).unwrap());
+    let truncated = m.truncate();
+    assert_eq!(truncated.amount(), dec!(40));
+    assert_eq!(truncated.code(), "USD");
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_truncate_with() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(40.234845)).unwrap());
+    let truncated = m.truncate_with(3);
+    assert_eq!(truncated.amount(), dec!(40.234));
+    assert_eq!(truncated.code(), "USD");
+}
+
+// ==================== RawMoney: abs ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_abs() {
+    let neg: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(-100.12345)).unwrap());
+    let pos = neg.abs();
+    assert_eq!(pos.amount(), dec!(100.12345));
+    assert_eq!(pos.code(), "USD");
+    assert!(pos.is_positive());
+}
+
+// ==================== RawMoney: checked arithmetic ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_add() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.12345)).unwrap());
+    let result = m.checked_add(dec!(50.00001)).unwrap();
+    assert_eq!(result.amount(), dec!(150.12346));
+    assert_eq!(result.code(), "USD");
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_sub() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.12345)).unwrap());
+    let result = m.checked_sub(dec!(0.12345)).unwrap();
+    assert_eq!(result.amount(), dec!(100.00000));
+    assert_eq!(result.code(), "USD");
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_mul() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(33.333333)).unwrap());
+    let result = m.checked_mul(dec!(3)).unwrap();
+    assert_eq!(result.amount(), dec!(99.999999));
+    assert_eq!(result.code(), "USD");
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_div() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.000000)).unwrap());
+    let result = m.checked_div(dec!(3)).unwrap();
+    // rust_decimal division result
+    assert_eq!(result.code(), "USD");
+    // Just check it doesn't overflow and produces a reasonable value
+    assert!(result.amount() > dec!(33) && result.amount() < dec!(34));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_rem() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.00)).unwrap());
+    let result = m.checked_rem(dec!(3)).unwrap();
+    assert_eq!(result.amount(), dec!(1.00));
+    assert_eq!(result.code(), "USD");
 }
 
 // ==================== ObjMoney::convert Tests ====================
