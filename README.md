@@ -175,6 +175,8 @@ moneylib = { version = "...", features = ["raw_money"] }
 ```
 
 ```rust
+# #[cfg(feature = "raw_money")]
+# fn main() {
 use moneylib::{BaseMoney, RawMoney, iso::USD, Money, macros::dec};
 
 // RawMoney preserves all decimal precision
@@ -190,6 +192,9 @@ let result = raw * dec!(1.08875); // Apply tax
 
 // Convert back to Money with rounding using finish()
 let final_money = result.finish();
+# }
+# #[cfg(not(feature = "raw_money"))]
+# fn main() {}
 ```
 
 Where rounding happens:
@@ -222,6 +227,8 @@ moneylib = { version = "...", features = ["serde", "raw_money"] }
 ```
 
 ```rust
+# #[cfg(all(feature = "serde", feature = "raw_money"))]
+# fn main() {
 use moneylib::{BaseMoney, Money, RawMoney, macros::dec};
 use moneylib::iso::{CAD, EUR, GBP, IDR, JPY, USD};
 
@@ -409,6 +416,9 @@ use moneylib::iso::{CAD, EUR, GBP, IDR, JPY, USD};
     assert!(ret.amount_from_str_dot_symbol_none.is_none());
     assert!(ret.amount_from_str_dot_symbol_omit.is_none());
     assert_eq!(ret.raw_amount_from_str_dot_symbol.amount(), dec!(-69.69696969));
+# }
+# #[cfg(not(all(feature = "serde", feature = "raw_money")))]
+# fn main() {}
 ```
 
 ### `locale`
@@ -426,6 +436,8 @@ moneylib = { version = "...", features = ["locale", "raw_money"] }
 ```
 
 ```rust
+# #[cfg(feature = "locale")]
+# fn main() {
 use moneylib::{BaseMoney, Money, Currency, iso::{USD, EUR, INR}};
 use moneylib::macros::dec;
 use moneylib::MoneyFormatter;
@@ -450,7 +462,9 @@ assert_eq!(result.unwrap(), "₹ -१२,३४,०१२.५२");
 // Invalid locale returns an error
 let money = Money::<USD>::new(dec!(1234.56)).unwrap();
 assert!(money.format_locale_amount("!!!invalid", "c na").is_err());
-
+# }
+# #[cfg(not(feature = "locale"))]
+# fn main() {}
 ```
 
 ### `exchange`
@@ -472,6 +486,8 @@ moneylib = { version = "...", features = ["exchange", "raw_money"] }
 ```
 
 ```rust
+# #[cfg(all(feature = "exchange", feature = "raw_money"))]
+# fn main() {
 use moneylib::{
     BaseMoney, Currency, Exchange, ExchangeRates, Money, RawMoney,
     iso::{CAD, EUR, IDR, IRR, USD},
@@ -529,5 +545,8 @@ assert_eq!(
     money.convert::<IDR>(&rates).unwrap().amount(),
     dec!(17_000_000)
 );
+# }
+# #[cfg(not(all(feature = "exchange", feature = "raw_money")))]
+# fn main() {}
 ```
 
