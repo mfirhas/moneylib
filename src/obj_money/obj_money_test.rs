@@ -3,7 +3,7 @@
 use super::ObjMoney;
 use crate::iso::{BHD, CHF, EUR, GBP, INR, JPY, SGD, USD};
 use crate::macros::dec;
-use crate::{BaseMoney, BaseOps, Decimal, Money, MoneyError, RoundingStrategy, money, raw};
+use crate::{BaseMoney, Decimal, Money, MoneyError, RoundingStrategy, money, raw};
 
 #[cfg(feature = "raw_money")]
 use crate::RawMoney;
@@ -331,7 +331,7 @@ fn test_obj_money_filter_positive_and_sum() {
 
 #[test]
 fn test_obj_money_same_currency_checked_ops_via_extraction() {
-    // Extract same-currency moneys from a dyn vec and use typed arithmetic.
+    // Extract same-currency moneys from a dyn vec and use ObjMoney arithmetic.
     let portfolio: Vec<Box<dyn ObjMoney>> = vec![
         Box::new(Money::<USD>::new(dec!(1000.00)).unwrap()),
         Box::new(Money::<EUR>::new(dec!(850.00)).unwrap()),
@@ -339,32 +339,30 @@ fn test_obj_money_same_currency_checked_ops_via_extraction() {
         Box::new(Money::<GBP>::new(dec!(600.00)).unwrap()),
     ];
 
-    // Aggregate USD amounts into a typed Money<USD> via Decimal
+    // Aggregate USD amounts into a dyn ObjMoney
     let usd_sum = portfolio
         .iter()
         .filter(|m| m.code() == "USD")
         .fold(Decimal::ZERO, |acc, m| acc + m.amount());
 
-    let aggregated = Money::<USD>::from_decimal(usd_sum);
-    assert_eq!(BaseMoney::amount(&aggregated), dec!(1250.00));
+    let aggregated: Box<dyn ObjMoney> = Box::new(Money::<USD>::from_decimal(usd_sum));
+    assert_eq!(aggregated.amount(), dec!(1250.00));
 
     // checked_add on the aggregated value
-    let bonus = Money::<USD>::new(dec!(100.00)).unwrap();
-    let total = BaseOps::checked_add(&aggregated, bonus).unwrap();
-    assert_eq!(BaseMoney::amount(&total), dec!(1350.00));
+    let total = aggregated.checked_add(dec!(100.00)).unwrap();
+    assert_eq!(total.amount(), dec!(1350.00));
 
     // checked_sub
-    let fee = Money::<USD>::new(dec!(50.00)).unwrap();
-    let net = BaseOps::checked_sub(&total, fee).unwrap();
-    assert_eq!(BaseMoney::amount(&net), dec!(1300.00));
+    let net = total.checked_sub(dec!(50.00)).unwrap();
+    assert_eq!(net.amount(), dec!(1300.00));
 
     // checked_mul by a scalar
-    let doubled = BaseOps::checked_mul(&net, dec!(2)).unwrap();
-    assert_eq!(BaseMoney::amount(&doubled), dec!(2600.00));
+    let doubled = net.checked_mul(dec!(2)).unwrap();
+    assert_eq!(doubled.amount(), dec!(2600.00));
 
     // checked_div by a scalar
-    let halved = BaseOps::checked_div(&doubled, dec!(4)).unwrap();
-    assert_eq!(BaseMoney::amount(&halved), dec!(650.00));
+    let halved = doubled.checked_div(dec!(4)).unwrap();
+    assert_eq!(halved.amount(), dec!(650.00));
 }
 
 #[test]
@@ -562,32 +560,30 @@ fn test_obj_raw_money_same_currency_checked_ops_via_extraction() {
         Box::new(RawMoney::<USD>::new(dec!(250.67890)).unwrap()),
     ];
 
-    // Aggregate USD raw amounts
+    // Aggregate USD raw amounts into a dyn ObjMoney
     let usd_sum = portfolio
         .iter()
         .filter(|m| m.code() == "USD")
         .fold(Decimal::ZERO, |acc, m| acc + m.amount());
 
-    let aggregated = RawMoney::<USD>::new(usd_sum).unwrap();
-    assert_eq!(BaseMoney::amount(&aggregated), dec!(750.80235));
+    let aggregated: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(usd_sum).unwrap());
+    assert_eq!(aggregated.amount(), dec!(750.80235));
 
     // checked_add
-    let extra = RawMoney::<USD>::new(dec!(49.19765)).unwrap();
-    let total = BaseOps::checked_add(&aggregated, extra).unwrap();
-    assert_eq!(BaseMoney::amount(&total), dec!(800.00000));
+    let total = aggregated.checked_add(dec!(49.19765)).unwrap();
+    assert_eq!(total.amount(), dec!(800.00000));
 
     // checked_sub
-    let fee = RawMoney::<USD>::new(dec!(0.00001)).unwrap();
-    let after_fee = BaseOps::checked_sub(&total, fee).unwrap();
-    assert_eq!(BaseMoney::amount(&after_fee), dec!(799.99999));
+    let after_fee = total.checked_sub(dec!(0.00001)).unwrap();
+    assert_eq!(after_fee.amount(), dec!(799.99999));
 
     // checked_mul
-    let scaled = BaseOps::checked_mul(&after_fee, dec!(2)).unwrap();
-    assert_eq!(BaseMoney::amount(&scaled), dec!(1599.99998));
+    let scaled = after_fee.checked_mul(dec!(2)).unwrap();
+    assert_eq!(scaled.amount(), dec!(1599.99998));
 
     // checked_div
-    let halved = BaseOps::checked_div(&scaled, dec!(2)).unwrap();
-    assert_eq!(BaseMoney::amount(&halved), dec!(799.99999));
+    let halved = scaled.checked_div(dec!(2)).unwrap();
+    assert_eq!(halved.amount(), dec!(799.99999));
 }
 
 #[cfg(feature = "raw_money")]
