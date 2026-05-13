@@ -95,6 +95,73 @@ fn format_parts(
     result
 }
 
+/// Runtime locale-aware formatter for `DynMoney`.
+///
+/// Mirrors [`crate::fmt::format_locale_amount`] but uses runtime `&str` fields (code, symbol,
+/// minor-unit symbol, minor-unit count) instead of a compile-time `C: Currency` type parameter.
+#[cfg(feature = "locale")]
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn format_obj_money_locale(
+    amount: Decimal,
+    code: &str,
+    symbol: &str,
+    minor_unit_symbol: &str,
+    minor_unit: u16,
+    locale_str: &str,
+    format_str: &str,
+) -> Result<String, crate::MoneyError> {
+    use crate::MoneyError;
+    use icu_decimal::{DecimalFormatter, input::Decimal as LocaleDecimal};
+    use icu_locale::Locale;
+
+    let loc: Locale = locale_str.parse().map_err(|_| {
+        MoneyError::ParseLocale(
+            format!("failed parsing locale {}, invalid or not found", locale_str).into(),
+        )
+    })?;
+    let formatter = DecimalFormatter::try_new(loc.into(), Default::default())
+        .map_err(|_| MoneyError::ParseLocale("failed initiating decimal formatter".into()))?;
+
+    let is_negative = amount.is_sign_negative();
+    let curr_minor_unit: u32 = minor_unit.into();
+    let scale = amount.scale();
+    let abs_amount = if scale < curr_minor_unit {
+        let remaining_scale: usize = (curr_minor_unit - scale)
+            .try_into()
+            .map_err(|_| MoneyError::ParseLocale("invalid minor unit".into()))?;
+        let minor_zeros = "0".repeat(remaining_scale);
+        let fract = if scale == 0 {
+            format!(".{}", minor_zeros)
+        } else {
+            minor_zeros
+        };
+        let mut ret = amount.abs().to_string();
+        ret.push_str(&fract);
+        ret
+    } else {
+        amount.abs().to_string()
+    };
+
+    let decimal = LocaleDecimal::try_from_str(&abs_amount).map_err(|_| {
+        MoneyError::ParseLocale(
+            format!("failed parsing {} into locale decimal", &abs_amount).into(),
+        )
+    })?;
+
+    let formatted_decimal = formatter.format(&decimal).to_string();
+
+    let ret = format_parts(
+        &formatted_decimal,
+        is_negative,
+        code,
+        symbol,
+        minor_unit_symbol,
+        format_str,
+    );
+
+    Ok(ret)
+}
+
 /// Runtime counterpart of `format_with_separator<C>`: formats money described by plain `&str`
 /// fields rather than by a generic `C: Currency` type parameter.
 ///

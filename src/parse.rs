@@ -145,6 +145,44 @@ pub(crate) fn parse_str_code<C: Currency>(
     parse_into_string_amount(integer_part, decimal_part, thousand_separator, is_negative)
 }
 
+/// Parse just the amount part of a money string (no currency code/symbol),
+/// returning a normalized decimal string (no thousand separator, dot decimal).
+///
+/// Used by `DynMoney` parse helpers that look up the currency code at runtime.
+pub(crate) fn parse_amount_str(
+    amount_str: &str,
+    thousand_separator: &str,
+    decimal_separator: &str,
+) -> Result<String, MoneyError> {
+    let amount_str = amount_str.trim();
+
+    let (abs_str, is_negative) = if let Some(s) = amount_str.strip_prefix('-') {
+        (s, true)
+    } else {
+        (amount_str, false)
+    };
+
+    let amount_parts: Vec<&str> = abs_str.split(decimal_separator).collect();
+    if amount_parts.len() > 2 {
+        return Err(MoneyError::ParseStrError(
+            format!(
+                "splitting by decimal separator({}) must not more than 2 parts: {}",
+                decimal_separator, amount_str
+            )
+            .into(),
+        ));
+    }
+
+    let integer_part = amount_parts[0];
+    let decimal_part = if amount_parts.len() == 2 {
+        Some(amount_parts[1])
+    } else {
+        None
+    };
+
+    parse_into_string_amount(integer_part, decimal_part, thousand_separator, is_negative)
+}
+
 /// parse money string with symbol `<SYMBOL><AMOUNT>`,
 /// where `<SYMBOL>` is currency alpha code.
 ///

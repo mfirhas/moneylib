@@ -1718,4 +1718,266 @@ fn test_tryfrom_raw_money_obj_to_money() {
     assert!(Money::<USD>::try_from(obj.as_ref()).is_err());
 }
 
+// ==================== DynMoney tests ====================
+
+use crate::iso::{EUR as EURc, GBP as GBPc, JPY as JPYc, USD as USDc};
+use crate::obj_money::DynMoney;
+use crate::{BaseMoney as BM, BaseOps as BO, MoneyFormatter as MF, MoneyParser as MP};
+
+#[test]
+fn test_dyn_money_new_and_accessors() {
+    let m = DynMoney::new::<USDc>(dec!(1234.567));
+    // USD has minor_unit = 2, so amount is rounded to 2 dp
+    assert_eq!(BM::<USDc>::amount(&m), dec!(1234.57));
+    assert_eq!(BM::<USDc>::code(&m), "USD");
+    assert_eq!(BM::<USDc>::symbol(&m), "$");
+    assert_eq!(BM::<USDc>::name(&m), "United States dollar");
+    assert_eq!(BM::<USDc>::minor_unit(&m), 2);
+    assert_eq!(BM::<USDc>::numeric_code(&m), 840);
+    assert_eq!(BM::<USDc>::thousand_separator(&m), ",");
+    assert_eq!(BM::<USDc>::decimal_separator(&m), ".");
+    assert_eq!(BM::<USDc>::minor_amount(&m), Some(123457_i128));
+}
+
+#[test]
+fn test_dyn_money_round_uses_runtime_currency() {
+    // Create a DynMoney(USD) then change currency to JPY at runtime.
+    let mut m = DynMoney::new::<USDc>(dec!(100.50));
+    m.set_curr::<JPYc>();
+    // JPY has minor_unit = 0; round() should use that
+    let rounded = BM::<JPYc>::round(m);
+    assert_eq!(BM::<JPYc>::amount(&rounded), dec!(100));
+    assert_eq!(rounded.currency.0.code, "JPY");
+}
+
+#[test]
+fn test_dyn_money_round_with_preserves_currency() {
+    let m = DynMoney::new::<USDc>(dec!(123.45));
+    // round_with Floor at 1 dp: 123.45 → 123.4
+    let rounded = BM::<USDc>::round_with(m, 1, RoundingStrategy::Floor);
+    assert_eq!(BM::<USDc>::amount(&rounded), dec!(123.4));
+    assert_eq!(rounded.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_truncate_preserves_currency() {
+    let m = DynMoney::new::<USDc>(dec!(99.99));
+    let t = BM::<USDc>::truncate(&m);
+    assert_eq!(BM::<USDc>::amount(&t), dec!(99));
+    assert_eq!(t.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_truncate_with_preserves_currency() {
+    let m = DynMoney::new::<EURc>(dec!(12.35));
+    // truncate_with 1 dp: 12.35 → 12.3
+    let t = BM::<EURc>::truncate_with(&m, 1);
+    assert_eq!(BM::<EURc>::amount(&t), dec!(12.3));
+    assert_eq!(t.currency.0.code, "EUR");
+}
+
+#[test]
+fn test_dyn_money_format_code_uses_runtime_separators() {
+    // EUR uses "." as thousand separator and "," as decimal separator
+    let m = DynMoney::new::<EURc>(dec!(1234.56));
+    assert_eq!(BM::<EURc>::format_code(&m), "EUR 1.234,56");
+}
+
+#[test]
+fn test_dyn_money_format_symbol_uses_runtime_separators() {
+    let m = DynMoney::new::<EURc>(dec!(1234.56));
+    assert_eq!(BM::<EURc>::format_symbol(&m), "€1.234,56");
+}
+
+#[test]
+fn test_dyn_money_format_code_minor() {
+    let m = DynMoney::new::<USDc>(dec!(10.50));
+    assert_eq!(BM::<USDc>::format_code_minor(&m), "USD 1,050 ¢");
+}
+
+#[test]
+fn test_dyn_money_format_symbol_minor() {
+    let m = DynMoney::new::<USDc>(dec!(10.50));
+    assert_eq!(BM::<USDc>::format_symbol_minor(&m), "$1,050 ¢");
+}
+
+#[test]
+fn test_dyn_money_abs_preserves_currency() {
+    let m = DynMoney::new::<USDc>(dec!(-50.00));
+    let pos = BO::<USDc>::abs(&m);
+    assert_eq!(BM::<USDc>::amount(&pos), dec!(50.00));
+    assert_eq!(pos.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_checked_add_preserves_currency() {
+    let m = DynMoney::new::<USDc>(dec!(100.00));
+    let result = BO::<USDc>::checked_add(&m, dec!(50.00)).unwrap();
+    assert_eq!(BM::<USDc>::amount(&result), dec!(150.00));
+    assert_eq!(result.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_checked_add_same_currency_dynmoney() {
+    let m1 = DynMoney::new::<USDc>(dec!(100.00));
+    let m2 = DynMoney::new::<USDc>(dec!(25.00));
+    // m2 is Amount<USD>, get_decimal checks code matches
+    let result = BO::<USDc>::checked_add(&m1, m2).unwrap();
+    assert_eq!(BM::<USDc>::amount(&result), dec!(125.00));
+    assert_eq!(result.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_checked_add_different_currency_returns_none() {
+    let m1 = DynMoney::new::<USDc>(dec!(100.00));
+    let m2 = DynMoney::new::<EURc>(dec!(25.00));
+    // m2.get_decimal() returns None because EUR != USD
+    let result = BO::<USDc>::checked_add(&m1, m2);
+    assert!(result.is_none());
+}
+
+#[test]
+fn test_dyn_money_checked_sub_preserves_currency() {
+    let m = DynMoney::new::<GBPc>(dec!(200.00));
+    let result = BO::<GBPc>::checked_sub(&m, dec!(75.50)).unwrap();
+    assert_eq!(BM::<GBPc>::amount(&result), dec!(124.50));
+    assert_eq!(result.currency.0.code, "GBP");
+}
+
+#[test]
+fn test_dyn_money_checked_mul_preserves_currency() {
+    let m = DynMoney::new::<USDc>(dec!(10.00));
+    let result = BO::<USDc>::checked_mul(&m, dec!(3)).unwrap();
+    assert_eq!(BM::<USDc>::amount(&result), dec!(30.00));
+    assert_eq!(result.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_checked_div_preserves_currency() {
+    let m = DynMoney::new::<USDc>(dec!(100.00));
+    let result = BO::<USDc>::checked_div(&m, dec!(4)).unwrap();
+    assert_eq!(BM::<USDc>::amount(&result), dec!(25.00));
+    assert_eq!(result.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_checked_rem_preserves_currency() {
+    let m = DynMoney::new::<USDc>(dec!(100.00));
+    let result = BO::<USDc>::checked_rem(&m, dec!(3)).unwrap();
+    assert_eq!(BM::<USDc>::amount(&result), dec!(1.00));
+    assert_eq!(result.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_format_uses_runtime_separators() {
+    // EUR: "." thousand sep, "," decimal sep
+    let m = DynMoney::new::<EURc>(dec!(1234.56));
+    let formatted = MF::<EURc>::format(&m, "c na");
+    assert_eq!(formatted, "EUR 1.234,56");
+}
+
+#[test]
+fn test_dyn_money_format_with_separator() {
+    let m = DynMoney::new::<USDc>(dec!(93009.45));
+    let formatted = MF::<USDc>::format_with_separator(&m, "c na", "*", "#");
+    assert_eq!(formatted, "USD 93*009#45");
+}
+
+#[test]
+fn test_dyn_money_parser_from_str_code_with_any_code() {
+    // Code-based parsing is dynamic: works for any registered currency code (ignores C type).
+    let m = <DynMoney as MP<USDc>>::from_str_code_with("EUR 1.234,56", ".", ",").unwrap();
+    assert_eq!(m.currency.0.code, "EUR");
+    assert_eq!(BM::<EURc>::amount(&m), dec!(1234.56));
+}
+
+#[test]
+fn test_dyn_money_parser_from_str_code_with_usd() {
+    let m = <DynMoney as MP<USDc>>::from_str_code_with("USD 1,234.56", ",", ".").unwrap();
+    assert_eq!(m.currency.0.code, "USD");
+    assert_eq!(BM::<USDc>::amount(&m), dec!(1234.56));
+}
+
+#[test]
+fn test_dyn_money_parser_from_str_code_uses_currency_separators() {
+    // from_str_code uses the currency's own separators automatically
+    let m = <DynMoney as MP<USDc>>::from_str_code("USD 1,234.56").unwrap();
+    assert_eq!(m.currency.0.code, "USD");
+    assert_eq!(BM::<USDc>::amount(&m), dec!(1234.56));
+}
+
+#[test]
+fn test_dyn_money_parser_from_str_code_eur_locale() {
+    // EUR uses "." thousand and "," decimal
+    let m = <DynMoney as MP<EURc>>::from_str_code("EUR 1.234,56").unwrap();
+    assert_eq!(m.currency.0.code, "EUR");
+    assert_eq!(BM::<EURc>::amount(&m), dec!(1234.56));
+}
+
+#[test]
+fn test_dyn_money_parser_from_str_code_unknown_currency_errors() {
+    let result = <DynMoney as MP<USDc>>::from_str_code_with("XYZ 100.00", ",", ".");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_dyn_money_parser_from_str_symbol_with() {
+    let m = <DynMoney as MP<USDc>>::from_str_symbol_with("$1,234.56", ",", ".").unwrap();
+    assert_eq!(m.currency.0.code, "USD");
+    assert_eq!(BM::<USDc>::amount(&m), dec!(1234.56));
+}
+
+#[test]
+fn test_dyn_money_parser_from_str_symbol_negative() {
+    let m = <DynMoney as MP<USDc>>::from_str_symbol_with("-$1,234.56", ",", ".").unwrap();
+    assert_eq!(m.currency.0.code, "USD");
+    assert_eq!(BM::<USDc>::amount(&m), dec!(-1234.56));
+}
+
+#[test]
+fn test_dyn_money_parser_from_str_symbol() {
+    let m = <DynMoney as MP<USDc>>::from_str_symbol("$1,234.56").unwrap();
+    assert_eq!(m.currency.0.code, "USD");
+    assert_eq!(BM::<USDc>::amount(&m), dec!(1234.56));
+}
+
+#[test]
+fn test_dyn_money_set_curr_from_code_changes_currency() {
+    let mut m = DynMoney::new::<USDc>(dec!(100.00));
+    assert_eq!(m.currency.0.code, "USD");
+    m.set_curr_from_code("JPY").unwrap();
+    assert_eq!(m.currency.0.code, "JPY");
+}
+
+#[test]
+fn test_dyn_money_partial_ord_same_currency() {
+    let m1 = DynMoney::new::<USDc>(dec!(100.00));
+    let m2 = DynMoney::new::<USDc>(dec!(200.00));
+    assert!(m1 < m2);
+    assert!(m2 > m1);
+}
+
+#[test]
+fn test_dyn_money_partial_ord_different_currency_returns_none() {
+    let m1 = DynMoney::new::<USDc>(dec!(100.00));
+    let m2 = DynMoney::new::<EURc>(dec!(100.00));
+    assert_eq!(m1.partial_cmp(&m2), None);
+}
+
+#[test]
+fn test_dyn_money_neg_preserves_currency() {
+    let m = DynMoney::new::<USDc>(dec!(50.00));
+    let neg = -m;
+    assert_eq!(BM::<USDc>::amount(&neg), dec!(-50.00));
+    assert_eq!(neg.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_neg_negative_to_positive() {
+    let m = DynMoney::new::<EURc>(dec!(-1234.56));
+    let pos = -m;
+    assert_eq!(BM::<EURc>::amount(&pos), dec!(1234.56));
+    assert_eq!(pos.currency.0.code, "EUR");
+}
+
 // end of obj_money_test.rs
