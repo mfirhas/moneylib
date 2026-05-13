@@ -59,6 +59,28 @@ impl DynMoney {
     }
 }
 
+/// Splits a `"<CODE> <AMOUNT>"` string into its code and amount parts, validating
+/// that the code is non-empty, contains only ASCII alphabetic characters, and that
+/// the amount part is non-empty.
+fn parse_code_and_amount(amount_str: &str) -> Result<(&str, &str), MoneyError> {
+    let str_code = amount_str.trim();
+    let parts: Vec<&str> = str_code.split_whitespace().collect();
+    if parts.len() != 2
+        || parts[0].is_empty()
+        || !parts[0].chars().all(|c| c.is_ascii_alphabetic())
+        || parts[1].is_empty()
+    {
+        return Err(MoneyError::ParseStrError(
+            format!(
+                "invalid currency with code, expected: <CODE> <AMOUNT> with <CODE> and <AMOUNT> all in ASCII, found: {}",
+                str_code
+            )
+            .into(),
+        ));
+    }
+    Ok((parts[0], parts[1]))
+}
+
 impl PartialEq for DynMoney {
     fn eq(&self, other: &Self) -> bool {
         self.amount == other.amount && self.currency.0.code == other.currency.0.code
@@ -323,30 +345,13 @@ impl<C: Currency> MoneyParser<C> for DynMoney {
         thousand_separator: &str,
         decimal_separator: &str,
     ) -> Result<Self, MoneyError> {
-        let str_code = amount_str.trim();
-
-        let parts: Vec<&str> = str_code.split_whitespace().collect();
-        if parts.len() != 2
-            || parts[0].is_empty()
-            || !parts[0].chars().all(|c| c.is_ascii_alphabetic())
-            || parts[1].is_empty()
-        {
-            return Err(MoneyError::ParseStrError(
-                format!(
-                    "invalid currency with code, expected: <CODE> <AMOUNT> with <CODE> and <AMOUNT> all in ascii, found: {}",
-                    str_code
-                )
-                .into(),
-            ));
-        }
-
-        let code = parts[0];
+        let (code, amount_part) = parse_code_and_amount(amount_str)?;
         let currency = super::context::get_currency(code).ok_or_else(|| {
             MoneyError::CurrencyMismatchError(code.into(), "unknown (not in currencies map)".into())
         })?;
 
         let cleaned =
-            crate::parse::parse_amount_str(parts[1], thousand_separator, decimal_separator)?;
+            crate::parse::parse_amount_str(amount_part, thousand_separator, decimal_separator)?;
         let amount = Decimal::from_str(&cleaned).map_err(|err| {
             MoneyError::ParseStrError(
                 format!("failed parsing {} into decimal: {}", cleaned, err).into(),
@@ -417,31 +422,14 @@ impl<C: Currency> MoneyParser<C> for DynMoney {
     /// The currency code is extracted from the string and looked up in the global currencies map.
     /// Its `thousand_separator` and `decimal_separator` fields are used automatically.
     fn from_str_code(amount_str: &str) -> Result<Self, MoneyError> {
-        let str_code = amount_str.trim();
-
-        let parts: Vec<&str> = str_code.split_whitespace().collect();
-        if parts.len() != 2
-            || parts[0].is_empty()
-            || !parts[0].chars().all(|c| c.is_ascii_alphabetic())
-            || parts[1].is_empty()
-        {
-            return Err(MoneyError::ParseStrError(
-                format!(
-                    "invalid currency with code, expected: <CODE> <AMOUNT> with <CODE> and <AMOUNT> all in ascii, found: {}",
-                    str_code
-                )
-                .into(),
-            ));
-        }
-
-        let code = parts[0];
+        let (code, amount_part) = parse_code_and_amount(amount_str)?;
         let currency = super::context::get_currency(code).ok_or_else(|| {
             MoneyError::CurrencyMismatchError(code.into(), "unknown (not in currencies map)".into())
         })?;
 
         // Use the runtime currency's own separators.
         let cleaned = crate::parse::parse_amount_str(
-            parts[1],
+            amount_part,
             currency.0.thousand_separator,
             currency.0.decimal_separator,
         )?;

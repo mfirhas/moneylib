@@ -124,7 +124,7 @@ pub(crate) fn parse_str_code<C: Currency>(
     if amount_parts.len() > 2 {
         return Err(MoneyError::ParseStrError(
             format!(
-                "splitting by decimal separator({}) must not more than 2 parts: {}",
+                "splitting by decimal separator({}) must not have more than 2 parts: {}",
                 decimal_separator, amount_str
             )
             .into(),
@@ -166,7 +166,7 @@ pub(crate) fn parse_amount_str(
     if amount_parts.len() > 2 {
         return Err(MoneyError::ParseStrError(
             format!(
-                "splitting by decimal separator({}) must not more than 2 parts: {}",
+                "splitting by decimal separator({}) must not have more than 2 parts: {}",
                 decimal_separator, amount_str
             )
             .into(),
@@ -216,7 +216,7 @@ pub(crate) fn parse_str_symbol<C: Currency>(
     if amount_parts.len() > 2 {
         return Err(MoneyError::ParseStrError(
             format!(
-                "splitting by decimal separator({}) must not more than 2 parts: {}",
+                "splitting by decimal separator({}) must not have more than 2 parts: {}",
                 decimal_separator, amount_str
             )
             .into(),
