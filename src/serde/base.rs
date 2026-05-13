@@ -35,7 +35,7 @@ pub struct BaseMoneyVisitor<M, C>(pub PhantomData<(M, C)>);
 impl<'de, C, M> de::Visitor<'de> for BaseMoneyVisitor<M, C>
 where
     C: Currency,
-    M: BaseMoney<C> + MoneyParser<C>,
+    M: BaseMoney<C> + MoneyParser<C> + FromStr<Err = crate::MoneyError>,
 {
     type Value = M;
 
@@ -95,7 +95,7 @@ where
 pub fn deserialize_as_number<'de, C, M, D>(deserializer: D) -> Result<M, D::Error>
 where
     C: Currency,
-    M: BaseMoney<C> + MoneyParser<C>,
+    M: BaseMoney<C> + MoneyParser<C> + FromStr<Err = crate::MoneyError>,
     D: Deserializer<'de>,
 {
     deserializer.deserialize_any(BaseMoneyVisitor::<M, C>(PhantomData))

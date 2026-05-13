@@ -757,7 +757,7 @@ fn test_format_obj_money_literal_block_escape() {
 // ==================== ObjIterOps::checked_sum Tests ====================
 
 #[cfg(feature = "exchange")]
-use crate::{ExchangeRates, ObjIterOps};
+use crate::{ExchangeRates, obj_money::ObjIterOps};
 
 /// All items are USD; the USD→USD rate is always 1, so the result is the simple sum.
 #[cfg(feature = "exchange")]

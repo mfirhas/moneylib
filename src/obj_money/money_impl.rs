@@ -145,7 +145,7 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, ObjMoney, BaseMoney, MoneyError, macros::dec, iso::{USD, EUR}};
+/// use moneylib::{Money, obj_money::ObjMoney, BaseMoney, MoneyError, macros::dec, iso::{USD, EUR}};
 ///
 /// let obj: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.50)).unwrap());
 ///

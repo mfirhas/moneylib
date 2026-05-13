@@ -32,7 +32,7 @@ use crate::{Currency, Decimal, MoneyError};
 /// # Examples
 ///
 /// ```
-/// use moneylib::{Money, raw, ObjMoney, Decimal, BaseMoney, macros::dec, iso::{USD, EUR, JPY}};
+/// use moneylib::{Money, raw, obj_money::ObjMoney, Decimal, BaseMoney, macros::dec, iso::{USD, EUR, JPY}};
 ///
 /// let portfolio: Vec<Box<dyn ObjMoney>> = vec![
 ///     Box::new(Money::<USD>::new(dec!(100.50)).unwrap()),
@@ -244,7 +244,7 @@ pub trait ObjMoney: Send + Sync {
     /// # Examples
     ///
     /// ```
-    /// use moneylib::{Money, ObjMoney, BaseMoney, macros::dec, iso::USD};
+    /// use moneylib::{Money, obj_money::ObjMoney, BaseMoney, macros::dec, iso::USD};
     ///
     /// let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(1234.45)).unwrap());
     /// assert_eq!(m.display(), "USD 1,234.45");

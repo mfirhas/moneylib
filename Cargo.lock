@@ -17,7 +17,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 [[package]]
 name = "currencylib"
 version = "0.2.0"
-source = "git+https://github.com/mfirhas/currencylib.git?branch=master#b574dece2cf8374bb462cc776395314da7e8f6ce"
+source = "git+https://github.com/mfirhas/currencylib.git?branch=master#a656a8769c9001415d3f545a266b040dba19f863"
 dependencies = [
  "phf",
 ]
