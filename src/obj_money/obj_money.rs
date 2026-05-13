@@ -7,6 +7,7 @@ use crate::{
 };
 
 use crate::{Currency, Decimal, MoneyError};
+use rust_decimal::prelude::FromPrimitive;
 
 /// Object-safe trait enabling dynamic dispatch (`dyn`) over different-currency money types.
 ///
@@ -132,6 +133,134 @@ pub trait ObjMoney: Send + Sync {
     ///
     /// Returns `None` on division by zero or overflow.
     fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Adds an `f64` amount to this money value. Returns `None` on overflow or
+    /// if `rhs` cannot be converted to `Decimal`.
+    #[inline]
+    fn checked_add_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_add(Decimal::from_f64(rhs)?)
+    }
+
+    /// Adds an `i32` amount to this money value. Returns `None` on overflow.
+    #[inline]
+    fn checked_add_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        self.checked_add(Decimal::from_i32(rhs)?)
+    }
+
+    /// Adds an `i64` amount to this money value. Returns `None` on overflow.
+    #[inline]
+    fn checked_add_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_add(Decimal::from_i64(rhs)?)
+    }
+
+    /// Adds an `i128` amount to this money value. Returns `None` on overflow.
+    #[inline]
+    fn checked_add_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        self.checked_add(Decimal::from_i128(rhs)?)
+    }
+
+    /// Subtracts an `f64` amount from this money value. Returns `None` on overflow or
+    /// if `rhs` cannot be converted to `Decimal`.
+    #[inline]
+    fn checked_sub_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_sub(Decimal::from_f64(rhs)?)
+    }
+
+    /// Subtracts an `i32` amount from this money value. Returns `None` on overflow.
+    #[inline]
+    fn checked_sub_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        self.checked_sub(Decimal::from_i32(rhs)?)
+    }
+
+    /// Subtracts an `i64` amount from this money value. Returns `None` on overflow.
+    #[inline]
+    fn checked_sub_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_sub(Decimal::from_i64(rhs)?)
+    }
+
+    /// Subtracts an `i128` amount from this money value. Returns `None` on overflow.
+    #[inline]
+    fn checked_sub_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        self.checked_sub(Decimal::from_i128(rhs)?)
+    }
+
+    /// Multiplies this money value by an `f64` scalar. Returns `None` on overflow or
+    /// if `rhs` cannot be converted to `Decimal`.
+    #[inline]
+    fn checked_mul_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_mul(Decimal::from_f64(rhs)?)
+    }
+
+    /// Multiplies this money value by an `i32` scalar. Returns `None` on overflow.
+    #[inline]
+    fn checked_mul_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        self.checked_mul(Decimal::from_i32(rhs)?)
+    }
+
+    /// Multiplies this money value by an `i64` scalar. Returns `None` on overflow.
+    #[inline]
+    fn checked_mul_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_mul(Decimal::from_i64(rhs)?)
+    }
+
+    /// Multiplies this money value by an `i128` scalar. Returns `None` on overflow.
+    #[inline]
+    fn checked_mul_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        self.checked_mul(Decimal::from_i128(rhs)?)
+    }
+
+    /// Divides this money value by an `f64` scalar. Returns `None` on division by zero,
+    /// overflow, or if `rhs` cannot be converted to `Decimal`.
+    #[inline]
+    fn checked_div_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_div(Decimal::from_f64(rhs)?)
+    }
+
+    /// Divides this money value by an `i32` scalar. Returns `None` on division by zero or overflow.
+    #[inline]
+    fn checked_div_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        self.checked_div(Decimal::from_i32(rhs)?)
+    }
+
+    /// Divides this money value by an `i64` scalar. Returns `None` on division by zero or overflow.
+    #[inline]
+    fn checked_div_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_div(Decimal::from_i64(rhs)?)
+    }
+
+    /// Divides this money value by an `i128` scalar. Returns `None` on division by zero or overflow.
+    #[inline]
+    fn checked_div_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        self.checked_div(Decimal::from_i128(rhs)?)
+    }
+
+    /// Returns the remainder of dividing this money value by an `f64` scalar. Returns `None` on
+    /// division by zero, overflow, or if `rhs` cannot be converted to `Decimal`.
+    #[inline]
+    fn checked_rem_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_rem(Decimal::from_f64(rhs)?)
+    }
+
+    /// Returns the remainder of dividing this money value by an `i32` scalar.
+    /// Returns `None` on division by zero or overflow.
+    #[inline]
+    fn checked_rem_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        self.checked_rem(Decimal::from_i32(rhs)?)
+    }
+
+    /// Returns the remainder of dividing this money value by an `i64` scalar.
+    /// Returns `None` on division by zero or overflow.
+    #[inline]
+    fn checked_rem_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        self.checked_rem(Decimal::from_i64(rhs)?)
+    }
+
+    /// Returns the remainder of dividing this money value by an `i128` scalar.
+    /// Returns `None` on division by zero or overflow.
+    #[inline]
+    fn checked_rem_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        self.checked_rem(Decimal::from_i128(rhs)?)
+    }
 
     // ---- Provided: derived from the required methods above ----
 
@@ -370,6 +499,106 @@ impl ObjMoney for Box<dyn ObjMoney> {
     #[inline]
     fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
         (**self).checked_rem(rhs)
+    }
+
+    #[inline]
+    fn checked_add_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_add_f64(rhs)
+    }
+
+    #[inline]
+    fn checked_add_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_add_i32(rhs)
+    }
+
+    #[inline]
+    fn checked_add_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_add_i64(rhs)
+    }
+
+    #[inline]
+    fn checked_add_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_add_i128(rhs)
+    }
+
+    #[inline]
+    fn checked_sub_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_sub_f64(rhs)
+    }
+
+    #[inline]
+    fn checked_sub_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_sub_i32(rhs)
+    }
+
+    #[inline]
+    fn checked_sub_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_sub_i64(rhs)
+    }
+
+    #[inline]
+    fn checked_sub_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_sub_i128(rhs)
+    }
+
+    #[inline]
+    fn checked_mul_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_mul_f64(rhs)
+    }
+
+    #[inline]
+    fn checked_mul_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_mul_i32(rhs)
+    }
+
+    #[inline]
+    fn checked_mul_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_mul_i64(rhs)
+    }
+
+    #[inline]
+    fn checked_mul_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_mul_i128(rhs)
+    }
+
+    #[inline]
+    fn checked_div_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_div_f64(rhs)
+    }
+
+    #[inline]
+    fn checked_div_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_div_i32(rhs)
+    }
+
+    #[inline]
+    fn checked_div_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_div_i64(rhs)
+    }
+
+    #[inline]
+    fn checked_div_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_div_i128(rhs)
+    }
+
+    #[inline]
+    fn checked_rem_f64(&self, rhs: f64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_rem_f64(rhs)
+    }
+
+    #[inline]
+    fn checked_rem_i32(&self, rhs: i32) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_rem_i32(rhs)
+    }
+
+    #[inline]
+    fn checked_rem_i64(&self, rhs: i64) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_rem_i64(rhs)
+    }
+
+    #[inline]
+    fn checked_rem_i128(&self, rhs: i128) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_rem_i128(rhs)
     }
 }
 

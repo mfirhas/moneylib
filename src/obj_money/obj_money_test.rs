@@ -1059,6 +1059,61 @@ fn test_obj_money_checked_rem() {
     assert_eq!(result.code(), "USD");
 }
 
+// ==================== Money: checked_* with f64 / i32 / i64 / i128 ====================
+
+#[test]
+fn test_obj_money_checked_add_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    assert_eq!(m.checked_add_f64(50.0).unwrap().amount(), dec!(150.00));
+    assert_eq!(m.checked_add_i32(50).unwrap().amount(), dec!(150.00));
+    assert_eq!(m.checked_add_i64(50i64).unwrap().amount(), dec!(150.00));
+    assert_eq!(m.checked_add_i128(50i128).unwrap().amount(), dec!(150.00));
+}
+
+#[test]
+fn test_obj_money_checked_sub_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    assert_eq!(m.checked_sub_f64(30.0).unwrap().amount(), dec!(70.00));
+    assert_eq!(m.checked_sub_i32(30).unwrap().amount(), dec!(70.00));
+    assert_eq!(m.checked_sub_i64(30i64).unwrap().amount(), dec!(70.00));
+    assert_eq!(m.checked_sub_i128(30i128).unwrap().amount(), dec!(70.00));
+}
+
+#[test]
+fn test_obj_money_checked_mul_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(10.00)).unwrap());
+    assert_eq!(m.checked_mul_f64(3.0).unwrap().amount(), dec!(30.00));
+    assert_eq!(m.checked_mul_i32(3).unwrap().amount(), dec!(30.00));
+    assert_eq!(m.checked_mul_i64(3i64).unwrap().amount(), dec!(30.00));
+    assert_eq!(m.checked_mul_i128(3i128).unwrap().amount(), dec!(30.00));
+}
+
+#[test]
+fn test_obj_money_checked_div_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    assert_eq!(m.checked_div_f64(4.0).unwrap().amount(), dec!(25.00));
+    assert_eq!(m.checked_div_i32(4).unwrap().amount(), dec!(25.00));
+    assert_eq!(m.checked_div_i64(4i64).unwrap().amount(), dec!(25.00));
+    assert_eq!(m.checked_div_i128(4i128).unwrap().amount(), dec!(25.00));
+}
+
+#[test]
+fn test_obj_money_checked_rem_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    assert_eq!(m.checked_rem_f64(3.0).unwrap().amount(), dec!(1.00));
+    assert_eq!(m.checked_rem_i32(3).unwrap().amount(), dec!(1.00));
+    assert_eq!(m.checked_rem_i64(3i64).unwrap().amount(), dec!(1.00));
+    assert_eq!(m.checked_rem_i128(3i128).unwrap().amount(), dec!(1.00));
+}
+
+#[test]
+fn test_obj_money_checked_div_by_zero_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    assert!(m.checked_div_i32(0).is_none());
+    assert!(m.checked_div_i64(0).is_none());
+    assert!(m.checked_div_i128(0).is_none());
+}
+
 // ==================== Box<dyn ObjMoney> blanket forwarding ====================
 
 #[test]
@@ -1214,6 +1269,70 @@ fn test_obj_raw_money_checked_rem() {
     let result = m.checked_rem(dec!(3)).unwrap();
     assert_eq!(result.amount(), dec!(1.00));
     assert_eq!(result.code(), "USD");
+}
+
+// ==================== RawMoney: checked_* with f64 / i32 / i64 / i128 ====================
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_add_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.12345)).unwrap());
+    assert_eq!(m.checked_add_f64(50.0).unwrap().amount(), dec!(150.12345));
+    assert_eq!(m.checked_add_i32(50).unwrap().amount(), dec!(150.12345));
+    assert_eq!(m.checked_add_i64(50i64).unwrap().amount(), dec!(150.12345));
+    assert_eq!(
+        m.checked_add_i128(50i128).unwrap().amount(),
+        dec!(150.12345)
+    );
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_sub_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.12345)).unwrap());
+    assert_eq!(m.checked_sub_f64(30.0).unwrap().amount(), dec!(70.12345));
+    assert_eq!(m.checked_sub_i32(30).unwrap().amount(), dec!(70.12345));
+    assert_eq!(m.checked_sub_i64(30i64).unwrap().amount(), dec!(70.12345));
+    assert_eq!(m.checked_sub_i128(30i128).unwrap().amount(), dec!(70.12345));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_mul_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(33.333333)).unwrap());
+    assert_eq!(m.checked_mul_f64(3.0).unwrap().amount(), dec!(99.999999));
+    assert_eq!(m.checked_mul_i32(3).unwrap().amount(), dec!(99.999999));
+    assert_eq!(m.checked_mul_i64(3i64).unwrap().amount(), dec!(99.999999));
+    assert_eq!(m.checked_mul_i128(3i128).unwrap().amount(), dec!(99.999999));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_div_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.00)).unwrap());
+    assert_eq!(m.checked_div_f64(4.0).unwrap().amount(), dec!(25.00));
+    assert_eq!(m.checked_div_i32(4).unwrap().amount(), dec!(25.00));
+    assert_eq!(m.checked_div_i64(4i64).unwrap().amount(), dec!(25.00));
+    assert_eq!(m.checked_div_i128(4i128).unwrap().amount(), dec!(25.00));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_rem_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.00)).unwrap());
+    assert_eq!(m.checked_rem_f64(3.0).unwrap().amount(), dec!(1.00));
+    assert_eq!(m.checked_rem_i32(3).unwrap().amount(), dec!(1.00));
+    assert_eq!(m.checked_rem_i64(3i64).unwrap().amount(), dec!(1.00));
+    assert_eq!(m.checked_rem_i128(3i128).unwrap().amount(), dec!(1.00));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_obj_raw_money_checked_div_by_zero_numeric_types() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.00)).unwrap());
+    assert!(m.checked_div_i32(0).is_none());
+    assert!(m.checked_div_i64(0).is_none());
+    assert!(m.checked_div_i128(0).is_none());
 }
 
 // ==================== ObjMoney::convert Tests ====================

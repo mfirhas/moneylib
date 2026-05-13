@@ -103,6 +103,106 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C>
         Some(Box::new(BaseOps::checked_rem(self, rhs)?))
     }
 
+    #[inline]
+    fn checked_add_f64(&self, rhs: f64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_add(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_add_i32(&self, rhs: i32) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_add(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_add_i64(&self, rhs: i64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_add(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_add_i128(&self, rhs: i128) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_add(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_sub_f64(&self, rhs: f64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_sub(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_sub_i32(&self, rhs: i32) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_sub(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_sub_i64(&self, rhs: i64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_sub(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_sub_i128(&self, rhs: i128) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_sub(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_mul_f64(&self, rhs: f64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_mul(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_mul_i32(&self, rhs: i32) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_mul(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_mul_i64(&self, rhs: i64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_mul(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_mul_i128(&self, rhs: i128) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_mul(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_div_f64(&self, rhs: f64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_div(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_div_i32(&self, rhs: i32) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_div(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_div_i64(&self, rhs: i64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_div(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_div_i128(&self, rhs: i128) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_div(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_rem_f64(&self, rhs: f64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_rem(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_rem_i32(&self, rhs: i32) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_rem(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_rem_i64(&self, rhs: i64) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_rem(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_rem_i128(&self, rhs: i128) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_rem(self, rhs)?))
+    }
+
     #[cfg(feature = "exchange")]
     fn convert(
         &self,
