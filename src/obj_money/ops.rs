@@ -6,7 +6,7 @@ impl ::std::ops::Neg for DynMoney {
     fn neg(self) -> Self::Output {
         Self {
             amount: -self.amount,
-            currency: self.currency,
+            ..self
         }
     }
 }

@@ -1347,12 +1347,12 @@ pub trait MoneyParser<C: Currency>: BaseMoney<C> {
     /// let m = Money::<USD>::from_str_code_with("USD 1234.56", ",", ".").unwrap();
     /// ```
     fn from_str_code_with(
-        amount_str: &str,
+        money_str: &str,
         thousand_separator: &str,
         decimal_separator: &str,
     ) -> Result<Self, MoneyError> {
         let amount = Decimal::from_str(&crate::parse::parse_str_code::<C>(
-            amount_str,
+            money_str,
             thousand_separator,
             decimal_separator,
         )?)
@@ -1396,12 +1396,12 @@ pub trait MoneyParser<C: Currency>: BaseMoney<C> {
     /// let m = Money::<USD>::from_str_symbol_with("-$1,234.56", ",", ".").unwrap();
     /// ```
     fn from_str_symbol_with(
-        amount_str: &str,
+        money_str: &str,
         thousand_separator: &str,
         decimal_separator: &str,
     ) -> Result<Self, MoneyError> {
         let amount = Decimal::from_str(&crate::parse::parse_str_symbol::<C>(
-            amount_str,
+            money_str,
             thousand_separator,
             decimal_separator,
         )?)
@@ -1437,9 +1437,9 @@ pub trait MoneyParser<C: Currency>: BaseMoney<C> {
     /// // Negative amount
     /// let m = Money::<USD>::from_str_code("USD -1,234.56").unwrap();
     /// ```
-    fn from_str_code(amount_str: &str) -> Result<Self, MoneyError> {
+    fn from_str_code(money_str: &str) -> Result<Self, MoneyError> {
         let amount = Decimal::from_str(&crate::parse::parse_str_code::<C>(
-            amount_str,
+            money_str,
             C::THOUSAND_SEPARATOR,
             C::DECIMAL_SEPARATOR,
         )?)
@@ -1475,9 +1475,9 @@ pub trait MoneyParser<C: Currency>: BaseMoney<C> {
     /// // Negative amount
     /// let m = Money::<USD>::from_str_symbol("-$1,234.56").unwrap();
     /// ```
-    fn from_str_symbol(amount_str: &str) -> Result<Self, MoneyError> {
+    fn from_str_symbol(money_str: &str) -> Result<Self, MoneyError> {
         let amount = Decimal::from_str(&crate::parse::parse_str_symbol::<C>(
-            amount_str,
+            money_str,
             C::THOUSAND_SEPARATOR,
             C::DECIMAL_SEPARATOR,
         )?)

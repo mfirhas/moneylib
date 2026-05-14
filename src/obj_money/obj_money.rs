@@ -239,6 +239,20 @@ pub trait ObjMoney: Send + Sync {
         )
     }
 
+    /// Formats with pattern `format_str`
+    fn format(&self, format_str: &str) -> String {
+        format_obj_money(
+            self.amount(),
+            self.code(),
+            self.symbol(),
+            self.minor_unit_symbol(),
+            self.minor_unit(),
+            self.thousand_separator(),
+            self.decimal_separator(),
+            format_str,
+        )
+    }
+
     /// Returns the default display format for money (same as `format_code`).
     ///
     /// # Examples

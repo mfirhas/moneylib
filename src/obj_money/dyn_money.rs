@@ -1,8 +1,7 @@
-use crate::{
-    BaseMoney, BaseOps, Currency, Decimal, MoneyError, MoneyFormatter, MoneyParser, base::Amount,
-};
+use crate::{Currency, Decimal, MoneyError};
 use currencylib::data::Data;
-use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
+
+use super::helpers;
 
 #[derive(Debug, Clone, Copy, Eq)]
 pub struct DynCurrency(pub(super) Data);
@@ -20,21 +19,55 @@ pub struct DynMoney {
 }
 
 impl DynMoney {
+    #[inline(always)]
     pub fn new<C: Currency>(amount: Decimal) -> Self {
         Self {
-            amount: super::context::amount::<C>(amount),
-            currency: DynCurrency(super::context::into_currency_data::<C>()),
+            amount: helpers::amount::<C>(amount),
+            currency: helpers::dyn_curr_from::<C>(),
         }
     }
 
-    pub fn set_curr<C: Currency>(&mut self) {
-        self.currency = DynCurrency(super::context::into_currency_data::<C>());
+    #[inline(always)]
+    pub fn new_with_curr(currency: DynCurrency, amount: Decimal) -> Self {
+        Self {
+            amount: helpers::amount_with_curr(amount, currency),
+            currency,
+        }
     }
 
-    pub fn set_curr_from_code(&mut self, code: &str) -> Result<(), MoneyError> {
-        if let Some(curr) = super::context::get_currency(code) {
-            self.currency = curr;
-            return Ok(());
+    #[inline(always)]
+    pub fn new_with_code(code: &str, amount: Decimal) -> Result<Self, MoneyError> {
+        if let Some(currency) = super::Context::get_currency(code) {
+            return Ok(Self {
+                amount: helpers::amount_with_curr(amount, currency),
+                currency,
+            });
+        }
+
+        Err(MoneyError::Other(
+            format!("currency {} not found", code).into(),
+        ))
+    }
+
+    #[inline(always)]
+    pub fn set_amount(&self, amount: Decimal) -> Self {
+        Self {
+            amount: helpers::amount_with_curr(amount, self.currency),
+            ..*self
+        }
+    }
+
+    #[inline(always)]
+    pub fn set_curr<C: Currency>(&self) -> Self {
+        Self {
+            currency: helpers::dyn_curr_from::<C>(),
+            ..*self
+        }
+    }
+
+    pub fn set_curr_from_code(&self, code: &str) -> Result<Self, MoneyError> {
+        if let Some(currency) = super::Context::get_currency(code) {
+            return Ok(Self { currency, ..*self });
         }
 
         Err(MoneyError::Other(
@@ -57,73 +90,3 @@ impl PartialOrd for DynMoney {
         None
     }
 }
-
-impl<C: Currency> Amount<C> for DynMoney {
-    fn get_decimal(&self) -> Option<Decimal> {
-        if C::CODE == self.currency.0.code {
-            return Some(self.amount);
-        }
-        None
-    }
-}
-
-impl<C: Currency> BaseMoney<C> for DynMoney {
-    #[inline]
-    fn from_decimal(amount: Decimal) -> Self {
-        Self::new::<C>(amount)
-    }
-
-    #[inline]
-    fn amount(&self) -> Decimal {
-        self.amount
-    }
-
-    #[inline]
-    fn minor_amount(&self) -> Option<i128> {
-        self.amount
-            .round_dp(self.currency.0.minor_unit.into())
-            .checked_mul(crate::dec!(10).checked_powu(self.currency.0.minor_unit.into())?)?
-            .to_i128()
-    }
-
-    #[inline]
-    fn name(&self) -> &str {
-        self.currency.0.name
-    }
-
-    #[inline]
-    fn symbol(&self) -> &str {
-        self.currency.0.symbol
-    }
-
-    #[inline]
-    fn code(&self) -> &str {
-        self.currency.0.code
-    }
-
-    #[inline]
-    fn numeric_code(&self) -> i32 {
-        self.currency.0.numeric.into()
-    }
-
-    #[inline]
-    fn minor_unit(&self) -> u16 {
-        self.currency.0.minor_unit
-    }
-
-    #[inline]
-    fn thousand_separator(&self) -> &str {
-        self.currency.0.thousand_separator
-    }
-
-    #[inline]
-    fn decimal_separator(&self) -> &str {
-        self.currency.0.decimal_separator
-    }
-}
-
-impl<C: Currency> BaseOps<C> for DynMoney {}
-
-impl<C: Currency> MoneyParser<C> for DynMoney {}
-
-impl<C: Currency> MoneyFormatter<C> for DynMoney {}
