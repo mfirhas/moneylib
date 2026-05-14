@@ -1801,8 +1801,7 @@ fn test_dyn_money_obj_as_any() {
     let m = DynMoney::new::<USD>(dec!(50.00));
     let boxed: Box<dyn ObjMoney> = Box::new(m);
     let any = boxed.as_any();
-    // as_any is not required to downcast; just verify it doesn't panic and returns a reference.
-    let _ = any;
+    assert!(any.downcast_ref::<DynMoney>().is_some());
 }
 
 // ---- sign helpers ----
@@ -1862,13 +1861,10 @@ fn test_dyn_money_obj_round() {
 #[test]
 fn test_dyn_money_obj_round_jpy() {
     // JPY has 0 minor units: round to whole number.
-    // new_with_code rounds on construction too, so use new_with_curr bypass.
-    use crate::obj_money::{Context, DynCurrency};
+    // Use new_with_curr which applies round_dp(0): 1234.7 → 1235 (above 0.5, rounds up).
+    use crate::obj_money::Context;
     let currency = Context::get_currency("JPY").unwrap();
-    // Construct without rounding by direct struct: use new_with_curr with is_raw=false
-    // which will round 1234.7 → 1235 (above 0.5, always rounds up).
     let m = DynMoney::new_with_curr(currency, dec!(1234.7));
-    // new_with_curr applies round_dp(0) which rounds 1234.7 → 1235.
     let obj: Box<dyn ObjMoney> = Box::new(m);
     let rounded = obj.round();
     assert_eq!(rounded.amount(), dec!(1235));
@@ -1917,12 +1913,11 @@ fn test_dyn_money_obj_truncate_negative() {
 
 #[test]
 fn test_dyn_money_obj_truncate_with() {
-    // Use new_with_curr to bypass rounding so we have more decimals to truncate.
-    use crate::obj_money::{Context, DynCurrency};
+    // Use new_with_curr which rounds to the currency's minor unit (2 dp for USD).
+    // 40.234845 rounded to 2 dp = 40.23; truncate_with(1) gives 40.2.
+    use crate::obj_money::Context;
     let currency = Context::get_currency("USD").unwrap();
     let m = DynMoney::new_with_curr(currency, dec!(40.234845));
-    // new_with_curr applies is_raw rounding (rounds to 2dp by default), so amount is 40.23.
-    // Test truncate_with 1 dp.
     let obj: Box<dyn ObjMoney> = Box::new(m);
     let truncated = obj.truncate_with(1);
     assert_eq!(truncated.amount(), dec!(40.2));
