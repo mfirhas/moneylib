@@ -240,3 +240,52 @@ impl super::ObjMoney for DynMoney {
         Ok(Box::new(Self::new_with_code(to_code, new_amount)?))
     }
 }
+
+impl TryFrom<&dyn super::ObjMoney> for DynMoney {
+    type Error = MoneyError;
+
+    fn try_from(value: &dyn super::ObjMoney) -> Result<Self, Self::Error> {
+        Self::new_with_code(value.code(), value.amount())
+    }
+}
+
+impl TryFrom<Box<dyn super::ObjMoney>> for DynMoney {
+    type Error = MoneyError;
+
+    fn try_from(value: Box<dyn super::ObjMoney>) -> Result<Self, Self::Error> {
+        DynMoney::try_from(value.as_ref())
+    }
+}
+
+impl<C: Currency> TryFrom<DynMoney> for crate::Money<C> {
+    type Error = MoneyError;
+
+    fn try_from(value: DynMoney) -> Result<Self, Self::Error> {
+        if value.currency.0.code != C::CODE {
+            return Err(MoneyError::CurrencyMismatchError(
+                value.currency.0.code.into(),
+                C::CODE.into(),
+            ));
+        }
+
+        use crate::BaseMoney;
+        Ok(Self::from_decimal(value.amount))
+    }
+}
+
+#[cfg(feature = "raw_money")]
+impl<C: Currency> TryFrom<DynMoney> for crate::RawMoney<C> {
+    type Error = MoneyError;
+
+    fn try_from(value: DynMoney) -> Result<Self, Self::Error> {
+        if value.currency.0.code != C::CODE {
+            return Err(MoneyError::CurrencyMismatchError(
+                value.currency.0.code.into(),
+                C::CODE.into(),
+            ));
+        }
+
+        use crate::BaseMoney;
+        Ok(Self::from_decimal(value.amount))
+    }
+}

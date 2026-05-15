@@ -180,3 +180,17 @@ impl<C: Currency + Copy + 'static + Send + Sync> TryFrom<&dyn super::ObjMoney> f
         Ok(Self::from_decimal(value.amount()))
     }
 }
+
+impl<C: Currency + Copy + Send + Sync + 'static> TryFrom<Box<dyn super::ObjMoney>> for RawMoney<C> {
+    type Error = MoneyError;
+
+    fn try_from(value: Box<dyn super::ObjMoney>) -> Result<Self, Self::Error> {
+        RawMoney::<C>::try_from(value.as_ref())
+    }
+}
+
+impl<C: Currency> From<RawMoney<C>> for super::DynMoney {
+    fn from(value: RawMoney<C>) -> Self {
+        Self::new::<C>(value.amount())
+    }
+}
