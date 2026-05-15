@@ -3,7 +3,7 @@ use crate::{Currency, MoneyError};
 /// Validate and build string amount.
 /// Thousand separators removed, and decimal separator use dot.
 /// E.g 42344.1233
-pub(super) fn parse_into_string_amount<'a>(
+fn parse_into_string_amount<'a>(
     integer_part: &'a str,
     decimal_part: Option<&'a str>,
     thousand_separator: &'a str,
