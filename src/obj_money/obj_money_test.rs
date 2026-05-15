@@ -2142,4 +2142,260 @@ fn test_dyn_money_partial_ord_different_currency() {
     assert!(m1.partial_cmp(&m2).is_none());
 }
 
+// ==================== Money: truncate_with ====================
+
+#[test]
+fn test_obj_money_truncate_with() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(99.99)).unwrap());
+    let truncated = m.truncate_with(1);
+    assert_eq!(truncated.amount(), dec!(99.9));
+    assert_eq!(truncated.code(), "USD");
+}
+
+#[test]
+fn test_obj_money_truncate_with_zero_scale() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(99.99)).unwrap());
+    let truncated = m.truncate_with(0);
+    assert_eq!(truncated.amount(), dec!(99));
+    assert_eq!(truncated.code(), "USD");
+}
+
+// ==================== Box<dyn ObjMoney>: additional blanket forwarding ====================
+
+#[test]
+fn test_boxed_obj_money_truncate_with_forwards() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(99.99)).unwrap());
+    let result = m.truncate_with(1);
+    assert_eq!(result.amount(), dec!(99.9));
+    assert_eq!(result.code(), "USD");
+}
+
+// ==================== Money: checked arithmetic overflow / edge cases ====================
+
+#[test]
+fn test_obj_money_checked_add_overflow() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::from_decimal(Decimal::MAX));
+    assert!(m.checked_add(dec!(1)).is_none());
+}
+
+#[test]
+fn test_obj_money_checked_mul_overflow() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::from_decimal(Decimal::MAX));
+    assert!(m.checked_mul(dec!(2)).is_none());
+}
+
+#[test]
+fn test_obj_money_checked_rem_by_zero() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
+    assert!(m.checked_rem(dec!(0)).is_none());
+}
+
+// ==================== DynMoney: scale, fraction, mantissa ====================
+
+#[test]
+fn test_dyn_money_obj_scale() {
+    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.45)));
+    assert_eq!(usd.scale(), 2);
+
+    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::new::<JPY>(dec!(500)));
+    assert_eq!(jpy.scale(), 0);
+}
+
+#[test]
+fn test_dyn_money_obj_fraction() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.45)));
+    assert_eq!(m.fraction(), dec!(0.45));
+
+    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::new::<JPY>(dec!(500)));
+    assert_eq!(jpy.fraction(), dec!(0));
+}
+
+#[test]
+fn test_dyn_money_obj_mantissa() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    assert_eq!(m.mantissa(), 123456_i128);
+}
+
+// ==================== DynMoney: format methods ====================
+
+#[test]
+fn test_dyn_money_obj_format_code() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    assert_eq!(m.format_code(), "USD 1,234.56");
+}
+
+#[test]
+fn test_dyn_money_obj_format_code_minor() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    assert_eq!(m.format_code_minor(), "USD 123,456 ¢");
+}
+
+#[test]
+fn test_dyn_money_obj_format_symbol_minor() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    assert_eq!(m.format_symbol_minor(), "$123,456 ¢");
+}
+
+#[test]
+fn test_dyn_money_obj_format_custom() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.50)));
+    // c = code, space, n = negative sign (positive → empty), a = amount
+    assert_eq!(m.format("c na"), "USD 100.50");
+}
+
+#[test]
+fn test_dyn_money_obj_format_negative_custom() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(-50.00)));
+    // n = '-' for negatives, s = symbol, a = amount
+    assert_eq!(m.format("nsa"), "-$50.00");
+}
+
+// ==================== DynMoney: Neg operator ====================
+
+#[test]
+fn test_dyn_money_neg_positive() {
+    let m = DynMoney::new::<USD>(dec!(100.50));
+    let neg = -m;
+    assert_eq!(neg.amount, dec!(-100.50));
+    assert_eq!(neg.currency.0.code, "USD");
+}
+
+#[test]
+fn test_dyn_money_neg_negative() {
+    let m = DynMoney::new::<EUR>(dec!(-50.00));
+    let neg = -m;
+    assert_eq!(neg.amount, dec!(50.00));
+    assert_eq!(neg.currency.0.code, "EUR");
+}
+
+#[test]
+fn test_dyn_money_neg_zero() {
+    let m = DynMoney::new::<USD>(dec!(0));
+    let neg = -m;
+    assert_eq!(neg.amount, dec!(0));
+    assert_eq!(neg.currency.0.code, "USD");
+}
+
+// ==================== DynMoney: checked arithmetic overflow / edge cases ====================
+
+#[test]
+fn test_dyn_money_obj_checked_add_overflow() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(Decimal::MAX));
+    assert!(m.checked_add(dec!(1)).is_none());
+}
+
+#[test]
+fn test_dyn_money_obj_checked_mul_overflow() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(Decimal::MAX));
+    assert!(m.checked_mul(dec!(2)).is_none());
+}
+
+#[test]
+fn test_dyn_money_obj_checked_rem_by_zero() {
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.00)));
+    assert!(m.checked_rem(dec!(0)).is_none());
+}
+
+// ==================== DynMoney: sort in vec ====================
+
+#[test]
+fn test_dyn_money_vec_sort_by_amount() {
+    let mut portfolio: Vec<Box<dyn ObjMoney>> = vec![
+        Box::new(DynMoney::new::<GBP>(dec!(300.00))),
+        Box::new(DynMoney::new::<USD>(dec!(100.00))),
+        Box::new(DynMoney::new::<EUR>(dec!(200.00))),
+    ];
+    portfolio.sort_by(|a, b| a.amount().cmp(&b.amount()));
+    let codes: Vec<&str> = portfolio.iter().map(|m| m.code()).collect();
+    assert_eq!(codes, vec!["USD", "EUR", "GBP"]);
+}
+
+// ==================== DynMoney: convert overflow (exchange feature) ====================
+
+#[cfg(feature = "exchange")]
+#[test]
+fn test_dyn_money_obj_convert_overflow() {
+    use crate::ExchangeRates;
+    let m = DynMoney::new::<USD>(Decimal::MAX);
+    let mut rates = ExchangeRates::<USD>::new();
+    // EUR=2 means get_pair("USD","EUR")=2; Decimal::MAX * 2 overflows.
+    rates.set("EUR", dec!(2)).unwrap();
+    let err = m.convert("EUR", &rates);
+    assert!(matches!(err, Err(MoneyError::OverflowError)));
+}
+
+// ==================== Context: runtime functions ====================
+
+#[test]
+fn test_context_is_currency_exist_known() {
+    use crate::obj_money::Context;
+    assert!(Context::is_currency_exist("USD"));
+    assert!(Context::is_currency_exist("EUR"));
+    assert!(Context::is_currency_exist("JPY"));
+}
+
+#[test]
+fn test_context_is_currency_exist_unknown() {
+    use crate::obj_money::Context;
+    assert!(!Context::is_currency_exist("INVALID"));
+}
+
+#[test]
+fn test_context_get_currency_known() {
+    use crate::obj_money::Context;
+    let usd = Context::get_currency("USD");
+    assert!(usd.is_some());
+    assert_eq!(usd.unwrap().0.code, "USD");
+}
+
+#[test]
+fn test_context_get_currency_unknown() {
+    use crate::obj_money::Context;
+    assert!(Context::get_currency("INVALID").is_none());
+}
+
+#[test]
+fn test_context_get_currency_by_symbol_known() {
+    use crate::obj_money::Context;
+    let result = Context::get_currency_by_symbol("$");
+    assert!(result.is_some());
+    // Multiple currencies may use "$"; just verify a non-empty code is returned.
+    assert!(!result.unwrap().0.code.is_empty());
+}
+
+#[test]
+fn test_context_get_currency_by_symbol_unknown() {
+    use crate::obj_money::Context;
+    assert!(Context::get_currency_by_symbol("###").is_none());
+}
+
+#[test]
+fn test_context_register_currency_duplicate_error() {
+    use crate::obj_money::Context;
+    // USD is already registered, so this must return an error without modifying state.
+    let result = Context::register_currency::<USD>();
+    assert!(matches!(result, Err(MoneyError::Other(_))));
+}
+
+#[test]
+fn test_context_set_currency_code_mismatch_error() {
+    use crate::obj_money::Context;
+    // Code "EUR" does not match C::CODE ("USD") → error.
+    let result = Context::set_currency::<USD>("EUR");
+    assert!(matches!(
+        result,
+        Err(MoneyError::CurrencyMismatchError(_, _))
+    ));
+}
+
+#[test]
+fn test_context_set_currency_success() {
+    use crate::obj_money::Context;
+    // Code matches C::CODE → updates (same value) successfully.
+    let result = Context::set_currency::<USD>("USD");
+    assert!(result.is_ok());
+    // Currency is still accessible.
+    assert!(Context::is_currency_exist("USD"));
+}
+
 // end of obj_money_test.rs
