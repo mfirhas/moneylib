@@ -109,26 +109,36 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C>
         to_code: &str,
         rate: &dyn crate::exchange::ObjRate,
     ) -> Result<Box<dyn super::ObjMoney>, crate::MoneyError> {
-        if BaseMoney::code(self) == to_code {
-            return Ok(Box::new(*self));
+        if C::CODE == to_code {
+            let current_is_raw = super::Context::is_raw();
+            super::Context::set_raw(true);
+            let ret = Box::new(super::DynMoney::new::<C>(BaseMoney::amount(self)));
+            super::Context::set_raw(current_is_raw);
+
+            return Ok(ret);
         }
 
-        Ok(Box::new(Self::from_decimal(
-            BaseMoney::amount(self)
-                .checked_mul(
-                    rate.get_rate(BaseMoney::code(self), to_code).ok_or(
-                        crate::MoneyError::ExchangeError(
-                            format!(
-                                "overflowed or failed getting rate from: {} to: {}",
-                                BaseMoney::code(self),
-                                to_code
-                            )
-                            .into(),
-                        ),
-                    )?,
+        let rate_amount = rate.get_rate(C::CODE, to_code).ok_or_else(|| {
+            MoneyError::ExchangeError(
+                format!(
+                    "overflowed or failed getting rate from: {} to: {}",
+                    BaseMoney::code(self),
+                    to_code
                 )
-                .ok_or(crate::MoneyError::OverflowError)?,
-        )))
+                .into(),
+            )
+        })?;
+
+        let result = BaseMoney::amount(self)
+            .checked_mul(rate_amount)
+            .ok_or(MoneyError::OverflowError)?;
+
+        let current_is_raw = super::Context::is_raw();
+        super::Context::set_raw(true);
+        let ret = super::DynMoney::new_with_code(to_code, result)?;
+        super::Context::set_raw(current_is_raw);
+
+        Ok(Box::new(ret))
     }
 }
 

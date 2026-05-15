@@ -167,10 +167,12 @@ impl super::ObjMoney for DynMoney {
         decimal_points: u32,
         strategy: RoundingStrategy,
     ) -> Box<dyn super::ObjMoney> {
-        Box::new(self.set_amount(
-            self.amount
-                .round_dp_with_strategy(decimal_points, strategy.into()),
-        ))
+        Box::new(
+            self.set_amount(
+                self.amount
+                    .round_dp_with_strategy(decimal_points, strategy.into()),
+            ),
+        )
     }
 
     #[inline]
@@ -235,9 +237,6 @@ impl super::ObjMoney for DynMoney {
             .checked_mul(rate_val)
             .ok_or(MoneyError::OverflowError)?;
 
-        let to_currency = super::Context::get_currency(to_code)
-            .ok_or_else(|| MoneyError::Other(format!("currency {} not found", to_code).into()))?;
-
-        Ok(Box::new(Self::new_with_curr(to_currency, new_amount)))
+        Ok(Box::new(Self::new_with_code(to_code, new_amount)?))
     }
 }
