@@ -50,6 +50,15 @@ impl DynMoney {
         ))
     }
 
+    /// Creates a `DynMoney` directly from `currency` and `amount` without applying any rounding.
+    ///
+    /// This is intended for internal use where the caller has already applied the desired
+    /// rounding (or explicitly wants no rounding).
+    #[inline(always)]
+    pub(super) fn from_parts(currency: DynCurrency, amount: Decimal) -> Self {
+        Self { amount, currency }
+    }
+
     #[inline(always)]
     pub fn set_amount(&self, amount: Decimal) -> Self {
         Self {
@@ -167,10 +176,12 @@ impl super::ObjMoney for DynMoney {
         decimal_points: u32,
         strategy: RoundingStrategy,
     ) -> Box<dyn super::ObjMoney> {
-        Box::new(self.set_amount(
-            self.amount
-                .round_dp_with_strategy(decimal_points, strategy.into()),
-        ))
+        Box::new(
+            self.set_amount(
+                self.amount
+                    .round_dp_with_strategy(decimal_points, strategy.into()),
+            ),
+        )
     }
 
     #[inline]

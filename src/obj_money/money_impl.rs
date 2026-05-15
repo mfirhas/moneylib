@@ -109,26 +109,32 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
         to_code: &str,
         rate: &dyn crate::exchange::ObjRate,
     ) -> Result<Box<dyn super::ObjMoney>, crate::MoneyError> {
-        if BaseMoney::code(self) == to_code {
+        if C::CODE == to_code {
             return Ok(Box::new(*self));
         }
 
-        Ok(Box::new(Self::from_decimal(
-            BaseMoney::amount(self)
-                .checked_mul(
-                    rate.get_rate(BaseMoney::code(self), to_code).ok_or(
-                        crate::MoneyError::ExchangeError(
-                            format!(
-                                "overflowed or failed getting rate from: {} to: {}",
-                                BaseMoney::code(self),
-                                to_code
-                            )
-                            .into(),
-                        ),
-                    )?,
+        let rate_val = rate.get_rate(C::CODE, to_code).ok_or_else(|| {
+            crate::MoneyError::ExchangeError(
+                format!(
+                    "overflowed or failed getting rate from: {} to: {}",
+                    C::CODE,
+                    to_code
                 )
-                .ok_or(crate::MoneyError::OverflowError)?,
-        )))
+                .into(),
+            )
+        })?;
+
+        let new_amount = BaseMoney::amount(self)
+            .checked_mul(rate_val)
+            .ok_or(crate::MoneyError::OverflowError)?;
+
+        let to_currency = super::Context::get_currency(to_code).ok_or_else(|| {
+            crate::MoneyError::Other(format!("currency {} not found", to_code).into())
+        })?;
+
+        // Money always rounds to the target currency's minor unit.
+        let rounded = new_amount.round_dp(to_currency.0.minor_unit.into());
+        Ok(Box::new(super::DynMoney::from_parts(to_currency, rounded)))
     }
 }
 

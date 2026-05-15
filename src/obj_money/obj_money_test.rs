@@ -1239,6 +1239,7 @@ fn test_obj_money_convert_usd_to_eur() {
     rates.set("EUR", dec!(0.8)).unwrap();
     let result = money.convert("EUR", &rates).unwrap();
     assert_eq!(result.amount(), dec!(80.00));
+    assert_eq!(result.code(), "EUR");
 }
 
 /// Converting Money<EUR> to USD via ExchangeRates<USD>:
@@ -1251,6 +1252,7 @@ fn test_obj_money_convert_cross_currency() {
     rates.set("EUR", dec!(0.8)).unwrap();
     let result = money.convert("USD", &rates).unwrap();
     assert_eq!(result.amount(), dec!(100.00));
+    assert_eq!(result.code(), "USD");
 }
 
 /// When the target currency is not present in the rates map, convert returns ExchangeError.
@@ -1286,6 +1288,7 @@ fn test_obj_money_convert_zero_amount() {
     rates.set("EUR", dec!(0.8)).unwrap();
     let result = money.convert("EUR", &rates).unwrap();
     assert_eq!(result.amount(), dec!(0));
+    assert_eq!(result.code(), "EUR");
 }
 
 /// Negative amount converts correctly (preserves sign).
@@ -1297,6 +1300,7 @@ fn test_obj_money_convert_negative_amount() {
     rates.set("EUR", dec!(0.8)).unwrap();
     let result = money.convert("EUR", &rates).unwrap();
     assert_eq!(result.amount(), dec!(-40.00));
+    assert_eq!(result.code(), "EUR");
 }
 
 /// Convert through Box<dyn ObjMoney> uses the blanket impl that delegates to the inner type.
@@ -1308,6 +1312,7 @@ fn test_obj_money_convert_via_box_dyn() {
     rates.set("EUR", dec!(0.8)).unwrap();
     let result = boxed.convert("EUR", &rates).unwrap();
     assert_eq!(result.amount(), dec!(160.00));
+    assert_eq!(result.code(), "EUR");
 }
 
 /// Same-currency convert through Box<dyn ObjMoney> is also a no-op.
@@ -1342,6 +1347,7 @@ fn test_obj_raw_money_convert_to_different_currency() {
     rates.set("EUR", dec!(0.8)).unwrap();
     let result = money.convert("EUR", &rates).unwrap();
     assert_eq!(result.amount(), dec!(80.0987648));
+    assert_eq!(result.code(), "EUR");
 }
 
 /// RawMoney missing rate also returns ExchangeError.
@@ -1353,6 +1359,31 @@ fn test_obj_raw_money_convert_missing_rate() {
     let rates = ExchangeRates::<USD>::new(); // JPY not present in rates
     let err = money.convert("JPY", &rates);
     assert!(matches!(err, Err(MoneyError::ExchangeError(_))));
+}
+
+/// When the target currency code is unknown to Context (not a standard ISO currency),
+/// convert returns an error even if a matching rate is present.
+#[cfg(feature = "exchange")]
+#[test]
+fn test_obj_money_convert_unknown_target_currency() {
+    let money = Money::<USD>::new(dec!(100.00)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    // "XYZ" is not registered in Context but we insert a rate for it so the
+    // rate lookup succeeds; the error must come from the missing Context entry.
+    rates.set("XYZ", dec!(1.5)).unwrap();
+    let err = money.convert("XYZ", &rates);
+    assert!(err.is_err());
+}
+
+/// Same as above but for RawMoney.
+#[cfg(all(feature = "exchange", feature = "raw_money"))]
+#[test]
+fn test_obj_raw_money_convert_unknown_target_currency() {
+    let money = RawMoney::<USD>::new(dec!(100.00)).unwrap();
+    let mut rates = ExchangeRates::<USD>::new();
+    rates.set("XYZ", dec!(1.5)).unwrap();
+    let err = money.convert("XYZ", &rates);
+    assert!(err.is_err());
 }
 
 /// Convert each item in a heterogeneous dyn portfolio individually, then sum.
@@ -1376,7 +1407,9 @@ fn test_obj_mixed_portfolio_convert_each() {
         .collect();
 
     assert_eq!(converted[0].amount(), dec!(80.00)); // USD 100 → EUR 80
+    assert_eq!(converted[0].code(), "EUR");
     assert_eq!(converted[1].amount(), dec!(80.00)); // EUR 80 same currency
+    assert_eq!(converted[1].code(), "EUR");
 
     let total = converted
         .iter()
@@ -1408,8 +1441,11 @@ fn test_obj_money_convert_multiple_currencies_to_usd() {
     let gbp_converted = portfolio[2].convert("USD", &rates).unwrap();
 
     assert_eq!(jpy_converted.amount(), dec!(10));
+    assert_eq!(jpy_converted.code(), "USD");
     assert_eq!(eur_converted.amount(), dec!(100.00));
+    assert_eq!(eur_converted.code(), "USD");
     assert_eq!(gbp_converted.amount(), dec!(100.00));
+    assert_eq!(gbp_converted.code(), "USD");
 }
 
 /// `RawMoney` preserves full precision; the sum must not be rounded.
