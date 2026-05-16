@@ -194,3 +194,62 @@ impl<C: Currency> From<RawMoney<C>> for super::DynMoney {
         Self::from_decimal::<C>(value.amount())
     }
 }
+
+// equality
+
+use crate::obj_money::{DynMoney, ObjMoney};
+impl<C: Currency> PartialEq<&dyn ObjMoney> for RawMoney<C> {
+    fn eq(&self, other: &&dyn ObjMoney) -> bool {
+        if self.code() != other.code() {
+            return false;
+        }
+        self.amount() == other.amount()
+    }
+}
+
+impl<C: Currency> PartialEq<Box<dyn ObjMoney>> for RawMoney<C> {
+    fn eq(&self, other: &Box<dyn ObjMoney>) -> bool {
+        if self.code() != other.code() {
+            return false;
+        }
+        self.amount() == other.amount()
+    }
+}
+
+impl<C: Currency> PartialEq<DynMoney> for RawMoney<C> {
+    fn eq(&self, other: &DynMoney) -> bool {
+        if self.code() != C::CODE {
+            return false;
+        }
+        self.amount() == other.amount()
+    }
+}
+
+// ordering
+
+impl<C: Currency> PartialOrd<&dyn ObjMoney> for RawMoney<C> {
+    fn partial_cmp(&self, other: &&dyn ObjMoney) -> Option<std::cmp::Ordering> {
+        if self.code() != other.code() {
+            return None;
+        }
+        self.amount().partial_cmp(&other.amount())
+    }
+}
+
+impl<C: Currency> PartialOrd<Box<dyn ObjMoney>> for RawMoney<C> {
+    fn partial_cmp(&self, other: &Box<dyn ObjMoney>) -> Option<std::cmp::Ordering> {
+        if self.code() != other.code() {
+            return None;
+        }
+        self.amount().partial_cmp(&other.amount())
+    }
+}
+
+impl<C: Currency> PartialOrd<DynMoney> for RawMoney<C> {
+    fn partial_cmp(&self, other: &DynMoney) -> Option<std::cmp::Ordering> {
+        if self.code() != other.code() {
+            return None;
+        }
+        self.amount().partial_cmp(&other.amount())
+    }
+}

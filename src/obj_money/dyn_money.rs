@@ -1,4 +1,4 @@
-use crate::{Currency, Decimal, MoneyError, RoundingStrategy};
+use crate::{Currency, Decimal, MoneyError, RoundingStrategy, prelude::ObjMoney};
 use currencylib::data::Data;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 
@@ -287,5 +287,75 @@ impl<C: Currency> TryFrom<DynMoney> for crate::RawMoney<C> {
 
         use crate::BaseMoney;
         Ok(Self::from_decimal(value.amount))
+    }
+}
+
+// Equality
+
+impl PartialEq<&dyn ObjMoney> for DynMoney {
+    fn eq(&self, other: &&dyn ObjMoney) -> bool {
+        self.currency.0.code == other.code() && self.amount == other.amount()
+    }
+}
+
+impl PartialEq<Box<dyn ObjMoney>> for DynMoney {
+    fn eq(&self, other: &Box<dyn ObjMoney>) -> bool {
+        self.currency.0.code == other.code() && self.amount == other.amount()
+    }
+}
+
+use crate::{BaseMoney, Money};
+impl<C: Currency> PartialEq<Money<C>> for DynMoney {
+    fn eq(&self, other: &Money<C>) -> bool {
+        self.currency.0.code == C::CODE && self.amount == other.amount()
+    }
+}
+
+#[cfg(feature = "raw_money")]
+use crate::RawMoney;
+
+#[cfg(feature = "raw_money")]
+impl<C: Currency> PartialEq<RawMoney<C>> for DynMoney {
+    fn eq(&self, other: &RawMoney<C>) -> bool {
+        self.currency.0.code == C::CODE && self.amount == other.amount()
+    }
+}
+
+// Ordering
+
+impl PartialOrd<&dyn ObjMoney> for DynMoney {
+    fn partial_cmp(&self, other: &&dyn ObjMoney) -> Option<std::cmp::Ordering> {
+        if self.currency.0.code != other.code() {
+            return None;
+        }
+        self.amount.partial_cmp(&other.amount())
+    }
+}
+
+impl PartialOrd<Box<dyn ObjMoney>> for DynMoney {
+    fn partial_cmp(&self, other: &Box<dyn ObjMoney>) -> Option<std::cmp::Ordering> {
+        if self.currency.0.code != other.code() {
+            return None;
+        }
+        self.amount.partial_cmp(&other.amount())
+    }
+}
+
+impl<C: Currency> PartialOrd<Money<C>> for DynMoney {
+    fn partial_cmp(&self, other: &Money<C>) -> Option<std::cmp::Ordering> {
+        if self.currency.0.code != other.code() {
+            return None;
+        }
+        self.amount.partial_cmp(&other.amount())
+    }
+}
+
+#[cfg(feature = "raw_money")]
+impl<C: Currency> PartialOrd<RawMoney<C>> for DynMoney {
+    fn partial_cmp(&self, other: &RawMoney<C>) -> Option<std::cmp::Ordering> {
+        if self.currency.0.code != other.code() {
+            return None;
+        }
+        self.amount.partial_cmp(&other.amount())
     }
 }
