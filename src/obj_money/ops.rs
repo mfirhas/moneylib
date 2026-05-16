@@ -13,16 +13,21 @@ impl ::std::ops::Neg for DynMoney {
     }
 }
 
+#[inline]
+fn negate_obj(m: &dyn ObjMoney) -> Box<dyn ObjMoney> {
+    let currency = Context::get_currency(m.code())
+        .expect("currency from existing ObjMoney must be registered");
+    Box::new(DynMoney {
+        amount: -m.amount(),
+        currency,
+    })
+}
+
 impl ::std::ops::Neg for Box<dyn ObjMoney> {
     type Output = Box<dyn ObjMoney>;
 
     fn neg(self) -> Self::Output {
-        let currency = Context::get_currency(self.code())
-            .expect("currency from existing ObjMoney must be registered");
-        Box::new(DynMoney {
-            amount: -self.amount(),
-            currency,
-        })
+        negate_obj(self.as_ref())
     }
 }
 
@@ -30,11 +35,6 @@ impl ::std::ops::Neg for &dyn ObjMoney {
     type Output = Box<dyn ObjMoney>;
 
     fn neg(self) -> Self::Output {
-        let currency = Context::get_currency(self.code())
-            .expect("currency from existing ObjMoney must be registered");
-        Box::new(DynMoney {
-            amount: -self.amount(),
-            currency,
-        })
+        negate_obj(self)
     }
 }
