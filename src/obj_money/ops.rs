@@ -15,8 +15,7 @@ impl ::std::ops::Neg for DynMoney {
 
 #[inline]
 fn negate_obj(m: &dyn ObjMoney) -> Box<dyn ObjMoney> {
-    let currency = Context::get_currency(m.code())
-        .expect("currency from existing ObjMoney must be registered");
+    let currency = Context::get_currency(m.code()).unwrap_or_else(|| unreachable!());
     Box::new(DynMoney {
         amount: -m.amount(),
         currency,

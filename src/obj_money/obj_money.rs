@@ -463,6 +463,21 @@ impl ObjMoney for Box<dyn ObjMoney> {
     fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
         (**self).checked_rem(rhs)
     }
+
+    #[inline]
+    fn is_approx(&self, amount: Decimal, tolerance: Decimal) -> bool {
+        (**self).is_approx(amount, tolerance)
+    }
+
+    #[inline]
+    fn format_with_separator(
+        &self,
+        format_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> String {
+        (**self).format_with_separator(format_str, thousand_separator, decimal_separator)
+    }
 }
 
 // --- ObjIterOps
