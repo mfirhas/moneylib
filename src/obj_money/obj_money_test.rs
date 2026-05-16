@@ -2845,12 +2845,10 @@ fn test_money_partial_eq_dyn_money_diff_amount() {
 
 #[test]
 fn test_money_partial_eq_dyn_money_diff_currency() {
-    // Note: the PartialEq<DynMoney> for Money<C> impl checks self.code() == C::CODE
-    // (always true), so only amounts are compared — DynMoney's currency is not checked.
     let money = Money::<USD>::new(dec!(88.88)).unwrap();
     let dyn_m = DynMoney::from_decimal::<EUR>(dec!(88.88));
-    // Same amount, different DynMoney currency — impl compares amounts only.
-    assert!(money == dyn_m);
+    // Different currencies — must not compare as equal.
+    assert!(money != dyn_m);
 }
 
 // ==================== Money<C>: PartialOrd with dyn ObjMoney ====================
@@ -3042,12 +3040,10 @@ fn test_raw_money_partial_eq_dyn_money_diff_amount() {
 #[cfg(feature = "raw_money")]
 #[test]
 fn test_raw_money_partial_eq_dyn_money_diff_currency() {
-    // Note: the PartialEq<DynMoney> for RawMoney<C> impl checks self.code() == C::CODE
-    // (always true), so only amounts are compared — DynMoney's currency is not checked.
     let raw = RawMoney::<USD>::new(dec!(88.88)).unwrap();
     let dyn_m = DynMoney::from_decimal::<EUR>(dec!(88.88));
-    // Same amount, different DynMoney currency — impl compares amounts only.
-    assert!(raw == dyn_m);
+    // Different currencies — must not compare as equal.
+    assert!(raw != dyn_m);
 }
 
 // ==================== RawMoney<C>: PartialOrd with dyn ObjMoney ====================
