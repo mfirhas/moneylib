@@ -118,11 +118,6 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
         Some(Box::new(BaseOps::checked_rem(self, rhs)?))
     }
 
-    #[inline]
-    fn neg(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(Money::<C>::from_decimal(-BaseMoney::amount(self)))
-    }
-
     #[cfg(feature = "exchange")]
     fn convert(
         &self,

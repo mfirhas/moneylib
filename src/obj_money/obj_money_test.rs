@@ -3282,6 +3282,23 @@ fn test_obj_money_neg_double_negation() {
     assert_eq!(neg_neg.code(), "USD");
 }
 
+#[test]
+fn test_ref_dyn_money_neg() {
+    let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(42.00)).unwrap());
+    let neg = -m.as_ref();
+    assert_eq!(neg.amount(), dec!(-42.00));
+    assert_eq!(neg.code(), "USD");
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_ref_dyn_raw_money_neg() {
+    let m: Box<dyn ObjMoney> = Box::new(RawMoney::<GBP>::new(dec!(9.999)).unwrap());
+    let neg = -m.as_ref();
+    assert_eq!(neg.amount(), dec!(-9.999));
+    assert_eq!(neg.code(), "GBP");
+}
+
 // ==================== ObjMoney::is_approx() ====================
 
 #[test]

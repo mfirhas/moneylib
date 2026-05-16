@@ -231,11 +231,6 @@ impl super::ObjMoney for DynMoney {
         Some(Box::new(self.set_amount(self.amount.checked_rem(rhs)?)))
     }
 
-    #[inline]
-    fn neg(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(self.set_amount(-self.amount))
-    }
-
     #[cfg(feature = "exchange")]
     fn convert(
         &self,

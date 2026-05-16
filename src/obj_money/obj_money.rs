@@ -142,9 +142,6 @@ pub trait ObjMoney: Send + Sync {
     /// Returns `None` on division by zero or overflow.
     fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
 
-    /// Returns the negation of this money value (flips the sign of the amount).
-    fn neg(&self) -> Box<dyn ObjMoney>;
-
     /// Returns `true` if `self` and `amount` differ by at most `tolerance` (inclusive).
     ///
     /// Uses the absolute value of `(self.amount() - amount)` for the comparison, so
@@ -465,11 +462,6 @@ impl ObjMoney for Box<dyn ObjMoney> {
     #[inline]
     fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
         (**self).checked_rem(rhs)
-    }
-
-    #[inline]
-    fn neg(&self) -> Box<dyn ObjMoney> {
-        (**self).neg()
     }
 }
 
