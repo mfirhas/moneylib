@@ -35,6 +35,21 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
     }
 
     #[inline]
+    fn minor_unit_name(&self) -> &str {
+        C::MINOR_UNIT_NAME
+    }
+
+    #[inline]
+    fn origin(&self) -> &str {
+        C::ORIGIN
+    }
+
+    #[inline]
+    fn locale(&self) -> &str {
+        C::LOCALE
+    }
+
+    #[inline]
     fn minor_amount(&self) -> Option<i128> {
         BaseMoney::minor_amount(self)
     }
@@ -101,6 +116,11 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
     #[inline]
     fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
         Some(Box::new(BaseOps::checked_rem(self, rhs)?))
+    }
+
+    #[inline]
+    fn neg(&self) -> Box<dyn super::ObjMoney> {
+        Box::new(Money::<C>::from_decimal(-BaseMoney::amount(self)))
     }
 
     #[cfg(feature = "exchange")]

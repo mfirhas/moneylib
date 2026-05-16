@@ -140,6 +140,21 @@ impl super::ObjMoney for DynMoney {
     }
 
     #[inline]
+    fn minor_unit_name(&self) -> &str {
+        self.currency.0.minor_unit_name
+    }
+
+    #[inline]
+    fn origin(&self) -> &str {
+        self.currency.0.origin
+    }
+
+    #[inline]
+    fn locale(&self) -> &str {
+        self.currency.0.locale
+    }
+
+    #[inline]
     fn minor_amount(&self) -> Option<i128> {
         self.amount
             .round_dp(self.currency.0.minor_unit.into())
@@ -214,6 +229,11 @@ impl super::ObjMoney for DynMoney {
     #[inline]
     fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
         Some(Box::new(self.set_amount(self.amount.checked_rem(rhs)?)))
+    }
+
+    #[inline]
+    fn neg(&self) -> Box<dyn super::ObjMoney> {
+        Box::new(self.set_amount(-self.amount))
     }
 
     #[cfg(feature = "exchange")]
