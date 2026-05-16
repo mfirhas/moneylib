@@ -3230,12 +3230,12 @@ fn test_dyn_currency_code_method() {
     assert_eq!(eur_curr.code(), "EUR");
 }
 
-// ==================== ObjMoney::neg() ====================
+// ==================== ObjMoney: neg via operator ====================
 
 #[test]
 fn test_obj_money_neg_positive() {
     let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.00)).unwrap());
-    let neg = m.neg();
+    let neg = -m;
     assert_eq!(neg.amount(), dec!(-100.00));
     assert_eq!(neg.code(), "USD");
 }
@@ -3243,7 +3243,7 @@ fn test_obj_money_neg_positive() {
 #[test]
 fn test_obj_money_neg_negative() {
     let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(-50.00)).unwrap());
-    let neg = m.neg();
+    let neg = -m;
     assert_eq!(neg.amount(), dec!(50.00));
     assert_eq!(neg.code(), "USD");
 }
@@ -3251,7 +3251,7 @@ fn test_obj_money_neg_negative() {
 #[test]
 fn test_obj_money_neg_zero() {
     let m: Box<dyn ObjMoney> = Box::new(Money::<EUR>::new(dec!(0)).unwrap());
-    let neg = m.neg();
+    let neg = -m;
     assert_eq!(neg.amount(), dec!(0));
     assert_eq!(neg.code(), "EUR");
 }
@@ -3260,7 +3260,7 @@ fn test_obj_money_neg_zero() {
 #[test]
 fn test_obj_raw_money_neg() {
     let m: Box<dyn ObjMoney> = Box::new(RawMoney::<GBP>::new(dec!(123.456)).unwrap());
-    let neg = m.neg();
+    let neg = -m;
     assert_eq!(neg.amount(), dec!(-123.456));
     assert_eq!(neg.code(), "GBP");
 }
@@ -3269,7 +3269,7 @@ fn test_obj_raw_money_neg() {
 fn test_dyn_money_neg() {
     use crate::obj_money::DynMoney;
     let dyn_m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(77.77)));
-    let neg = dyn_m.neg();
+    let neg = -dyn_m;
     assert_eq!(neg.amount(), dec!(-77.77));
     assert_eq!(neg.code(), "USD");
 }
@@ -3277,7 +3277,7 @@ fn test_dyn_money_neg() {
 #[test]
 fn test_obj_money_neg_double_negation() {
     let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(99.99)).unwrap());
-    let neg_neg = m.neg().neg();
+    let neg_neg = -(-m);
     assert_eq!(neg_neg.amount(), dec!(99.99));
     assert_eq!(neg_neg.code(), "USD");
 }
