@@ -19,6 +19,7 @@ pub mod prelude {
     pub use crate::MoneyParser;
     pub use crate::PercentOps;
     pub use crate::RoundingStrategy;
+    pub use crate::base::{Amount, DecimalNumber};
     pub use crate::{Decimal, Money, MoneyError};
 
     pub use crate::iso;

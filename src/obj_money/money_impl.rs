@@ -112,7 +112,7 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
         if C::CODE == to_code {
             let current_is_raw = super::Context::is_raw();
             super::Context::set_raw(false);
-            let ret = Box::new(super::DynMoney::new::<C>(BaseMoney::amount(self)));
+            let ret = Box::new(super::DynMoney::from_decimal::<C>(BaseMoney::amount(self)));
             super::Context::set_raw(current_is_raw);
 
             return Ok(ret);
@@ -191,6 +191,6 @@ impl<C: Currency + Copy + Send + Sync + 'static> TryFrom<Box<dyn super::ObjMoney
 
 impl<C: Currency> From<Money<C>> for super::DynMoney {
     fn from(value: Money<C>) -> Self {
-        Self::new::<C>(value.amount())
+        Self::from_decimal::<C>(value.amount())
     }
 }

@@ -1565,8 +1565,10 @@ fn test_any() {
 fn test_tryfrom_obj_money_to_money_success() {
     let obj: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.50)).unwrap());
     let money = Money::<USD>::try_from(obj.as_ref()).unwrap();
+    let money_2: Money<USD> = obj.try_into().unwrap();
     assert_eq!(BaseMoney::amount(&money), dec!(100.50));
     assert_eq!(BaseMoney::code(&money), "USD");
+    assert_eq!(money, money_2);
 }
 
 #[test]
@@ -1726,79 +1728,79 @@ use crate::obj_money::DynMoney;
 
 #[test]
 fn test_dyn_money_obj_amount() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.50)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.50)));
     assert_eq!(m.amount(), dec!(100.50));
 }
 
 #[test]
 fn test_dyn_money_obj_code() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1.00)));
     assert_eq!(m.code(), "USD");
 }
 
 #[test]
 fn test_dyn_money_obj_symbol() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1.00)));
     assert_eq!(m.symbol(), "$");
 }
 
 #[test]
 fn test_dyn_money_obj_name() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1.00)));
     assert_eq!(m.name(), "United States dollar");
 }
 
 #[test]
 fn test_dyn_money_obj_minor_unit() {
-    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1.00)));
+    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1.00)));
     assert_eq!(usd.minor_unit(), 2);
 
-    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::new::<JPY>(dec!(100)));
+    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<JPY>(dec!(100)));
     assert_eq!(jpy.minor_unit(), 0);
 }
 
 #[test]
 fn test_dyn_money_obj_thousand_separator() {
-    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1.00)));
+    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1.00)));
     assert_eq!(usd.thousand_separator(), ",");
 }
 
 #[test]
 fn test_dyn_money_obj_decimal_separator() {
-    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1.00)));
+    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1.00)));
     assert_eq!(usd.decimal_separator(), ".");
 }
 
 #[test]
 fn test_dyn_money_obj_minor_unit_symbol() {
-    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1.00)));
+    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1.00)));
     assert_eq!(usd.minor_unit_symbol(), "¢");
 }
 
 #[test]
 fn test_dyn_money_obj_minor_amount() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(10.50)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(10.50)));
     assert_eq!(m.minor_amount().unwrap(), 1050);
 
-    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::new::<JPY>(dec!(300)));
+    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<JPY>(dec!(300)));
     assert_eq!(jpy.minor_amount().unwrap(), 300);
 }
 
 #[test]
 fn test_dyn_money_obj_numeric_code() {
-    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1.00)));
+    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1.00)));
     assert_eq!(usd.numeric_code(), 840);
 
-    let eur: Box<dyn ObjMoney> = Box::new(DynMoney::new::<EUR>(dec!(1.00)));
+    let eur: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<EUR>(dec!(1.00)));
     assert_eq!(eur.numeric_code(), 978);
 
-    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::new::<JPY>(dec!(100)));
+    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<JPY>(dec!(100)));
     assert_eq!(jpy.numeric_code(), 392);
 }
 
 #[test]
 fn test_dyn_money_obj_as_any() {
-    let m = DynMoney::new::<USD>(dec!(50.00));
+    let m = DynMoney::from_decimal::<USD>(dec!(50.00));
     let boxed: Box<dyn ObjMoney> = Box::new(m);
     let any = boxed.as_any();
     assert!(any.downcast_ref::<DynMoney>().is_some());
@@ -1808,7 +1810,7 @@ fn test_dyn_money_obj_as_any() {
 
 #[test]
 fn test_dyn_money_obj_is_positive() {
-    let pos: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1.00)));
+    let pos: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1.00)));
     assert!(pos.is_positive());
     assert!(!pos.is_negative());
     assert!(!pos.is_zero());
@@ -1816,14 +1818,14 @@ fn test_dyn_money_obj_is_positive() {
 
 #[test]
 fn test_dyn_money_obj_is_negative() {
-    let neg: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(-1.00)));
+    let neg: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(-1.00)));
     assert!(neg.is_negative());
     assert!(!neg.is_positive());
 }
 
 #[test]
 fn test_dyn_money_obj_is_zero() {
-    let zero: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(0)));
+    let zero: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(0)));
     assert!(zero.is_zero());
     assert!(!zero.is_positive());
     assert!(!zero.is_negative());
@@ -1833,7 +1835,7 @@ fn test_dyn_money_obj_is_zero() {
 
 #[test]
 fn test_dyn_money_obj_abs() {
-    let neg: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(-100.50)));
+    let neg: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(-100.50)));
     let pos = neg.abs();
     assert_eq!(pos.amount(), dec!(100.50));
     assert_eq!(pos.code(), "USD");
@@ -1842,7 +1844,7 @@ fn test_dyn_money_obj_abs() {
 
 #[test]
 fn test_dyn_money_obj_abs_already_positive() {
-    let pos: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(50.00)));
+    let pos: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(50.00)));
     assert_eq!(pos.abs().amount(), dec!(50.00));
 }
 
@@ -1851,7 +1853,7 @@ fn test_dyn_money_obj_abs_already_positive() {
 #[test]
 fn test_dyn_money_obj_round() {
     // DynMoney rounds on construction (is_raw defaults to false).
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(123.456)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(123.456)));
     // Constructed amount is already rounded to 2 dp.
     let rounded = m.round();
     assert_eq!(rounded.code(), "USD");
@@ -1928,7 +1930,7 @@ fn test_dyn_money_obj_truncate_with() {
 
 #[test]
 fn test_dyn_money_obj_checked_add() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.00)));
     let result = m.checked_add(dec!(50.00)).unwrap();
     assert_eq!(result.amount(), dec!(150.00));
     assert_eq!(result.code(), "USD");
@@ -1936,7 +1938,7 @@ fn test_dyn_money_obj_checked_add() {
 
 #[test]
 fn test_dyn_money_obj_checked_sub() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.00)));
     let result = m.checked_sub(dec!(30.00)).unwrap();
     assert_eq!(result.amount(), dec!(70.00));
     assert_eq!(result.code(), "USD");
@@ -1944,7 +1946,7 @@ fn test_dyn_money_obj_checked_sub() {
 
 #[test]
 fn test_dyn_money_obj_checked_mul() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(10.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(10.00)));
     let result = m.checked_mul(dec!(3)).unwrap();
     assert_eq!(result.amount(), dec!(30.00));
     assert_eq!(result.code(), "USD");
@@ -1952,7 +1954,7 @@ fn test_dyn_money_obj_checked_mul() {
 
 #[test]
 fn test_dyn_money_obj_checked_div() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.00)));
     let result = m.checked_div(dec!(4)).unwrap();
     assert_eq!(result.amount(), dec!(25.00));
     assert_eq!(result.code(), "USD");
@@ -1960,13 +1962,13 @@ fn test_dyn_money_obj_checked_div() {
 
 #[test]
 fn test_dyn_money_obj_checked_div_by_zero() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.00)));
     assert!(m.checked_div(dec!(0)).is_none());
 }
 
 #[test]
 fn test_dyn_money_obj_checked_rem() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.00)));
     let result = m.checked_rem(dec!(3)).unwrap();
     assert_eq!(result.amount(), dec!(1.00));
     assert_eq!(result.code(), "USD");
@@ -1976,7 +1978,7 @@ fn test_dyn_money_obj_checked_rem() {
 
 #[test]
 fn test_dyn_money_obj_chained_ops() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1000.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1000.00)));
     let result = m
         .checked_add(dec!(500.00))
         .unwrap()
@@ -1994,13 +1996,13 @@ fn test_dyn_money_obj_chained_ops() {
 
 #[test]
 fn test_dyn_money_obj_display() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1234.56)));
     assert_eq!(m.display(), "USD 1,234.56");
 }
 
 #[test]
 fn test_dyn_money_obj_format_symbol() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1234.56)));
     assert_eq!(m.format_symbol(), "$1,234.56");
 }
 
@@ -2009,9 +2011,9 @@ fn test_dyn_money_obj_format_symbol() {
 #[test]
 fn test_dyn_money_obj_in_vec() {
     let portfolio: Vec<Box<dyn ObjMoney>> = vec![
-        Box::new(DynMoney::new::<USD>(dec!(100.00))),
-        Box::new(DynMoney::new::<EUR>(dec!(200.00))),
-        Box::new(DynMoney::new::<JPY>(dec!(15000))),
+        Box::new(DynMoney::from_decimal::<USD>(dec!(100.00))),
+        Box::new(DynMoney::from_decimal::<EUR>(dec!(200.00))),
+        Box::new(DynMoney::from_decimal::<JPY>(dec!(15000))),
         Box::new(Money::<GBP>::new(dec!(50.00)).unwrap()),
     ];
 
@@ -2041,7 +2043,7 @@ fn test_dyn_money_new_with_code_invalid() {
 #[test]
 fn test_dyn_money_obj_convert_same_currency() {
     use crate::ExchangeRates;
-    let m = DynMoney::new::<USD>(dec!(100.00));
+    let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let rates = ExchangeRates::<USD>::new();
     let result = m.convert("USD", &rates).unwrap();
     assert_eq!(result.amount(), dec!(100.00));
@@ -2052,7 +2054,7 @@ fn test_dyn_money_obj_convert_same_currency() {
 #[test]
 fn test_dyn_money_obj_convert_usd_to_eur() {
     use crate::ExchangeRates;
-    let m = DynMoney::new::<USD>(dec!(100.00));
+    let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let mut rates = ExchangeRates::<USD>::new();
     rates.set("EUR", dec!(0.8)).unwrap();
     let result = m.convert("EUR", &rates).unwrap();
@@ -2064,7 +2066,7 @@ fn test_dyn_money_obj_convert_usd_to_eur() {
 #[test]
 fn test_dyn_money_obj_convert_missing_rate() {
     use crate::ExchangeRates;
-    let m = DynMoney::new::<USD>(dec!(100.00));
+    let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let rates = ExchangeRates::<USD>::new(); // JPY not set
     let err = m.convert("JPY", &rates);
     assert!(matches!(err, Err(MoneyError::ExchangeError(_))));
@@ -2074,7 +2076,7 @@ fn test_dyn_money_obj_convert_missing_rate() {
 #[test]
 fn test_dyn_money_obj_convert_unknown_target_currency() {
     use crate::ExchangeRates;
-    let m = DynMoney::new::<USD>(dec!(100.00));
+    let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let rates = ExchangeRates::<USD>::new();
     // Inject a fake rate for a non-existent currency code so the rate lookup succeeds
     // but Context::get_currency should fail.  We can test via a normal unknown code.
@@ -2087,7 +2089,7 @@ fn test_dyn_money_obj_convert_unknown_target_currency() {
 
 #[test]
 fn test_dyn_money_set_amount() {
-    let m = DynMoney::new::<USD>(dec!(100.00));
+    let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let updated = m.set_amount(dec!(200.00));
     assert_eq!(updated.amount, dec!(200.00));
     assert_eq!(updated.currency.0.code, "USD");
@@ -2095,7 +2097,7 @@ fn test_dyn_money_set_amount() {
 
 #[test]
 fn test_dyn_money_set_curr() {
-    let m = DynMoney::new::<USD>(dec!(100.00));
+    let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let updated = m.set_curr::<EUR>();
     assert_eq!(updated.currency.0.code, "EUR");
     assert_eq!(updated.amount, dec!(100.00));
@@ -2103,42 +2105,42 @@ fn test_dyn_money_set_curr() {
 
 #[test]
 fn test_dyn_money_set_curr_from_code_valid() {
-    let m = DynMoney::new::<USD>(dec!(100.00));
+    let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let updated = m.set_curr_from_code("JPY").unwrap();
     assert_eq!(updated.currency.0.code, "JPY");
 }
 
 #[test]
 fn test_dyn_money_set_curr_from_code_invalid() {
-    let m = DynMoney::new::<USD>(dec!(100.00));
+    let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     assert!(m.set_curr_from_code("INVALID_CODE").is_err());
 }
 
 #[test]
 fn test_dyn_money_partial_eq_same() {
-    let m1 = DynMoney::new::<USD>(dec!(100.00));
-    let m2 = DynMoney::new::<USD>(dec!(100.00));
+    let m1 = DynMoney::from_decimal::<USD>(dec!(100.00));
+    let m2 = DynMoney::from_decimal::<USD>(dec!(100.00));
     assert_eq!(m1, m2);
 }
 
 #[test]
 fn test_dyn_money_partial_eq_different_amount() {
-    let m1 = DynMoney::new::<USD>(dec!(100.00));
-    let m2 = DynMoney::new::<USD>(dec!(200.00));
+    let m1 = DynMoney::from_decimal::<USD>(dec!(100.00));
+    let m2 = DynMoney::from_decimal::<USD>(dec!(200.00));
     assert_ne!(m1, m2);
 }
 
 #[test]
 fn test_dyn_money_partial_ord_same_currency() {
-    let m1 = DynMoney::new::<USD>(dec!(100.00));
-    let m2 = DynMoney::new::<USD>(dec!(200.00));
+    let m1 = DynMoney::from_decimal::<USD>(dec!(100.00));
+    let m2 = DynMoney::from_decimal::<USD>(dec!(200.00));
     assert!(m1 < m2);
 }
 
 #[test]
 fn test_dyn_money_partial_ord_different_currency() {
-    let m1 = DynMoney::new::<USD>(dec!(100.00));
-    let m2 = DynMoney::new::<EUR>(dec!(200.00));
+    let m1 = DynMoney::from_decimal::<USD>(dec!(100.00));
+    let m2 = DynMoney::from_decimal::<EUR>(dec!(200.00));
     assert!(m1.partial_cmp(&m2).is_none());
 }
 
@@ -2194,25 +2196,25 @@ fn test_obj_money_checked_rem_by_zero() {
 
 #[test]
 fn test_dyn_money_obj_scale() {
-    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.45)));
+    let usd: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.45)));
     assert_eq!(usd.scale(), 2);
 
-    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::new::<JPY>(dec!(500)));
+    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<JPY>(dec!(500)));
     assert_eq!(jpy.scale(), 0);
 }
 
 #[test]
 fn test_dyn_money_obj_fraction() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.45)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.45)));
     assert_eq!(m.fraction(), dec!(0.45));
 
-    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::new::<JPY>(dec!(500)));
+    let jpy: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<JPY>(dec!(500)));
     assert_eq!(jpy.fraction(), dec!(0));
 }
 
 #[test]
 fn test_dyn_money_obj_mantissa() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1234.56)));
     assert_eq!(m.mantissa(), 123456_i128);
 }
 
@@ -2220,32 +2222,32 @@ fn test_dyn_money_obj_mantissa() {
 
 #[test]
 fn test_dyn_money_obj_format_code() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1234.56)));
     assert_eq!(m.format_code(), "USD 1,234.56");
 }
 
 #[test]
 fn test_dyn_money_obj_format_code_minor() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1234.56)));
     assert_eq!(m.format_code_minor(), "USD 123,456 ¢");
 }
 
 #[test]
 fn test_dyn_money_obj_format_symbol_minor() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(1234.56)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(1234.56)));
     assert_eq!(m.format_symbol_minor(), "$123,456 ¢");
 }
 
 #[test]
 fn test_dyn_money_obj_format_custom() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.50)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.50)));
     // c = code, space, n = negative sign (positive → empty), a = amount
     assert_eq!(m.format("c na"), "USD 100.50");
 }
 
 #[test]
 fn test_dyn_money_obj_format_negative_custom() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(-50.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(-50.00)));
     // n = '-' for negatives, s = symbol, a = amount
     assert_eq!(m.format("nsa"), "-$50.00");
 }
@@ -2254,7 +2256,7 @@ fn test_dyn_money_obj_format_negative_custom() {
 
 #[test]
 fn test_dyn_money_neg_positive() {
-    let m = DynMoney::new::<USD>(dec!(100.50));
+    let m = DynMoney::from_decimal::<USD>(dec!(100.50));
     let neg = -m;
     assert_eq!(neg.amount, dec!(-100.50));
     assert_eq!(neg.currency.0.code, "USD");
@@ -2262,7 +2264,7 @@ fn test_dyn_money_neg_positive() {
 
 #[test]
 fn test_dyn_money_neg_negative() {
-    let m = DynMoney::new::<EUR>(dec!(-50.00));
+    let m = DynMoney::from_decimal::<EUR>(dec!(-50.00));
     let neg = -m;
     assert_eq!(neg.amount, dec!(50.00));
     assert_eq!(neg.currency.0.code, "EUR");
@@ -2270,7 +2272,7 @@ fn test_dyn_money_neg_negative() {
 
 #[test]
 fn test_dyn_money_neg_zero() {
-    let m = DynMoney::new::<USD>(dec!(0));
+    let m = DynMoney::from_decimal::<USD>(dec!(0));
     let neg = -m;
     assert_eq!(neg.amount, dec!(0));
     assert_eq!(neg.currency.0.code, "USD");
@@ -2280,19 +2282,19 @@ fn test_dyn_money_neg_zero() {
 
 #[test]
 fn test_dyn_money_obj_checked_add_overflow() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(Decimal::MAX));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(Decimal::MAX));
     assert!(m.checked_add(dec!(1)).is_none());
 }
 
 #[test]
 fn test_dyn_money_obj_checked_mul_overflow() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(Decimal::MAX));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(Decimal::MAX));
     assert!(m.checked_mul(dec!(2)).is_none());
 }
 
 #[test]
 fn test_dyn_money_obj_checked_rem_by_zero() {
-    let m: Box<dyn ObjMoney> = Box::new(DynMoney::new::<USD>(dec!(100.00)));
+    let m: Box<dyn ObjMoney> = Box::new(DynMoney::from_decimal::<USD>(dec!(100.00)));
     assert!(m.checked_rem(dec!(0)).is_none());
 }
 
@@ -2301,9 +2303,9 @@ fn test_dyn_money_obj_checked_rem_by_zero() {
 #[test]
 fn test_dyn_money_vec_sort_by_amount() {
     let mut portfolio: Vec<Box<dyn ObjMoney>> = vec![
-        Box::new(DynMoney::new::<GBP>(dec!(300.00))),
-        Box::new(DynMoney::new::<USD>(dec!(100.00))),
-        Box::new(DynMoney::new::<EUR>(dec!(200.00))),
+        Box::new(DynMoney::from_decimal::<GBP>(dec!(300.00))),
+        Box::new(DynMoney::from_decimal::<USD>(dec!(100.00))),
+        Box::new(DynMoney::from_decimal::<EUR>(dec!(200.00))),
     ];
     portfolio.sort_by(|a, b| a.amount().cmp(&b.amount()));
     let codes: Vec<&str> = portfolio.iter().map(|m| m.code()).collect();
@@ -2316,7 +2318,7 @@ fn test_dyn_money_vec_sort_by_amount() {
 #[test]
 fn test_dyn_money_obj_convert_overflow() {
     use crate::ExchangeRates;
-    let m = DynMoney::new::<USD>(Decimal::MAX);
+    let m = DynMoney::from_decimal::<USD>(Decimal::MAX);
     let mut rates = ExchangeRates::<USD>::new();
     // EUR=2 means get_pair("USD","EUR")=2; Decimal::MAX * 2 overflows.
     rates.set("EUR", dec!(2)).unwrap();

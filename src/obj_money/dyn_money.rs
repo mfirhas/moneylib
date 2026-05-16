@@ -21,7 +21,7 @@ pub struct DynMoney {
 
 impl DynMoney {
     #[inline(always)]
-    pub fn new<C: Currency>(amount: Decimal) -> Self {
+    pub fn from_decimal<C: Currency>(amount: Decimal) -> Self {
         Self {
             amount: helpers::amount::<C>(amount),
             currency: helpers::dyn_curr_from::<C>(),
