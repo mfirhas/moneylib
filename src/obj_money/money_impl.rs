@@ -218,7 +218,7 @@ impl<C: Currency> PartialEq<Box<dyn ObjMoney>> for Money<C> {
 
 impl<C: Currency> PartialEq<DynMoney> for Money<C> {
     fn eq(&self, other: &DynMoney) -> bool {
-        if self.code() != C::CODE {
+        if other.code() != C::CODE {
             return false;
         }
         self.amount() == other.amount()
