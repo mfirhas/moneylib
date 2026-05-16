@@ -2,11 +2,11 @@ use std::any::Any;
 
 use super::fmt::format_obj_money;
 use crate::{
-    BaseMoney, RoundingStrategy,
+    RoundingStrategy,
     fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR},
 };
 
-use crate::{Currency, Decimal, MoneyError};
+use crate::{Decimal, MoneyError};
 
 /// Object-safe trait enabling dynamic dispatch (`dyn`) over different-currency money types.
 ///
@@ -395,10 +395,11 @@ pub trait ObjIterOps {
     /// # Argument
     /// rates: impl ObjRate, accepts `ExchangeRates`.
     #[cfg(feature = "exchange")]
-    fn checked_sum<M, To>(&self, rates: impl crate::exchange::ObjRate) -> Result<M, MoneyError>
-    where
-        M: BaseMoney<To>,
-        To: Currency;
+    fn checked_sum(
+        &self,
+        target_currency: &str,
+        rates: impl crate::exchange::ObjRate,
+    ) -> Result<Box<dyn ObjMoney>, MoneyError>;
 }
 
 impl<I, T> ObjIterOps for I
@@ -407,34 +408,23 @@ where
     T: ObjMoney,
 {
     #[cfg(feature = "exchange")]
-    fn checked_sum<M, To>(&self, rates: impl crate::exchange::ObjRate) -> Result<M, MoneyError>
-    where
-        M: BaseMoney<To>,
-        To: Currency,
-    {
-        let mut total = Decimal::ZERO;
+    fn checked_sum(
+        &self,
+        target_currency: &str,
+        rates: impl crate::exchange::ObjRate,
+    ) -> Result<Box<dyn ObjMoney>, MoneyError> {
+        use crate::prelude::DynMoney;
+
+        let mut total: Box<dyn ObjMoney> =
+            Box::new(DynMoney::new_with_code(target_currency, Decimal::ZERO)?);
 
         for m in self {
+            let res = m.convert(target_currency, &rates)?;
             total = total
-                .checked_add(
-                    m.amount()
-                        .checked_mul(
-                            rates
-                                .get_rate(m.code(), To::CODE)
-                                .ok_or(MoneyError::ExchangeError(
-                                format!(
-                                    "failed getting rate from: {} to: {}, please check the rates",
-                                    m.code(),
-                                    To::CODE
-                                )
-                                .into(),
-                            ))?,
-                        )
-                        .ok_or(MoneyError::OverflowError)?,
-                )
+                .checked_add(res.amount())
                 .ok_or(MoneyError::OverflowError)?;
         }
 
-        M::new(total)
+        Ok(total)
     }
 }

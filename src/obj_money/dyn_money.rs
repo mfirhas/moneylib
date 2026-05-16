@@ -7,6 +7,12 @@ use super::helpers;
 #[derive(Debug, Clone, Copy, Eq)]
 pub struct DynCurrency(pub(super) Data);
 
+impl DynCurrency {
+    pub fn code(&self) -> &str {
+        self.0.code
+    }
+}
+
 impl PartialEq for DynCurrency {
     fn eq(&self, other: &Self) -> bool {
         self.0.code == other.0.code

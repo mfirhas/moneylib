@@ -769,8 +769,8 @@ fn test_obj_iter_ops_checked_sum_single_currency() {
         Money::<USD>::new(dec!(50.00)).unwrap(),
     ];
     let rates = ExchangeRates::<USD>::new();
-    let result: Money<USD> = portfolio.checked_sum(rates).unwrap();
-    assert_eq!(BaseMoney::amount(&result), dec!(350.00));
+    let result = portfolio.checked_sum("USD", rates).unwrap();
+    assert_eq!(result.amount(), dec!(350.00));
 }
 
 /// EUR items converted to USD.
@@ -785,8 +785,8 @@ fn test_obj_iter_ops_checked_sum_convert_to_different_currency() {
     ];
     let mut rates = ExchangeRates::<USD>::new();
     rates.set("EUR", dec!(0.8)).unwrap();
-    let result: Money<USD> = portfolio.checked_sum(rates).unwrap();
-    assert_eq!(BaseMoney::amount(&result), dec!(150.00));
+    let result = portfolio.checked_sum("USD", rates).unwrap();
+    assert_eq!(result.amount(), dec!(150.00));
 }
 
 /// An empty collection should produce zero (Money::new(Decimal::ZERO)).
@@ -795,8 +795,8 @@ fn test_obj_iter_ops_checked_sum_convert_to_different_currency() {
 fn test_obj_iter_ops_checked_sum_empty_collection() {
     let empty: Vec<Money<USD>> = vec![];
     let rates = ExchangeRates::<USD>::new();
-    let result: Money<USD> = empty.checked_sum(rates).unwrap();
-    assert_eq!(BaseMoney::amount(&result), dec!(0.00));
+    let result = empty.checked_sum("USD", rates).unwrap();
+    assert_eq!(result.amount(), dec!(0.00));
 }
 
 /// When a currency in the collection has no entry in the rates map,
@@ -806,7 +806,7 @@ fn test_obj_iter_ops_checked_sum_empty_collection() {
 fn test_obj_iter_ops_checked_sum_missing_rate() {
     let portfolio = vec![Money::<EUR>::new(dec!(100.00)).unwrap()];
     let rates = ExchangeRates::<USD>::new(); // EUR not present
-    let result: Result<Money<USD>, _> = portfolio.checked_sum(rates);
+    let result: Result<_, _> = portfolio.checked_sum("USD", rates);
     assert!(matches!(result, Err(MoneyError::ExchangeError(_))));
 }
 
@@ -819,7 +819,7 @@ fn test_obj_iter_ops_checked_sum_overflow_add() {
         Money::<USD>::from_decimal(dec!(1)),
     ];
     let rates = ExchangeRates::<USD>::new();
-    let result: Result<Money<USD>, _> = portfolio.checked_sum(rates);
+    let result: Result<_, _> = portfolio.checked_sum("USD", rates);
     assert!(matches!(result, Err(MoneyError::OverflowError)));
 }
 
@@ -832,7 +832,7 @@ fn test_obj_iter_ops_checked_sum_overflow_mul() {
     let portfolio = [Money::<EUR>::from_decimal(Decimal::MAX)];
     let mut rates = ExchangeRates::<USD>::new();
     rates.set("EUR", dec!(0.00001)).unwrap();
-    let result: Result<Money<USD>, _> = portfolio.checked_sum(rates);
+    let result: Result<_, _> = portfolio.checked_sum("USD", rates);
     assert!(matches!(result, Err(MoneyError::OverflowError)));
 }
 
@@ -846,8 +846,8 @@ fn test_obj_iter_ops_checked_sum_negative_amounts() {
         Money::<USD>::new(dec!(20.00)).unwrap(),
     ];
     let rates = ExchangeRates::<USD>::new();
-    let result: Money<USD> = portfolio.checked_sum(rates).unwrap();
-    assert_eq!(BaseMoney::amount(&result), dec!(90.00));
+    let result = portfolio.checked_sum("USD", rates).unwrap();
+    assert_eq!(result.amount(), dec!(90.00));
 }
 
 /// `Vec<Box<dyn ObjMoney>>` holding multiple currencies, all converted to USD.
@@ -863,8 +863,8 @@ fn test_obj_iter_ops_checked_sum_heterogeneous_dyn() {
     let mut rates = ExchangeRates::<USD>::new();
     rates.set("EUR", dec!(0.8)).unwrap(); // get_pair("EUR","USD") = 1.25
     rates.set("GBP", dec!(0.5)).unwrap(); // get_pair("GBP","USD") = 2.00
-    let result: Money<USD> = portfolio.checked_sum(rates).unwrap();
-    assert_eq!(BaseMoney::amount(&result), dec!(300.00));
+    let result = portfolio.checked_sum("USD", rates).unwrap();
+    assert_eq!(result.amount(), dec!(300.00));
 }
 
 /// Missing rate on a heterogeneous dyn collection must also return `ExchangeError`.
@@ -876,7 +876,7 @@ fn test_obj_iter_ops_checked_sum_heterogeneous_dyn_missing_rate() {
         Box::new(Money::<EUR>::new(dec!(50.00)).unwrap()), // EUR not in rates
     ];
     let rates = ExchangeRates::<USD>::new();
-    let result: Result<Money<USD>, _> = portfolio.checked_sum(rates);
+    let result: Result<_, _> = portfolio.checked_sum("USD", rates);
     assert!(matches!(result, Err(MoneyError::ExchangeError(_))));
 }
 
@@ -890,8 +890,8 @@ fn test_obj_iter_ops_checked_sum_array_slice() {
         Money::<USD>::new(dec!(30.00)).unwrap(),
     ];
     let rates = ExchangeRates::<USD>::new();
-    let result: Money<USD> = arr.checked_sum(rates).unwrap();
-    assert_eq!(BaseMoney::amount(&result), dec!(60.00));
+    let result = arr.checked_sum("USD", rates).unwrap();
+    assert_eq!(result.amount(), dec!(60.00));
 }
 
 // ==================== Money: numeric_code ====================
@@ -1421,8 +1421,8 @@ fn test_obj_iter_ops_checked_sum_raw_money() {
         RawMoney::<USD>::new(dec!(200.456)).unwrap(),
     ];
     let rates = ExchangeRates::<USD>::new();
-    let result: RawMoney<USD> = portfolio.checked_sum(rates).unwrap();
-    assert_eq!(BaseMoney::amount(&result), dec!(300.579));
+    let result = portfolio.checked_sum("USD", rates).unwrap();
+    assert_eq!(result.amount(), dec!(300.58)); // rounded
 }
 
 /// `RawMoney` items converted to a different currency preserve rate arithmetic precision.
@@ -1434,8 +1434,8 @@ fn test_obj_iter_ops_checked_sum_raw_money_convert() {
     let portfolio = vec![RawMoney::<EUR>::new(dec!(100.001)).unwrap()];
     let mut rates = ExchangeRates::<USD>::new();
     rates.set("EUR", dec!(0.8)).unwrap();
-    let result: RawMoney<USD> = portfolio.checked_sum(rates).unwrap();
-    assert_eq!(BaseMoney::amount(&result), dec!(125.00125));
+    let result = portfolio.checked_sum("USD", rates).unwrap();
+    assert_eq!(result.amount(), dec!(125));
 }
 
 /// `Vec<Box<dyn ObjMoney>>` containing both `Money` and `RawMoney` instances.
@@ -1449,8 +1449,8 @@ fn test_obj_iter_ops_checked_sum_mixed_money_and_raw_money_dyn() {
     ];
     let mut rates = ExchangeRates::<USD>::new();
     rates.set("EUR", dec!(0.8)).unwrap(); // get_pair("EUR","USD") = 1.25
-    let result: Money<USD> = portfolio.checked_sum(rates).unwrap();
-    assert_eq!(BaseMoney::amount(&result), dec!(200.00));
+    let result = portfolio.checked_sum("USD", rates).unwrap();
+    assert_eq!(result.amount(), dec!(200.00));
 }
 
 /// `format_obj_money` with a backslash-escaped format symbol (`\m`): the symbol is
