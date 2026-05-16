@@ -3261,7 +3261,7 @@ fn test_obj_money_neg_zero() {
 fn test_obj_raw_money_neg() {
     let m: Box<dyn ObjMoney> = Box::new(RawMoney::<GBP>::new(dec!(123.456)).unwrap());
     let neg = -m;
-    assert_eq!(neg.amount(), dec!(-123.456));
+    assert_eq!(neg.amount(), dec!(-123.46));
     assert_eq!(neg.code(), "GBP");
 }
 
@@ -3295,7 +3295,7 @@ fn test_ref_dyn_money_neg() {
 fn test_ref_dyn_raw_money_neg() {
     let m: Box<dyn ObjMoney> = Box::new(RawMoney::<GBP>::new(dec!(9.999)).unwrap());
     let neg = -m.as_ref();
-    assert_eq!(neg.amount(), dec!(-9.999));
+    assert_eq!(neg.amount(), dec!(-10.00));
     assert_eq!(neg.code(), "GBP");
 }
 

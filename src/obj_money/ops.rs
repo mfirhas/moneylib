@@ -1,4 +1,3 @@
-use super::Context;
 use super::DynMoney;
 use super::ObjMoney;
 
@@ -15,11 +14,8 @@ impl ::std::ops::Neg for DynMoney {
 
 #[inline]
 fn negate_obj(m: &dyn ObjMoney) -> Box<dyn ObjMoney> {
-    let currency = Context::get_currency(m.code()).unwrap_or_else(|| unreachable!());
-    Box::new(DynMoney {
-        amount: -m.amount(),
-        currency,
-    })
+    let dyn_m: DynMoney = m.try_into().unwrap_or_else(|_| unreachable!());
+    Box::new(dyn_m.set_amount(-m.amount()))
 }
 
 impl ::std::ops::Neg for Box<dyn ObjMoney> {
