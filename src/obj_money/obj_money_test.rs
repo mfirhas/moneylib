@@ -2581,7 +2581,7 @@ fn test_tryfrom_dyn_money_to_raw_money_currency_mismatch() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_tryfrom_dyn_money_to_raw_money_preserves_precision() {
+fn test_tryfrom_dyn_money_to_raw_money_rounded_value() {
     let dyn_m = DynMoney::from_decimal::<GBP>(dec!(12.35));
     let raw = RawMoney::<GBP>::try_from(dyn_m).unwrap();
     assert_eq!(BaseMoney::amount(&raw), dec!(12.35));
