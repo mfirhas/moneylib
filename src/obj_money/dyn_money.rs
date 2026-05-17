@@ -19,6 +19,30 @@ pub struct DynCurrency {
 }
 
 impl DynCurrency {
+    pub fn from_curr<C: Currency>() -> Self {
+        DynCurrency {
+            code: C::CODE,
+            symbol: C::SYMBOL,
+            name: C::NAME,
+            numeric: C::NUMERIC,
+            minor_unit: C::MINOR_UNIT,
+            minor_unit_symbol: C::MINOR_UNIT_SYMBOL,
+            minor_unit_name: C::MINOR_UNIT_NAME,
+            thousand_separator: C::THOUSAND_SEPARATOR,
+            decimal_separator: C::DECIMAL_SEPARATOR,
+            origin: C::ORIGIN,
+            locale: C::LOCALE,
+        }
+    }
+}
+
+impl<C: Currency> From<C> for DynCurrency {
+    fn from(_: C) -> Self {
+        Self::from_curr::<C>()
+    }
+}
+
+impl DynCurrency {
     pub fn code(&self) -> &str {
         self.code
     }
@@ -41,7 +65,7 @@ impl DynMoney {
     pub fn from_decimal<C: Currency>(amount: Decimal) -> Self {
         Self {
             amount: helpers::amount::<C>(amount),
-            currency: helpers::dyn_curr_from::<C>(),
+            currency: DynCurrency::from_curr::<C>(),
         }
     }
 
@@ -78,7 +102,7 @@ impl DynMoney {
     #[inline(always)]
     pub fn set_curr<C: Currency>(&self) -> Self {
         Self {
-            currency: helpers::dyn_curr_from::<C>(),
+            currency: DynCurrency::from_curr::<C>(),
             ..*self
         }
     }

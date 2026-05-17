@@ -125,10 +125,7 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C>
         rate: &dyn crate::exchange::ObjRate,
     ) -> Result<Box<dyn super::ObjMoney>, crate::MoneyError> {
         if C::CODE == to_code {
-            let current_is_raw = super::Context::is_raw();
-            super::Context::set_raw(true);
             let ret = Box::new(super::DynMoney::from_decimal::<C>(BaseMoney::amount(self)));
-            super::Context::set_raw(current_is_raw);
 
             return Ok(ret);
         }
@@ -148,10 +145,7 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C>
             .checked_mul(rate_amount)
             .ok_or(MoneyError::OverflowError)?;
 
-        let current_is_raw = super::Context::is_raw();
-        super::Context::set_raw(true);
         let ret = super::DynMoney::new_with_code(to_code, result)?;
-        super::Context::set_raw(current_is_raw);
 
         Ok(Box::new(ret))
     }

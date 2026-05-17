@@ -63,7 +63,7 @@ impl Context {
             ));
         }
 
-        write.insert(C::CODE, super::helpers::dyn_curr_from::<C>());
+        write.insert(C::CODE, super::DynCurrency::from_curr::<C>());
 
         Ok(())
     }
@@ -90,7 +90,7 @@ impl Context {
             .write()
             .map_err(|_| MoneyError::Other("failed getting lock to set into CURRENCIES".into()))?;
 
-        write.insert(C::CODE, super::helpers::dyn_curr_from::<C>());
+        write.insert(C::CODE, super::DynCurrency::from_curr::<C>());
 
         Ok(())
     }

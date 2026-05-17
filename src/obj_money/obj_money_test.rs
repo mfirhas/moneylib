@@ -1332,7 +1332,7 @@ fn test_obj_raw_money_convert_same_currency() {
     let money = RawMoney::<USD>::new(dec!(123.456789)).unwrap();
     let rates = ExchangeRates::<USD>::new();
     let result = money.convert("USD", &rates).unwrap();
-    assert_eq!(result.amount(), dec!(123.456789));
+    assert_eq!(result.amount(), dec!(123.46));
     assert_eq!(result.code(), "USD");
 }
 
@@ -1345,7 +1345,7 @@ fn test_obj_raw_money_convert_to_different_currency() {
     let mut rates = ExchangeRates::<USD>::new();
     rates.set("EUR", dec!(0.8)).unwrap();
     let result = money.convert("EUR", &rates).unwrap();
-    assert_eq!(result.amount(), dec!(80.0987648));
+    assert_eq!(result.amount(), dec!(80.10));
 }
 
 /// RawMoney missing rate also returns ExchangeError.
