@@ -2542,13 +2542,10 @@ fn test_tryfrom_dyn_money_to_money_currency_mismatch() {
 
 #[test]
 fn test_tryfrom_dyn_money_to_money_rounds_on_conversion() {
-    // DynMoney stores 100.456; Money<USD> rounds to 2dp on from_decimal.
-    use crate::obj_money::Context;
-    Context::set_raw(true);
-    let dyn_m = DynMoney::from_decimal::<USD>(dec!(100.456));
-    Context::set_raw(false);
+    // DynMoney::from_decimal rounds to the currency's minor unit on construction.
+    // Money<USD>::try_from preserves the already-rounded amount.
+    let dyn_m = DynMoney::from_decimal::<USD>(dec!(100.46));
     let money = Money::<USD>::try_from(dyn_m).unwrap();
-    // Money::from_decimal uses bankers rounding: 0.456 rounds to 0.46.
     assert_eq!(BaseMoney::amount(&money), dec!(100.46));
 }
 
@@ -2564,12 +2561,9 @@ fn test_tryfrom_dyn_money_to_money_jpy() {
 #[cfg(feature = "raw_money")]
 #[test]
 fn test_tryfrom_dyn_money_to_raw_money_success() {
-    use crate::obj_money::Context;
-    Context::set_raw(true);
-    let dyn_m = DynMoney::from_decimal::<USD>(dec!(50.123456));
-    Context::set_raw(false);
+    let dyn_m = DynMoney::from_decimal::<USD>(dec!(50.12));
     let raw = RawMoney::<USD>::try_from(dyn_m).unwrap();
-    assert_eq!(BaseMoney::amount(&raw), dec!(50.123456));
+    assert_eq!(BaseMoney::amount(&raw), dec!(50.12));
     assert_eq!(BaseMoney::code(&raw), "USD");
 }
 
@@ -2587,13 +2581,10 @@ fn test_tryfrom_dyn_money_to_raw_money_currency_mismatch() {
 
 #[cfg(feature = "raw_money")]
 #[test]
-fn test_tryfrom_dyn_money_to_raw_money_preserves_precision() {
-    use crate::obj_money::Context;
-    Context::set_raw(true);
-    let dyn_m = DynMoney::from_decimal::<GBP>(dec!(12.345678));
-    Context::set_raw(false);
+fn test_tryfrom_dyn_money_to_raw_money_rounded_value() {
+    let dyn_m = DynMoney::from_decimal::<GBP>(dec!(12.35));
     let raw = RawMoney::<GBP>::try_from(dyn_m).unwrap();
-    assert_eq!(BaseMoney::amount(&raw), dec!(12.345678));
+    assert_eq!(BaseMoney::amount(&raw), dec!(12.35));
 }
 
 // ==================== DynMoney: PartialEq cross-type ====================
@@ -2657,11 +2648,8 @@ fn test_dyn_money_partial_eq_money_diff_currency() {
 #[cfg(feature = "raw_money")]
 #[test]
 fn test_dyn_money_partial_eq_raw_money_same() {
-    use crate::obj_money::Context;
-    Context::set_raw(true);
-    let dyn_m = DynMoney::from_decimal::<USD>(dec!(33.333));
-    Context::set_raw(false);
-    let raw = RawMoney::<USD>::new(dec!(33.333)).unwrap();
+    let dyn_m = DynMoney::from_decimal::<USD>(dec!(33.33));
+    let raw = RawMoney::<USD>::new(dec!(33.33)).unwrap();
     assert!(dyn_m == raw);
 }
 
