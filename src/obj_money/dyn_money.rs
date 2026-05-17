@@ -1,21 +1,32 @@
 use crate::{Currency, Decimal, MoneyError, RoundingStrategy, prelude::ObjMoney};
-use currencylib::data::Data;
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 
 use super::helpers;
 
 #[derive(Debug, Clone, Copy, Eq)]
-pub struct DynCurrency(pub(super) Data);
+pub struct DynCurrency {
+    pub(super) code: &'static str,
+    pub(super) symbol: &'static str,
+    pub(super) name: &'static str,
+    pub(super) numeric: u16,
+    pub(super) minor_unit: u16,
+    pub(super) minor_unit_symbol: &'static str,
+    pub(super) minor_unit_name: &'static str,
+    pub(super) thousand_separator: &'static str,
+    pub(super) decimal_separator: &'static str,
+    pub(super) origin: &'static str,
+    pub(super) locale: &'static str,
+}
 
 impl DynCurrency {
     pub fn code(&self) -> &str {
-        self.0.code
+        self.code
     }
 }
 
 impl PartialEq for DynCurrency {
     fn eq(&self, other: &Self) -> bool {
-        self.0.code == other.0.code
+        self.code == other.code
     }
 }
 
@@ -85,13 +96,13 @@ impl DynMoney {
 
 impl PartialEq for DynMoney {
     fn eq(&self, other: &Self) -> bool {
-        self.amount == other.amount && self.currency.0.code == other.currency.0.code
+        self.amount == other.amount && self.currency.code == other.currency.code
     }
 }
 
 impl PartialOrd for DynMoney {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.currency.0.code == other.currency.0.code {
+        if self.currency.code == other.currency.code {
             return Some(self.amount.cmp(&other.amount));
         }
         None
@@ -106,59 +117,59 @@ impl super::ObjMoney for DynMoney {
 
     #[inline]
     fn code(&self) -> &str {
-        self.currency.0.code
+        self.currency.code
     }
 
     #[inline]
     fn symbol(&self) -> &str {
-        self.currency.0.symbol
+        self.currency.symbol
     }
 
     #[inline]
     fn name(&self) -> &str {
-        self.currency.0.name
+        self.currency.name
     }
 
     #[inline]
     fn minor_unit(&self) -> u16 {
-        self.currency.0.minor_unit
+        self.currency.minor_unit
     }
 
     #[inline]
     fn thousand_separator(&self) -> &str {
-        self.currency.0.thousand_separator
+        self.currency.thousand_separator
     }
 
     #[inline]
     fn decimal_separator(&self) -> &str {
-        self.currency.0.decimal_separator
+        self.currency.decimal_separator
     }
 
     #[inline]
     fn minor_unit_symbol(&self) -> &str {
-        self.currency.0.minor_unit_symbol
+        self.currency.minor_unit_symbol
     }
 
     #[inline]
     fn minor_unit_name(&self) -> &str {
-        self.currency.0.minor_unit_name
+        self.currency.minor_unit_name
     }
 
     #[inline]
     fn origin(&self) -> &str {
-        self.currency.0.origin
+        self.currency.origin
     }
 
     #[inline]
     fn locale(&self) -> &str {
-        self.currency.0.locale
+        self.currency.locale
     }
 
     #[inline]
     fn minor_amount(&self) -> Option<i128> {
         self.amount
-            .round_dp(self.currency.0.minor_unit.into())
-            .checked_mul(crate::dec!(10).checked_powu(self.currency.0.minor_unit.into())?)?
+            .round_dp(self.currency.minor_unit.into())
+            .checked_mul(crate::dec!(10).checked_powu(self.currency.minor_unit.into())?)?
             .to_i128()
     }
 
@@ -169,7 +180,7 @@ impl super::ObjMoney for DynMoney {
 
     #[inline]
     fn numeric_code(&self) -> i32 {
-        self.currency.0.numeric.into()
+        self.currency.numeric.into()
     }
 
     #[inline]
@@ -179,7 +190,7 @@ impl super::ObjMoney for DynMoney {
 
     #[inline]
     fn round(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(self.set_amount(self.amount.round_dp(self.currency.0.minor_unit.into())))
+        Box::new(self.set_amount(self.amount.round_dp(self.currency.minor_unit.into())))
     }
 
     #[inline]
@@ -237,21 +248,19 @@ impl super::ObjMoney for DynMoney {
         to_code: &str,
         rate: &dyn crate::exchange::ObjRate,
     ) -> Result<Box<dyn super::ObjMoney>, MoneyError> {
-        if self.currency.0.code == to_code {
+        if self.currency.code == to_code {
             return Ok(Box::new(*self));
         }
 
-        let rate_val = rate
-            .get_rate(self.currency.0.code, to_code)
-            .ok_or_else(|| {
-                MoneyError::ExchangeError(
-                    format!(
-                        "overflowed or failed getting rate from: {} to: {}",
-                        self.currency.0.code, to_code
-                    )
-                    .into(),
+        let rate_val = rate.get_rate(self.currency.code, to_code).ok_or_else(|| {
+            MoneyError::ExchangeError(
+                format!(
+                    "overflowed or failed getting rate from: {} to: {}",
+                    self.currency.code, to_code
                 )
-            })?;
+                .into(),
+            )
+        })?;
 
         let new_amount = self
             .amount
@@ -282,9 +291,9 @@ impl<C: Currency> TryFrom<DynMoney> for crate::Money<C> {
     type Error = MoneyError;
 
     fn try_from(value: DynMoney) -> Result<Self, Self::Error> {
-        if value.currency.0.code != C::CODE {
+        if value.currency.code != C::CODE {
             return Err(MoneyError::CurrencyMismatchError(
-                value.currency.0.code.into(),
+                value.currency.code.into(),
                 C::CODE.into(),
             ));
         }
@@ -299,9 +308,9 @@ impl<C: Currency> TryFrom<DynMoney> for crate::RawMoney<C> {
     type Error = MoneyError;
 
     fn try_from(value: DynMoney) -> Result<Self, Self::Error> {
-        if value.currency.0.code != C::CODE {
+        if value.currency.code != C::CODE {
             return Err(MoneyError::CurrencyMismatchError(
-                value.currency.0.code.into(),
+                value.currency.code.into(),
                 C::CODE.into(),
             ));
         }
@@ -315,20 +324,20 @@ impl<C: Currency> TryFrom<DynMoney> for crate::RawMoney<C> {
 
 impl PartialEq<&dyn ObjMoney> for DynMoney {
     fn eq(&self, other: &&dyn ObjMoney) -> bool {
-        self.currency.0.code == other.code() && self.amount == other.amount()
+        self.currency.code == other.code() && self.amount == other.amount()
     }
 }
 
 impl PartialEq<Box<dyn ObjMoney>> for DynMoney {
     fn eq(&self, other: &Box<dyn ObjMoney>) -> bool {
-        self.currency.0.code == other.code() && self.amount == other.amount()
+        self.currency.code == other.code() && self.amount == other.amount()
     }
 }
 
 use crate::{BaseMoney, Money};
 impl<C: Currency> PartialEq<Money<C>> for DynMoney {
     fn eq(&self, other: &Money<C>) -> bool {
-        self.currency.0.code == C::CODE && self.amount == other.amount()
+        self.currency.code == C::CODE && self.amount == other.amount()
     }
 }
 
@@ -338,7 +347,7 @@ use crate::RawMoney;
 #[cfg(feature = "raw_money")]
 impl<C: Currency> PartialEq<RawMoney<C>> for DynMoney {
     fn eq(&self, other: &RawMoney<C>) -> bool {
-        self.currency.0.code == C::CODE && self.amount == other.amount()
+        self.currency.code == C::CODE && self.amount == other.amount()
     }
 }
 
@@ -346,7 +355,7 @@ impl<C: Currency> PartialEq<RawMoney<C>> for DynMoney {
 
 impl PartialOrd<&dyn ObjMoney> for DynMoney {
     fn partial_cmp(&self, other: &&dyn ObjMoney) -> Option<std::cmp::Ordering> {
-        if self.currency.0.code != other.code() {
+        if self.currency.code != other.code() {
             return None;
         }
         self.amount.partial_cmp(&other.amount())
@@ -355,7 +364,7 @@ impl PartialOrd<&dyn ObjMoney> for DynMoney {
 
 impl PartialOrd<Box<dyn ObjMoney>> for DynMoney {
     fn partial_cmp(&self, other: &Box<dyn ObjMoney>) -> Option<std::cmp::Ordering> {
-        if self.currency.0.code != other.code() {
+        if self.currency.code != other.code() {
             return None;
         }
         self.amount.partial_cmp(&other.amount())
@@ -364,7 +373,7 @@ impl PartialOrd<Box<dyn ObjMoney>> for DynMoney {
 
 impl<C: Currency> PartialOrd<Money<C>> for DynMoney {
     fn partial_cmp(&self, other: &Money<C>) -> Option<std::cmp::Ordering> {
-        if self.currency.0.code != other.code() {
+        if self.currency.code != other.code() {
             return None;
         }
         self.amount.partial_cmp(&other.amount())
@@ -374,7 +383,7 @@ impl<C: Currency> PartialOrd<Money<C>> for DynMoney {
 #[cfg(feature = "raw_money")]
 impl<C: Currency> PartialOrd<RawMoney<C>> for DynMoney {
     fn partial_cmp(&self, other: &RawMoney<C>) -> Option<std::cmp::Ordering> {
-        if self.currency.0.code != other.code() {
+        if self.currency.code != other.code() {
             return None;
         }
         self.amount.partial_cmp(&other.amount())

@@ -11,7 +11,30 @@ static IS_RAW: AtomicBool = AtomicBool::new(false);
 
 /// Global context containing runtime data for all currencies supported for runtime checking.
 static CURRENCIES: LazyLock<RwLock<HashMap<&'static str, super::DynCurrency>>> =
-    LazyLock::new(|| RwLock::new(entries().map(|(k, v)| (k, super::DynCurrency(v))).collect()));
+    LazyLock::new(|| {
+        RwLock::new(
+            entries()
+                .map(|(k, v)| {
+                    (
+                        k,
+                        super::DynCurrency {
+                            code: v.code,
+                            symbol: v.symbol,
+                            name: v.name,
+                            numeric: v.numeric,
+                            minor_unit: v.minor_unit,
+                            minor_unit_symbol: v.minor_unit_symbol,
+                            minor_unit_name: v.minor_unit_name,
+                            thousand_separator: v.thousand_separator,
+                            decimal_separator: v.decimal_separator,
+                            origin: v.origin,
+                            locale: v.locale,
+                        },
+                    )
+                })
+                .collect(),
+        )
+    });
 
 pub struct Context;
 
@@ -84,7 +107,7 @@ impl Context {
         if let Ok(data) = CURRENCIES.read() {
             return data
                 .iter()
-                .find(|(_, curr)| curr.0.symbol == symbol)
+                .find(|(_, curr)| curr.symbol == symbol)
                 .map(|(_, &v)| v);
         }
 

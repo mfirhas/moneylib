@@ -2096,14 +2096,14 @@ fn test_dyn_money_set_amount() {
     let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let updated = m.set_amount(dec!(200.00));
     assert_eq!(updated.amount, dec!(200.00));
-    assert_eq!(updated.currency.0.code, "USD");
+    assert_eq!(updated.currency.code, "USD");
 }
 
 #[test]
 fn test_dyn_money_set_curr() {
     let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let updated = m.set_curr::<EUR>();
-    assert_eq!(updated.currency.0.code, "EUR");
+    assert_eq!(updated.currency.code, "EUR");
     assert_eq!(updated.amount, dec!(100.00));
 }
 
@@ -2111,7 +2111,7 @@ fn test_dyn_money_set_curr() {
 fn test_dyn_money_set_curr_from_code_valid() {
     let m = DynMoney::from_decimal::<USD>(dec!(100.00));
     let updated = m.set_curr_from_code("JPY").unwrap();
-    assert_eq!(updated.currency.0.code, "JPY");
+    assert_eq!(updated.currency.code, "JPY");
 }
 
 #[test]
@@ -2263,7 +2263,7 @@ fn test_dyn_money_neg_positive() {
     let m = DynMoney::from_decimal::<USD>(dec!(100.50));
     let neg = -m;
     assert_eq!(neg.amount, dec!(-100.50));
-    assert_eq!(neg.currency.0.code, "USD");
+    assert_eq!(neg.currency.code, "USD");
 }
 
 #[test]
@@ -2271,7 +2271,7 @@ fn test_dyn_money_neg_negative() {
     let m = DynMoney::from_decimal::<EUR>(dec!(-50.00));
     let neg = -m;
     assert_eq!(neg.amount, dec!(50.00));
-    assert_eq!(neg.currency.0.code, "EUR");
+    assert_eq!(neg.currency.code, "EUR");
 }
 
 #[test]
@@ -2279,7 +2279,7 @@ fn test_dyn_money_neg_zero() {
     let m = DynMoney::from_decimal::<USD>(dec!(0));
     let neg = -m;
     assert_eq!(neg.amount, dec!(0));
-    assert_eq!(neg.currency.0.code, "USD");
+    assert_eq!(neg.currency.code, "USD");
 }
 
 // ==================== DynMoney: checked arithmetic overflow / edge cases ====================
@@ -2351,7 +2351,7 @@ fn test_context_get_currency_known() {
     use crate::obj_money::Context;
     let usd = Context::get_currency("USD");
     assert!(usd.is_some());
-    assert_eq!(usd.unwrap().0.code, "USD");
+    assert_eq!(usd.unwrap().code, "USD");
 }
 
 #[test]
@@ -2366,7 +2366,7 @@ fn test_context_get_currency_by_symbol_known() {
     let result = Context::get_currency_by_symbol("$");
     assert!(result.is_some());
     // Multiple currencies may use "$"; just verify a non-empty code is returned.
-    assert!(!result.unwrap().0.code.is_empty());
+    assert!(!result.unwrap().code.is_empty());
 }
 
 #[test]
@@ -2435,8 +2435,8 @@ fn test_context_register_currency_success() {
             // Successfully registered — verify the currency is now accessible.
             assert!(Context::is_currency_exist("XZZ"));
             let curr = Context::get_currency("XZZ").unwrap();
-            assert_eq!(curr.0.code, "XZZ");
-            assert_eq!(curr.0.symbol, "T");
+            assert_eq!(curr.code, "XZZ");
+            assert_eq!(curr.symbol, "T");
         }
         Err(MoneyError::Other(_)) => {
             // Already registered from a previous test in the same process — that's fine.
@@ -2471,7 +2471,7 @@ fn test_tryfrom_obj_money_ref_to_dyn_money_success() {
     let obj: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.50)).unwrap());
     let dyn_money = DynMoney::try_from(obj.as_ref()).unwrap();
     assert_eq!(dyn_money.amount, dec!(100.50));
-    assert_eq!(dyn_money.currency.0.code, "USD");
+    assert_eq!(dyn_money.currency.code, "USD");
 }
 
 #[test]
@@ -2489,7 +2489,7 @@ fn test_tryfrom_obj_money_ref_to_dyn_money_invalid_code() {
 fn test_tryfrom_obj_money_ref_to_dyn_money_eur() {
     let obj: Box<dyn ObjMoney> = Box::new(Money::<EUR>::new(dec!(75.25)).unwrap());
     let dyn_money = DynMoney::try_from(obj.as_ref()).unwrap();
-    assert_eq!(dyn_money.currency.0.code, "EUR");
+    assert_eq!(dyn_money.currency.code, "EUR");
     assert_eq!(dyn_money.amount, dec!(75.25));
 }
 
@@ -2499,7 +2499,7 @@ fn test_tryfrom_obj_money_ref_to_dyn_money_eur() {
 fn test_tryfrom_box_obj_money_to_dyn_money_success() {
     let obj: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(200.00)).unwrap());
     let dyn_money = DynMoney::try_from(obj).unwrap();
-    assert_eq!(dyn_money.currency.0.code, "USD");
+    assert_eq!(dyn_money.currency.code, "USD");
     assert_eq!(dyn_money.amount, dec!(200.00));
 }
 
@@ -2507,7 +2507,7 @@ fn test_tryfrom_box_obj_money_to_dyn_money_success() {
 fn test_tryfrom_box_obj_money_to_dyn_money_jpy() {
     let obj: Box<dyn ObjMoney> = Box::new(Money::<JPY>::new(dec!(5000)).unwrap());
     let dyn_money = DynMoney::try_from(obj).unwrap();
-    assert_eq!(dyn_money.currency.0.code, "JPY");
+    assert_eq!(dyn_money.currency.code, "JPY");
     assert_eq!(dyn_money.amount, dec!(5000));
 }
 
@@ -2516,7 +2516,7 @@ fn test_tryfrom_box_obj_money_to_dyn_money_jpy() {
 fn test_tryfrom_box_obj_money_raw_to_dyn_money() {
     let obj: Box<dyn ObjMoney> = Box::new(RawMoney::<EUR>::new(dec!(99.9999)).unwrap());
     let dyn_money = DynMoney::try_from(obj).unwrap();
-    assert_eq!(dyn_money.currency.0.code, "EUR");
+    assert_eq!(dyn_money.currency.code, "EUR");
 }
 
 // ==================== TryFrom<DynMoney> for Money<C> ====================
@@ -2776,7 +2776,7 @@ fn test_dyn_money_partial_ord_raw_money_diff_currency() {
 fn test_from_money_to_dyn_money() {
     let money = Money::<USD>::new(dec!(123.45)).unwrap();
     let dyn_m = DynMoney::from(money);
-    assert_eq!(dyn_m.currency.0.code, "USD");
+    assert_eq!(dyn_m.currency.code, "USD");
     assert_eq!(dyn_m.amount, dec!(123.45));
 }
 
@@ -2784,7 +2784,7 @@ fn test_from_money_to_dyn_money() {
 fn test_from_money_to_dyn_money_eur() {
     let money = Money::<EUR>::new(dec!(99.99)).unwrap();
     let dyn_m: DynMoney = money.into();
-    assert_eq!(dyn_m.currency.0.code, "EUR");
+    assert_eq!(dyn_m.currency.code, "EUR");
     assert_eq!(dyn_m.amount, dec!(99.99));
 }
 
@@ -2792,7 +2792,7 @@ fn test_from_money_to_dyn_money_eur() {
 fn test_from_money_to_dyn_money_jpy() {
     let money = Money::<JPY>::new(dec!(5000)).unwrap();
     let dyn_m: DynMoney = money.into();
-    assert_eq!(dyn_m.currency.0.code, "JPY");
+    assert_eq!(dyn_m.currency.code, "JPY");
     assert_eq!(dyn_m.amount, dec!(5000));
 }
 
@@ -2929,7 +2929,7 @@ fn test_from_raw_money_to_dyn_money() {
     // With is_raw=false (default), the amount is rounded to the currency's minor unit.
     let raw = RawMoney::<USD>::new(dec!(99.12)).unwrap();
     let dyn_m = DynMoney::from(raw);
-    assert_eq!(dyn_m.currency.0.code, "USD");
+    assert_eq!(dyn_m.currency.code, "USD");
     assert_eq!(dyn_m.amount, dec!(99.12));
 }
 
@@ -2938,7 +2938,7 @@ fn test_from_raw_money_to_dyn_money() {
 fn test_from_raw_money_to_dyn_money_into() {
     let raw = RawMoney::<EUR>::new(dec!(55.55)).unwrap();
     let dyn_m: DynMoney = raw.into();
-    assert_eq!(dyn_m.currency.0.code, "EUR");
+    assert_eq!(dyn_m.currency.code, "EUR");
     assert_eq!(dyn_m.amount, dec!(55.55));
 }
 
@@ -2947,7 +2947,7 @@ fn test_from_raw_money_to_dyn_money_into() {
 fn test_from_raw_money_to_dyn_money_jpy() {
     let raw = RawMoney::<JPY>::new(dec!(10000)).unwrap();
     let dyn_m: DynMoney = raw.into();
-    assert_eq!(dyn_m.currency.0.code, "JPY");
+    assert_eq!(dyn_m.currency.code, "JPY");
     assert_eq!(dyn_m.amount, dec!(10000));
 }
 
