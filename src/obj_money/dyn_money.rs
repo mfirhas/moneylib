@@ -69,6 +69,17 @@ impl DynMoney {
         }
     }
 
+    /// Constructs a `DynMoney` without rounding the amount, regardless of the global
+    /// `Context::is_raw()` flag. Use this when you need to preserve full precision
+    /// (e.g. to represent a `RawMoney` value as a `DynMoney`).
+    #[inline(always)]
+    pub fn from_decimal_raw<C: Currency>(amount: Decimal) -> Self {
+        Self {
+            amount,
+            currency: DynCurrency::from_curr::<C>(),
+        }
+    }
+
     #[inline(always)]
     pub fn new_with_curr(currency: DynCurrency, amount: Decimal) -> Self {
         Self {
