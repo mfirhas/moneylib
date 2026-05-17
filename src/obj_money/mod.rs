@@ -21,10 +21,10 @@ mod raw_money_impl;
 mod obj_money_test;
 
 mod helpers {
-    /// converts Currency into Data
+    /// converts Currency into DynCurrency
     #[inline(always)]
     pub(super) const fn dyn_curr_from<C: crate::Currency>() -> super::DynCurrency {
-        super::DynCurrency(currencylib::data::Data {
+        super::DynCurrency {
             code: C::CODE,
             symbol: C::SYMBOL,
             name: C::NAME,
@@ -36,7 +36,7 @@ mod helpers {
             decimal_separator: C::DECIMAL_SEPARATOR,
             origin: C::ORIGIN,
             locale: C::LOCALE,
-        })
+        }
     }
 
     /// get the amount rounded or not depends on Context's config.
@@ -59,6 +59,6 @@ mod helpers {
             return amount;
         }
 
-        amount.round_dp(currency.0.minor_unit.into())
+        amount.round_dp(currency.minor_unit.into())
     }
 }
