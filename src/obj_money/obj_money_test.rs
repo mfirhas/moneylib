@@ -1728,6 +1728,25 @@ fn test_tryfrom_raw_money_obj_to_money() {
 
 use crate::obj_money::DynMoney;
 
+// ---- from_decimal_raw ----
+
+#[test]
+fn test_dyn_money_from_decimal_raw_preserves_full_precision() {
+    // from_decimal_raw must NOT round, regardless of the Context::is_raw() flag.
+    let m = DynMoney::from_decimal_raw::<USD>(dec!(12.345678));
+    assert_eq!(m.amount(), dec!(12.345678));
+    assert_eq!(m.code(), "USD");
+}
+
+#[test]
+fn test_dyn_money_from_decimal_raw_vs_from_decimal() {
+    // from_decimal rounds to minor_unit (2 dp for USD); from_decimal_raw does not.
+    let rounded = DynMoney::from_decimal::<USD>(dec!(99.999));
+    let raw = DynMoney::from_decimal_raw::<USD>(dec!(99.999));
+    assert_eq!(rounded.amount(), dec!(100.00));
+    assert_eq!(raw.amount(), dec!(99.999));
+}
+
 // ---- primitive accessors ----
 
 #[test]
