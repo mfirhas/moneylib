@@ -72,6 +72,15 @@ pub trait ObjMoney: Send + Sync {
     /// Returns the minor-unit symbol (e.g. `"¢"` for USD, `"minor"` when none is defined).
     fn minor_unit_symbol(&self) -> &str;
 
+    /// Returns the minor-unit name (e.g. `"cent"` for USD, `"penny"` for GBP).
+    fn minor_unit_name(&self) -> &str;
+
+    /// Returns the country or region of origin (e.g. `"United States"` for USD).
+    fn origin(&self) -> &str;
+
+    /// Returns the BCP 47 locale tag for this currency (e.g. `"en-US"` for USD).
+    fn locale(&self) -> &str;
+
     /// Returns the money amount in its smallest unit (e.g. cents for USD, pence for GBP).
     ///
     /// # Errors
@@ -132,6 +141,60 @@ pub trait ObjMoney: Send + Sync {
     ///
     /// Returns `None` on division by zero or overflow.
     fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Returns `true` if `self` and `amount` differ by at most `tolerance` (inclusive).
+    ///
+    /// Uses the absolute value of `(self.amount() - amount)` for the comparison, so
+    /// the tolerance must be non-negative for a meaningful result.
+    ///
+    /// Returns `false` if `tolerance` is `None` (overflow during subtraction).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, BaseMoney, obj_money::ObjMoney, macros::dec, iso::USD};
+    ///
+    /// let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.01)).unwrap());
+    /// assert!(m.is_approx(dec!(100.00), dec!(0.05)));
+    /// assert!(!m.is_approx(dec!(100.00), dec!(0.00)));
+    /// ```
+    #[inline]
+    fn is_approx(&self, amount: Decimal, tolerance: Decimal) -> bool {
+        self.amount()
+            .checked_sub(amount)
+            .is_some_and(|diff| tolerance >= diff.abs())
+    }
+
+    /// Formats money with a custom format string and explicit separators.
+    ///
+    /// This is the runtime equivalent of [`crate::MoneyFormatter::format_with_separator`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, BaseMoney, obj_money::ObjMoney, macros::dec, iso::USD};
+    ///
+    /// let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(93009.45)).unwrap());
+    /// assert_eq!(m.format_with_separator("c na", "*", "#"), "USD 93*009#45");
+    /// ```
+    #[inline]
+    fn format_with_separator(
+        &self,
+        format_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> String {
+        super::fmt::format_obj_money(
+            self.amount(),
+            self.code(),
+            self.symbol(),
+            self.minor_unit_symbol(),
+            self.minor_unit(),
+            thousand_separator,
+            decimal_separator,
+            format_str,
+        )
+    }
 
     // ---- Provided: derived from the required methods above ----
 
@@ -313,6 +376,21 @@ impl ObjMoney for Box<dyn ObjMoney> {
     }
 
     #[inline]
+    fn minor_unit_name(&self) -> &str {
+        (**self).minor_unit_name()
+    }
+
+    #[inline]
+    fn origin(&self) -> &str {
+        (**self).origin()
+    }
+
+    #[inline]
+    fn locale(&self) -> &str {
+        (**self).locale()
+    }
+
+    #[inline]
     fn minor_amount(&self) -> Option<i128> {
         (**self).minor_amount()
     }
@@ -384,6 +462,21 @@ impl ObjMoney for Box<dyn ObjMoney> {
     #[inline]
     fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
         (**self).checked_rem(rhs)
+    }
+
+    #[inline]
+    fn is_approx(&self, amount: Decimal, tolerance: Decimal) -> bool {
+        (**self).is_approx(amount, tolerance)
+    }
+
+    #[inline]
+    fn format_with_separator(
+        &self,
+        format_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> String {
+        (**self).format_with_separator(format_str, thousand_separator, decimal_separator)
     }
 }
 

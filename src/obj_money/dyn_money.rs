@@ -140,6 +140,21 @@ impl super::ObjMoney for DynMoney {
     }
 
     #[inline]
+    fn minor_unit_name(&self) -> &str {
+        self.currency.0.minor_unit_name
+    }
+
+    #[inline]
+    fn origin(&self) -> &str {
+        self.currency.0.origin
+    }
+
+    #[inline]
+    fn locale(&self) -> &str {
+        self.currency.0.locale
+    }
+
+    #[inline]
     fn minor_amount(&self) -> Option<i128> {
         self.amount
             .round_dp(self.currency.0.minor_unit.into())

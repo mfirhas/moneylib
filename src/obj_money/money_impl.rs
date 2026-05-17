@@ -35,6 +35,21 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
     }
 
     #[inline]
+    fn minor_unit_name(&self) -> &str {
+        C::MINOR_UNIT_NAME
+    }
+
+    #[inline]
+    fn origin(&self) -> &str {
+        C::ORIGIN
+    }
+
+    #[inline]
+    fn locale(&self) -> &str {
+        C::LOCALE
+    }
+
+    #[inline]
     fn minor_amount(&self) -> Option<i128> {
         BaseMoney::minor_amount(self)
     }
