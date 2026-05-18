@@ -3314,3 +3314,80 @@ fn test_dyn_money_format_with_separator() {
         "USD 1.234,56"
     );
 }
+
+// ==================== DynCurrency: From<C> impl ====================
+
+/// Covers `impl<C: Currency> From<C> for DynCurrency` (dyn_money.rs lines 40-42).
+#[test]
+fn test_dyn_currency_from_currency_usd() {
+    use crate::obj_money::DynCurrency;
+    let curr = DynCurrency::from(USD);
+    assert_eq!(curr.code(), "USD");
+    assert_eq!(curr.symbol, "$");
+    assert_eq!(curr.minor_unit, 2);
+}
+
+#[test]
+fn test_dyn_currency_from_currency_jpy() {
+    use crate::obj_money::DynCurrency;
+    let curr = DynCurrency::from(JPY);
+    assert_eq!(curr.code(), "JPY");
+    assert_eq!(curr.minor_unit, 0);
+}
+
+// ==================== Context::set_raw and helpers with is_raw==true ====================
+
+/// Covers `Context::set_raw()` (context.rs lines 46-48), and the `is_raw=true` early-return
+/// paths in `helpers::amount` (mod.rs line 28) and `helpers::amount_with_curr` (mod.rs line 41).
+///
+/// These tests are marked `#[serial]` to prevent race conditions: `IS_RAW` is a process-wide
+/// `AtomicBool` and concurrent mutation would corrupt other tests that rely on the default
+/// `is_raw=false` behaviour.
+#[serial_test::serial]
+#[test]
+fn test_context_set_raw_toggles_is_raw() {
+    use crate::obj_money::Context;
+    // Default is false; toggle to true, verify, then restore.
+    Context::set_raw(true);
+    assert!(Context::is_raw());
+    Context::set_raw(false);
+    assert!(!Context::is_raw());
+}
+
+/// When `is_raw=true`, `helpers::amount` must return the amount unchanged (no rounding).
+/// `DynMoney::from_decimal::<USD>(dec!(1.123456))` would normally round to `1.12` for USD
+/// (2 minor units), but with is_raw=true it must preserve the full precision.
+#[serial_test::serial]
+#[test]
+fn test_helpers_amount_is_raw_true_preserves_precision() {
+    use crate::obj_money::{Context, DynMoney};
+    Context::set_raw(true);
+    let m = DynMoney::from_decimal::<USD>(dec!(1.123456));
+    Context::set_raw(false);
+    assert_eq!(m.amount(), dec!(1.123456));
+}
+
+/// When `is_raw=true`, `helpers::amount_with_curr` must also skip rounding.
+/// `DynMoney::new_with_curr` delegates to `helpers::amount_with_curr`.
+#[serial_test::serial]
+#[test]
+fn test_helpers_amount_with_curr_is_raw_true_preserves_precision() {
+    use crate::obj_money::{Context, DynMoney};
+    let currency = Context::get_currency("EUR").unwrap();
+    Context::set_raw(true);
+    let m = DynMoney::new_with_curr(currency, dec!(9.999999));
+    Context::set_raw(false);
+    assert_eq!(m.amount(), dec!(9.999999));
+}
+
+/// Verify that after restoring is_raw=false, subsequent constructions still round normally.
+#[serial_test::serial]
+#[test]
+fn test_context_set_raw_false_re_enables_rounding() {
+    use crate::obj_money::{Context, DynMoney};
+    Context::set_raw(true);
+    Context::set_raw(false);
+    // Back to normal: USD should round to 2 dp.
+    let m = DynMoney::from_decimal::<USD>(dec!(1.999999));
+    assert_eq!(m.amount(), dec!(2.00));
+}
