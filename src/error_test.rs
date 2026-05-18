@@ -37,3 +37,11 @@ fn test_exchange_error_display() {
     assert!(err.to_string().contains("[MONEYLIB]"));
     assert!(err.to_string().contains("rate not found"));
 }
+
+#[cfg(feature = "obj_money")]
+#[test]
+fn test_obj_money_error_display() {
+    let err_msg = "obj_money error";
+    let err = MoneyError::ObjMoneyError(err_msg.into());
+    assert!(err.to_string().contains("obj_money error"));
+}

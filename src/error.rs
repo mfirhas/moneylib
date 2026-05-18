@@ -46,7 +46,7 @@ impl Display for MoneyError {
             #[cfg(feature = "exchange")]
             MoneyError::ExchangeError(err) => write!(f, "{ERROR_PREFIX} exchange error: {}", err),
 
-            MoneyError::ObjMoneyError(err) => write!(f, "{ERROR_PREFIX} error: {}", err),
+            MoneyError::ObjMoneyError(err) => write!(f, "{ERROR_PREFIX} obj_money error: {}", err),
         }
     }
 }
