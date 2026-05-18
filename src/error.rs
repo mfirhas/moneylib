@@ -20,7 +20,8 @@ pub enum MoneyError {
     #[cfg(feature = "exchange")]
     ExchangeError(ErrVal),
 
-    Other(ErrVal),
+    #[cfg(feature = "obj_money")]
+    ObjMoneyError(ErrVal),
 }
 
 impl Display for MoneyError {
@@ -45,7 +46,7 @@ impl Display for MoneyError {
             #[cfg(feature = "exchange")]
             MoneyError::ExchangeError(err) => write!(f, "{ERROR_PREFIX} exchange error: {}", err),
 
-            MoneyError::Other(err) => write!(f, "{ERROR_PREFIX} error: {}", err),
+            MoneyError::ObjMoneyError(err) => write!(f, "{ERROR_PREFIX} error: {}", err),
         }
     }
 }

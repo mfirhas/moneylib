@@ -2380,7 +2380,7 @@ fn test_context_register_currency_duplicate_error() {
     use crate::obj_money::Context;
     // USD is already registered, so this must return an error without modifying state.
     let result = Context::register_currency::<USD>();
-    assert!(matches!(result, Err(MoneyError::Other(_))));
+    assert!(matches!(result, Err(MoneyError::ObjMoneyError(_))));
 }
 
 #[test]
@@ -2438,7 +2438,7 @@ fn test_context_register_currency_success() {
             assert_eq!(curr.code, "XZZ");
             assert_eq!(curr.symbol, "T");
         }
-        Err(MoneyError::Other(_)) => {
+        Err(MoneyError::ObjMoneyError(_)) => {
             // Already registered from a previous test in the same process — that's fine.
             assert!(Context::is_currency_exist("XZZ"));
         }
@@ -2482,7 +2482,7 @@ fn test_tryfrom_obj_money_ref_to_dyn_money_invalid_code() {
     // Since all valid Money/RawMoney currencies exist in Context, use a direct new_with_code:
     let result = DynMoney::new_with_code("INVALID", dec!(1.00));
     assert!(result.is_err());
-    assert!(matches!(result, Err(MoneyError::Other(_))));
+    assert!(matches!(result, Err(MoneyError::ObjMoneyError(_))));
 }
 
 #[test]

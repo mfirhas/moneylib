@@ -49,11 +49,11 @@ impl Context {
 
     pub fn register_currency<C: Currency>() -> Result<(), MoneyError> {
         let mut write = CURRENCIES.write().map_err(|_| {
-            MoneyError::Other("failed getting lock to write into CURRENCIES".into())
+            MoneyError::ObjMoneyError("failed getting lock to write into CURRENCIES".into())
         })?;
 
         if write.contains_key(&C::CODE) {
-            return Err(MoneyError::Other(
+            return Err(MoneyError::ObjMoneyError(
                 format!(
                     "Currency with code {} already exist: {:?}",
                     C::CODE,
@@ -86,9 +86,9 @@ impl Context {
             ));
         }
 
-        let mut write = CURRENCIES
-            .write()
-            .map_err(|_| MoneyError::Other("failed getting lock to set into CURRENCIES".into()))?;
+        let mut write = CURRENCIES.write().map_err(|_| {
+            MoneyError::ObjMoneyError("failed getting lock to set into CURRENCIES".into())
+        })?;
 
         write.insert(C::CODE, super::DynCurrency::from_curr::<C>());
 

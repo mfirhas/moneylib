@@ -86,7 +86,7 @@ impl DynMoney {
             });
         }
 
-        Err(MoneyError::Other(
+        Err(MoneyError::ObjMoneyError(
             format!("currency {} not found", code).into(),
         ))
     }
@@ -112,7 +112,7 @@ impl DynMoney {
             return Ok(Self { currency, ..*self });
         }
 
-        Err(MoneyError::Other(
+        Err(MoneyError::ObjMoneyError(
             format!("currency {} not found", code).into(),
         ))
     }
