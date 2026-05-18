@@ -34,6 +34,16 @@ impl DynCurrency {
             locale: C::LOCALE,
         }
     }
+
+    pub fn from_code(code: &str) -> Result<Self, MoneyError> {
+        if let Some(curr) = super::Context::get_currency(code) {
+            return Ok(curr);
+        }
+
+        Err(MoneyError::ObjMoneyError(
+            format!("currency {} not found", code).into(),
+        ))
+    }
 }
 
 impl<C: Currency> From<C> for DynCurrency {

@@ -3319,3 +3319,21 @@ fn test_dyn_money_format_with_separator() {
 fn test_set_raw() {
     super::Context::set_raw(false);
 }
+
+#[test]
+fn test_dyn_currency_from_curr() {
+    let dc: super::DynCurrency = crate::iso::JPY.into();
+    assert_eq!(dc.code, "JPY");
+}
+
+#[test]
+fn test_dyn_currency_from_code() {
+    let dc = super::DynCurrency::from_code("XAU").unwrap();
+    assert_eq!(dc.code, "XAU");
+}
+
+#[test]
+fn test_dyn_currency_from_code_not_found() {
+    let dc = super::DynCurrency::from_code("ASD");
+    assert!(dc.is_err());
+}
