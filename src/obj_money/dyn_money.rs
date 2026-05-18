@@ -56,8 +56,8 @@ impl PartialEq for DynCurrency {
 
 #[derive(Debug, Clone, Copy, Eq)]
 pub struct DynMoney {
-    pub(super) amount: Decimal,
-    pub(super) currency: DynCurrency,
+    amount: Decimal,
+    currency: DynCurrency,
 }
 
 impl DynMoney {
