@@ -3314,3 +3314,8 @@ fn test_dyn_money_format_with_separator() {
         "USD 1.234,56"
     );
 }
+
+#[test]
+fn test_set_raw() {
+    super::Context::set_raw(false);
+}
