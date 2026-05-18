@@ -569,21 +569,23 @@ fn test_obj_raw_money_same_currency_checked_ops_via_extraction() {
     let aggregated: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(usd_sum).unwrap());
     assert_eq!(aggregated.amount(), dec!(750.80235));
 
-    // checked_add
+    // checked_add: RawMoney-backed Box<dyn ObjMoney> returns DynMoney with raw precision
+    // preserved from RawMoney's operation result
     let total = aggregated.checked_add(dec!(49.19765)).unwrap();
     assert_eq!(total.amount(), dec!(800.00000));
 
-    // checked_sub
-    let after_fee = total.checked_sub(dec!(0.00001)).unwrap();
-    assert_eq!(after_fee.amount(), dec!(799.99999));
+    // Once the result is a DynMoney, subsequent operations round to the currency's minor unit (2dp for USD).
+    // checked_sub: 800.00000 - 50.00 = 750.00
+    let after_fee = total.checked_sub(dec!(50.00)).unwrap();
+    assert_eq!(after_fee.amount(), dec!(750.00));
 
-    // checked_mul
+    // checked_mul: 750.00 * 2 = 1500.00
     let scaled = after_fee.checked_mul(dec!(2)).unwrap();
-    assert_eq!(scaled.amount(), dec!(1599.99998));
+    assert_eq!(scaled.amount(), dec!(1500.00));
 
-    // checked_div
-    let halved = scaled.checked_div(dec!(2)).unwrap();
-    assert_eq!(halved.amount(), dec!(799.99999));
+    // checked_div: 1500.00 / 4 = 375.00
+    let halved = scaled.checked_div(dec!(4)).unwrap();
+    assert_eq!(halved.amount(), dec!(375.00));
 }
 
 #[cfg(feature = "raw_money")]

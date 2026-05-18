@@ -65,57 +65,69 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
     }
 
     #[inline]
-    fn abs(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(BaseOps::abs(self))
+    fn abs(&self) -> super::DynMoney {
+        super::DynMoney::from_decimal::<C>(BaseMoney::amount(&BaseOps::abs(self)))
     }
 
     #[inline]
-    fn round(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(BaseMoney::round(*self))
+    fn round(&self) -> super::DynMoney {
+        super::DynMoney::from_decimal::<C>(BaseMoney::amount(&BaseMoney::round(*self)))
     }
 
     #[inline]
-    fn round_with(
-        &self,
-        decimal_points: u32,
-        strategy: RoundingStrategy,
-    ) -> Box<dyn super::ObjMoney> {
-        Box::new(BaseMoney::round_with(*self, decimal_points, strategy))
+    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> super::DynMoney {
+        super::DynMoney::from_decimal::<C>(BaseMoney::amount(&BaseMoney::round_with(
+            *self,
+            decimal_points,
+            strategy,
+        )))
     }
 
     #[inline]
-    fn truncate(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(BaseMoney::truncate(self))
+    fn truncate(&self) -> super::DynMoney {
+        super::DynMoney::from_decimal::<C>(BaseMoney::amount(&BaseMoney::truncate(self)))
     }
 
     #[inline]
-    fn truncate_with(&self, scale: u32) -> Box<dyn super::ObjMoney> {
-        Box::new(BaseMoney::truncate_with(self, scale))
+    fn truncate_with(&self, scale: u32) -> super::DynMoney {
+        super::DynMoney::from_decimal::<C>(BaseMoney::amount(&BaseMoney::truncate_with(
+            self, scale,
+        )))
     }
 
     #[inline]
-    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(BaseOps::checked_add(self, rhs)?))
+    fn checked_add(&self, rhs: Decimal) -> Option<super::DynMoney> {
+        Some(super::DynMoney::from_decimal::<C>(BaseMoney::amount(
+            &BaseOps::checked_add(self, rhs)?,
+        )))
     }
 
     #[inline]
-    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(BaseOps::checked_sub(self, rhs)?))
+    fn checked_sub(&self, rhs: Decimal) -> Option<super::DynMoney> {
+        Some(super::DynMoney::from_decimal::<C>(BaseMoney::amount(
+            &BaseOps::checked_sub(self, rhs)?,
+        )))
     }
 
     #[inline]
-    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(BaseOps::checked_mul(self, rhs)?))
+    fn checked_mul(&self, rhs: Decimal) -> Option<super::DynMoney> {
+        Some(super::DynMoney::from_decimal::<C>(BaseMoney::amount(
+            &BaseOps::checked_mul(self, rhs)?,
+        )))
     }
 
     #[inline]
-    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(BaseOps::checked_div(self, rhs)?))
+    fn checked_div(&self, rhs: Decimal) -> Option<super::DynMoney> {
+        Some(super::DynMoney::from_decimal::<C>(BaseMoney::amount(
+            &BaseOps::checked_div(self, rhs)?,
+        )))
     }
 
     #[inline]
-    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(BaseOps::checked_rem(self, rhs)?))
+    fn checked_rem(&self, rhs: Decimal) -> Option<super::DynMoney> {
+        Some(super::DynMoney::from_decimal::<C>(BaseMoney::amount(
+            &BaseOps::checked_rem(self, rhs)?,
+        )))
     }
 
     #[cfg(feature = "exchange")]
@@ -123,10 +135,9 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
         &self,
         to_code: &str,
         rate: &dyn crate::exchange::ObjRate,
-    ) -> Result<Box<dyn super::ObjMoney>, crate::MoneyError> {
+    ) -> Result<super::DynMoney, crate::MoneyError> {
         if C::CODE == to_code {
-            let ret = Box::new(super::DynMoney::from_decimal::<C>(BaseMoney::amount(self)));
-            return Ok(ret);
+            return Ok(super::DynMoney::from_decimal::<C>(BaseMoney::amount(self)));
         }
 
         let rate_amount = rate.get_rate(C::CODE, to_code).ok_or_else(|| {
@@ -144,9 +155,7 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
             .checked_mul(rate_amount)
             .ok_or(MoneyError::OverflowError)?;
 
-        let ret = super::DynMoney::new_with_code(to_code, result)?;
-
-        Ok(Box::new(ret))
+        super::DynMoney::new_with_code(to_code, result)
     }
 }
 

@@ -69,6 +69,16 @@ impl DynMoney {
         }
     }
 
+    /// Create a `DynMoney` without rounding the amount (preserves full decimal precision).
+    /// Used internally by `RawMoney`'s `ObjMoney` implementation.
+    #[inline(always)]
+    pub(super) fn from_decimal_exact<C: Currency>(amount: Decimal) -> Self {
+        Self {
+            amount,
+            currency: DynCurrency::from_curr::<C>(),
+        }
+    }
+
     #[inline(always)]
     pub fn new_with_curr(currency: DynCurrency, amount: Decimal) -> Self {
         Self {
@@ -208,62 +218,56 @@ impl super::ObjMoney for DynMoney {
     }
 
     #[inline]
-    fn abs(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(self.set_amount(self.amount.abs()))
+    fn abs(&self) -> DynMoney {
+        self.set_amount(self.amount.abs())
     }
 
     #[inline]
-    fn round(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(self.set_amount(self.amount.round_dp(self.currency.minor_unit.into())))
+    fn round(&self) -> DynMoney {
+        self.set_amount(self.amount.round_dp(self.currency.minor_unit.into()))
     }
 
     #[inline]
-    fn round_with(
-        &self,
-        decimal_points: u32,
-        strategy: RoundingStrategy,
-    ) -> Box<dyn super::ObjMoney> {
-        Box::new(
-            self.set_amount(
-                self.amount
-                    .round_dp_with_strategy(decimal_points, strategy.into()),
-            ),
+    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> DynMoney {
+        self.set_amount(
+            self.amount
+                .round_dp_with_strategy(decimal_points, strategy.into()),
         )
     }
 
     #[inline]
-    fn truncate(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(self.set_amount(self.amount.trunc()))
+    fn truncate(&self) -> DynMoney {
+        self.set_amount(self.amount.trunc())
     }
 
     #[inline]
-    fn truncate_with(&self, scale: u32) -> Box<dyn super::ObjMoney> {
-        Box::new(self.set_amount(self.amount.trunc_with_scale(scale)))
+    fn truncate_with(&self, scale: u32) -> DynMoney {
+        self.set_amount(self.amount.trunc_with_scale(scale))
     }
 
     #[inline]
-    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(self.set_amount(self.amount.checked_add(rhs)?)))
+    fn checked_add(&self, rhs: Decimal) -> Option<DynMoney> {
+        Some(self.set_amount(self.amount.checked_add(rhs)?))
     }
 
     #[inline]
-    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(self.set_amount(self.amount.checked_sub(rhs)?)))
+    fn checked_sub(&self, rhs: Decimal) -> Option<DynMoney> {
+        Some(self.set_amount(self.amount.checked_sub(rhs)?))
     }
 
     #[inline]
-    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(self.set_amount(self.amount.checked_mul(rhs)?)))
+    fn checked_mul(&self, rhs: Decimal) -> Option<DynMoney> {
+        Some(self.set_amount(self.amount.checked_mul(rhs)?))
     }
 
     #[inline]
-    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(self.set_amount(self.amount.checked_div(rhs)?)))
+    fn checked_div(&self, rhs: Decimal) -> Option<DynMoney> {
+        Some(self.set_amount(self.amount.checked_div(rhs)?))
     }
 
     #[inline]
-    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
-        Some(Box::new(self.set_amount(self.amount.checked_rem(rhs)?)))
+    fn checked_rem(&self, rhs: Decimal) -> Option<DynMoney> {
+        Some(self.set_amount(self.amount.checked_rem(rhs)?))
     }
 
     #[cfg(feature = "exchange")]
@@ -271,9 +275,9 @@ impl super::ObjMoney for DynMoney {
         &self,
         to_code: &str,
         rate: &dyn crate::exchange::ObjRate,
-    ) -> Result<Box<dyn super::ObjMoney>, MoneyError> {
+    ) -> Result<DynMoney, MoneyError> {
         if self.currency.code == to_code {
-            return Ok(Box::new(*self));
+            return Ok(*self);
         }
 
         let rate_val = rate.get_rate(self.currency.code, to_code).ok_or_else(|| {
@@ -291,7 +295,7 @@ impl super::ObjMoney for DynMoney {
             .checked_mul(rate_val)
             .ok_or(MoneyError::OverflowError)?;
 
-        Ok(Box::new(Self::new_with_code(to_code, new_amount)?))
+        Self::new_with_code(to_code, new_amount)
     }
 }
 

@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use super::fmt::format_obj_money;
+use super::{DynMoney, fmt::format_obj_money};
 use crate::{
     RoundingStrategy,
     fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR},
@@ -97,50 +97,50 @@ pub trait ObjMoney: Send + Sync {
         &self,
         to_code: &str,
         rate: &dyn crate::exchange::ObjRate,
-    ) -> Result<Box<dyn ObjMoney>, MoneyError>;
+    ) -> Result<DynMoney, MoneyError>;
 
     /// Returns the ISO 4217 numeric code for the currency (e.g. `840` for USD).
     fn numeric_code(&self) -> i32;
 
     /// Returns the absolute value of the money amount, preserving currency.
-    fn abs(&self) -> Box<dyn ObjMoney>;
+    fn abs(&self) -> DynMoney;
 
     /// Rounds the money amount to the currency's minor unit using bankers rounding.
-    fn round(&self) -> Box<dyn ObjMoney>;
+    fn round(&self) -> DynMoney;
 
     /// Rounds the money amount to `decimal_points` places using `strategy`.
-    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> Box<dyn ObjMoney>;
+    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> DynMoney;
 
     /// Truncates the money amount, removing the fractional part entirely.
-    fn truncate(&self) -> Box<dyn ObjMoney>;
+    fn truncate(&self) -> DynMoney;
 
     /// Truncates the money amount to `scale` decimal places.
-    fn truncate_with(&self, scale: u32) -> Box<dyn ObjMoney>;
+    fn truncate_with(&self, scale: u32) -> DynMoney;
 
     /// Adds `rhs` (a raw decimal amount) to this money value.
     ///
     /// Returns `None` on overflow.
-    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+    fn checked_add(&self, rhs: Decimal) -> Option<DynMoney>;
 
     /// Subtracts `rhs` (a raw decimal amount) from this money value.
     ///
     /// Returns `None` on overflow.
-    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+    fn checked_sub(&self, rhs: Decimal) -> Option<DynMoney>;
 
     /// Multiplies this money value by `rhs`.
     ///
     /// Returns `None` on overflow.
-    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+    fn checked_mul(&self, rhs: Decimal) -> Option<DynMoney>;
 
     /// Divides this money value by `rhs`.
     ///
     /// Returns `None` on division by zero or overflow.
-    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+    fn checked_div(&self, rhs: Decimal) -> Option<DynMoney>;
 
     /// Returns the remainder of dividing this money value by `rhs`.
     ///
     /// Returns `None` on division by zero or overflow.
-    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+    fn checked_rem(&self, rhs: Decimal) -> Option<DynMoney>;
 
     /// Returns `true` if `self` and `amount` differ by at most `tolerance` (inclusive).
     ///
@@ -405,7 +405,7 @@ impl ObjMoney for Box<dyn ObjMoney> {
         &self,
         to_code: &str,
         rate: &dyn crate::exchange::ObjRate,
-    ) -> Result<Box<dyn ObjMoney>, MoneyError> {
+    ) -> Result<DynMoney, MoneyError> {
         (**self).convert(to_code, rate)
     }
 
@@ -415,52 +415,52 @@ impl ObjMoney for Box<dyn ObjMoney> {
     }
 
     #[inline]
-    fn abs(&self) -> Box<dyn ObjMoney> {
+    fn abs(&self) -> DynMoney {
         (**self).abs()
     }
 
     #[inline]
-    fn round(&self) -> Box<dyn ObjMoney> {
+    fn round(&self) -> DynMoney {
         (**self).round()
     }
 
     #[inline]
-    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> Box<dyn ObjMoney> {
+    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> DynMoney {
         (**self).round_with(decimal_points, strategy)
     }
 
     #[inline]
-    fn truncate(&self) -> Box<dyn ObjMoney> {
+    fn truncate(&self) -> DynMoney {
         (**self).truncate()
     }
 
     #[inline]
-    fn truncate_with(&self, scale: u32) -> Box<dyn ObjMoney> {
+    fn truncate_with(&self, scale: u32) -> DynMoney {
         (**self).truncate_with(scale)
     }
 
     #[inline]
-    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+    fn checked_add(&self, rhs: Decimal) -> Option<DynMoney> {
         (**self).checked_add(rhs)
     }
 
     #[inline]
-    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+    fn checked_sub(&self, rhs: Decimal) -> Option<DynMoney> {
         (**self).checked_sub(rhs)
     }
 
     #[inline]
-    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+    fn checked_mul(&self, rhs: Decimal) -> Option<DynMoney> {
         (**self).checked_mul(rhs)
     }
 
     #[inline]
-    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+    fn checked_div(&self, rhs: Decimal) -> Option<DynMoney> {
         (**self).checked_div(rhs)
     }
 
     #[inline]
-    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+    fn checked_rem(&self, rhs: Decimal) -> Option<DynMoney> {
         (**self).checked_rem(rhs)
     }
 
@@ -492,7 +492,7 @@ pub trait ObjIterOps {
         &self,
         target_currency: &str,
         rates: impl crate::exchange::ObjRate,
-    ) -> Result<Box<dyn ObjMoney>, MoneyError>;
+    ) -> Result<DynMoney, MoneyError>;
 }
 
 impl<I, T> ObjIterOps for I
@@ -505,11 +505,8 @@ where
         &self,
         target_currency: &str,
         rates: impl crate::exchange::ObjRate,
-    ) -> Result<Box<dyn ObjMoney>, MoneyError> {
-        use crate::prelude::DynMoney;
-
-        let mut total: Box<dyn ObjMoney> =
-            Box::new(DynMoney::new_with_code(target_currency, Decimal::ZERO)?);
+    ) -> Result<DynMoney, MoneyError> {
+        let mut total = DynMoney::new_with_code(target_currency, Decimal::ZERO)?;
 
         for m in self {
             let res = m.convert(target_currency, &rates)?;
