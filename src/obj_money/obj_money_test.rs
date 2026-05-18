@@ -569,8 +569,8 @@ fn test_obj_raw_money_same_currency_checked_ops_via_extraction() {
     let aggregated: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(usd_sum).unwrap());
     assert_eq!(aggregated.amount(), dec!(750.80235));
 
-    // checked_add: RawMoney-backed Box<dyn ObjMoney> returns DynMoney with raw precision
-    // preserved from RawMoney's operation result
+    // checked_add: RawMoney-backed Box<dyn ObjMoney> returns DynMoney with preserved precision
+    // from RawMoney's operation result
     let total = aggregated.checked_add(dec!(49.19765)).unwrap();
     assert_eq!(total.amount(), dec!(800.00000));
 

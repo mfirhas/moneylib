@@ -70,7 +70,14 @@ impl DynMoney {
     }
 
     /// Create a `DynMoney` without rounding the amount (preserves full decimal precision).
-    /// Used internally by `RawMoney`'s `ObjMoney` implementation.
+    ///
+    /// Unlike [`DynMoney::from_decimal`], this constructor stores `amount` exactly as provided,
+    /// bypassing the currency's minor-unit rounding. Use this when the source value already
+    /// carries the correct precision — for example, inside `RawMoney`'s [`ObjMoney`] impl where
+    /// the amount must be retained until an explicit [`ObjMoney::round`] or
+    /// [`ObjMoney::round_with`] call is made.
+    ///
+    /// [`ObjMoney`]: super::ObjMoney
     #[inline(always)]
     pub(super) fn from_decimal_exact<C: Currency>(amount: Decimal) -> Self {
         Self {
