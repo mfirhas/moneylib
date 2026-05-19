@@ -63,8 +63,8 @@ pub trait Exchange<From: Currency> {
     ///
     /// let money = Money::<USD>::new(123).unwrap();
     /// let mut rates = ExchangeRates::<USD>::new();
-    /// rates.set(EUR::CODE, dec!(0.8));
-    /// rates.set(IDR::CODE, 17_000);
+    /// rates.set(EUR::CODE, dec!(0.8)).unwrap();
+    /// rates.set(IDR::CODE, 17_000).unwrap();
     /// let ret = money.convert::<EUR>(&rates);
     /// assert_eq!(ret.unwrap().amount(), dec!(98.4));
     /// let ret = money.convert::<IDR>(&rates);
@@ -221,10 +221,10 @@ impl<From: Currency, To: Currency> Rate<From, To> for i128 {}
 /// use moneylib::{Currency, Exchange, ExchangeRates, iso::{USD, EUR, IDR, IRR, CAD}, macros::dec};
 ///
 /// let mut rates = ExchangeRates::<USD>::new();
-/// rates.set(EUR::CODE, dec!(0.8));
-/// rates.set(IDR::CODE, 17000);
-/// rates.set(IRR::CODE, 1_321_700i128);
-/// rates.set(CAD::CODE, 1.8);
+/// rates.set(EUR::CODE, dec!(0.8)).unwrap();
+/// rates.set(IDR::CODE, 17000).unwrap();
+/// rates.set(IRR::CODE, 1_321_700i128).unwrap();
+/// rates.set(CAD::CODE, 1.8).unwrap();
 ///
 /// assert_eq!(rates.get(USD::CODE).unwrap(), dec!(1));
 /// assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(0.8));
@@ -409,11 +409,11 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// use moneylib::{Currency, ExchangeRates, iso::{USD, IDR, EUR}, macros::dec};
     ///
     /// let mut rates = ExchangeRates::<USD>::new();
-    /// rates.set(IDR::CODE, 16000);
+    /// rates.set(IDR::CODE, 16000).unwrap();
     /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(16000));
-    /// rates.set(IDR::CODE, dec!(17000.23));
+    /// rates.set(IDR::CODE, dec!(17000.23)).unwrap();
     /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(17000.23));
-    /// rates.set(EUR::CODE, dec!(0.8));
+    /// rates.set(EUR::CODE, dec!(0.8)).unwrap();
     /// assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(0.8));
     /// ```
     pub fn get(&self, code: &str) -> Option<Decimal> {
@@ -430,11 +430,11 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     /// use moneylib::{Currency, ExchangeRates, iso::{USD, IDR, EUR, CAD}, macros::dec};
     ///
     /// let mut rates = ExchangeRates::<USD>::new();
-    /// rates.set(IDR::CODE, 16000);
+    /// rates.set(IDR::CODE, 16000).unwrap();
     /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(16000));
-    /// rates.set(IDR::CODE, dec!(17000.23));
+    /// rates.set(IDR::CODE, dec!(17000.23)).unwrap();
     /// assert_eq!(rates.get(IDR::CODE).unwrap(), dec!(17000.23));
-    /// rates.set(EUR::CODE, dec!(0.8));
+    /// rates.set(EUR::CODE, dec!(0.8)).unwrap();
     /// assert_eq!(rates.get(EUR::CODE).unwrap(), dec!(0.8));
     ///
     /// let usd_idr = rates.get_pair(USD::CODE, IDR::CODE).unwrap();
