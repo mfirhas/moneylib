@@ -1020,7 +1020,7 @@ pub trait IterOps<C: Currency> {
     fn mode(&self) -> Option<Vec<Self::Item>>;
 }
 
-/// Trait for types that can represent a money amount: BaseMoney<C>, Decimal, f64, i32, i64, i128.
+/// Trait for types that can represent a money amount: `BaseMoney<C>`, Decimal, f64, i32, i64, i128.
 ///
 /// This trait allows for flexible input types in constructing and arithmetic operations.
 ///
