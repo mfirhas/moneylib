@@ -111,15 +111,19 @@ impl DynMoney {
 
     #[inline(always)]
     pub fn set_curr<C: Currency>(&self) -> Self {
+        let currency = DynCurrency::from_curr::<C>();
         Self {
-            currency: DynCurrency::from_curr::<C>(),
-            ..*self
+            amount: helpers::amount_with_curr(self.amount, currency),
+            currency,
         }
     }
 
     pub fn set_curr_from_code(&self, code: &str) -> Result<Self, MoneyError> {
         if let Some(currency) = super::Context::get_currency(code) {
-            return Ok(Self { currency, ..*self });
+            return Ok(Self {
+                amount: helpers::amount_with_curr(self.amount, currency),
+                currency,
+            });
         }
 
         Err(MoneyError::ObjMoneyError(
@@ -224,7 +228,10 @@ impl super::ObjMoney for DynMoney {
 
     #[inline]
     fn round(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(self.set_amount(self.amount.round_dp(self.currency.minor_unit.into())))
+        Box::new(Self {
+            amount: self.amount.round_dp(self.currency.minor_unit.into()),
+            currency: self.currency,
+        })
     }
 
     #[inline]
