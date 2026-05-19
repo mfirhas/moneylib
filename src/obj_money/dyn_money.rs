@@ -1,3 +1,5 @@
+use std::fmt::{Debug, Display};
+
 use crate::{Currency, Decimal, MoneyError, RoundingStrategy, prelude::ObjMoney};
 use rust_decimal::{MathematicalOps, prelude::ToPrimitive};
 
@@ -153,7 +155,7 @@ impl PartialEq for DynCurrency {
 /// assert_eq!(m.amount(), dec!(1234.57)); // rounded to 2 d.p.
 /// assert_eq!(m.code(), "USD");
 /// ```
-#[derive(Debug, Clone, Copy, Eq)]
+#[derive(Clone, Copy, Eq)]
 pub struct DynMoney {
     amount: Decimal,
     currency: DynCurrency,
@@ -690,5 +692,23 @@ impl<C: Currency> PartialOrd<RawMoney<C>> for DynMoney {
             return None;
         }
         self.amount.partial_cmp(&other.amount())
+    }
+}
+
+impl Display for DynMoney {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.display())
+    }
+}
+
+impl Debug for DynMoney {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "DynMoney({}, {}, is_raw: {})",
+            self.code(),
+            self.amount,
+            super::Context::is_raw()
+        )
     }
 }

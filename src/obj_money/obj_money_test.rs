@@ -3337,3 +3337,11 @@ fn test_dyn_currency_from_code_not_found() {
     let dc = super::DynCurrency::from_code("ASD");
     assert!(dc.is_err());
 }
+
+#[test]
+fn test_dyn_money_display_debug() {
+    let asd = DynMoney::from_decimal::<crate::iso::USD>(dec!(123.398));
+    dbg!(asd);
+    let display = asd.to_string();
+    assert_eq!(display.as_str(), "USD 123.40");
+}
