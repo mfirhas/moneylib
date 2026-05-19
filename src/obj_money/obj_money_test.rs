@@ -1325,7 +1325,7 @@ fn test_obj_money_convert_via_box_dyn_same_currency() {
     assert_eq!(result.code(), "EUR");
 }
 
-/// RawMoney converts to same currency without changing amount.
+/// RawMoney converts to same currency; result is rounded to currency's minor unit.
 #[cfg(all(feature = "exchange", feature = "raw_money"))]
 #[test]
 fn test_obj_raw_money_convert_same_currency() {
@@ -1336,8 +1336,8 @@ fn test_obj_raw_money_convert_same_currency() {
     assert_eq!(result.code(), "USD");
 }
 
-/// RawMoney preserves full precision after conversion (no rounding).
-/// 100.123456 * 0.8 = 80.0987648
+/// RawMoney converts to a different currency; result is rounded to the target currency's minor unit.
+/// 100.123456 * 0.8 = 80.0987648, rounded to EUR's 2 decimal places → 80.10
 #[cfg(all(feature = "exchange", feature = "raw_money"))]
 #[test]
 fn test_obj_raw_money_convert_to_different_currency() {
