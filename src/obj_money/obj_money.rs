@@ -482,6 +482,7 @@ impl ObjMoney for Box<dyn ObjMoney> {
 
 // --- ObjIterOps
 
+/// Operations on iterable ObjMoney
 pub trait ObjIterOps {
     /// Sum all ObjMoney inside iterable types.
     ///

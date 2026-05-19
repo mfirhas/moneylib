@@ -1,3 +1,5 @@
+//! Runtime-validated money types and trait along with currency.
+
 mod context;
 pub use context::Context;
 
