@@ -14,7 +14,8 @@
 /// ```
 /// use moneylib::{BaseMoney, macros::{dec, money}};
 ///
-/// // Short form: no `use moneylib::iso::USD;` needed
+/// // Short form: no `use moneylib::iso::USD;` needed.
+/// // `BaseMoney` is only required here to call `.amount()` — not to invoke the macro itself.
 /// let m = money!(USD, 40.237);
 /// assert_eq!(m.amount(), dec!(40.24)); // rounded to 2 decimal places for USD
 ///
@@ -34,11 +35,11 @@
 macro_rules! money {
     // Short form: bare ISO currency identifier, auto-resolved from crate::iso
     ($currency:ident, $($amount:tt)+) => {
-        $crate::Money::<$crate::iso::$currency>::from_decimal($crate::dec!($($amount)+))
+        <$crate::Money::<$crate::iso::$currency> as $crate::BaseMoney::<$crate::iso::$currency>>::from_decimal($crate::dec!($($amount)+))
     };
     // Long form: explicit path for custom currency types (must be in scope)
     ($currency:path, $($amount:tt)+) => {
-        $crate::Money::<$currency>::from_decimal($crate::dec!($($amount)+))
+        <$crate::Money::<$currency> as $crate::BaseMoney::<$currency>>::from_decimal($crate::dec!($($amount)+))
     };
 }
 
@@ -58,7 +59,8 @@ macro_rules! money {
 /// ```
 /// use moneylib::{BaseMoney, macros::{dec, raw}};
 ///
-/// // Short form: no `use moneylib::iso::USD;` needed
+/// // Short form: no `use moneylib::iso::USD;` needed.
+/// // `BaseMoney` is only required here to call `.amount()` — not to invoke the macro itself.
 /// let m = raw!(USD, 40.237);
 /// assert_eq!(m.amount(), dec!(40.237));
 ///
@@ -79,11 +81,11 @@ macro_rules! money {
 macro_rules! raw {
     // Short form: bare ISO currency identifier, auto-resolved from crate::iso
     ($currency:ident, $($amount:tt)+) => {
-        $crate::RawMoney::<$crate::iso::$currency>::from_decimal($crate::dec!($($amount)+))
+        <$crate::RawMoney::<$crate::iso::$currency> as $crate::BaseMoney::<$crate::iso::$currency>>::from_decimal($crate::dec!($($amount)+))
     };
     // Long form: explicit path for custom currency types (must be in scope)
     ($currency:path, $($amount:tt)+) => {
-        $crate::RawMoney::<$currency>::from_decimal($crate::dec!($($amount)+))
+        <$crate::RawMoney::<$currency> as $crate::BaseMoney::<$currency>>::from_decimal($crate::dec!($($amount)+))
     };
 }
 
