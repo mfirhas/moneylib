@@ -266,10 +266,11 @@ impl DynMoney {
         }
     }
 
-    /// Returns a new `DynMoney` with the same amount re-rounded for currency `C`.
+    /// Returns a new `DynMoney` with the same amount but re-keyed to currency `C`.
     ///
-    /// The amount is rounded to `C::MINOR_UNIT` decimal places, so switching to a currency with a
-    /// different precision (e.g. JPY with 0 decimal places) will truncate/round the value.
+    /// The currency metadata is updated to `C`; the amount is kept as-is (no re-rounding is
+    /// applied). Use [`set_amount`](Self::set_amount) afterwards if you also need to re-round
+    /// for the new currency's `minor_unit`.
     ///
     /// # Examples
     ///
@@ -279,20 +280,18 @@ impl DynMoney {
     /// let m = DynMoney::from_decimal::<USD>(dec!(100.75));
     /// let jpy = m.set_curr::<JPY>();
     /// assert_eq!(jpy.code(), "JPY");
-    /// // 100.75 rounded to 0 decimal places (JPY) → 101
-    /// assert_eq!(jpy.amount(), dec!(101));
     /// ```
     #[inline(always)]
     pub fn set_curr<C: Currency>(&self) -> Self {
-        let currency = DynCurrency::from_curr::<C>();
         Self {
-            amount: helpers::amount_with_curr(self.amount, currency),
-            currency,
+            currency: DynCurrency::from_curr::<C>(),
+            ..*self
         }
     }
 
-    /// Returns a new `DynMoney` with the currency swapped to the one identified by `code`, with
-    /// the amount re-rounded for that currency.
+    /// Returns a new `DynMoney` with the currency swapped to the one identified by `code`.
+    ///
+    /// The currency metadata is updated; the amount is kept as-is (no re-rounding is applied).
     ///
     /// # Errors
     ///
@@ -307,17 +306,12 @@ impl DynMoney {
     /// let m = DynMoney::from_decimal::<USD>(dec!(100.75));
     /// let jpy = m.set_curr_from_code("JPY").unwrap();
     /// assert_eq!(jpy.code(), "JPY");
-    /// // 100.75 rounded to 0 decimal places (JPY) → 101
-    /// assert_eq!(jpy.amount(), dec!(101));
     ///
     /// assert!(m.set_curr_from_code("XYZ").is_err());
     /// ```
     pub fn set_curr_from_code(&self, code: &str) -> Result<Self, MoneyError> {
         if let Some(currency) = super::Context::get_currency(code) {
-            return Ok(Self {
-                amount: helpers::amount_with_curr(self.amount, currency),
-                currency,
-            });
+            return Ok(Self { currency, ..*self });
         }
 
         Err(MoneyError::ObjMoneyError(
@@ -422,10 +416,7 @@ impl super::ObjMoney for DynMoney {
 
     #[inline]
     fn round(&self) -> Box<dyn super::ObjMoney> {
-        Box::new(Self {
-            amount: self.amount.round_dp(self.currency.minor_unit.into()),
-            currency: self.currency,
-        })
+        Box::new(self.set_amount(self.amount.round_dp(self.currency.minor_unit.into())))
     }
 
     #[inline]

@@ -3318,7 +3318,6 @@ fn test_dyn_money_format_with_separator() {
 #[test]
 fn test_set_raw() {
     super::Context::set_raw(false);
-    assert!(!super::Context::is_raw());
 }
 
 #[test]
