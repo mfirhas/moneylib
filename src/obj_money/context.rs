@@ -73,9 +73,8 @@ impl Context {
     /// skip rounding to the currency's `minor_unit`. Setting it back to `false` restores normal
     /// rounding behaviour.
     ///
-    /// **Note:** `IS_RAW` is a process-wide [`AtomicBool`](std::sync::atomic::AtomicBool). If
-    /// tests mutate this flag they must run serially (e.g. with `#[serial_test::serial]`) to
-    /// prevent race conditions.
+    /// **Note:** `IS_RAW` is a process-wide [`AtomicBool`](std::sync::atomic::AtomicBool).
+    /// If tests mutate this flag they must run serially to prevent race conditions.
     ///
     /// # Examples
     ///
