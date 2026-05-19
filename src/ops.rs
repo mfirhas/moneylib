@@ -26,6 +26,11 @@ use crate::Money;
 macro_rules! impl_money_ops {
     ($T:ident) => {
         /// M + M = M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the addition overflows the internal `Decimal` representation.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_add`] instead.
         impl<C> ::std::ops::Add for $T<C>
         where
             C: $crate::Currency,
@@ -33,7 +38,6 @@ macro_rules! impl_money_ops {
             type Output = Self;
 
             fn add(self, rhs: Self) -> Self::Output {
-                // WARN: PANIC!
                 let ret = $crate::BaseMoney::amount(&self)
                     .checked_add($crate::BaseMoney::amount(&rhs))
                     .expect("addition operation overflow");
@@ -42,6 +46,11 @@ macro_rules! impl_money_ops {
         }
 
         /// M - M = M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the subtraction overflows the internal `Decimal` representation.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_sub`] instead.
         impl<C> ::std::ops::Sub for $T<C>
         where
             C: $crate::Currency,
@@ -49,7 +58,6 @@ macro_rules! impl_money_ops {
             type Output = Self;
 
             fn sub(self, rhs: Self) -> Self::Output {
-                // WARN: PANIC!
                 let ret = $crate::BaseMoney::amount(&self)
                     .checked_sub($crate::BaseMoney::amount(&rhs))
                     .expect("subtraction operation overflow");
@@ -58,12 +66,16 @@ macro_rules! impl_money_ops {
         }
 
         /// M += M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the addition overflows the internal `Decimal` representation.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_add`] instead.
         impl<C> ::std::ops::AddAssign for $T<C>
         where
             C: $crate::Currency,
         {
             fn add_assign(&mut self, other: Self) {
-                // WARN: PANIC!
                 let ret = $crate::BaseMoney::amount(self)
                     .checked_add($crate::BaseMoney::amount(&other))
                     .expect("addition operation overflow");
@@ -72,12 +84,16 @@ macro_rules! impl_money_ops {
         }
 
         /// M -= M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the subtraction overflows the internal `Decimal` representation.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_sub`] instead.
         impl<C> ::std::ops::SubAssign for $T<C>
         where
             C: $crate::Currency,
         {
             fn sub_assign(&mut self, other: Self) {
-                // WARN: PANIC!
                 let ret = $crate::BaseMoney::amount(self)
                     .checked_sub($crate::BaseMoney::amount(&other))
                     .expect("subtraction operation overflow");
@@ -98,6 +114,11 @@ macro_rules! impl_money_ops {
         }
 
         /// M + d = M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the addition overflows the internal `Decimal` representation.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_add`] instead.
         impl<C> ::std::ops::Add<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
@@ -105,7 +126,6 @@ macro_rules! impl_money_ops {
             type Output = Self;
 
             fn add(self, rhs: $crate::Decimal) -> Self::Output {
-                // WARN: PANIC!
                 let ret = $crate::BaseMoney::amount(&self)
                     .checked_add(rhs)
                     .expect("addition operation overflow");
@@ -114,6 +134,11 @@ macro_rules! impl_money_ops {
         }
 
         /// M - d = M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the subtraction overflows the internal `Decimal` representation.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_sub`] instead.
         impl<C> ::std::ops::Sub<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
@@ -121,7 +146,6 @@ macro_rules! impl_money_ops {
             type Output = Self;
 
             fn sub(self, rhs: $crate::Decimal) -> Self::Output {
-                // WARN: PANIC!
                 let ret = $crate::BaseMoney::amount(&self)
                     .checked_sub(rhs)
                     .expect("subtraction operation overflow");
@@ -130,6 +154,11 @@ macro_rules! impl_money_ops {
         }
 
         /// M * d = M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the multiplication overflows the internal `Decimal` representation.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_mul`] instead.
         impl<C> ::std::ops::Mul<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
@@ -137,7 +166,6 @@ macro_rules! impl_money_ops {
             type Output = Self;
 
             fn mul(self, rhs: $crate::Decimal) -> Self::Output {
-                // WARN: PANIC!
                 let ret = $crate::BaseMoney::amount(&self)
                     .checked_mul(rhs)
                     .expect("multiplication operation overflow");
@@ -146,6 +174,11 @@ macro_rules! impl_money_ops {
         }
 
         /// M / d = M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the division overflows the internal `Decimal` representation or
+        /// if `rhs` is zero. For overflow-safe arithmetic, use [`BaseOps::checked_div`] instead.
         impl<C> ::std::ops::Div<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
@@ -153,7 +186,6 @@ macro_rules! impl_money_ops {
             type Output = Self;
 
             fn div(self, rhs: $crate::Decimal) -> Self::Output {
-                // WARN: PANIC!
                 let ret = $crate::BaseMoney::amount(&self)
                     .checked_div(rhs)
                     .expect("division operation overflow");
@@ -162,6 +194,11 @@ macro_rules! impl_money_ops {
         }
 
         /// d + M = M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the addition overflows the internal `Decimal` representation.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_add`] instead.
         impl<C> ::std::ops::Add<$T<C>> for $crate::Decimal
         where
             C: $crate::Currency,
@@ -169,7 +206,6 @@ macro_rules! impl_money_ops {
             type Output = $T<C>;
 
             fn add(self, rhs: $T<C>) -> Self::Output {
-                // WARN: PANIC!
                 let ret = self
                     .checked_add($crate::BaseMoney::amount(&rhs))
                     .expect("addition operation overflow");
@@ -178,6 +214,11 @@ macro_rules! impl_money_ops {
         }
 
         /// d * M = M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the multiplication overflows the internal `Decimal` representation.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_mul`] instead.
         impl<C> ::std::ops::Mul<$T<C>> for $crate::Decimal
         where
             C: $crate::Currency,
@@ -185,7 +226,6 @@ macro_rules! impl_money_ops {
             type Output = $T<C>;
 
             fn mul(self, rhs: $T<C>) -> Self::Output {
-                // WARN: PANIC!
                 let ret = self
                     .checked_mul($crate::BaseMoney::amount(&rhs))
                     .expect("multiplication operation overflow");
@@ -194,6 +234,11 @@ macro_rules! impl_money_ops {
         }
 
         /// M % d = M
+        ///
+        /// # Panics
+        ///
+        /// Panics if the remainder operation overflows or if `rhs` is zero.
+        /// For overflow-safe arithmetic, use [`BaseOps::checked_rem`] instead.
         impl<C> ::std::ops::Rem<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
