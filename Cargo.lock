@@ -16,9 +16,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "currencylib"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2fb52c336cffdd312e1ffdbc599e9e14a79269766bd20e6115bd59cf93f49ef"
+checksum = "983b5f0535899a61c3ece2a61439905e2055eef60ad46904431d48109c0c7a16"
 dependencies = [
  "phf",
 ]

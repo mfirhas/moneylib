@@ -1,4 +1,4 @@
-use crate::{BaseMoney, Currency, Decimal, MoneyError, RawMoney};
+use crate::{BaseMoney, BaseOps, Currency, Decimal, MoneyError, RawMoney, RoundingStrategy};
 
 impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C> {
     #[inline]
@@ -35,6 +35,21 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C>
     }
 
     #[inline]
+    fn minor_unit_name(&self) -> &str {
+        C::MINOR_UNIT_NAME
+    }
+
+    #[inline]
+    fn origin(&self) -> &str {
+        C::ORIGIN
+    }
+
+    #[inline]
+    fn locale(&self) -> &str {
+        C::LOCALE
+    }
+
+    #[inline]
     fn minor_amount(&self) -> Option<i128> {
         BaseMoney::minor_amount(self)
     }
@@ -44,32 +59,95 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C>
         self
     }
 
+    #[inline]
+    fn numeric_code(&self) -> i32 {
+        C::NUMERIC.into()
+    }
+
+    #[inline]
+    fn abs(&self) -> Box<dyn super::ObjMoney> {
+        Box::new(BaseOps::abs(self))
+    }
+
+    #[inline]
+    fn round(&self) -> Box<dyn super::ObjMoney> {
+        Box::new(BaseMoney::round(*self))
+    }
+
+    #[inline]
+    fn round_with(
+        &self,
+        decimal_points: u32,
+        strategy: RoundingStrategy,
+    ) -> Box<dyn super::ObjMoney> {
+        Box::new(BaseMoney::round_with(*self, decimal_points, strategy))
+    }
+
+    #[inline]
+    fn truncate(&self) -> Box<dyn super::ObjMoney> {
+        Box::new(BaseMoney::truncate(self))
+    }
+
+    #[inline]
+    fn truncate_with(&self, scale: u32) -> Box<dyn super::ObjMoney> {
+        Box::new(BaseMoney::truncate_with(self, scale))
+    }
+
+    #[inline]
+    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_add(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_sub(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_mul(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_div(self, rhs)?))
+    }
+
+    #[inline]
+    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn super::ObjMoney>> {
+        Some(Box::new(BaseOps::checked_rem(self, rhs)?))
+    }
+
     #[cfg(feature = "exchange")]
     fn convert(
         &self,
         to_code: &str,
         rate: &dyn crate::exchange::ObjRate,
     ) -> Result<Box<dyn super::ObjMoney>, crate::MoneyError> {
-        if BaseMoney::code(self) == to_code {
-            return Ok(Box::new(*self));
+        if C::CODE == to_code {
+            let ret = Box::new(super::DynMoney::from_decimal::<C>(BaseMoney::amount(self)));
+
+            return Ok(ret);
         }
 
-        Ok(Box::new(Self::from_decimal(
-            BaseMoney::amount(self)
-                .checked_mul(
-                    rate.get_rate(BaseMoney::code(self), to_code).ok_or(
-                        crate::MoneyError::ExchangeError(
-                            format!(
-                                "overflowed or failed getting rate from: {} to: {}",
-                                BaseMoney::code(self),
-                                to_code
-                            )
-                            .into(),
-                        ),
-                    )?,
+        let rate_amount = rate.get_rate(C::CODE, to_code).ok_or_else(|| {
+            MoneyError::ExchangeError(
+                format!(
+                    "overflowed or failed getting rate from: {} to: {}",
+                    BaseMoney::code(self),
+                    to_code
                 )
-                .ok_or(crate::MoneyError::OverflowError)?,
-        )))
+                .into(),
+            )
+        })?;
+
+        let result = BaseMoney::amount(self)
+            .checked_mul(rate_amount)
+            .ok_or(MoneyError::OverflowError)?;
+
+        let ret = super::DynMoney::new_with_code(to_code, result)?;
+
+        Ok(Box::new(ret))
     }
 }
 
@@ -86,7 +164,7 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C>
 /// # Examples
 ///
 /// ```
-/// use moneylib::{RawMoney, ObjMoney, BaseMoney, MoneyError, macros::dec, iso::{USD, EUR}};
+/// use moneylib::{RawMoney, obj_money::ObjMoney, BaseMoney, MoneyError, macros::dec, iso::{USD, EUR}};
 ///
 /// let obj: Box<dyn ObjMoney> = Box::new(RawMoney::<USD>::new(dec!(100.567)).unwrap());
 ///
@@ -109,5 +187,78 @@ impl<C: Currency + Copy + 'static + Send + Sync> TryFrom<&dyn super::ObjMoney> f
             ));
         }
         Ok(Self::from_decimal(value.amount()))
+    }
+}
+
+impl<C: Currency + Copy + Send + Sync + 'static> TryFrom<Box<dyn super::ObjMoney>> for RawMoney<C> {
+    type Error = MoneyError;
+
+    fn try_from(value: Box<dyn super::ObjMoney>) -> Result<Self, Self::Error> {
+        RawMoney::<C>::try_from(value.as_ref())
+    }
+}
+
+impl<C: Currency> From<RawMoney<C>> for super::DynMoney {
+    fn from(value: RawMoney<C>) -> Self {
+        Self::from_decimal::<C>(value.amount())
+    }
+}
+
+// equality
+
+use crate::obj_money::{DynMoney, ObjMoney};
+impl<C: Currency> PartialEq<&dyn ObjMoney> for RawMoney<C> {
+    fn eq(&self, other: &&dyn ObjMoney) -> bool {
+        if self.code() != other.code() {
+            return false;
+        }
+        self.amount() == other.amount()
+    }
+}
+
+impl<C: Currency> PartialEq<Box<dyn ObjMoney>> for RawMoney<C> {
+    fn eq(&self, other: &Box<dyn ObjMoney>) -> bool {
+        if self.code() != other.code() {
+            return false;
+        }
+        self.amount() == other.amount()
+    }
+}
+
+impl<C: Currency> PartialEq<DynMoney> for RawMoney<C> {
+    fn eq(&self, other: &DynMoney) -> bool {
+        if other.code() != C::CODE {
+            return false;
+        }
+        self.amount() == other.amount()
+    }
+}
+
+// ordering
+
+impl<C: Currency> PartialOrd<&dyn ObjMoney> for RawMoney<C> {
+    fn partial_cmp(&self, other: &&dyn ObjMoney) -> Option<std::cmp::Ordering> {
+        if self.code() != other.code() {
+            return None;
+        }
+        self.amount().partial_cmp(&other.amount())
+    }
+}
+
+impl<C: Currency> PartialOrd<Box<dyn ObjMoney>> for RawMoney<C> {
+    fn partial_cmp(&self, other: &Box<dyn ObjMoney>) -> Option<std::cmp::Ordering> {
+        if self.code() != other.code() {
+            return None;
+        }
+        self.amount().partial_cmp(&other.amount())
+    }
+}
+
+impl<C: Currency> PartialOrd<DynMoney> for RawMoney<C> {
+    fn partial_cmp(&self, other: &DynMoney) -> Option<std::cmp::Ordering> {
+        if self.code() != other.code() {
+            return None;
+        }
+        self.amount().partial_cmp(&other.amount())
     }
 }

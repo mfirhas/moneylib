@@ -1,0 +1,524 @@
+use std::any::Any;
+
+use super::fmt::format_obj_money;
+use crate::{
+    RoundingStrategy,
+    fmt::{CODE_FORMAT, CODE_FORMAT_MINOR, SYMBOL_FORMAT, SYMBOL_FORMAT_MINOR},
+};
+
+use crate::{Decimal, MoneyError};
+
+/// Object-safe trait enabling dynamic dispatch (`dyn`) over different-currency money types.
+///
+/// This trait exposes the read-only subset of [`crate::BaseMoney`] needed for heterogeneous
+/// collections (e.g. `Vec<Box<dyn ObjMoney>>`) where the currency type `C` is erased at runtime.
+///
+/// # Why not `BaseMoney<C>` directly?
+///
+/// `BaseMoney<C>` cannot be used as a trait object for three reasons:
+/// - It has a generic type parameter `C`, so `dyn BaseMoney<USD>` and `dyn BaseMoney<EUR>` are
+///   different types and cannot be stored in the same collection.
+/// - Several methods return `Self` or take `impl Trait` arguments, both of which are
+///   object-safety violations.
+///
+/// `ObjMoney` solves all three: no type parameter, no `Clone` supertraits, and every
+/// method uses only concrete types (`Decimal`, `&str`, `String`, `bool`, etc.).
+///
+/// # Required methods
+///
+/// Implementors must provide the eight primitive accessors. All other methods have
+/// default implementations derived from those primitives.
+///
+/// # Examples
+///
+/// ```
+/// use moneylib::{Money, raw, obj_money::ObjMoney, Decimal, BaseMoney, macros::dec, iso::{USD, EUR, JPY}};
+///
+/// let portfolio: Vec<Box<dyn ObjMoney>> = vec![
+///     Box::new(Money::<USD>::new(dec!(100.50)).unwrap()),
+///     Box::new(Money::<EUR>::new(dec!(200.75)).unwrap()),
+///     Box::new(raw!(BHD, 8392.098)),
+///     Box::new(Money::<JPY>::new(dec!(15000)).unwrap()),
+///     Box::new(raw!(CAD, 6942.6942)),
+/// ];
+///
+/// let codes: Vec<&str> = portfolio.iter().map(|m| m.code()).collect();
+/// assert_eq!(codes, vec!["USD", "EUR", "BHD", "JPY", "CAD"]);
+/// ```
+pub trait ObjMoney: Send + Sync {
+    // ---- Required: eight primitive accessors ----
+
+    /// Returns the decimal amount of this money value.
+    fn amount(&self) -> Decimal;
+
+    /// Returns the ISO 4217 currency code (e.g. `"USD"`).
+    fn code(&self) -> &str;
+
+    /// Returns the currency symbol (e.g. `"$"`).
+    fn symbol(&self) -> &str;
+
+    /// Returns the full name of the currency (e.g. `"United States dollar"`).
+    fn name(&self) -> &str;
+
+    /// Returns the number of decimal places in the currency's minor unit (e.g. `2` for USD).
+    fn minor_unit(&self) -> u16;
+
+    /// Returns the thousands separator used by the currency's locale (e.g. `","` for USD).
+    fn thousand_separator(&self) -> &str;
+
+    /// Returns the decimal separator used by the currency's locale (e.g. `"."` for USD).
+    fn decimal_separator(&self) -> &str;
+
+    /// Returns the minor-unit symbol (e.g. `"¢"` for USD, `"minor"` when none is defined).
+    fn minor_unit_symbol(&self) -> &str;
+
+    /// Returns the minor-unit name (e.g. `"cent"` for USD, `"penny"` for GBP).
+    fn minor_unit_name(&self) -> &str;
+
+    /// Returns the country or region of origin (e.g. `"United States"` for USD).
+    fn origin(&self) -> &str;
+
+    /// Returns the BCP 47 locale tag for this currency (e.g. `"en-US"` for USD).
+    fn locale(&self) -> &str;
+
+    /// Returns the money amount in its smallest unit (e.g. cents for USD, pence for GBP).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MoneyError::OverflowError`] if the computation overflows.
+    fn minor_amount(&self) -> Option<i128>;
+
+    /// Get object money as Any
+    fn as_any(&self) -> &dyn Any;
+
+    /// Convert ObjMoney to `to_code` with `rate`
+    #[cfg(feature = "exchange")]
+    fn convert(
+        &self,
+        to_code: &str,
+        rate: &dyn crate::exchange::ObjRate,
+    ) -> Result<Box<dyn ObjMoney>, MoneyError>;
+
+    /// Returns the ISO 4217 numeric code for the currency (e.g. `840` for USD).
+    fn numeric_code(&self) -> i32;
+
+    /// Returns the absolute value of the money amount, preserving currency.
+    fn abs(&self) -> Box<dyn ObjMoney>;
+
+    /// Rounds the money amount to the currency's minor unit using bankers rounding.
+    fn round(&self) -> Box<dyn ObjMoney>;
+
+    /// Rounds the money amount to `decimal_points` places using `strategy`.
+    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> Box<dyn ObjMoney>;
+
+    /// Truncates the money amount, removing the fractional part entirely.
+    fn truncate(&self) -> Box<dyn ObjMoney>;
+
+    /// Truncates the money amount to `scale` decimal places.
+    fn truncate_with(&self, scale: u32) -> Box<dyn ObjMoney>;
+
+    /// Adds `rhs` (a raw decimal amount) to this money value.
+    ///
+    /// Returns `None` on overflow.
+    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Subtracts `rhs` (a raw decimal amount) from this money value.
+    ///
+    /// Returns `None` on overflow.
+    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Multiplies this money value by `rhs`.
+    ///
+    /// Returns `None` on overflow.
+    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Divides this money value by `rhs`.
+    ///
+    /// Returns `None` on division by zero or overflow.
+    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Returns the remainder of dividing this money value by `rhs`.
+    ///
+    /// Returns `None` on division by zero or overflow.
+    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>>;
+
+    /// Returns `true` if `self` and `amount` differ by at most `tolerance` (inclusive).
+    ///
+    /// Uses the absolute value of `(self.amount() - amount)` for the comparison, so
+    /// the tolerance must be non-negative for a meaningful result.
+    ///
+    /// Returns `false` if `tolerance` is `None` (overflow during subtraction).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, BaseMoney, obj_money::ObjMoney, macros::dec, iso::USD};
+    ///
+    /// let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(100.01)).unwrap());
+    /// assert!(m.is_approx(dec!(100.00), dec!(0.05)));
+    /// assert!(!m.is_approx(dec!(100.00), dec!(0.00)));
+    /// ```
+    #[inline]
+    fn is_approx(&self, amount: Decimal, tolerance: Decimal) -> bool {
+        self.amount()
+            .checked_sub(amount)
+            .is_some_and(|diff| tolerance >= diff.abs())
+    }
+
+    /// Formats money with a custom format string and explicit separators.
+    ///
+    /// This is the runtime equivalent of [`crate::MoneyFormatter::format_with_separator`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, BaseMoney, obj_money::ObjMoney, macros::dec, iso::USD};
+    ///
+    /// let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(93009.45)).unwrap());
+    /// assert_eq!(m.format_with_separator("c na", "*", "#"), "USD 93*009#45");
+    /// ```
+    #[inline]
+    fn format_with_separator(
+        &self,
+        format_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> String {
+        super::fmt::format_obj_money(
+            self.amount(),
+            self.code(),
+            self.symbol(),
+            self.minor_unit_symbol(),
+            self.minor_unit(),
+            thousand_separator,
+            decimal_separator,
+            format_str,
+        )
+    }
+
+    // ---- Provided: derived from the required methods above ----
+
+    /// Returns `true` if the amount is zero.
+    #[inline]
+    fn is_zero(&self) -> bool {
+        self.amount().is_zero()
+    }
+
+    /// Returns `true` if the amount is positive.
+    ///
+    /// Zero returns false.
+    ///
+    #[inline]
+    fn is_positive(&self) -> bool {
+        if self.is_zero() {
+            return false;
+        }
+        self.amount().is_sign_positive()
+    }
+
+    /// Returns `true` if the amount is negative.
+    ///
+    /// Zero returns false.
+    ///
+    #[inline]
+    fn is_negative(&self) -> bool {
+        if self.is_zero() {
+            return false;
+        }
+        self.amount().is_sign_negative()
+    }
+
+    /// Returns the scale (number of decimal places) of the stored amount.
+    #[inline]
+    fn scale(&self) -> u32 {
+        self.amount().scale()
+    }
+
+    /// Returns the fractional part of the amount.
+    #[inline]
+    fn fraction(&self) -> Decimal {
+        self.amount().fract()
+    }
+
+    /// Returns the mantissa (significand digits) of the amount.
+    #[inline]
+    fn mantissa(&self) -> i128 {
+        self.amount().mantissa()
+    }
+
+    /// Formats money with currency code and locale separators (e.g. `"USD 1,234.56"`).
+    fn format_code(&self) -> String {
+        format_obj_money(
+            self.amount(),
+            self.code(),
+            self.symbol(),
+            self.minor_unit_symbol(),
+            self.minor_unit(),
+            self.thousand_separator(),
+            self.decimal_separator(),
+            CODE_FORMAT,
+        )
+    }
+
+    /// Formats money with currency symbol and locale separators (e.g. `"$1,234.56"`).
+    fn format_symbol(&self) -> String {
+        format_obj_money(
+            self.amount(),
+            self.code(),
+            self.symbol(),
+            self.minor_unit_symbol(),
+            self.minor_unit(),
+            self.thousand_separator(),
+            self.decimal_separator(),
+            SYMBOL_FORMAT,
+        )
+    }
+
+    /// Formats money with currency code in the smallest unit (e.g. `"USD 123,456 ¢"`).
+    fn format_code_minor(&self) -> String {
+        format_obj_money(
+            self.amount(),
+            self.code(),
+            self.symbol(),
+            self.minor_unit_symbol(),
+            self.minor_unit(),
+            self.thousand_separator(),
+            self.decimal_separator(),
+            CODE_FORMAT_MINOR,
+        )
+    }
+
+    /// Formats money with currency symbol in the smallest unit (e.g. `"$123,456 ¢"`).
+    fn format_symbol_minor(&self) -> String {
+        format_obj_money(
+            self.amount(),
+            self.code(),
+            self.symbol(),
+            self.minor_unit_symbol(),
+            self.minor_unit(),
+            self.thousand_separator(),
+            self.decimal_separator(),
+            SYMBOL_FORMAT_MINOR,
+        )
+    }
+
+    /// Formats with pattern `format_str`
+    fn format(&self, format_str: &str) -> String {
+        format_obj_money(
+            self.amount(),
+            self.code(),
+            self.symbol(),
+            self.minor_unit_symbol(),
+            self.minor_unit(),
+            self.thousand_separator(),
+            self.decimal_separator(),
+            format_str,
+        )
+    }
+
+    /// Returns the default display format for money (same as `format_code`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use moneylib::{Money, obj_money::ObjMoney, BaseMoney, macros::dec, iso::USD};
+    ///
+    /// let m: Box<dyn ObjMoney> = Box::new(Money::<USD>::new(dec!(1234.45)).unwrap());
+    /// assert_eq!(m.display(), "USD 1,234.45");
+    /// ```
+    #[inline]
+    fn display(&self) -> String {
+        self.format_code()
+    }
+}
+
+// ---- Blanket impl for Box<dyn ObjMoney> ----
+
+impl ObjMoney for Box<dyn ObjMoney> {
+    #[inline]
+    fn amount(&self) -> Decimal {
+        (**self).amount()
+    }
+
+    #[inline]
+    fn code(&self) -> &str {
+        (**self).code()
+    }
+
+    #[inline]
+    fn symbol(&self) -> &str {
+        (**self).symbol()
+    }
+
+    #[inline]
+    fn name(&self) -> &str {
+        (**self).name()
+    }
+
+    #[inline]
+    fn minor_unit(&self) -> u16 {
+        (**self).minor_unit()
+    }
+
+    #[inline]
+    fn thousand_separator(&self) -> &str {
+        (**self).thousand_separator()
+    }
+
+    #[inline]
+    fn decimal_separator(&self) -> &str {
+        (**self).decimal_separator()
+    }
+
+    #[inline]
+    fn minor_unit_symbol(&self) -> &str {
+        (**self).minor_unit_symbol()
+    }
+
+    #[inline]
+    fn minor_unit_name(&self) -> &str {
+        (**self).minor_unit_name()
+    }
+
+    #[inline]
+    fn origin(&self) -> &str {
+        (**self).origin()
+    }
+
+    #[inline]
+    fn locale(&self) -> &str {
+        (**self).locale()
+    }
+
+    #[inline]
+    fn minor_amount(&self) -> Option<i128> {
+        (**self).minor_amount()
+    }
+
+    #[inline]
+    fn as_any(&self) -> &dyn std::any::Any {
+        (**self).as_any()
+    }
+
+    #[cfg(feature = "exchange")]
+    fn convert(
+        &self,
+        to_code: &str,
+        rate: &dyn crate::exchange::ObjRate,
+    ) -> Result<Box<dyn ObjMoney>, MoneyError> {
+        (**self).convert(to_code, rate)
+    }
+
+    #[inline]
+    fn numeric_code(&self) -> i32 {
+        (**self).numeric_code()
+    }
+
+    #[inline]
+    fn abs(&self) -> Box<dyn ObjMoney> {
+        (**self).abs()
+    }
+
+    #[inline]
+    fn round(&self) -> Box<dyn ObjMoney> {
+        (**self).round()
+    }
+
+    #[inline]
+    fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> Box<dyn ObjMoney> {
+        (**self).round_with(decimal_points, strategy)
+    }
+
+    #[inline]
+    fn truncate(&self) -> Box<dyn ObjMoney> {
+        (**self).truncate()
+    }
+
+    #[inline]
+    fn truncate_with(&self, scale: u32) -> Box<dyn ObjMoney> {
+        (**self).truncate_with(scale)
+    }
+
+    #[inline]
+    fn checked_add(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_add(rhs)
+    }
+
+    #[inline]
+    fn checked_sub(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_sub(rhs)
+    }
+
+    #[inline]
+    fn checked_mul(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_mul(rhs)
+    }
+
+    #[inline]
+    fn checked_div(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_div(rhs)
+    }
+
+    #[inline]
+    fn checked_rem(&self, rhs: Decimal) -> Option<Box<dyn ObjMoney>> {
+        (**self).checked_rem(rhs)
+    }
+
+    #[inline]
+    fn is_approx(&self, amount: Decimal, tolerance: Decimal) -> bool {
+        (**self).is_approx(amount, tolerance)
+    }
+
+    #[inline]
+    fn format_with_separator(
+        &self,
+        format_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> String {
+        (**self).format_with_separator(format_str, thousand_separator, decimal_separator)
+    }
+}
+
+// --- ObjIterOps
+
+/// Operations on iterable ObjMoney
+pub trait ObjIterOps {
+    /// Sum all ObjMoney inside iterable types.
+    ///
+    /// # Argument
+    /// rates: impl ObjRate, accepts `ExchangeRates`.
+    #[cfg(feature = "exchange")]
+    fn checked_sum(
+        &self,
+        target_currency: &str,
+        rates: impl crate::exchange::ObjRate,
+    ) -> Result<Box<dyn ObjMoney>, MoneyError>;
+}
+
+impl<I, T> ObjIterOps for I
+where
+    for<'a> &'a I: IntoIterator<Item = &'a T>,
+    T: ObjMoney,
+{
+    #[cfg(feature = "exchange")]
+    fn checked_sum(
+        &self,
+        target_currency: &str,
+        rates: impl crate::exchange::ObjRate,
+    ) -> Result<Box<dyn ObjMoney>, MoneyError> {
+        use crate::prelude::DynMoney;
+
+        let mut total: Box<dyn ObjMoney> =
+            Box::new(DynMoney::new_with_code(target_currency, Decimal::ZERO)?);
+
+        for m in self {
+            let res = m.convert(target_currency, &rates)?;
+            total = total
+                .checked_add(res.amount())
+                .ok_or(MoneyError::OverflowError)?;
+        }
+
+        Ok(total)
+    }
+}

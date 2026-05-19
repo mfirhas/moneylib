@@ -19,6 +19,7 @@ pub mod prelude {
     pub use crate::MoneyParser;
     pub use crate::PercentOps;
     pub use crate::RoundingStrategy;
+    pub use crate::base::{Amount, DecimalNumber};
     pub use crate::{Decimal, Money, MoneyError};
 
     pub use crate::iso;
@@ -34,7 +35,7 @@ pub mod prelude {
     pub use crate::exchange::{Exchange, ExchangeRates, ObjRate, Rate};
 
     #[cfg(feature = "obj_money")]
-    pub use crate::ObjMoney;
+    pub use crate::obj_money::{Context, DynCurrency, DynMoney, ObjIterOps, ObjMoney};
 
     #[cfg(feature = "serde")]
     pub use crate::serde;
@@ -107,9 +108,7 @@ mod fmt;
 mod parse;
 
 #[cfg(feature = "obj_money")]
-mod obj_money;
-#[cfg(feature = "obj_money")]
-pub use obj_money::{ObjIterOps, ObjMoney};
+pub mod obj_money;
 
 // ----------------- test modules -----------------
 

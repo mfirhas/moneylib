@@ -23,7 +23,7 @@ all-features = true
 [features]
 default = []
 raw_money = []
-obj_money = []
+obj_money = ["currencylib/data"]
 serde = ["dep:serde", "dep:serde_json"]
 locale = ["dep:icu_locale", "dep:icu_decimal"]
 exchange = []
@@ -31,7 +31,7 @@ exchange = []
 [dependencies]
 rust_decimal = { version = "1.40.0", default-features = false, features = ["maths"] }
 rust_decimal_macros = { version = "1.40.0", features = ["reexportable"] }
-currencylib = "0.2.0"
+currencylib = "0.2.1"
 serde = { version = "1.0", default-features = false, optional = true }
 serde_json = { version = "1.0", features = ["arbitrary_precision"], optional = true }
 icu_locale  = { version = "2.1.1", optional = true }

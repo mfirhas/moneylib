@@ -9,7 +9,8 @@ use rust_decimal::MathematicalOps;
 use rust_decimal::RoundingStrategy as DecimalRoundingStrategy;
 use rust_decimal::prelude::FromPrimitive;
 use std::fmt::Debug;
-use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
+use std::ops::Neg;
+use std::str::FromStr;
 
 /// Base trait for all money types in the library.
 ///
@@ -632,9 +633,7 @@ pub trait BaseMoney<C: Currency>: Clone {
 /// assert_eq!(m1.max(m2), m1);
 /// assert_eq!(m1.min(m2), m2);
 /// ```
-pub trait BaseOps<C: Currency>:
-    BaseMoney<C> + Add<Output = Self> + Sub<Output = Self> + AddAssign + SubAssign + Neg<Output = Self>
-{
+pub trait BaseOps<C: Currency>: BaseMoney<C> + Neg<Output = Self> {
     // PROVIDED
 
     /// Compare 2 moneys within tolerance(inclusive).
@@ -1315,7 +1314,7 @@ impl From<RoundingStrategy> for DecimalRoundingStrategy {
 /// // Parse with symbol prefix
 /// let m = Money::<USD>::from_str_symbol("$1,234.56").unwrap();
 /// ```
-pub trait MoneyParser<C: Currency>: BaseMoney<C> + std::str::FromStr<Err = MoneyError> {
+pub trait MoneyParser<C: Currency>: BaseMoney<C> {
     /// Parse money from a string in `"<CODE> <AMOUNT>"` format with explicit separators.
     ///
     /// The `<CODE>` must match the currency's alpha code (e.g. `"USD"`)  and the `<AMOUNT>`
@@ -1348,15 +1347,20 @@ pub trait MoneyParser<C: Currency>: BaseMoney<C> + std::str::FromStr<Err = Money
     /// let m = Money::<USD>::from_str_code_with("USD 1234.56", ",", ".").unwrap();
     /// ```
     fn from_str_code_with(
-        amount_str: &str,
+        money_str: &str,
         thousand_separator: &str,
         decimal_separator: &str,
     ) -> Result<Self, MoneyError> {
-        Self::from_str(&crate::parse::parse_str_code::<C>(
-            amount_str,
+        let amount = Decimal::from_str(&crate::parse::parse_str_code::<C>(
+            money_str,
             thousand_separator,
             decimal_separator,
         )?)
+        .map_err(|err| {
+            MoneyError::ParseStrError(format!("failed parsing {} into decimal", err).into())
+        })?;
+
+        Ok(Self::from_decimal(amount))
     }
 
     /// Parse money from a string in `"<SYMBOL><AMOUNT>"` format with explicit separators.
@@ -1392,15 +1396,20 @@ pub trait MoneyParser<C: Currency>: BaseMoney<C> + std::str::FromStr<Err = Money
     /// let m = Money::<USD>::from_str_symbol_with("-$1,234.56", ",", ".").unwrap();
     /// ```
     fn from_str_symbol_with(
-        amount_str: &str,
+        money_str: &str,
         thousand_separator: &str,
         decimal_separator: &str,
     ) -> Result<Self, MoneyError> {
-        Self::from_str(&crate::parse::parse_str_symbol::<C>(
-            amount_str,
+        let amount = Decimal::from_str(&crate::parse::parse_str_symbol::<C>(
+            money_str,
             thousand_separator,
             decimal_separator,
         )?)
+        .map_err(|err| {
+            MoneyError::ParseStrError(format!("failed parsing {} into decimal", err).into())
+        })?;
+
+        Ok(Self::from_decimal(amount))
     }
 
     /// Parse money from a string in `"<CODE> <AMOUNT>"` format using the currency's locale separators.
@@ -1428,12 +1437,17 @@ pub trait MoneyParser<C: Currency>: BaseMoney<C> + std::str::FromStr<Err = Money
     /// // Negative amount
     /// let m = Money::<USD>::from_str_code("USD -1,234.56").unwrap();
     /// ```
-    fn from_str_code(amount_str: &str) -> Result<Self, MoneyError> {
-        Self::from_str(&crate::parse::parse_str_code::<C>(
-            amount_str,
+    fn from_str_code(money_str: &str) -> Result<Self, MoneyError> {
+        let amount = Decimal::from_str(&crate::parse::parse_str_code::<C>(
+            money_str,
             C::THOUSAND_SEPARATOR,
             C::DECIMAL_SEPARATOR,
         )?)
+        .map_err(|err| {
+            MoneyError::ParseStrError(format!("failed parsing {} into decimal", err).into())
+        })?;
+
+        Ok(Self::from_decimal(amount))
     }
 
     /// Parse money from a string in `"<SYMBOL><AMOUNT>"` format using the currency's locale separators.
@@ -1461,12 +1475,17 @@ pub trait MoneyParser<C: Currency>: BaseMoney<C> + std::str::FromStr<Err = Money
     /// // Negative amount
     /// let m = Money::<USD>::from_str_symbol("-$1,234.56").unwrap();
     /// ```
-    fn from_str_symbol(amount_str: &str) -> Result<Self, MoneyError> {
-        Self::from_str(&crate::parse::parse_str_symbol::<C>(
-            amount_str,
+    fn from_str_symbol(money_str: &str) -> Result<Self, MoneyError> {
+        let amount = Decimal::from_str(&crate::parse::parse_str_symbol::<C>(
+            money_str,
             C::THOUSAND_SEPARATOR,
             C::DECIMAL_SEPARATOR,
         )?)
+        .map_err(|err| {
+            MoneyError::ParseStrError(format!("failed parsing {} into decimal", err).into())
+        })?;
+
+        Ok(Self::from_decimal(amount))
     }
 }
 
