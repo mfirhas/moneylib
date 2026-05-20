@@ -121,7 +121,7 @@ impl Context {
             ));
         }
 
-        write.insert(C::CODE, super::DynCurrency::from_curr::<C>());
+        write.insert(C::CODE, dyn_curr_from::<C>());
 
         Ok(())
     }
@@ -179,7 +179,7 @@ impl Context {
             MoneyError::ObjMoneyError("failed getting lock to set into CURRENCIES".into())
         })?;
 
-        write.insert(C::CODE, super::DynCurrency::from_curr::<C>());
+        write.insert(C::CODE, dyn_curr_from::<C>());
 
         Ok(())
     }
@@ -233,5 +233,21 @@ impl Context {
         }
 
         None
+    }
+}
+
+fn dyn_curr_from<C: Currency>() -> super::DynCurrency {
+    super::DynCurrency {
+        code: C::CODE,
+        symbol: C::SYMBOL,
+        name: C::NAME,
+        numeric: C::NUMERIC,
+        minor_unit: C::MINOR_UNIT,
+        minor_unit_symbol: C::MINOR_UNIT_SYMBOL,
+        minor_unit_name: C::MINOR_UNIT_NAME,
+        thousand_separator: C::THOUSAND_SEPARATOR,
+        decimal_separator: C::DECIMAL_SEPARATOR,
+        origin: C::ORIGIN,
+        locale: C::LOCALE,
     }
 }

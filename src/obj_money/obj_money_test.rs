@@ -3321,12 +3321,6 @@ fn test_set_raw() {
 }
 
 #[test]
-fn test_dyn_currency_from_curr() {
-    let dc: super::DynCurrency = crate::iso::JPY.into();
-    assert_eq!(dc.code, "JPY");
-}
-
-#[test]
 fn test_dyn_currency_from_code() {
     let dc = super::DynCurrency::from_code("XAU").unwrap();
     assert_eq!(dc.code, "XAU");

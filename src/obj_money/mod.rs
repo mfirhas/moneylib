@@ -23,16 +23,6 @@ mod raw_money_impl;
 mod obj_money_test;
 
 mod helpers {
-    /// get the amount rounded or not depends on Context's config.
-    #[inline(always)]
-    pub(super) fn amount<C: crate::Currency>(amount: crate::Decimal) -> crate::Decimal {
-        if super::Context::is_raw() {
-            return amount;
-        }
-
-        amount.round_dp(C::MINOR_UNIT.into())
-    }
-
     /// get amount rounded or not depends on Context's config.
     #[inline(always)]
     pub(super) fn amount_with_curr(

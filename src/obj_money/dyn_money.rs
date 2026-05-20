@@ -44,35 +44,6 @@ pub struct DynCurrency {
 }
 
 impl DynCurrency {
-    /// Creates a `DynCurrency` from a compile-time [`Currency`] type.
-    ///
-    /// All fields are populated from the associated constants of `C`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::obj_money::DynCurrency;
-    /// use moneylib::iso::USD;
-    ///
-    /// let dc = DynCurrency::from_curr::<USD>();
-    /// assert_eq!(dc.code(), "USD");
-    /// ```
-    pub fn from_curr<C: Currency>() -> Self {
-        DynCurrency {
-            code: C::CODE,
-            symbol: C::SYMBOL,
-            name: C::NAME,
-            numeric: C::NUMERIC,
-            minor_unit: C::MINOR_UNIT,
-            minor_unit_symbol: C::MINOR_UNIT_SYMBOL,
-            minor_unit_name: C::MINOR_UNIT_NAME,
-            thousand_separator: C::THOUSAND_SEPARATOR,
-            decimal_separator: C::DECIMAL_SEPARATOR,
-            origin: C::ORIGIN,
-            locale: C::LOCALE,
-        }
-    }
-
     /// Looks up a `DynCurrency` from the global [`Context`](super::Context) registry by ISO 4217
     /// code.
     ///
@@ -100,12 +71,6 @@ impl DynCurrency {
         Err(MoneyError::ObjMoneyError(
             format!("currency {} not found", code).into(),
         ))
-    }
-}
-
-impl<C: Currency> From<C> for DynCurrency {
-    fn from(_: C) -> Self {
-        Self::from_curr::<C>()
     }
 }
 
@@ -212,29 +177,6 @@ pub struct DynMoney {
 }
 
 impl DynMoney {
-    /// Creates a `DynMoney` from a compile-time [`Currency`] type and a decimal amount.
-    ///
-    /// The amount is rounded to `C::MINOR_UNIT` decimal places unless
-    /// [`Context::is_raw()`](super::Context::is_raw) is `true`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{obj_money::{DynMoney, ObjMoney}, macros::dec, iso::JPY};
-    ///
-    /// // JPY has 0 minor-unit decimal places
-    /// let m = DynMoney::from_decimal::<JPY>(dec!(1234.99));
-    /// assert_eq!(m.amount(), dec!(1235));
-    /// assert_eq!(m.code(), "JPY");
-    /// ```
-    #[inline(always)]
-    pub fn from_decimal<C: Currency>(amount: Decimal) -> Self {
-        Self {
-            amount: helpers::amount::<C>(amount),
-            currency: DynCurrency::from_curr::<C>(),
-        }
-    }
-
     /// Creates a `DynMoney` from an already-constructed [`DynCurrency`] and a decimal amount.
     ///
     /// The amount is rounded to `currency.minor_unit` decimal places unless
@@ -314,29 +256,6 @@ impl DynMoney {
     pub fn set_amount(&self, amount: Decimal) -> Self {
         Self {
             amount: helpers::amount_with_curr(amount, self.currency),
-            ..*self
-        }
-    }
-
-    /// Returns a new `DynMoney` with the same amount but re-keyed to currency `C`.
-    ///
-    /// The currency metadata is updated to `C`; the amount is kept as-is (no re-rounding is
-    /// applied). Use [`set_amount`](Self::set_amount) afterwards if you also need to re-round
-    /// for the new currency's `minor_unit`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use moneylib::{obj_money::{DynMoney, ObjMoney}, macros::dec, iso::{USD, JPY}};
-    ///
-    /// let m = DynMoney::from_decimal::<USD>(dec!(100.75));
-    /// let jpy = m.set_curr::<JPY>();
-    /// assert_eq!(jpy.code(), "JPY");
-    /// ```
-    #[inline(always)]
-    pub fn set_curr<C: Currency>(&self) -> Self {
-        Self {
-            currency: DynCurrency::from_curr::<C>(),
             ..*self
         }
     }
