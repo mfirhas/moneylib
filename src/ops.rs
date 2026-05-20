@@ -30,7 +30,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the addition overflows the internal `Decimal` representation.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_add`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_add`] instead.
         impl<C> ::std::ops::Add for $T<C>
         where
             C: $crate::Currency,
@@ -50,7 +50,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the subtraction overflows the internal `Decimal` representation.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_sub`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_sub`] instead.
         impl<C> ::std::ops::Sub for $T<C>
         where
             C: $crate::Currency,
@@ -70,7 +70,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the addition overflows the internal `Decimal` representation.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_add`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_add`] instead.
         impl<C> ::std::ops::AddAssign for $T<C>
         where
             C: $crate::Currency,
@@ -88,7 +88,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the subtraction overflows the internal `Decimal` representation.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_sub`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_sub`] instead.
         impl<C> ::std::ops::SubAssign for $T<C>
         where
             C: $crate::Currency,
@@ -118,7 +118,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the addition overflows the internal `Decimal` representation.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_add`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_add`] instead.
         impl<C> ::std::ops::Add<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
@@ -138,7 +138,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the subtraction overflows the internal `Decimal` representation.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_sub`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_sub`] instead.
         impl<C> ::std::ops::Sub<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
@@ -158,7 +158,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the multiplication overflows the internal `Decimal` representation.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_mul`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_mul`] instead.
         impl<C> ::std::ops::Mul<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
@@ -178,7 +178,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the division overflows the internal `Decimal` representation or
-        /// if `rhs` is zero. For overflow-safe arithmetic, use [`BaseOps::checked_div`] instead.
+        /// if `rhs` is zero. For overflow-safe arithmetic, use [`crate::BaseOps::checked_div`] instead.
         impl<C> ::std::ops::Div<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
@@ -198,7 +198,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the addition overflows the internal `Decimal` representation.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_add`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_add`] instead.
         impl<C> ::std::ops::Add<$T<C>> for $crate::Decimal
         where
             C: $crate::Currency,
@@ -218,7 +218,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the multiplication overflows the internal `Decimal` representation.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_mul`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_mul`] instead.
         impl<C> ::std::ops::Mul<$T<C>> for $crate::Decimal
         where
             C: $crate::Currency,
@@ -238,7 +238,7 @@ macro_rules! impl_money_ops {
         /// # Panics
         ///
         /// Panics if the remainder operation overflows or if `rhs` is zero.
-        /// For overflow-safe arithmetic, use [`BaseOps::checked_rem`] instead.
+        /// For overflow-safe arithmetic, use [`crate::BaseOps::checked_rem`] instead.
         impl<C> ::std::ops::Rem<$crate::Decimal> for $T<C>
         where
             C: $crate::Currency,
