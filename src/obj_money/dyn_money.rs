@@ -124,6 +124,56 @@ impl DynCurrency {
     pub fn code(&self) -> &str {
         self.code
     }
+
+    /// Returns the currency symbol (e.g. `"$"`).
+    pub fn symbol(&self) -> &str {
+        self.symbol
+    }
+
+    /// Returns the full currency name (e.g. `"United States Dollar"`).
+    pub fn name(&self) -> &str {
+        self.name
+    }
+
+    /// Returns the ISO 4217 numeric code.
+    pub fn numeric(&self) -> u16 {
+        self.numeric
+    }
+
+    /// Returns the number of fractional digits used by the currency.
+    pub fn minor_unit(&self) -> u16 {
+        self.minor_unit
+    }
+
+    /// Returns the symbol for the minor currency unit.
+    pub fn minor_unit_symbol(&self) -> &str {
+        self.minor_unit_symbol
+    }
+
+    /// Returns the name for the minor currency unit.
+    pub fn minor_unit_name(&self) -> &str {
+        self.minor_unit_name
+    }
+
+    /// Returns the thousands separator used for formatting.
+    pub fn thousand_separator(&self) -> &str {
+        self.thousand_separator
+    }
+
+    /// Returns the decimal separator used for formatting.
+    pub fn decimal_separator(&self) -> &str {
+        self.decimal_separator
+    }
+
+    /// Returns the country or region of origin.
+    pub fn origin(&self) -> &str {
+        self.origin
+    }
+
+    /// Returns the locale associated with this currency.
+    pub fn locale(&self) -> &str {
+        self.locale
+    }
 }
 
 impl PartialEq for DynCurrency {

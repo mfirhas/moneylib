@@ -3345,3 +3345,20 @@ fn test_dyn_money_display_debug() {
     let display = asd.to_string();
     assert_eq!(display.as_str(), "USD 123.40");
 }
+
+#[test]
+fn dyn_currency_accessors() {
+    let dc = super::DynCurrency::from_curr::<EUR>();
+
+    assert_eq!(dc.code(), "EUR");
+    assert_eq!(dc.symbol(), "€");
+    assert_eq!(dc.name(), "Euro");
+    assert_eq!(dc.numeric(), 978);
+    assert_eq!(dc.minor_unit(), 2);
+    assert_eq!(dc.minor_unit_symbol(), "c");
+    assert_eq!(dc.minor_unit_name(), "cent");
+    assert_eq!(dc.thousand_separator(), ".");
+    assert_eq!(dc.decimal_separator(), ",");
+    assert_eq!(dc.origin(), "Eurozone");
+    assert_eq!(dc.locale(), "de-DE");
+}
