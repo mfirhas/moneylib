@@ -102,6 +102,9 @@ pub trait ObjMoney: Send + Sync {
     /// Returns the ISO 4217 numeric code for the currency (e.g. `840` for USD).
     fn numeric_code(&self) -> i32;
 
+    /// Negate ObjMoney
+    fn neg(&self) -> Box<dyn ObjMoney>;
+
     /// Returns the absolute value of the money amount, preserving currency.
     fn abs(&self) -> Box<dyn ObjMoney>;
 
@@ -412,6 +415,11 @@ impl ObjMoney for Box<dyn ObjMoney> {
     #[inline]
     fn numeric_code(&self) -> i32 {
         (**self).numeric_code()
+    }
+
+    #[inline]
+    fn neg(&self) -> Box<dyn ObjMoney> {
+        (**self).neg()
     }
 
     #[inline]

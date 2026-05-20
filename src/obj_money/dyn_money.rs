@@ -412,6 +412,11 @@ impl super::ObjMoney for DynMoney {
     }
 
     #[inline]
+    fn neg(&self) -> Box<dyn ObjMoney> {
+        Box::new(-*self)
+    }
+
+    #[inline]
     fn abs(&self) -> Box<dyn super::ObjMoney> {
         Box::new(self.set_amount(self.amount.abs()))
     }

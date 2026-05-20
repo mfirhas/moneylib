@@ -65,6 +65,11 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for RawMoney<C>
     }
 
     #[inline]
+    fn neg(&self) -> Box<dyn ObjMoney> {
+        Box::new(-*self)
+    }
+
+    #[inline]
     fn abs(&self) -> Box<dyn super::ObjMoney> {
         Box::new(BaseOps::abs(self))
     }
