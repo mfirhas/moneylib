@@ -250,6 +250,18 @@ where
     }
 }
 
+impl<C: Currency> From<crate::Money<C>> for RawMoney<C> {
+    fn from(value: Money<C>) -> Self {
+        Self::from_decimal(value.amount())
+    }
+}
+
+impl<C: Currency> From<RawMoney<C>> for crate::Money<C> {
+    fn from(value: crate::RawMoney<C>) -> Self {
+        Self::from_decimal(value.amount())
+    }
+}
+
 impl<C> BaseOps<C> for RawMoney<C> where C: Currency {}
 
 impl<C> MoneyParser<C> for RawMoney<C> where C: Currency {}

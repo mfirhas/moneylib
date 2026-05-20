@@ -1332,7 +1332,7 @@ fn test_obj_raw_money_convert_same_currency() {
     let money = RawMoney::<USD>::new(dec!(123.456789)).unwrap();
     let rates = ExchangeRates::<USD>::new();
     let result = money.convert("USD", &rates).unwrap();
-    assert_eq!(result.amount(), dec!(123.46));
+    assert_eq!(result.amount(), dec!(123.456789));
     assert_eq!(result.code(), "USD");
 }
 
@@ -2763,7 +2763,7 @@ fn test_dyn_money_partial_ord_raw_money_diff_currency() {
 #[test]
 fn test_from_money_to_dyn_money() {
     let money = Money::<USD>::new(dec!(123.45)).unwrap();
-    let dyn_m = DynMoney::from(money);
+    let dyn_m = DynMoney::try_from(money).unwrap();
     assert_eq!(dyn_m.code(), "USD");
     assert_eq!(dyn_m.amount(), dec!(123.45));
 }
@@ -2771,7 +2771,7 @@ fn test_from_money_to_dyn_money() {
 #[test]
 fn test_from_money_to_dyn_money_eur() {
     let money = Money::<EUR>::new(dec!(99.99)).unwrap();
-    let dyn_m: DynMoney = money.into();
+    let dyn_m: DynMoney = money.try_into().unwrap();
     assert_eq!(dyn_m.code(), "EUR");
     assert_eq!(dyn_m.amount(), dec!(99.99));
 }
@@ -2779,7 +2779,7 @@ fn test_from_money_to_dyn_money_eur() {
 #[test]
 fn test_from_money_to_dyn_money_jpy() {
     let money = Money::<JPY>::new(dec!(5000)).unwrap();
-    let dyn_m: DynMoney = money.into();
+    let dyn_m: DynMoney = money.try_into().unwrap();
     assert_eq!(dyn_m.code(), "JPY");
     assert_eq!(dyn_m.amount(), dec!(5000));
 }
@@ -2916,7 +2916,7 @@ fn test_from_raw_money_to_dyn_money() {
     // RawMoney stores full precision but DynMoney::from_decimal respects Context::is_raw.
     // With is_raw=false (default), the amount is rounded to the currency's minor unit.
     let raw = RawMoney::<USD>::new(dec!(99.12)).unwrap();
-    let dyn_m = DynMoney::from(raw);
+    let dyn_m = DynMoney::try_from(raw).unwrap();
     assert_eq!(dyn_m.code(), "USD");
     assert_eq!(dyn_m.amount(), dec!(99.12));
 }
@@ -2925,7 +2925,7 @@ fn test_from_raw_money_to_dyn_money() {
 #[test]
 fn test_from_raw_money_to_dyn_money_into() {
     let raw = RawMoney::<EUR>::new(dec!(55.55)).unwrap();
-    let dyn_m: DynMoney = raw.into();
+    let dyn_m: DynMoney = raw.try_into().unwrap();
     assert_eq!(dyn_m.code(), "EUR");
     assert_eq!(dyn_m.amount(), dec!(55.55));
 }
@@ -2934,7 +2934,7 @@ fn test_from_raw_money_to_dyn_money_into() {
 #[test]
 fn test_from_raw_money_to_dyn_money_jpy() {
     let raw = RawMoney::<JPY>::new(dec!(10000)).unwrap();
-    let dyn_m: DynMoney = raw.into();
+    let dyn_m: DynMoney = raw.try_into().unwrap();
     assert_eq!(dyn_m.code(), "JPY");
     assert_eq!(dyn_m.amount(), dec!(10000));
 }

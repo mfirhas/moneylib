@@ -130,8 +130,7 @@ impl<C: Currency + Copy + 'static + Send + Sync> super::ObjMoney for Money<C> {
         rate: &dyn crate::exchange::ObjRate,
     ) -> Result<Box<dyn super::ObjMoney>, crate::MoneyError> {
         if C::CODE == to_code {
-            let ret = Box::new(super::DynMoney::from_decimal::<C>(BaseMoney::amount(self)));
-            return Ok(ret);
+            return Ok(Box::new(*self));
         }
 
         let rate_amount = rate.get_rate(C::CODE, to_code).ok_or_else(|| {
@@ -202,12 +201,13 @@ impl<C: Currency + Copy + Send + Sync + 'static> TryFrom<Box<dyn super::ObjMoney
     }
 }
 
-impl<C: Currency> From<Money<C>> for super::DynMoney {
-    fn from(value: Money<C>) -> Self {
-        Self::from_decimal::<C>(value.amount())
+impl<C: Currency> TryFrom<Money<C>> for super::DynMoney {
+    type Error = MoneyError;
+
+    fn try_from(value: Money<C>) -> Result<Self, Self::Error> {
+        Self::new_with_code(C::CODE, value.amount())
     }
 }
-
 // equality
 
 use crate::obj_money::{DynMoney, ObjMoney};
