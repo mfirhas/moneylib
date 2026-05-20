@@ -464,8 +464,6 @@ impl<'a, Base: Currency> ExchangeRates<'a, Base> {
     }
 
     /// Check if rates is empty.
-    ///
-    /// Rates is atleast contains base rate, so this always return false.
     pub fn is_empty(&self) -> bool {
         self.rates.is_empty()
     }
