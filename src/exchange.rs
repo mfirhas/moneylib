@@ -474,8 +474,6 @@ where
     I: IntoIterator<Item = (&'a str, Decimal)>,
 {
     /// Set exchange rates from list of rates.
-    ///
-    /// If some of the sets failed, will be skipped.
     fn from(value: I) -> Self {
         let mut rates = HashMap::new();
         rates.insert(Base::CODE, Decimal::ONE);
