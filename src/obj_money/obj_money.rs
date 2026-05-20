@@ -32,6 +32,8 @@ use crate::{Decimal, MoneyError};
 /// # Examples
 ///
 /// ```
+/// # #[cfg(all(feature = "obj_money", feature = "raw_money"))]
+/// # {
 /// use moneylib::{Money, raw, obj_money::ObjMoney, Decimal, BaseMoney, macros::dec, iso::{USD, EUR, JPY}};
 ///
 /// let portfolio: Vec<Box<dyn ObjMoney>> = vec![
@@ -44,6 +46,7 @@ use crate::{Decimal, MoneyError};
 ///
 /// let codes: Vec<&str> = portfolio.iter().map(|m| m.code()).collect();
 /// assert_eq!(codes, vec!["USD", "EUR", "BHD", "JPY", "CAD"]);
+/// # }
 /// ```
 pub trait ObjMoney: Send + Sync {
     // ---- Required: eight primitive accessors ----
