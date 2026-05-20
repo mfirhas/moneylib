@@ -111,7 +111,7 @@ pub(crate) fn format_obj_money(
     decimal_separator: &str,
     format_str: &str,
 ) -> String {
-    let is_negative = amount.is_sign_negative();
+    let is_negative = !amount.is_zero() && amount.is_sign_negative();
 
     let display_amount = if contains_active_format_symbol(format_str, MINOR_FORMAT_SYMBOL) {
         let minor_result = dec!(10)
