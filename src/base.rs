@@ -192,8 +192,8 @@ pub trait BaseMoney<C: Currency>: Clone {
     ///
     /// let money = Money::<USD>::new(dec!(123.456)).unwrap();
     ///
-    /// let rounded = money.round_with(2, RoundingStrategy::Floor);
-    /// assert_eq!(rounded.amount(), dec!(123.46));
+    /// let rounded = money.round_with(1, RoundingStrategy::Floor);
+    /// assert_eq!(rounded.amount(), dec!(123.4));
     /// ```
     #[inline]
     fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self {
