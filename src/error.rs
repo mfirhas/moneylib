@@ -14,13 +14,10 @@ pub enum MoneyError {
     /// CurrencyMismatchError(got, expected)
     CurrencyMismatchError(String, String),
 
-    #[cfg(feature = "locale")]
-    ParseLocale(ErrVal),
+    ParseLocaleError(ErrVal),
 
-    #[cfg(feature = "exchange")]
     ExchangeError(ErrVal),
 
-    #[cfg(feature = "obj_money")]
     ObjMoneyError(ErrVal),
 }
 
@@ -38,15 +35,12 @@ impl Display for MoneyError {
                 )
             }
 
-            #[cfg(feature = "locale")]
-            MoneyError::ParseLocale(err) => {
+            MoneyError::ParseLocaleError(err) => {
                 write!(f, "{ERROR_PREFIX} error parsing locale: {}", err)
             }
 
-            #[cfg(feature = "exchange")]
             MoneyError::ExchangeError(err) => write!(f, "{ERROR_PREFIX} exchange error: {}", err),
 
-            #[cfg(feature = "obj_money")]
             MoneyError::ObjMoneyError(err) => write!(f, "{ERROR_PREFIX} obj_money error: {}", err),
         }
     }

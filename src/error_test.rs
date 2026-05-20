@@ -25,7 +25,7 @@ fn test_currency_mismatch_error_display() {
 #[cfg(feature = "locale")]
 #[test]
 fn test_parse_locale_error_display() {
-    let err = MoneyError::ParseLocale("invalid locale".to_string().into());
+    let err = MoneyError::ParseLocaleError("invalid locale".to_string().into());
     assert!(err.to_string().contains("[MONEYLIB]"));
     assert!(err.to_string().contains("invalid locale"));
 }

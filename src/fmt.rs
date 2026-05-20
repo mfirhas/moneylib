@@ -259,7 +259,7 @@ pub(crate) fn format_locale_amount<C: Currency>(
     use icu_locale::Locale;
 
     let loc: Locale = locale_str.parse().map_err(|_| {
-        MoneyError::ParseLocale(
+        MoneyError::ParseLocaleError(
             format!(
                 "failed parsing locale {} , invalid or not found",
                 locale_str
@@ -268,14 +268,14 @@ pub(crate) fn format_locale_amount<C: Currency>(
         )
     })?;
     let formatter = DecimalFormatter::try_new(loc.into(), Default::default())
-        .map_err(|_| MoneyError::ParseLocale("failed initiating decimal formatter".into()))?;
+        .map_err(|_| MoneyError::ParseLocaleError("failed initiating decimal formatter".into()))?;
 
     let is_negative = money.is_negative();
     let curr_minor_unit = C::MINOR_UNIT.into();
     let abs_amount = if money.scale() < curr_minor_unit {
         let remaining_scale: usize = (curr_minor_unit - money.scale())
             .try_into()
-            .map_err(|_| MoneyError::ParseLocale("invalid minor unit".into()))?;
+            .map_err(|_| MoneyError::ParseLocaleError("invalid minor unit".into()))?;
         let minor_amount = "0".repeat(remaining_scale);
         let fract = if money.scale() == 0 {
             format!(".{}", minor_amount)
@@ -290,7 +290,7 @@ pub(crate) fn format_locale_amount<C: Currency>(
     };
 
     let decimal = LocaleDecimal::try_from_str(&abs_amount).map_err(|_| {
-        MoneyError::ParseLocale(
+        MoneyError::ParseLocaleError(
             format!("failed parsing {} into locale decimal", &abs_amount).into(),
         )
     })?;

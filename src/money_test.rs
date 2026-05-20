@@ -3224,7 +3224,7 @@ fn test_format_locale_amount_negative() {
 fn test_format_locale_amount_invalid_locale() {
     let money = Money::<USD>::new(dec!(1234.56)).unwrap();
     let result = money.format_locale_amount("!!!invalid", "c na");
-    assert!(matches!(result, Err(MoneyError::ParseLocale(_))));
+    assert!(matches!(result, Err(MoneyError::ParseLocaleError(_))));
 }
 
 #[cfg(feature = "locale")]
