@@ -5,7 +5,7 @@ use std::{
 
 use crate::{Currency, MoneyError};
 
-use currencylib::data::{entries, get as get_data};
+use currencylib::data::entries;
 
 static IS_RAW: AtomicBool = AtomicBool::new(false);
 
@@ -117,12 +117,7 @@ impl Context {
 
         if write.contains_key(&C::CODE) {
             return Err(MoneyError::ObjMoneyError(
-                format!(
-                    "Currency with code {} already exist: {:?}",
-                    C::CODE,
-                    get_data(C::CODE)
-                )
-                .into(),
+                format!("Currency with code {} already exist", C::CODE,).into(),
             ));
         }
 
