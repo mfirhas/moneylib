@@ -208,7 +208,7 @@ where
         for pcn in pcns.into_iter() {
             result = result.checked_add(self.percent(pcn.get_decimal()?)?.amount())?;
         }
-        Self::Output::new(result).ok()
+        Some(Self::Output::from_decimal(result))
     }
 
     fn percent_adds_compound<D, I>(&self, pcns: I) -> Option<Self::Output>
