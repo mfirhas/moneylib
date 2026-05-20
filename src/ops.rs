@@ -4,6 +4,21 @@ use crate::Money;
 
 /// Implements all standard arithmetic operator overloads for a money type.
 ///
+/// | Operation | Trait impl generated |
+/// |-----------|---------------------|
+/// | `M + M`   | `Add for $T<C>` |
+/// | `M - M`   | `Sub for $T<C>` |
+/// | `M += M`  | `AddAssign for $T<C>` |
+/// | `M -= M`  | `SubAssign for $T<C>` |
+/// | `-M`      | `Neg for $T<C>` |
+/// | `M + d`   | `Add<Decimal> for $T<C>` |
+/// | `M - d`   | `Sub<Decimal> for $T<C>` |
+/// | `M * d`   | `Mul<Decimal> for $T<C>` |
+/// | `M / d`   | `Div<Decimal> for $T<C>` |
+/// | `d + M`   | `Add<$T<C>> for Decimal` |
+/// | `d * M`   | `Mul<$T<C>> for Decimal` |
+/// | `M % d`   | `Rem<Decimal> for $T<C>` |
+///
 /// Generates `Add`, `Sub`, `AddAssign`, `SubAssign`, `Neg`, `Add<Decimal>`,
 /// `Sub<Decimal>`, `Mul<Decimal>`, `Div<Decimal>`, `Add<$T<C>> for Decimal`,
 /// `Mul<$T<C>> for Decimal`, and `Rem<Decimal>` impls for `$T<C>` where
