@@ -34,8 +34,8 @@ pub mod prelude {
     #[cfg(feature = "exchange")]
     pub use crate::exchange::{Exchange, ExchangeRates, ObjRate, Rate};
 
-    #[cfg(feature = "obj_money")]
-    pub use crate::obj_money::{Context, DynCurrency, DynMoney, ObjIterOps, ObjMoney};
+    // #[cfg(feature = "obj_money")]
+    // pub use crate::obj_money::{Context, DynCurrency, DynMoney, ObjIterOps, ObjMoney};
 
     #[cfg(feature = "serde")]
     pub use crate::serde;
@@ -107,8 +107,8 @@ mod fmt;
 
 mod parse;
 
-#[cfg(feature = "obj_money")]
-pub mod obj_money;
+// #[cfg(feature = "obj_money")]
+// pub mod obj_money;
 
 // ----------------- test modules -----------------
 
