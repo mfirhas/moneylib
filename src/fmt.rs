@@ -147,25 +147,53 @@ pub(crate) fn format_with_separator<C: Currency>(
     thousand_separator: &str,
     decimal_separator: &str,
 ) -> String {
-    let is_negative = money.is_negative();
+    format_with_separator_internal(
+        C::CODE,
+        C::SYMBOL,
+        C::MINOR_UNIT,
+        C::MINOR_UNIT_SYMBOL,
+        money.is_negative(),
+        money.amount(),
+        money.minor_amount(),
+        format_str,
+        thousand_separator,
+        decimal_separator,
+    )
+}
 
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub(crate) fn format_with_separator_internal(
+    code: &str,
+    symbol: &str,
+    minor_unit: u16,
+    minor_unit_symbol: &str,
+    is_negative: bool,
+    amount: Decimal,
+    minor_amount: Option<i128>,
+    format_str: &str,
+    thousand_separator: &str,
+    decimal_separator: &str,
+) -> String {
     // Use absolute value for display if negative
     let display_amount = if contains_active_format_symbol(format_str, MINOR_FORMAT_SYMBOL) {
-        if let Some(minor_amount) = money.minor_amount() {
+        if let Some(minor_amount) = minor_amount {
             format_128_abs(minor_amount, thousand_separator)
         } else {
             "OVERFLOWED".into()
         }
     } else {
-        format_decimal_abs(
-            money.amount(),
-            thousand_separator,
-            decimal_separator,
-            C::MINOR_UNIT,
-        )
+        format_decimal_abs(amount, thousand_separator, decimal_separator, minor_unit)
     };
 
-    format_with_amount::<C>(&display_amount, is_negative, format_str)
+    format_with_amount_internal(
+        code,
+        symbol,
+        minor_unit_symbol,
+        &display_amount,
+        is_negative,
+        format_str,
+    )
 }
 
 /// Returns true if `symbol` appears as an active (non-escaped, non-literal-block) format symbol
@@ -201,6 +229,25 @@ pub(crate) fn format_with_amount<C: Currency>(
     is_negative: bool,
     format_str: &str,
 ) -> String {
+    format_with_amount_internal(
+        C::CODE,
+        C::SYMBOL,
+        C::MINOR_UNIT_SYMBOL,
+        display_amount,
+        is_negative,
+        format_str,
+    )
+}
+
+#[inline]
+pub(crate) fn format_with_amount_internal(
+    code: &str,
+    symbol: &str,
+    minor_unit_symbol: &str,
+    display_amount: &str,
+    is_negative: bool,
+    format_str: &str,
+) -> String {
     let mut chars = format_str.chars().peekable();
 
     let mut result = String::new();
@@ -230,9 +277,9 @@ pub(crate) fn format_with_amount<C: Currency>(
         } else {
             match ch {
                 AMOUNT_FORMAT_SYMBOL => result.push_str(display_amount),
-                CODE_FORMAT_SYMBOL => result.push_str(C::CODE),
-                SYMBOL_FORMAT_SYMBOL => result.push_str(C::SYMBOL),
-                MINOR_FORMAT_SYMBOL => result.push_str(C::MINOR_UNIT_SYMBOL),
+                CODE_FORMAT_SYMBOL => result.push_str(code),
+                SYMBOL_FORMAT_SYMBOL => result.push_str(symbol),
+                MINOR_FORMAT_SYMBOL => result.push_str(minor_unit_symbol),
                 NEGATIVE_FORMAT_SYMBOL => {
                     if is_negative {
                         result.push('-');
