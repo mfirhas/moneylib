@@ -103,3 +103,168 @@ fn deserialize_invalid_amount() {
 
     assert!(serde_json::from_str::<ObjMoney>(json).is_err());
 }
+
+// failed cases
+
+#[test]
+fn deserialize_missing_code() {
+    let json = r#"{"amount":123.45}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_missing_amount() {
+    let json = r#"{"code":"USD"}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_invalid_code() {
+    let json = r#"{"code":"INVALID","amount":123.45}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_invalid_amount_type() {
+    let json = r#"{"code":"USD","amount":"123.45"}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_invalid_amount_value() {
+    let json = r#"{"code":"USD","amount":1e999999}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_str_code_comma_invalid_currency() {
+    #[allow(dead_code)]
+    #[derive(Deserialize)]
+    struct Wrapper {
+        #[serde(with = "crate::serde::obj_money::str_code_comma")]
+        money: ObjMoney,
+    }
+
+    let json = r#"{"money":"ABC 1,234.56"}"#;
+
+    assert!(serde_json::from_str::<Wrapper>(json).is_err());
+}
+
+#[test]
+fn deserialize_str_code_comma_invalid_format() {
+    #[allow(dead_code)]
+    #[derive(Deserialize)]
+    struct Wrapper {
+        #[serde(with = "crate::serde::obj_money::str_code_comma")]
+        money: ObjMoney,
+    }
+
+    let json = r#"{"money":"not money"}"#;
+
+    assert!(serde_json::from_str::<Wrapper>(json).is_err());
+}
+
+#[test]
+fn deserialize_str_code_comma_not_string() {
+    #[allow(dead_code)]
+    #[derive(Deserialize)]
+    struct Wrapper {
+        #[serde(with = "crate::serde::obj_money::str_code_comma")]
+        money: ObjMoney,
+    }
+
+    let json = r#"{"money":123}"#;
+
+    assert!(serde_json::from_str::<Wrapper>(json).is_err());
+}
+
+#[test]
+fn deserialize_str_code_dot_invalid_currency() {
+    #[allow(dead_code)]
+    #[derive(Deserialize)]
+    struct Wrapper {
+        #[serde(with = "crate::serde::obj_money::str_code_dot")]
+        money: ObjMoney,
+    }
+
+    let json = r#"{"money":"ABC 1.234,56"}"#;
+
+    assert!(serde_json::from_str::<Wrapper>(json).is_err());
+}
+
+#[test]
+fn deserialize_str_code_dot_invalid_format() {
+    #[allow(dead_code)]
+    #[derive(Deserialize)]
+    struct Wrapper {
+        #[serde(with = "crate::serde::obj_money::str_code_dot")]
+        money: ObjMoney,
+    }
+
+    let json = r#"{"money":"not money"}"#;
+
+    assert!(serde_json::from_str::<Wrapper>(json).is_err());
+}
+
+#[test]
+fn deserialize_str_code_dot_not_string() {
+    #[allow(dead_code)]
+    #[derive(Deserialize)]
+    struct Wrapper {
+        #[serde(with = "crate::serde::obj_money::str_code_dot")]
+        money: ObjMoney,
+    }
+
+    let json = r#"{"money":123}"#;
+
+    assert!(serde_json::from_str::<Wrapper>(json).is_err());
+}
+
+#[test]
+fn deserialize_invalid_json_number() {
+    // Overflowed JSON number; serde_json::Number cannot represent it.
+    let json = r#"{"code":"USD","amount":1e999999}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_amount_as_string() {
+    // Amount must be a JSON number, not a string.
+    let json = r#"{"code":"USD","amount":"123.45"}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_amount_as_bool() {
+    let json = r#"{"code":"USD","amount":true}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_amount_as_null() {
+    let json = r#"{"code":"USD","amount":null}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_amount_as_array() {
+    let json = r#"{"code":"USD","amount":[123.45]}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
+
+#[test]
+fn deserialize_amount_as_object() {
+    let json = r#"{"code":"USD","amount":{"value":123.45}}"#;
+
+    assert!(serde_json::from_str::<ObjMoney>(json).is_err());
+}
