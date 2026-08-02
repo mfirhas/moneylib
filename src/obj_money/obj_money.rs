@@ -1,8 +1,12 @@
 use super::dyn_money::DynMoney;
 use crate::exchange::ObjRate;
 use crate::{BaseMoney, Currency, Decimal, MoneyError, base::DecimalNumber};
+use crate::{RoundingStrategy, dec};
 use currencylib::data;
 use g_string::GString;
+use rust_decimal::MathematicalOps;
+use rust_decimal::prelude::ToPrimitive;
+use std::str::FromStr;
 use std::{collections::HashMap, fmt::Debug, sync::OnceLock};
 
 static CURRENCIES: OnceLock<HashMap<GString<(), 3, 4, true>, ObjCurrency>> = OnceLock::new();
@@ -30,6 +34,12 @@ fn currencies() -> Result<&'static HashMap<GString<(), 3, 4, true>, ObjCurrency>
                             format!("failed initializing currency symbol: {}", err).into(),
                         )
                     })?,
+                    minor_unit_symbol: GString::try_new(v.minor_unit_symbol).map_err(|err| {
+                        MoneyError::ObjMoneyError(
+                            format!("failed initializing currency minor unit symbol: {}", err)
+                                .into(),
+                        )
+                    })?,
                     name: GString::try_new(v.name).map_err(|err| {
                         MoneyError::ObjMoneyError(
                             format!("failed initializing currency name: {}", err).into(),
@@ -52,6 +62,7 @@ fn currencies() -> Result<&'static HashMap<GString<(), 3, 4, true>, ObjCurrency>
 pub fn register_currency(
     code: &str,
     symbol: &str,
+    minor_unit_symbol: &str,
     name: &str,
     minor_unit: u16,
 ) -> Result<(), MoneyError> {
@@ -71,6 +82,11 @@ pub fn register_currency(
         symbol: GString::try_new(symbol).map_err(|err| {
             MoneyError::ObjMoneyError(
                 format!("failed initializing currency symbol: {}", err).into(),
+            )
+        })?,
+        minor_unit_symbol: GString::try_new(minor_unit_symbol).map_err(|err| {
+            MoneyError::ObjMoneyError(
+                format!("failed initializing currency minor unit symbol: {}", err).into(),
             )
         })?,
         name: GString::try_new(name).map_err(|err| {
@@ -97,6 +113,7 @@ pub struct ObjMoney<const IS_RAW: bool = false> {
 pub struct ObjCurrency {
     code: GString<(), 3, 4, true>,
     symbol: GString<(), 1, 16>,
+    minor_unit_symbol: GString<(), 1, 16>,
     name: GString<(), 1, 50>,
     minor_unit: u16,
 }
@@ -105,6 +122,7 @@ impl ObjCurrency {
     pub fn try_new(
         code: &str,
         symbol: &str,
+        minor_unit_symbol: &str,
         name: &str,
         minor_unit: u16,
     ) -> Result<ObjCurrency, MoneyError> {
@@ -123,6 +141,15 @@ impl ObjCurrency {
                     format!(
                         "failed constructing currency symbol {} with error: {}",
                         symbol, err
+                    )
+                    .into(),
+                )
+            })?,
+            minor_unit_symbol: GString::try_new(minor_unit_symbol).map_err(|err| {
+                MoneyError::ObjMoneyError(
+                    format!(
+                        "failed constructing currency minor unit symbol {} with error: {}",
+                        minor_unit_symbol, err
                     )
                     .into(),
                 )
@@ -188,6 +215,33 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     }
 
     #[inline]
+    pub fn minor_amount(&self) -> Option<i128> {
+        // if the amount is raw, round it first
+        if IS_RAW {
+            self.amount().round_dp(self.minor_unit().into())
+        } else {
+            self.amount()
+        }
+        .checked_mul(dec!(10).checked_powu(self.minor_unit().into())?)?
+        .to_i128()
+    }
+
+    #[inline]
+    pub fn round(&self) -> Self {
+        self.set_amount(self.amount().round_dp(self.minor_unit().into()));
+        *self
+    }
+
+    #[inline]
+    pub fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> Self {
+        self.set_amount(
+            self.amount()
+                .round_dp_with_strategy(decimal_points, strategy.into()),
+        );
+        *self
+    }
+
+    #[inline]
     pub fn code(&self) -> &str {
         self.currency.code.as_str()
     }
@@ -195,6 +249,11 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     #[inline]
     pub fn symbol(&self) -> &str {
         self.currency.symbol.as_str()
+    }
+
+    #[inline]
+    pub fn minor_unit_symbol(&self) -> &str {
+        self.currency.minor_unit_symbol.as_str()
     }
 
     #[inline]
@@ -213,6 +272,27 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     #[inline]
     pub fn abs(&self) -> Self {
         self.set_amount(self.amount().abs())
+    }
+
+    #[inline]
+    pub fn is_zero(&self) -> bool {
+        self.amount().is_zero()
+    }
+
+    #[inline]
+    pub fn is_positive(&self) -> bool {
+        if self.is_zero() {
+            return false;
+        }
+        self.amount().is_sign_positive()
+    }
+
+    #[inline]
+    pub fn is_negative(&self) -> bool {
+        if self.is_zero() {
+            return false;
+        }
+        self.amount().is_sign_negative()
     }
 
     #[inline]
@@ -313,6 +393,54 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
                 .checked_rem(rhs.get_decimal().ok_or(MoneyError::OverflowError)?)
                 .ok_or(MoneyError::OverflowError)?,
         ))
+    }
+}
+
+// parsing
+impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
+    pub fn from_str_code(
+        money_str: &str,
+        code: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> Result<Self, MoneyError> {
+        let amount_str = crate::parse::parse_str_code_internal(
+            code,
+            money_str,
+            thousand_separator,
+            decimal_separator,
+        )?;
+        ObjMoney::try_new(
+            code,
+            Decimal::from_str(&amount_str).map_err(|err| {
+                MoneyError::ObjMoneyError(
+                    format!("failed parsing string amount \"{}\": {}", &amount_str, err).into(),
+                )
+            })?,
+        )
+    }
+}
+
+// formatting
+impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
+    pub fn format(
+        &self,
+        format_str: &str,
+        thousand_separator: &str,
+        decimal_separator: &str,
+    ) -> String {
+        crate::fmt::format_with_separator_internal(
+            self.code(),
+            self.symbol(),
+            self.minor_unit(),
+            self.minor_unit_symbol(),
+            self.is_negative(),
+            self.amount(),
+            self.minor_amount(),
+            format_str,
+            thousand_separator,
+            decimal_separator,
+        )
     }
 }
 
