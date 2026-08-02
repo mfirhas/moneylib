@@ -456,6 +456,7 @@ impl std::ops::Neg for ObjMoney {
 }
 
 // conversion
+#[cfg(feature = "exchange")]
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     #[inline]
     pub fn convert(
