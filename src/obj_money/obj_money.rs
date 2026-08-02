@@ -117,7 +117,7 @@ pub struct ObjMoney<const IS_RAW: bool = false> {
 pub struct ObjCurrency {
     code: GString<(), 3, 4, true>,
     symbol: GString<(), 1, 16>,
-    minor_unit_symbol: GString<(), 1, 16>,
+    minor_unit_symbol: GString<(), 0, 16>,
     name: GString<(), 1, 50>,
     minor_unit: u16,
 }
