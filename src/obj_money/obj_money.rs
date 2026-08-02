@@ -175,7 +175,7 @@ impl ObjCurrency {
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     #[inline(always)]
     fn round_amount(amount: Decimal, dp: u32) -> Decimal {
-        if IS_RAW { amount.round_dp(dp) } else { amount }
+        if IS_RAW { amount } else { amount.round_dp(dp) }
     }
 
     #[inline]
