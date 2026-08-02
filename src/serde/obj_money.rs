@@ -25,9 +25,6 @@ impl<'de, const IS_RAW: bool> serde::Deserialize<'de> for ObjMoney<IS_RAW> {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::Deserialize;
-        use std::str::FromStr;
-
         #[derive(Debug, Deserialize)]
         struct ObjMoneySerde {
             code: String,
