@@ -44,9 +44,9 @@ fn currencies() -> Result<&'static HashMap<GString<(), 3, 4, true>, ObjCurrency>
     // if another thread won the race, ignore — fall through to get()
     let _ = CURRENCIES.set(map);
 
-    Ok(CURRENCIES.get().ok_or(MoneyError::ObjMoneyError(
+    CURRENCIES.get().ok_or(MoneyError::ObjMoneyError(
         "failed getting the currencies".into(),
-    ))?)
+    ))
 }
 
 pub fn register_currency(
@@ -144,7 +144,7 @@ impl ObjCurrency {
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     #[inline(always)]
     fn round_amount(amount: Decimal, dp: u32) -> Decimal {
-        IS_RAW.then_some(amount.round_dp(dp)).unwrap_or(amount)
+        if IS_RAW { amount.round_dp(dp) } else { amount }
     }
 
     #[inline]
