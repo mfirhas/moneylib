@@ -26,23 +26,27 @@ fn currencies() -> Result<&'static HashMap<GString<(), 3, 4, true>, ObjCurrency>
                 ObjCurrency {
                     code: GString::try_new(v.code).map_err(|err| {
                         MoneyError::ObjMoneyError(
-                            format!("failed initializing currency code: {}", err).into(),
+                            format!("failed initializing currency code {}: {}", v.code, err).into(),
                         )
                     })?,
                     symbol: GString::try_new(v.symbol).map_err(|err| {
                         MoneyError::ObjMoneyError(
-                            format!("failed initializing currency symbol: {}", err).into(),
+                            format!("failed initializing currency symbol {}: {}", v.symbol, err)
+                                .into(),
                         )
                     })?,
                     minor_unit_symbol: GString::try_new(v.minor_unit_symbol).map_err(|err| {
                         MoneyError::ObjMoneyError(
-                            format!("failed initializing currency minor unit symbol: {}", err)
-                                .into(),
+                            format!(
+                                "failed initializing currency minor unit symbol {}: {}",
+                                v.minor_unit_symbol, err
+                            )
+                            .into(),
                         )
                     })?,
                     name: GString::try_new(v.name).map_err(|err| {
                         MoneyError::ObjMoneyError(
-                            format!("failed initializing currency name: {}", err).into(),
+                            format!("failed initializing currency name {}: {}", v.name, err).into(),
                         )
                     })?,
                     minor_unit: v.minor_unit,
@@ -400,10 +404,16 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     pub fn from_str_code(
         money_str: &str,
-        code: &str,
         thousand_separator: &str,
         decimal_separator: &str,
     ) -> Result<Self, MoneyError> {
+        let parts: Vec<&str> = money_str.split_whitespace().collect();
+        if parts.is_empty() {
+            return Err(MoneyError::ObjMoneyError(
+                format!("invalid string: {}", money_str).into(),
+            ));
+        }
+        let code = parts[0];
         let amount_str = crate::parse::parse_str_code_internal(
             code,
             money_str,
@@ -550,5 +560,20 @@ impl<const IS_RAW: bool, C: Currency> TryFrom<ObjMoney<IS_RAW>> for crate::RawMo
             ));
         }
         Ok(Self::from_decimal(value.amount()))
+    }
+}
+
+impl<const IS_RAW: bool> PartialEq for ObjMoney<IS_RAW> {
+    fn eq(&self, other: &Self) -> bool {
+        self.code() == other.code() && self.amount() == other.amount()
+    }
+}
+
+impl<const IS_RAW: bool> PartialOrd for ObjMoney<IS_RAW> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.code() != other.code() {
+            return None;
+        }
+        Some(self.amount().cmp(&other.amount()))
     }
 }
