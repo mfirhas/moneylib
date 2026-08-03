@@ -2391,3 +2391,17 @@ fn test_raw_parse_multiple_decimal_separators_via_code() {
     let result = RawMoney::<USD>::from_str_code_with("USD 1.2.3", ",", ".");
     assert!(matches!(result, Err(MoneyError::ParseStrError(_))));
 }
+
+use crate::money;
+
+#[test]
+fn test_raw_from_money() {
+    let raw: RawMoney<USD> = money!(USD, 234).into();
+    assert_eq!(raw.amount(), dec!(234));
+}
+
+#[test]
+fn test_money_from_raw() {
+    let money: Money<USD> = raw!(USD, 234).into();
+    assert_eq!(money.amount(), dec!(234));
+}
