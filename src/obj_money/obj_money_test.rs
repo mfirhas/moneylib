@@ -122,7 +122,7 @@ fn minor_unit_getter() {
 }
 
 #[test]
-fn register_currency_success() {
+fn register_currency_test() {
     register_currency("XYZ", "@", "", "Test Currency", 3).unwrap();
 
     let money: ObjMoney = ObjMoney::try_new("XYZ", dec!(1.234)).unwrap();
