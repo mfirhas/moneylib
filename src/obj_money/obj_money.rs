@@ -7,11 +7,14 @@ use g_string::GString;
 use rust_decimal::MathematicalOps;
 use rust_decimal::prelude::ToPrimitive;
 use std::str::FromStr;
+use std::sync::RwLock;
 use std::{collections::HashMap, fmt::Debug, sync::OnceLock};
 
-static CURRENCIES: OnceLock<HashMap<GString<(), 3, 4, true>, ObjCurrency>> = OnceLock::new();
+static CURRENCIES: OnceLock<RwLock<HashMap<GString<(), 3, 4, true>, ObjCurrency>>> =
+    OnceLock::new();
 
-fn currencies() -> Result<&'static HashMap<GString<(), 3, 4, true>, ObjCurrency>, MoneyError> {
+fn currencies() -> Result<&'static RwLock<HashMap<GString<(), 3, 4, true>, ObjCurrency>>, MoneyError>
+{
     if let Some(map) = CURRENCIES.get() {
         return Ok(map);
     }
@@ -55,8 +58,7 @@ fn currencies() -> Result<&'static HashMap<GString<(), 3, 4, true>, ObjCurrency>
         })
         .collect::<Result<HashMap<_, _>, _>>()?;
 
-    // if another thread won the race, ignore — fall through to get()
-    let _ = CURRENCIES.set(map);
+    let _ = CURRENCIES.set(RwLock::new(map));
 
     CURRENCIES.get().ok_or(MoneyError::ObjMoneyError(
         "failed getting the currencies".into(),
@@ -70,7 +72,9 @@ pub fn register_currency(
     name: &str,
     minor_unit: u16,
 ) -> Result<(), MoneyError> {
-    let existing = currencies()?;
+    let mut existing = currencies()?
+        .write()
+        .map_err(|_| MoneyError::ObjMoneyError("failed getting lock to write".into()))?;
 
     if existing.contains_key(code) {
         return Err(MoneyError::ObjMoneyError(
@@ -99,10 +103,7 @@ pub fn register_currency(
         minor_unit,
     };
 
-    let mut updated_data = existing.clone();
-    updated_data.insert(code_key, curr);
-
-    let _ = CURRENCIES.set(updated_data);
+    existing.insert(code_key, curr);
 
     Ok(())
 }
@@ -196,11 +197,12 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
                 .into(),
             )
         })?;
-        let obj_curr = currencies()?
-            .get(&code_key)
-            .ok_or(MoneyError::ObjMoneyError(
-                format!("currency {} is not found", currency_code).into(),
-            ))?;
+        let currencies = currencies()?
+            .read()
+            .map_err(|_| MoneyError::ObjMoneyError("failed reading currencies lock".into()))?;
+        let obj_curr = currencies.get(&code_key).ok_or(MoneyError::ObjMoneyError(
+            format!("currency {} is not found", currency_code).into(),
+        ))?;
 
         Ok(Self {
             amount: Self::round_amount(amount, obj_curr.minor_unit.into()),
