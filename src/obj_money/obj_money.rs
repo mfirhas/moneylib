@@ -427,6 +427,18 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     }
 }
 
+impl From<ObjMoney<false>> for ObjMoney<true> {
+    fn from(value: ObjMoney<false>) -> Self {
+        Self::new(value.currency, value.amount)
+    }
+}
+
+impl From<ObjMoney<true>> for ObjMoney<false> {
+    fn from(value: ObjMoney<true>) -> Self {
+        Self::new(value.currency, value.amount)
+    }
+}
+
 // parsing
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     pub fn from_str_code(
@@ -481,7 +493,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     }
 }
 
-impl std::ops::Neg for ObjMoney {
+impl<const IS_RAW: bool> std::ops::Neg for ObjMoney<IS_RAW> {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
