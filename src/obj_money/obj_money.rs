@@ -10,35 +10,38 @@ use std::str::FromStr;
 use std::sync::RwLock;
 use std::{collections::HashMap, fmt::Debug, sync::OnceLock};
 
-static CURRENCIES: OnceLock<RwLock<HashMap<GString<(), 3, 4, true>, ObjCurrency>>> =
-    OnceLock::new();
+type CurrencyCode = GString<(), 3, 4, true>;
+type CurrencySymbol = GString<(), 1, 16>;
+type CurrencyMinorUnitSymbol = GString<(), 0, 16>;
+type CurrencyName = GString<(), 1, 100>;
 
-fn currencies() -> Result<&'static RwLock<HashMap<GString<(), 3, 4, true>, ObjCurrency>>, MoneyError>
-{
-    if let Some(map) = CURRENCIES.get() {
-        return Ok(map);
-    }
-    let map = data::entries()
-        .map(|(k, v)| -> Result<_, MoneyError> {
-            Ok((
-                GString::try_new(k).map_err(|err| {
+static CURRENCIES: OnceLock<RwLock<HashMap<CurrencyCode, ObjCurrency>>> = OnceLock::new();
+
+pub(super) struct CodeToCurrencyMap(pub(super) CurrencyCode, pub(super) ObjCurrency);
+
+impl TryFrom<(&'static str, data::Data)> for CodeToCurrencyMap {
+    type Error = MoneyError;
+
+    fn try_from((k, v): (&'static str, data::Data)) -> Result<Self, Self::Error> {
+        Ok(CodeToCurrencyMap(
+            CurrencyCode::try_new(k).map_err(|err| {
+                MoneyError::ObjMoneyError(
+                    format!("failed initializing currency code {} as key: {}", k, err).into(),
+                )
+            })?,
+            ObjCurrency {
+                code: CurrencyCode::try_new(v.code).map_err(|err| {
                     MoneyError::ObjMoneyError(
-                        format!("failed initializing currency code {} as key: {}", k, err).into(),
+                        format!("failed initializing currency code {}: {}", v.code, err).into(),
                     )
                 })?,
-                ObjCurrency {
-                    code: GString::try_new(v.code).map_err(|err| {
-                        MoneyError::ObjMoneyError(
-                            format!("failed initializing currency code {}: {}", v.code, err).into(),
-                        )
-                    })?,
-                    symbol: GString::try_new(v.symbol).map_err(|err| {
-                        MoneyError::ObjMoneyError(
-                            format!("failed initializing currency symbol {}: {}", v.symbol, err)
-                                .into(),
-                        )
-                    })?,
-                    minor_unit_symbol: GString::try_new(v.minor_unit_symbol).map_err(|err| {
+                symbol: CurrencySymbol::try_new(v.symbol).map_err(|err| {
+                    MoneyError::ObjMoneyError(
+                        format!("failed initializing currency symbol {}: {}", v.symbol, err).into(),
+                    )
+                })?,
+                minor_unit_symbol: CurrencyMinorUnitSymbol::try_new(v.minor_unit_symbol).map_err(
+                    |err| {
                         MoneyError::ObjMoneyError(
                             format!(
                                 "failed initializing currency minor unit symbol {}: {}",
@@ -46,16 +49,38 @@ fn currencies() -> Result<&'static RwLock<HashMap<GString<(), 3, 4, true>, ObjCu
                             )
                             .into(),
                         )
-                    })?,
-                    name: GString::try_new(v.name).map_err(|err| {
-                        MoneyError::ObjMoneyError(
-                            format!("failed initializing currency name {}: {}", v.name, err).into(),
-                        )
-                    })?,
-                    minor_unit: v.minor_unit,
-                },
-            ))
-        })
+                    },
+                )?,
+                name: CurrencyName::try_new(v.name).map_err(|err| {
+                    MoneyError::ObjMoneyError(
+                        format!("failed initializing currency name {}: {}", v.name, err).into(),
+                    )
+                })?,
+                minor_unit: v.minor_unit,
+            },
+        ))
+    }
+}
+
+impl From<CodeToCurrencyMap> for Result<(CurrencyCode, ObjCurrency), MoneyError> {
+    fn from(value: CodeToCurrencyMap) -> Self {
+        Ok((value.0, value.1))
+    }
+}
+
+fn currencies() -> Result<&'static RwLock<HashMap<CurrencyCode, ObjCurrency>>, MoneyError> {
+    if let Some(map) = CURRENCIES.get() {
+        return Ok(map);
+    }
+    let map = data::entries()
+        .map(
+            |curr_data| -> Result<(CurrencyCode, ObjCurrency), MoneyError> {
+                <(&str, currencylib::data::Data) as TryInto<CodeToCurrencyMap>>::try_into(
+                    curr_data,
+                )?
+                .into()
+            },
+        )
         .collect::<Result<HashMap<_, _>, _>>()?;
 
     let _ = CURRENCIES.set(RwLock::new(map));
@@ -116,10 +141,10 @@ pub struct ObjMoney<const IS_RAW: bool = false> {
 
 #[derive(Clone, Copy, Debug)]
 pub struct ObjCurrency {
-    code: GString<(), 3, 4, true>,
-    symbol: GString<(), 1, 16>,
-    minor_unit_symbol: GString<(), 0, 16>,
-    name: GString<(), 1, 50>,
+    code: CurrencyCode,
+    symbol: CurrencySymbol,
+    minor_unit_symbol: CurrencyMinorUnitSymbol,
+    name: CurrencyName,
     minor_unit: u16,
 }
 

@@ -1,6 +1,139 @@
 use crate::obj_money::DynMoney;
-use crate::obj_money::*;
+use crate::obj_money::obj_money::CodeToCurrencyMap;
 use crate::{BaseMoney, dec};
+use crate::{MoneyError, obj_money::*};
+
+#[test]
+fn currency_data_conversion_success() {
+    let data = currencylib::data::Data {
+        code: "USD",
+        symbol: "$",
+        name: "United States dollar",
+        numeric: 842,
+        minor_unit: 2,
+        minor_unit_symbol: "c",
+        minor_unit_name: "cent",
+        thousand_separator: ",",
+        decimal_separator: ".",
+        origin: "United States",
+        locale: "en-us",
+    };
+    let from = ("USD", data);
+    let c_map: CodeToCurrencyMap = from.try_into().unwrap();
+    let obj_money = ObjMoney::<false>::new(c_map.1, dec!(1));
+
+    assert_eq!(c_map.0, "USD");
+    assert_eq!(obj_money.code(), "USD");
+    assert_eq!(obj_money.symbol(), "$");
+    assert_eq!(obj_money.minor_unit(), 2);
+    assert_eq!(obj_money.minor_unit_symbol(), "c");
+    assert_eq!(obj_money.name(), "United States dollar");
+}
+
+#[test]
+fn currency_data_conversion_failed() {
+    let data = currencylib::data::Data {
+        code: "US😀",
+        symbol: "$",
+        name: "United States dollar",
+        numeric: 842,
+        minor_unit: 2,
+        minor_unit_symbol: "c",
+        minor_unit_name: "cent",
+        thousand_separator: ",",
+        decimal_separator: ".",
+        origin: "United States",
+        locale: "en-us",
+    };
+    let from = ("USD", data);
+    let c_map: Result<CodeToCurrencyMap, MoneyError> = from.try_into();
+    assert!(c_map.is_err());
+
+    let data = currencylib::data::Data {
+        code: "",
+        symbol: "$",
+        name: "United States dollar",
+        numeric: 842,
+        minor_unit: 2,
+        minor_unit_symbol: "c",
+        minor_unit_name: "cent",
+        thousand_separator: ",",
+        decimal_separator: ".",
+        origin: "United States",
+        locale: "en-us",
+    };
+    let from = ("USD", data);
+    let c_map: Result<CodeToCurrencyMap, MoneyError> = from.try_into();
+    assert!(c_map.is_err());
+
+    let data = currencylib::data::Data {
+        code: "USD",
+        symbol: "$",
+        name: "United States dollar",
+        numeric: 842,
+        minor_unit: 2,
+        minor_unit_symbol: "c",
+        minor_unit_name: "cent",
+        thousand_separator: ",",
+        decimal_separator: ".",
+        origin: "United States",
+        locale: "en-us",
+    };
+    let from = ("", data);
+    let c_map: Result<CodeToCurrencyMap, MoneyError> = from.try_into();
+    assert!(c_map.is_err());
+
+    let data = currencylib::data::Data {
+        code: "USD",
+        symbol: "",
+        name: "United States dollar",
+        numeric: 842,
+        minor_unit: 2,
+        minor_unit_symbol: "c",
+        minor_unit_name: "cent",
+        thousand_separator: ",",
+        decimal_separator: ".",
+        origin: "United States",
+        locale: "en-us",
+    };
+    let from = ("USD", data);
+    let c_map: Result<CodeToCurrencyMap, MoneyError> = from.try_into();
+    assert!(c_map.is_err());
+
+    let data = currencylib::data::Data {
+        code: "USD",
+        symbol: "$",
+        name: "United States dollar",
+        numeric: 842,
+        minor_unit: 2,
+        minor_unit_symbol: "cCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+        minor_unit_name: "cent",
+        thousand_separator: ",",
+        decimal_separator: ".",
+        origin: "United States",
+        locale: "en-us",
+    };
+    let from = ("USD", data);
+    let c_map: Result<CodeToCurrencyMap, MoneyError> = from.try_into();
+    assert!(c_map.is_err());
+
+    let data = currencylib::data::Data {
+        code: "USD",
+        symbol: "$",
+        name: "",
+        numeric: 842,
+        minor_unit: 2,
+        minor_unit_symbol: "c",
+        minor_unit_name: "cent",
+        thousand_separator: ",",
+        decimal_separator: ".",
+        origin: "United States",
+        locale: "en-us",
+    };
+    let from = ("USD", data);
+    let c_map: Result<CodeToCurrencyMap, MoneyError> = from.try_into();
+    assert!(c_map.is_err());
+}
 
 #[test]
 fn currency_try_new() {
