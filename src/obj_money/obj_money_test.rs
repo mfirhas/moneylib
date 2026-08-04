@@ -276,7 +276,7 @@ fn register_currency_test() {
 
     // invalid code
     assert!(register_currency("XY👄", "@", "", "Test Currency", 3).is_err());
-    assert!(register_currency("AAA", "", "", "Test Currency", 3).is_err());
+    assert!(register_currency("GNU", "", "", "Test Currency", 3).is_err());
     assert!(
         register_currency(
             "DDD",
@@ -296,11 +296,36 @@ fn register_currency_test() {
 
     let ret = register_currency("XYZ", "@", "", "Test Currency", 3);
     assert!(ret.is_err());
+
+    // race condition tests
+    let currencies = [
+        ("AAA", "A", "a", "Axx", 2),
+        ("BBB", "B", "b", "Bxx", 1),
+        ("CCC", "C", "c", "Cxx", 3),
+        ("DDD", "D", "d", "Dxx", 0),
+    ];
+    let races: Vec<_> = (0..4)
+        .map(|i| {
+            std::thread::spawn(move || {
+                let ret = register_currency(
+                    currencies[i].0,
+                    currencies[i].1,
+                    currencies[i].2,
+                    currencies[i].3,
+                    currencies[i].4,
+                );
+                ret
+            })
+        })
+        .collect();
+
+    let results: Vec<_> = races.into_iter().map(|h| h.join().unwrap()).collect();
+    assert!(results.iter().all(|r| r.is_ok()));
 }
 
 #[test]
 fn dyn_money_obj_money() {
-    let money = ObjMoney::try_new("USD", dec!(42)).unwrap();
+    let money = ObjMoney::<false>::try_new("USD", dec!(42)).unwrap();
 
     let dyn_money: &dyn DynMoney = &money;
 
@@ -335,29 +360,131 @@ fn dyn_money_raw_money() {
     assert_eq!(dyn_money.minor_unit(), 2);
 }
 
+// raw object moneys
 #[test]
-fn register_currency_race_condition_lock() {
-    let currencies = [
-        ("AAA", "A", "a", "Axx", 2),
-        ("BBB", "B", "b", "Bxx", 1),
-        ("CCC", "C", "c", "Cxx", 3),
-        ("DDD", "D", "d", "Dxx", 0),
-    ];
-    let races: Vec<_> = (0..4)
-        .map(|i| {
-            std::thread::spawn(move || {
-                let ret = register_currency(
-                    currencies[i].0,
-                    currencies[i].1,
-                    currencies[i].2,
-                    currencies[i].3,
-                    currencies[i].4,
-                );
-                ret
-            })
-        })
-        .collect();
+fn raw_obj_money_test() {
+    let raw_obj_money = ObjMoney::<true>::try_new("EUR", dec!(123.43284)).unwrap();
+    assert_eq!(raw_obj_money.code(), "EUR");
+    assert_eq!(raw_obj_money.amount(), dec!(123.43284));
 
-    let results: Vec<_> = races.into_iter().map(|h| h.join().unwrap()).collect();
-    assert!(results.iter().all(|r| r.is_ok()));
+    let minor_amount = raw_obj_money.minor_amount().unwrap();
+    assert_eq!(minor_amount, 12343);
+
+    let rounded = raw_obj_money.round();
+    assert_eq!(rounded.code(), "EUR");
+    assert_eq!(rounded.amount(), dec!(123.43));
+
+    let rounded = raw_obj_money.round_with(3, crate::RoundingStrategy::BankersRounding);
+    assert_eq!(rounded.code(), "EUR");
+    assert_eq!(rounded.amount(), dec!(123.433));
+}
+
+// conversion & ops
+#[test]
+fn obj_money_ops_tests() {
+    let raw_obj: ObjMoney<true> = ObjMoney::try_new("USD", dec!(123.456)).unwrap();
+    assert_eq!(raw_obj.code(), "USD");
+    assert_eq!(raw_obj.amount(), dec!(123.456));
+
+    assert!(raw_obj.is_positive());
+
+    // raw -> round
+    let rounded_raw_obj: ObjMoney<false> = raw_obj.into();
+    assert_eq!(rounded_raw_obj.code(), "USD");
+    assert_eq!(rounded_raw_obj.amount(), dec!(123.46));
+
+    let ret: ObjMoney<true> = rounded_raw_obj.into();
+    assert_eq!(ret.code(), "USD");
+    assert_eq!(ret.amount(), dec!(123.46));
+
+    // raw rounded
+    let raw_obj_rounded: ObjMoney<true> = raw_obj.round();
+    assert_eq!(raw_obj_rounded.code(), "USD");
+    assert_eq!(raw_obj_rounded.amount(), dec!(123.46));
+
+    assert_eq!(rounded_raw_obj.amount(), raw_obj_rounded.amount());
+
+    // negated
+    let neg_raw_obj = -raw_obj;
+    assert_eq!(neg_raw_obj.code(), "USD");
+    assert_eq!(neg_raw_obj.amount(), dec!(-123.456));
+
+    let neg_rounded_obj = -rounded_raw_obj;
+    assert_eq!(neg_rounded_obj.code(), "USD");
+    assert_eq!(neg_rounded_obj.amount(), dec!(-123.46));
+
+    // ops
+    // addition
+    let neg_ops = raw_obj.checked_add(neg_raw_obj).unwrap();
+    assert_eq!(neg_ops.code(), "USD");
+    assert_eq!(neg_ops.amount(), dec!(0));
+
+    assert!(!neg_ops.is_positive() && !neg_ops.is_negative() && neg_ops.is_zero());
+
+    let add = raw_obj.checked_add(raw_obj).unwrap();
+    assert_eq!(add.code(), "USD");
+    assert_eq!(add.amount(), dec!(246.912));
+
+    let add = raw_obj.checked_add(rounded_raw_obj).unwrap();
+    assert_eq!(add.code(), "USD");
+    assert_eq!(add.amount(), dec!(246.916));
+
+    let eur = ObjMoney::<false>::try_new("EUR", dec!(234)).unwrap();
+    let eur_raw = ObjMoney::<true>::try_new("EUR", dec!(234.4440)).unwrap();
+    let ret = eur_raw.checked_add(eur).unwrap();
+    assert_eq!(ret.code(), "EUR");
+    assert_eq!(ret.amount(), dec!(468.444));
+
+    let curr_mismatch = raw_obj.checked_add(eur);
+    assert!(curr_mismatch.is_err());
+
+    // substraction
+    let neg_ops = raw_obj.checked_sub(neg_raw_obj).unwrap();
+    assert_eq!(neg_ops.code(), "USD");
+    assert_eq!(neg_ops.amount(), dec!(246.912));
+
+    let sub = raw_obj.checked_sub(raw_obj).unwrap();
+    assert_eq!(sub.code(), "USD");
+    assert_eq!(sub.amount(), dec!(0));
+
+    let sub = raw_obj.checked_sub(rounded_raw_obj).unwrap();
+    assert_eq!(sub.code(), "USD");
+    assert_eq!(sub.amount(), dec!(-0.004));
+
+    let eur = ObjMoney::<false>::try_new("EUR", dec!(234)).unwrap();
+    let eur_raw = ObjMoney::<true>::try_new("EUR", dec!(234.4440)).unwrap();
+    let ret = eur_raw.checked_sub(eur).unwrap();
+    assert_eq!(ret.code(), "EUR");
+    assert_eq!(ret.amount(), dec!(0.444));
+
+    let curr_mismatch = raw_obj.checked_sub(eur);
+    assert!(curr_mismatch.is_err());
+
+    // multiplication
+    let mul = rounded_raw_obj.checked_mul(4).unwrap();
+    assert_eq!(mul.code(), "USD");
+    assert_eq!(mul.amount(), dec!(493.84));
+
+    let mul = rounded_raw_obj.checked_mul(-2.5).unwrap();
+    assert_eq!(mul.code(), "USD");
+    assert_eq!(mul.amount(), dec!(-308.650));
+
+    // division
+    let div = neg_raw_obj.checked_div(10).unwrap();
+    assert_eq!(div.code(), "USD");
+    assert_eq!(div.amount(), dec!(-12.3456));
+
+    let div = raw_obj.checked_div(4).unwrap();
+    assert_eq!(div.code(), "USD");
+    assert_eq!(div.amount(), dec!(30.864));
+
+    let absed = neg_rounded_obj.abs();
+    assert_eq!(absed.code(), "USD");
+    assert_eq!(absed.amount(), dec!(123.46));
+
+    // rem
+    let m = ObjMoney::<true>::try_new("IDR", dec!(43_000.248)).unwrap();
+    let ret = m.checked_rem(3).unwrap();
+    assert_eq!(ret.amount(), dec!(1.248));
+    assert_eq!(dec!(43_000.248).checked_rem(dec!(3)).unwrap(), dec!(1.248));
 }
