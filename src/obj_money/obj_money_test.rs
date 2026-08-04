@@ -170,6 +170,20 @@ fn currency_try_new_invalid_symbol() {
 }
 
 #[test]
+fn currency_try_new_invalid_minor_unit_symbol() {
+    assert!(
+        ObjCurrency::try_new(
+            "USD",
+            "$",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "Dollar",
+            2
+        )
+        .is_err()
+    );
+}
+
+#[test]
 fn currency_try_new_invalid_name() {
     assert!(ObjCurrency::try_new("USD", "$", "¢", "", 2).is_err());
 }
@@ -319,4 +333,31 @@ fn dyn_money_raw_money() {
     assert_eq!(dyn_money.code(), "USD");
     assert_eq!(dyn_money.symbol(), "$");
     assert_eq!(dyn_money.minor_unit(), 2);
+}
+
+#[test]
+fn register_currency_race_condition_lock() {
+    let currencies = [
+        ("AAA", "A", "a", "Axx", 2),
+        ("BBB", "B", "b", "Bxx", 1),
+        ("CCC", "C", "c", "Cxx", 3),
+        ("DDD", "D", "d", "Dxx", 0),
+    ];
+    let races: Vec<_> = (0..4)
+        .map(|i| {
+            std::thread::spawn(move || {
+                let ret = register_currency(
+                    currencies[i].0,
+                    currencies[i].1,
+                    currencies[i].2,
+                    currencies[i].3,
+                    currencies[i].4,
+                );
+                ret
+            })
+        })
+        .collect();
+
+    let results: Vec<_> = races.into_iter().map(|h| h.join().unwrap()).collect();
+    assert!(results.iter().all(|r| r.is_ok()));
 }

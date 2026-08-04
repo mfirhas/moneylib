@@ -157,7 +157,7 @@ impl ObjCurrency {
         minor_unit: u16,
     ) -> Result<ObjCurrency, MoneyError> {
         Ok(ObjCurrency {
-            code: GString::try_new(code).map_err(|err| {
+            code: CurrencyCode::try_new(code).map_err(|err| {
                 MoneyError::ObjMoneyError(
                     format!(
                         "failed constructing currency code {} with error: {}",
@@ -166,7 +166,7 @@ impl ObjCurrency {
                     .into(),
                 )
             })?,
-            symbol: GString::try_new(symbol).map_err(|err| {
+            symbol: CurrencySymbol::try_new(symbol).map_err(|err| {
                 MoneyError::ObjMoneyError(
                     format!(
                         "failed constructing currency symbol {} with error: {}",
@@ -175,16 +175,18 @@ impl ObjCurrency {
                     .into(),
                 )
             })?,
-            minor_unit_symbol: GString::try_new(minor_unit_symbol).map_err(|err| {
-                MoneyError::ObjMoneyError(
-                    format!(
-                        "failed constructing currency minor unit symbol {} with error: {}",
-                        minor_unit_symbol, err
+            minor_unit_symbol: CurrencyMinorUnitSymbol::try_new(minor_unit_symbol).map_err(
+                |err| {
+                    MoneyError::ObjMoneyError(
+                        format!(
+                            "failed constructing currency minor unit symbol {} with error: {}",
+                            minor_unit_symbol, err
+                        )
+                        .into(),
                     )
-                    .into(),
-                )
-            })?,
-            name: GString::try_new(name).map_err(|err| {
+                },
+            )?,
+            name: CurrencyName::try_new(name).map_err(|err| {
                 MoneyError::ObjMoneyError(
                     format!(
                         "failed constructing currency name {} with error: {}",
