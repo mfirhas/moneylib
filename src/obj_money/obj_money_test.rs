@@ -243,6 +243,15 @@ fn minor_amount_overflow() {
 }
 
 #[test]
+fn minor_amount_minor_unit_overflow() {
+    let curr = ObjCurrency::try_new("BIG", "#", "@", "TOO BIG", u16::MAX).unwrap();
+    let money = ObjMoney::<true>::new(curr, dec!(123.123));
+
+    let minor_amount = money.minor_amount();
+    assert!(minor_amount.is_none());
+}
+
+#[test]
 fn code_getter() {
     let money: ObjMoney = ObjMoney::try_new("EUR", dec!(1)).unwrap();
 
