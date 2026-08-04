@@ -14,7 +14,7 @@ pub trait DynMoney {
     fn minor_unit(&self) -> u16;
 }
 
-impl DynMoney for ObjMoney {
+impl<const IS_RAW: bool> DynMoney for ObjMoney<IS_RAW> {
     #[inline]
     fn amount(&self) -> Decimal {
         self.amount()
