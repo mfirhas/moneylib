@@ -1,6 +1,6 @@
 use crate::obj_money::DynMoney;
 use crate::obj_money::obj_money::CodeToCurrencyMap;
-use crate::{BaseMoney, dec};
+use crate::{BaseMoney, Decimal, dec};
 use crate::{MoneyError, obj_money::*};
 
 #[test]
@@ -438,6 +438,10 @@ fn obj_money_ops_tests() {
     let curr_mismatch = raw_obj.checked_add(eur);
     assert!(curr_mismatch.is_err());
 
+    let max = ObjMoney::<false>::try_new("USD", Decimal::MAX).unwrap();
+    let ret = max.checked_add(raw_obj);
+    assert!(ret.is_err());
+
     // substraction
     let neg_ops = raw_obj.checked_sub(neg_raw_obj).unwrap();
     assert_eq!(neg_ops.code(), "USD");
@@ -460,6 +464,10 @@ fn obj_money_ops_tests() {
     let curr_mismatch = raw_obj.checked_sub(eur);
     assert!(curr_mismatch.is_err());
 
+    let min = ObjMoney::<false>::try_new("USD", Decimal::MIN).unwrap();
+    let ret = min.checked_sub(raw_obj);
+    assert!(ret.is_err());
+
     // multiplication
     let mul = rounded_raw_obj.checked_mul(4).unwrap();
     assert_eq!(mul.code(), "USD");
@@ -468,6 +476,12 @@ fn obj_money_ops_tests() {
     let mul = rounded_raw_obj.checked_mul(-2.5).unwrap();
     assert_eq!(mul.code(), "USD");
     assert_eq!(mul.amount(), dec!(-308.650));
+
+    let max = ObjMoney::<false>::try_new("USD", Decimal::MAX).unwrap();
+    let ret = max.checked_mul(23);
+    assert!(ret.is_err());
+    let ret = raw_obj.checked_mul(i128::MAX);
+    assert!(ret.is_err());
 
     // division
     let div = neg_raw_obj.checked_div(10).unwrap();
@@ -482,11 +496,23 @@ fn obj_money_ops_tests() {
     assert_eq!(absed.code(), "USD");
     assert_eq!(absed.amount(), dec!(123.46));
 
+    let max = ObjMoney::<false>::try_new("USD", Decimal::MAX).unwrap();
+    let ret = max.checked_div(0);
+    assert!(ret.is_err());
+    let ret = raw_obj.checked_div(i128::MAX);
+    assert!(ret.is_err());
+
     // rem
     let m = ObjMoney::<true>::try_new("IDR", dec!(43_000.248)).unwrap();
     let ret = m.checked_rem(3).unwrap();
     assert_eq!(ret.amount(), dec!(1.248));
     assert_eq!(dec!(43_000.248).checked_rem(dec!(3)).unwrap(), dec!(1.248));
+
+    let max = ObjMoney::<false>::try_new("USD", Decimal::MAX).unwrap();
+    let ret = max.checked_rem(0);
+    assert!(ret.is_err());
+    let ret = raw_obj.checked_rem(i128::MAX);
+    assert!(ret.is_err());
 }
 
 #[test]
