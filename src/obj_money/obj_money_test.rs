@@ -638,3 +638,60 @@ fn comptime_obj_money_conversion_test() {
         obj_money_raw_eur.try_into();
     assert!(obj_money_raw_eur_to_raw_money.is_err());
 }
+
+// conversion tests
+#[test]
+fn test_obj_money_convert() {
+    use crate::ExchangeRates;
+    use crate::iso::EUR;
+
+    let rates = ExchangeRates::<EUR>::from([
+        ("IDR", dec!(21_250)),
+        ("IRR", dec!(1_652_125)),
+        ("USD", dec!(1.25)),
+        ("EUR", dec!(0.8)), // will be ignored since base already in eur and forced into 1.
+    ]);
+
+    let obj_money = ObjMoney::<true>::try_new("USD", dec!(123.123)).unwrap();
+
+    let usd_idr = obj_money.convert("IDR", &rates).unwrap();
+    assert_eq!(usd_idr.amount(), dec!(2_093_091.0000));
+
+    // failed case
+    let obj_money = ObjMoney::<true>::try_new("USD", Decimal::MAX).unwrap();
+
+    let usd_idr = obj_money.convert("IDR", &rates);
+    assert!(usd_idr.is_err());
+}
+
+#[test]
+fn test_obj_money_convert_multi() {
+    use crate::ExchangeRates;
+    use crate::iso::EUR;
+
+    let rates = ExchangeRates::<EUR>::from([
+        ("IDR", dec!(21_250)),
+        ("IRR", dec!(1_652_125)),
+        ("USD", dec!(1.25)),
+        ("EUR", dec!(0.8)), // will be ignored since base already in eur and forced into 1.
+    ]);
+
+    let obj_money = ObjMoney::<false>::try_new("USD", dec!(123.123)).unwrap();
+
+    let converts = obj_money
+        .convert_multi(["IDR", "USD", "EUR", "IRR"], &rates)
+        .unwrap();
+
+    assert_eq!(converts.len(), 4);
+    assert_eq!(converts[0].amount(), dec!(2_093_040.00));
+    assert_eq!(converts[1].amount(), dec!(123.12));
+    assert_eq!(converts[2].amount(), dec!(98.50));
+    assert_eq!(converts[3].amount(), dec!(162_727_704.00));
+
+    // failed case
+
+    let obj_money = ObjMoney::<false>::try_new("USD", Decimal::MAX).unwrap();
+
+    let converts = obj_money.convert_multi(["IDR", "USD", "EUR", "IRR"], &rates);
+    assert!(converts.is_err());
+}
