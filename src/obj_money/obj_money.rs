@@ -373,21 +373,11 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     #[inline]
     pub fn checked_mul<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: DynMoney,
+        RHS: DecimalNumber,
     {
-        if self.code() != rhs.code() {
-            return Err(MoneyError::ObjMoneyError(
-                format!(
-                    "currency mismatch, got {}, expected {}",
-                    rhs.code(),
-                    self.code()
-                )
-                .into(),
-            ));
-        }
         Ok(self.set_amount(
             self.amount()
-                .checked_mul(rhs.amount())
+                .checked_mul(rhs.get_decimal().ok_or(MoneyError::OverflowError)?)
                 .ok_or(MoneyError::OverflowError)?,
         ))
     }
@@ -395,21 +385,11 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     #[inline]
     pub fn checked_div<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
-        RHS: DynMoney,
+        RHS: DecimalNumber,
     {
-        if self.code() != rhs.code() {
-            return Err(MoneyError::ObjMoneyError(
-                format!(
-                    "currency mismatch, got {}, expected {}",
-                    rhs.code(),
-                    self.code()
-                )
-                .into(),
-            ));
-        }
         Ok(self.set_amount(
             self.amount()
-                .checked_div(rhs.amount())
+                .checked_div(rhs.get_decimal().ok_or(MoneyError::OverflowError)?)
                 .ok_or(MoneyError::OverflowError)?,
         ))
     }
