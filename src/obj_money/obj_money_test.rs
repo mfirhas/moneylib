@@ -234,6 +234,15 @@ fn minor_amount() {
 }
 
 #[test]
+fn minor_amount_overflow() {
+    let money = ObjMoney::<true>::try_new("USD", Decimal::MAX)
+        .unwrap()
+        .minor_amount();
+
+    assert!(money.is_none());
+}
+
+#[test]
 fn code_getter() {
     let money: ObjMoney = ObjMoney::try_new("EUR", dec!(1)).unwrap();
 
