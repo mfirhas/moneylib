@@ -261,8 +261,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
 
     #[inline]
     pub fn round(&self) -> Self {
-        self.set_amount(self.amount().round_dp(self.minor_unit().into()));
-        *self
+        self.set_amount(self.amount().round_dp(self.minor_unit().into()))
     }
 
     #[inline]
@@ -270,8 +269,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         self.set_amount(
             self.amount()
                 .round_dp_with_strategy(decimal_points, strategy.into()),
-        );
-        *self
+        )
     }
 
     #[inline]
