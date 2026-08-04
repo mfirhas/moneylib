@@ -488,3 +488,109 @@ fn obj_money_ops_tests() {
     assert_eq!(ret.amount(), dec!(1.248));
     assert_eq!(dec!(43_000.248).checked_rem(dec!(3)).unwrap(), dec!(1.248));
 }
+
+#[test]
+fn test_obj_money_parsing() {
+    let input_money_comma = "USD 40,023.498";
+    let input_money_dot = "USD 40.023,498";
+
+    let tender_money_comma = ObjMoney::<false>::from_str_code(input_money_comma, ",", ".").unwrap();
+    assert_eq!(tender_money_comma.code(), "USD");
+    assert_eq!(tender_money_comma.amount(), dec!(40_023.50));
+
+    let raw_money_comma = ObjMoney::<true>::from_str_code(input_money_comma, ",", ".").unwrap();
+    assert_eq!(raw_money_comma.code(), "USD");
+    assert_eq!(raw_money_comma.amount(), dec!(40_023.4980));
+
+    let tender_money_dot = ObjMoney::<false>::from_str_code(input_money_dot, ".", ",").unwrap();
+    assert_eq!(tender_money_dot.code(), "USD");
+    assert_eq!(tender_money_dot.amount(), dec!(40_023.50));
+
+    let raw_money_dot = ObjMoney::<true>::from_str_code(input_money_dot, ".", ",").unwrap();
+    assert_eq!(raw_money_dot.code(), "USD");
+    assert_eq!(raw_money_dot.amount(), dec!(40_023.4980));
+
+    let empty = "";
+    let failed = ObjMoney::<false>::from_str_code(empty, ",", ".");
+    assert!(failed.is_err());
+
+    let empty = " ";
+    let failed = ObjMoney::<false>::from_str_code(empty, ",", ".");
+    assert!(failed.is_err());
+
+    let invalid_amount = "USD nganu ";
+    let failed = ObjMoney::<false>::from_str_code(invalid_amount, ",", ".");
+    assert!(failed.is_err());
+
+    let overflow_amount =
+        "USD 123,234,234,345,234,345,112,234,000,000,000,000,000,555.928349823942834";
+    let failed = ObjMoney::<false>::from_str_code(overflow_amount, ",", ".");
+    assert!(failed.is_err());
+}
+
+#[test]
+fn test_obj_money_equality_ordering() {
+    let tender = ObjMoney::<false>::try_new("USD", dec!(123.468)).unwrap();
+    let raw = ObjMoney::<true>::try_new("USD", dec!(123.46997)).unwrap();
+    assert!(tender > raw);
+    assert!(raw <= tender);
+
+    let eur = ObjMoney::<true>::try_new("EUR", dec!(124.46997)).unwrap();
+    assert_eq!(eur > raw, false);
+
+    assert!(tender == raw.round());
+    let rounded: ObjMoney<false> = raw.into();
+    assert!(tender == rounded);
+}
+
+// comptime vs objmoney conversion
+#[test]
+fn comptime_obj_money_conversion_test() {
+    use crate::{Money, RawMoney, money, raw};
+
+    let money = money!(USD, 2390.3324);
+    let raw = raw!(USD, 123.0987);
+    let obj_money = ObjMoney::<false>::try_new("USD", dec!(123.123)).unwrap();
+    let obj_money_raw = ObjMoney::<true>::try_new("USD", dec!(123.123)).unwrap();
+    let obj_money_eur = ObjMoney::<false>::try_new("EUR", dec!(123.123)).unwrap();
+    let obj_money_raw_eur = ObjMoney::<true>::try_new("EUR", dec!(123.123)).unwrap();
+
+    // comptime -> runtime
+    let money_to_obj_money: ObjMoney = money.try_into().unwrap();
+    assert_eq!(money_to_obj_money.code(), "USD");
+    assert_eq!(money_to_obj_money.amount(), dec!(2390.33));
+
+    let money_to_obj_money_raw: ObjMoney<true> = money.try_into().unwrap();
+    assert_eq!(money_to_obj_money_raw.code(), "USD");
+    assert_eq!(money_to_obj_money_raw.amount(), dec!(2390.33)); // money! already rounded it
+
+    let raw_to_obj_money: ObjMoney = raw.try_into().unwrap();
+    assert_eq!(raw_to_obj_money.code(), "USD");
+    assert_eq!(raw_to_obj_money.amount(), dec!(123.1));
+
+    let raw_to_obj_money_raw: ObjMoney<true> = raw.try_into().unwrap();
+    assert_eq!(raw_to_obj_money_raw.code(), "USD");
+    assert_eq!(raw_to_obj_money_raw.amount(), dec!(123.0987));
+
+    // runtime -> comptime
+    let obj_money_to_money: Money<crate::iso::USD> = obj_money.try_into().unwrap();
+    assert_eq!(BaseMoney::amount(&obj_money_to_money), dec!(123.12));
+
+    let obj_money_to_raw: RawMoney<crate::iso::USD> = obj_money.try_into().unwrap();
+    assert_eq!(BaseMoney::amount(&obj_money_to_raw), dec!(123.12));
+
+    let obj_money_raw_to_money: Money<crate::iso::USD> = obj_money_raw.try_into().unwrap();
+    assert_eq!(BaseMoney::amount(&obj_money_raw_to_money), dec!(123.12));
+
+    let obj_money_raw_to_raw: RawMoney<crate::iso::USD> = obj_money_raw.try_into().unwrap();
+    assert_eq!(BaseMoney::amount(&obj_money_raw_to_raw), dec!(123.123));
+
+    // --
+    let obj_money_eur_to_money: Result<Money<crate::iso::USD>, MoneyError> =
+        obj_money_eur.try_into();
+    assert!(obj_money_eur_to_money.is_err());
+
+    let obj_money_raw_eur_to_raw_money: Result<RawMoney<crate::iso::USD>, MoneyError> =
+        obj_money_raw_eur.try_into();
+    assert!(obj_money_raw_eur_to_raw_money.is_err());
+}
