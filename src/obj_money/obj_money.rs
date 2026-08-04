@@ -107,22 +107,22 @@ pub fn register_currency(
         ));
     }
 
-    let code_key = GString::try_new(code).map_err(|err| {
+    let code_key = CurrencyCode::try_new(code).map_err(|err| {
         MoneyError::ObjMoneyError(format!("failed initializing currency code: {}", err).into())
     })?;
     let curr = ObjCurrency {
         code: code_key,
-        symbol: GString::try_new(symbol).map_err(|err| {
+        symbol: CurrencySymbol::try_new(symbol).map_err(|err| {
             MoneyError::ObjMoneyError(
                 format!("failed initializing currency symbol: {}", err).into(),
             )
         })?,
-        minor_unit_symbol: GString::try_new(minor_unit_symbol).map_err(|err| {
+        minor_unit_symbol: CurrencyMinorUnitSymbol::try_new(minor_unit_symbol).map_err(|err| {
             MoneyError::ObjMoneyError(
                 format!("failed initializing currency minor unit symbol: {}", err).into(),
             )
         })?,
-        name: GString::try_new(name).map_err(|err| {
+        name: CurrencyName::try_new(name).map_err(|err| {
             MoneyError::ObjMoneyError(format!("failed initializing currency name: {}", err).into())
         })?,
         minor_unit,

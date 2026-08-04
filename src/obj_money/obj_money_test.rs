@@ -260,6 +260,21 @@ fn register_currency_test() {
 
     let money: ObjMoney = ObjMoney::try_new("XYZ", dec!(1.234)).unwrap();
 
+    // invalid code
+    assert!(register_currency("XY👄", "@", "", "Test Currency", 3).is_err());
+    assert!(register_currency("AAA", "", "", "Test Currency", 3).is_err());
+    assert!(
+        register_currency(
+            "DDD",
+            "@",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "Test Currency",
+            3
+        )
+        .is_err()
+    );
+    assert!(register_currency("BBB", "@", "", "", 3).is_err());
+
     assert_eq!(money.code(), "XYZ");
     assert_eq!(money.symbol(), "@");
     assert_eq!(money.name(), "Test Currency");
