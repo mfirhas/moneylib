@@ -582,14 +582,18 @@ impl<const IS_RAW: bool, C: Currency> TryFrom<ObjMoney<IS_RAW>> for crate::RawMo
     }
 }
 
-impl<const IS_RAW: bool> PartialEq for ObjMoney<IS_RAW> {
-    fn eq(&self, other: &Self) -> bool {
+impl<const IS_RAW_LHS: bool, const IS_RAW_RHS: bool> PartialEq<ObjMoney<IS_RAW_RHS>>
+    for ObjMoney<IS_RAW_LHS>
+{
+    fn eq(&self, other: &ObjMoney<IS_RAW_RHS>) -> bool {
         self.code() == other.code() && self.amount() == other.amount()
     }
 }
 
-impl<const IS_RAW: bool> PartialOrd for ObjMoney<IS_RAW> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+impl<const IS_RAW_LHS: bool, const IS_RAW_RHS: bool> PartialOrd<ObjMoney<IS_RAW_RHS>>
+    for ObjMoney<IS_RAW_LHS>
+{
+    fn partial_cmp(&self, other: &ObjMoney<IS_RAW_RHS>) -> Option<std::cmp::Ordering> {
         if self.code() != other.code() {
             return None;
         }
