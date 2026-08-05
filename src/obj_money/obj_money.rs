@@ -237,9 +237,15 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         })
     }
 
-    pub fn set_amount(mut self, new_amount: Decimal) -> Self {
+    #[inline]
+    pub(super) fn set_amount(mut self, new_amount: Decimal) -> Self {
         self.amount = new_amount;
         self
+    }
+
+    #[inline]
+    pub fn update_amount(self, new_amount: Decimal) -> Self {
+        self.set_amount(Self::round_amount(new_amount, self.minor_unit().into()))
     }
 
     #[inline]
@@ -260,12 +266,12 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     }
 
     #[inline]
-    pub fn round(&self) -> Self {
+    pub fn round(self) -> Self {
         self.set_amount(self.amount().round_dp(self.minor_unit().into()))
     }
 
     #[inline]
-    pub fn round_with(&self, decimal_points: u32, strategy: RoundingStrategy) -> Self {
+    pub fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self {
         self.set_amount(
             self.amount()
                 .round_dp_with_strategy(decimal_points, strategy.into()),
@@ -302,7 +308,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     #[inline]
     pub fn abs(&self) -> Self {
-        self.set_amount(self.amount().abs())
+        self.update_amount(self.amount().abs())
     }
 
     #[inline]
@@ -341,7 +347,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
                 .into(),
             ));
         }
-        Ok(self.set_amount(
+        Ok(self.update_amount(
             self.amount()
                 .checked_add(rhs.amount())
                 .ok_or(MoneyError::OverflowError)?,
@@ -363,7 +369,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
                 .into(),
             ));
         }
-        Ok(self.set_amount(
+        Ok(self.update_amount(
             self.amount()
                 .checked_sub(rhs.amount())
                 .ok_or(MoneyError::OverflowError)?,
@@ -375,7 +381,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     where
         RHS: DecimalNumber,
     {
-        Ok(self.set_amount(
+        Ok(self.update_amount(
             self.amount()
                 .checked_mul(rhs.get_decimal().ok_or(MoneyError::OverflowError)?)
                 .ok_or(MoneyError::OverflowError)?,
@@ -387,7 +393,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     where
         RHS: DecimalNumber,
     {
-        Ok(self.set_amount(
+        Ok(self.update_amount(
             self.amount()
                 .checked_div(rhs.get_decimal().ok_or(MoneyError::OverflowError)?)
                 .ok_or(MoneyError::OverflowError)?,
@@ -399,7 +405,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     where
         RHS: DecimalNumber,
     {
-        Ok(self.set_amount(
+        Ok(self.update_amount(
             self.amount()
                 .checked_rem(rhs.get_decimal().ok_or(MoneyError::OverflowError)?)
                 .ok_or(MoneyError::OverflowError)?,
@@ -409,13 +415,13 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
 
 impl From<ObjMoney<false>> for ObjMoney<true> {
     fn from(value: ObjMoney<false>) -> Self {
-        Self::new(value.currency, value.amount)
+        Self::new(value.currency, value.amount())
     }
 }
 
 impl From<ObjMoney<true>> for ObjMoney<false> {
     fn from(value: ObjMoney<true>) -> Self {
-        Self::new(value.currency, value.amount)
+        Self::new(value.currency, value.amount())
     }
 }
 
