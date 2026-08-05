@@ -431,6 +431,13 @@ fn obj_money_ops_tests() {
     assert_eq!(neg_rounded_obj.code(), "USD");
     assert_eq!(neg_rounded_obj.amount(), dec!(-123.46));
 
+    use crate::{money, raw};
+
+    let comp_money = money!(USD, 23490);
+    let comp_raw_money = raw!(USD, 12323.492);
+    let comp_money_eur = money!(EUR, 23490);
+    let comp_raw_money_eur = raw!(EUR, 12323.4234);
+
     // ops
     // addition
     let neg_ops = raw_obj.checked_add(neg_raw_obj).unwrap();
@@ -460,6 +467,15 @@ fn obj_money_ops_tests() {
     let ret = max.checked_add(raw_obj);
     assert!(ret.is_err());
 
+    let ret = raw_obj.checked_add(comp_money).unwrap();
+    assert_eq!(ret.code(), "USD");
+    assert_eq!(ret.amount(), dec!(23613.456));
+    let ret = rounded_raw_obj.checked_add(comp_raw_money).unwrap();
+    assert_eq!(ret.code(), "USD");
+    assert_eq!(ret.amount(), dec!(12446.95));
+    let ret = neg_raw_obj.checked_add(comp_money_eur);
+    assert!(ret.is_err());
+
     // substraction
     let neg_ops = raw_obj.checked_sub(neg_raw_obj).unwrap();
     assert_eq!(neg_ops.code(), "USD");
@@ -484,6 +500,16 @@ fn obj_money_ops_tests() {
 
     let min = ObjMoney::<false>::try_new("USD", Decimal::MIN).unwrap();
     let ret = min.checked_sub(raw_obj);
+    assert!(ret.is_err());
+
+    let ret = raw_obj.checked_sub(comp_money).unwrap();
+    assert_eq!(ret.code(), "USD");
+    assert_eq!(ret.amount(), dec!(-23366.544));
+    let neg_rounded_eur = -ObjMoney::<false>::try_new("EUR", dec!(9822300.389)).unwrap();
+    let ret = neg_rounded_eur.checked_sub(comp_raw_money_eur).unwrap();
+    assert_eq!(ret.code(), "EUR");
+    assert_eq!(ret.amount(), dec!(-9834623.81));
+    let ret = neg_raw_obj.checked_sub(comp_money_eur);
     assert!(ret.is_err());
 
     // multiplication
