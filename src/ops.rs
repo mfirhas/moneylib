@@ -273,7 +273,58 @@ macro_rules! impl_money_ops {
 impl_money_ops!(Money);
 
 #[cfg(feature = "raw_money")]
-use crate::RawMoney;
+use crate::{BaseOps, RawMoney};
 
 #[cfg(feature = "raw_money")]
 impl_money_ops!(RawMoney);
+
+// --------------------------------------------------------------------------------
+// ------------------ ops for mixed `Money<C>` and `RawMoney<C>` ------------------
+// --------------------------------------------------------------------------------
+
+use crate::Currency;
+use std::ops::{Add, Sub};
+
+// M + R
+#[cfg(feature = "raw_money")]
+impl<C: Currency> Add<RawMoney<C>> for Money<C> {
+    type Output = Money<C>;
+
+    fn add(self, rhs: RawMoney<C>) -> Self::Output {
+        self.checked_add(rhs)
+            .expect("addition operation overflowed")
+    }
+}
+
+// R + M
+#[cfg(feature = "raw_money")]
+impl<C: Currency> Add<Money<C>> for RawMoney<C> {
+    type Output = RawMoney<C>;
+
+    fn add(self, rhs: Money<C>) -> Self::Output {
+        self.checked_add(rhs)
+            .expect("addition operation overflowed")
+    }
+}
+
+// M - R
+#[cfg(feature = "raw_money")]
+impl<C: Currency> Sub<RawMoney<C>> for Money<C> {
+    type Output = Money<C>;
+
+    fn sub(self, rhs: RawMoney<C>) -> Self::Output {
+        self.checked_sub(rhs)
+            .expect("substraction operation overflowed")
+    }
+}
+
+// R - M
+#[cfg(feature = "raw_money")]
+impl<C: Currency> Sub<Money<C>> for RawMoney<C> {
+    type Output = RawMoney<C>;
+
+    fn sub(self, rhs: Money<C>) -> Self::Output {
+        self.checked_sub(rhs)
+            .expect("substraction operation overflowed")
+    }
+}

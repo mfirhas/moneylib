@@ -448,3 +448,50 @@ fn test_raw_allocate_by_ratios_all_zero_returns_none() {
     let amount = RawMoney::<USD>::new(dec!(100)).unwrap();
     assert!(amount.split::<_, Vec<_>>(&[0, 0, 0]).is_none());
 }
+
+#[cfg(feature = "raw_money")]
+use crate::{Decimal, money, raw};
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_mixed_add() {
+    let money = money!(MYR, 23909.398);
+    let raw = raw!(MYR, 2045.2244);
+
+    let money_add_raw = money + raw;
+    assert_eq!(money_add_raw.amount(), dec!(25954.62));
+
+    let raw_add_money = raw + money;
+    assert_eq!(raw_add_money.amount(), dec!(25954.6244));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+#[should_panic]
+fn test_mixed_add_panic() {
+    let max = Money::<IDR>::new(Decimal::MAX).unwrap();
+    let raw = raw!(IDR, 1);
+    let _ = max + raw;
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+fn test_mixed_sub() {
+    let money = money!(MYR, 23909.398);
+    let raw = raw!(MYR, 2045.2244);
+
+    let money_sub_raw = money - raw;
+    assert_eq!(money_sub_raw.amount(), dec!(21864.18));
+
+    let raw_sub_money = raw - money;
+    assert_eq!(raw_sub_money.amount(), dec!(-21864.1756));
+}
+
+#[cfg(feature = "raw_money")]
+#[test]
+#[should_panic]
+fn test_mixed_sub_panic() {
+    let max = Money::<IDR>::new(Decimal::MIN).unwrap();
+    let raw = raw!(IDR, 1);
+    let _ = max - raw;
+}
