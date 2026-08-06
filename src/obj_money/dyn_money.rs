@@ -4,6 +4,7 @@ use crate::{BaseMoney, Currency, Decimal, Money};
 #[cfg(feature = "raw_money")]
 use crate::RawMoney;
 
+/// Trait for mixed money types.
 pub trait DynMoney {
     fn amount(&self) -> Decimal;
 

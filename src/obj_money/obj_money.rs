@@ -90,6 +90,9 @@ fn currencies() -> Result<&'static RwLock<HashMap<CurrencyCode, ObjCurrency>>, M
     ))
 }
 
+/// Register new currency for runtime validation.
+///
+/// The currency will be added into existing currencies of ISO 4217.
 pub fn register_currency(
     code: &str,
     symbol: &str,
@@ -133,12 +136,16 @@ pub fn register_currency(
     Ok(())
 }
 
+/// `ObjMoney` is type for runtime money where currency is resolved at runtime.
+///
+/// This is useful for user-specified currencies and aggregating multiple currencies.
 #[derive(Clone, Copy, Debug)]
 pub struct ObjMoney<const IS_RAW: bool = false> {
     amount: Decimal,
     currency: ObjCurrency,
 }
 
+/// `ObjCurrency` is runtime currency type.
 #[derive(Clone, Copy, Debug)]
 pub struct ObjCurrency {
     code: CurrencyCode,
@@ -149,6 +156,7 @@ pub struct ObjCurrency {
 }
 
 impl ObjCurrency {
+    /// Constructs new ObjCurrency.
     pub fn try_new(
         code: &str,
         symbol: &str,
@@ -206,6 +214,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         if IS_RAW { amount } else { amount.round_dp(dp) }
     }
 
+    /// Constructs new ObjMoney from ObjCurrency.
     #[inline]
     pub fn new(currency: ObjCurrency, amount: Decimal) -> Self {
         Self {
@@ -214,6 +223,9 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         }
     }
 
+    /// Constructs new ObjMoney from currency code.
+    ///
+    /// It checks for registered currencies, including ISO 4217.
     pub fn try_new(currency_code: &str, amount: Decimal) -> Result<Self, MoneyError> {
         let code_key = GString::try_new(currency_code).map_err(|err| {
             MoneyError::ObjMoneyError(
@@ -243,16 +255,19 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         self
     }
 
+    /// Update amount.
     #[inline]
     pub fn update_amount(self, new_amount: Decimal) -> Self {
         self.set_amount(Self::round_amount(new_amount, self.minor_unit().into()))
     }
 
+    /// Amount.
     #[inline]
     pub fn amount(&self) -> Decimal {
         self.amount
     }
 
+    /// Minor amount. It rounds first if it's in raw.
     #[inline]
     pub fn minor_amount(&self) -> Option<i128> {
         // if the amount is raw, round it first
@@ -265,11 +280,13 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         .to_i128()
     }
 
+    /// Rounds to currency's minor unit using banker's rounding rule.
     #[inline]
     pub fn round(self) -> Self {
         self.set_amount(self.amount().round_dp(self.minor_unit().into()))
     }
 
+    /// Rounds to selected minor unit/decimal points and rounding strategy.
     #[inline]
     pub fn round_with(self, decimal_points: u32, strategy: RoundingStrategy) -> Self {
         self.set_amount(
@@ -278,26 +295,31 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         )
     }
 
+    /// Currency code.
     #[inline]
     pub fn code(&self) -> &str {
         self.currency.code.as_str()
     }
 
+    /// Currency symbol.
     #[inline]
     pub fn symbol(&self) -> &str {
         self.currency.symbol.as_str()
     }
 
+    /// Currency minor unit symbol.
     #[inline]
     pub fn minor_unit_symbol(&self) -> &str {
         self.currency.minor_unit_symbol.as_str()
     }
 
+    /// Currency name.
     #[inline]
     pub fn name(&self) -> &str {
         self.currency.name.as_str()
     }
 
+    /// Currency minor unit.
     #[inline]
     pub fn minor_unit(&self) -> u16 {
         self.currency.minor_unit
@@ -306,16 +328,19 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
 
 // Ops
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
+    /// Absolute value.
     #[inline]
     pub fn abs(&self) -> Self {
         self.update_amount(self.amount().abs())
     }
 
+    /// Check if amount is zero
     #[inline]
     pub fn is_zero(&self) -> bool {
         self.amount().is_zero()
     }
 
+    /// Check if amount is bigger than zero.
     #[inline]
     pub fn is_positive(&self) -> bool {
         if self.is_zero() {
@@ -324,6 +349,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         self.amount().is_sign_positive()
     }
 
+    /// Check if amount is smaller than zero.
     #[inline]
     pub fn is_negative(&self) -> bool {
         if self.is_zero() {
@@ -332,6 +358,9 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         self.amount().is_sign_negative()
     }
 
+    /// Adds ObjMoney to `impl DynMoney`: `ObjMoney`, `Money<C>`, `RawMoney<C>`.
+    ///
+    /// Currency is checked at runtime.
     #[inline]
     pub fn checked_add<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
@@ -354,6 +383,9 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         ))
     }
 
+    /// Substracts ObjMoney to `impl DynMoney`: `ObjMoney`, `Money<C>`, `RawMoney<C>`.
+    ///
+    /// Currency is checked at runtime.
     #[inline]
     pub fn checked_sub<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
@@ -376,6 +408,9 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         ))
     }
 
+    /// Multiplies ObjMoney to `impl DecimalNumber`: Decimal, f64, i32, i64, i128.
+    ///
+    /// Currency is checked at runtime.
     #[inline]
     pub fn checked_mul<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
@@ -388,6 +423,9 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         ))
     }
 
+    /// Divides ObjMoney to `impl DecimalNumber`: Decimal, f64, i32, i64, i128.
+    ///
+    /// Currency is checked at runtime.
     #[inline]
     pub fn checked_div<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
@@ -400,6 +438,7 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         ))
     }
 
+    /// Get remainder.
     #[inline]
     pub fn checked_rem<RHS>(&self, rhs: RHS) -> Result<Self, MoneyError>
     where
@@ -427,6 +466,9 @@ impl From<ObjMoney<true>> for ObjMoney<false> {
 
 // parsing
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
+    /// Parse ObjMoney from string with format `<CODE> <AMOUNT>`.
+    ///
+    /// `<CODE>` must be registered or valid ISO 4217 currencies.
     pub fn from_str_code(
         money_str: &str,
         thousand_separator: &str,
@@ -458,6 +500,52 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
 
 // formatting
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
+    /// Format ObjMoney into `format_str` with specified thousand and decimal separators.
+    ///
+    /// `format_str` contains these symbols as parts of money display.
+    /// Format symbols:
+    /// - 'a': amount (displayed as absolute value)
+    /// - 'c': currency code (e.g., "USD")
+    /// - 's': currency symbol (e.g., "$")
+    /// - 'm': minor symbol (e.g., "cents")
+    /// - 'n': negative sign (-), only displayed when amount is negative
+    ///
+    /// # Escaping Format Symbols
+    ///
+    /// To display format symbols as literal characters, prefix them with a backslash (\).
+    /// This allows you to:
+    /// 1. Insert literal format symbol characters (a, c, s, m, n) into the output
+    /// 2. Mix escaped symbols with actual format symbols in the same string
+    ///
+    /// Escape sequences:
+    /// - `\a` outputs literal "a"
+    /// - `\c` outputs literal "c"
+    /// - `\s` outputs literal "s"
+    /// - `\m` outputs literal "m"
+    /// - `\n` outputs literal "n"
+    /// - `\\` (double backslash in source) outputs literal "\"
+    /// - `\x` (where x is not a format symbol or backslash) outputs literal "\x"
+    ///
+    /// # Literal Blocks
+    ///
+    /// Use `\{...}` to print the contents of the curly braces literally, without any
+    /// interpretation of format symbols inside. This is an alternative to escaping
+    /// individual characters.
+    ///
+    /// Examples:
+    /// - `\{Total:} c na` outputs "Total: USD 1,000.23"
+    /// - `\{Price (USD):} na` outputs "Price (USD): 1,000.23"
+    /// - `\{a, c, s} a` outputs "a, c, s 100.50"
+    ///
+    /// If the closing `}` is omitted, the contents are still printed literally to the end.
+    ///
+    /// # Arguments
+    ///
+    /// * `money` - The Money value to format
+    /// * `format_str` - The format string containing format symbols and optional literal text
+    ///
+    /// *NOTE*: It's preferable to include `n` to avoid negative money printed as positive.
+    ///
     pub fn format(
         &self,
         format_str: &str,
@@ -493,6 +581,11 @@ impl<const IS_RAW: bool> std::ops::Neg for ObjMoney<IS_RAW> {
 // conversion
 #[cfg(feature = "exchange")]
 impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
+    /// Converts ObjMoney into `target` currency code.
+    ///
+    /// `target` currency code must be registered or valid ISO 4217.
+    ///
+    /// `rate` is the [`crate::ExchangeRates`].
     #[inline]
     pub fn convert(
         &self,
@@ -511,6 +604,11 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
         )
     }
 
+    /// Converts ObjMoney into multiple `targets` of currency codes.
+    ///
+    /// `targets` currency codes must be registered or valid ISO 4217.
+    ///
+    /// `rate` is the [`crate::ExchangeRates`].
     #[inline]
     pub fn convert_multi<'a, 'b, I>(
         &'a self,

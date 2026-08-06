@@ -1,3 +1,7 @@
+//! Money type with runtime currencies.
+//!
+//! Useful for accepting money with user-defined currencies and aggregating multiple moneys with different currencies.
+
 mod dyn_money;
 pub use dyn_money::DynMoney;
 
