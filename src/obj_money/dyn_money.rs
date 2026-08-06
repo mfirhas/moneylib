@@ -6,12 +6,16 @@ use crate::RawMoney;
 
 /// Trait for mixed money types.
 pub trait DynMoney {
+    /// Money's amount.
     fn amount(&self) -> Decimal;
 
+    /// Currency code.
     fn code(&self) -> &str;
 
+    /// Currency symbol.
     fn symbol(&self) -> &str;
 
+    /// Currency minor unit.
     fn minor_unit(&self) -> u16;
 }
 

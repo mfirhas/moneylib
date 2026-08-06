@@ -93,6 +93,8 @@ fn currencies() -> Result<&'static RwLock<HashMap<CurrencyCode, ObjCurrency>>, M
 /// Register new currency for runtime validation.
 ///
 /// The currency will be added into existing currencies of ISO 4217.
+///
+/// Currency code is the identity for a currency, so it cannot be duplicated.
 pub fn register_currency(
     code: &str,
     symbol: &str,
@@ -256,6 +258,8 @@ impl<const IS_RAW: bool> ObjMoney<IS_RAW> {
     }
 
     /// Update amount.
+    ///
+    /// It rounds the `new_amount` if `IS_RAW` is false.
     #[inline]
     pub fn update_amount(self, new_amount: Decimal) -> Self {
         self.set_amount(Self::round_amount(new_amount, self.minor_unit().into()))
