@@ -19,7 +19,6 @@ This crate uses [Decimal](https://docs.rs/rust_decimal/latest/rust_decimal/struc
 
 More detailed docs:
 - [docs.rs](https://docs.rs/moneylib)
-- [moneylib](https://mfirhas.com/projects/moneylib/)
 
 ## Features
 Here are some features supported:
