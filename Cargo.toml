@@ -9,6 +9,7 @@ repository = "https://github.com/mfirhas/moneylib"
 documentation = "https://docs.rs/moneylib"
 keywords = ["finance", "money", "currency", "decimal", "type-safe"]
 categories = ["finance", "data-structures"]
+rust-version = "1.88.0"
 exclude = [
   "**/*_test.rs",
   "tests/**",
