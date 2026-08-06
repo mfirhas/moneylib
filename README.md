@@ -1,6 +1,6 @@
 # moneylib
 
-![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
+[![MSRV](https://img.shields.io/crates/msrv/moneylib)](https://github.com/mfirhas/moneylib/actions/workflows/msrv.yml)
 [![Crates.io](https://img.shields.io/crates/v/moneylib.svg)](https://crates.io/crates/moneylib)
 [![ci](https://github.com/mfirhas/moneylib/actions/workflows/ci.yml/badge.svg)](https://github.com/mfirhas/moneylib/actions/workflows/ci.yml)
 [![Documentation](https://docs.rs/moneylib/badge.svg)](https://docs.rs/moneylib)
