@@ -545,6 +545,13 @@ impl<Base: Currency + Send + Sync> ObjRate for ExchangeRates<'_, Base> {
     }
 }
 
+impl ObjRate for Decimal {
+    #[inline]
+    fn get_rate(&self, _: &str, _: &str) -> Option<Decimal> {
+        Some(*self)
+    }
+}
+
 fn exchange_rates_display<Base: Currency>(rates: &ExchangeRates<Base>) -> String {
     let mut ret = format!("Base: {}", Base::CODE);
     ret.push_str(&format!(

@@ -87,11 +87,21 @@ fn parse_into_string_amount<'a>(
 ///
 /// It returns string amount without thousand separator and with dot decimal separator.
 pub(crate) fn parse_str_code<C: Currency>(
-    str_code: &str,
+    money_str: &str,
     thousand_separator: &str,
     decimal_separator: &str,
 ) -> Result<String, MoneyError> {
-    let str_code = str_code.trim();
+    parse_str_code_internal(C::CODE, money_str, thousand_separator, decimal_separator)
+}
+
+#[inline]
+pub(crate) fn parse_str_code_internal(
+    code: &str,
+    money_str: &str,
+    thousand_separator: &str,
+    decimal_separator: &str,
+) -> Result<String, MoneyError> {
+    let str_code = money_str.trim();
 
     // Split by space (handles multiple spaces automatically)
     let parts: Vec<&str> = str_code.split_whitespace().collect();
@@ -112,10 +122,10 @@ pub(crate) fn parse_str_code<C: Currency>(
     let currency_code = parts[0];
     let amount_str = parts[1];
 
-    if currency_code != C::CODE {
+    if currency_code != code {
         return Err(MoneyError::CurrencyMismatchError(
             currency_code.into(),
-            C::CODE.into(),
+            code.into(),
         ));
     }
 
@@ -150,18 +160,28 @@ pub(crate) fn parse_str_code<C: Currency>(
 ///
 /// It returns string amount without thousand separator and with dot decimal separator.
 pub(crate) fn parse_str_symbol<C: Currency>(
-    str_symbol: &str,
+    money_str: &str,
     thousand_separator: &str,
     decimal_separator: &str,
 ) -> Result<String, MoneyError> {
-    let str_symbol = str_symbol.trim();
+    parse_str_symbol_internal(C::SYMBOL, money_str, thousand_separator, decimal_separator)
+}
+
+#[inline]
+pub(crate) fn parse_str_symbol_internal(
+    symbol: &str,
+    money_str: &str,
+    thousand_separator: &str,
+    decimal_separator: &str,
+) -> Result<String, MoneyError> {
+    let str_symbol = money_str.trim();
 
     let (abs_money, is_negative) = if let Some(trimmed) = str_symbol.strip_prefix('-') {
         (trimmed, true)
     } else {
         (str_symbol, false)
     };
-    let amount_str = abs_money.strip_prefix(C::SYMBOL);
+    let amount_str = abs_money.strip_prefix(symbol);
     let amount_str = if let Some(amount) = amount_str
         && !amount.is_empty()
     {
@@ -169,7 +189,7 @@ pub(crate) fn parse_str_symbol<C: Currency>(
     } else {
         return Err(MoneyError::CurrencyMismatchError(
             str_symbol.into(),
-            C::SYMBOL.into(),
+            symbol.into(),
         ));
     };
 
