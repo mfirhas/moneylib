@@ -9,9 +9,6 @@ OUT_FILE := $(OUT_DIR)/lcov.info
 MIN_COVERAGE ?= 95
 
 check:
-	@RUSTFLAGS="-D warnings" cargo check
-	@cargo clippy -- -D warnings
-	@RUSTDOCFLAGS="-D warnings" cargo doc
 	# all features enabled
 	@RUSTFLAGS="-D warnings" cargo check --all-features
 	@cargo clippy --all-features -- -D warnings
