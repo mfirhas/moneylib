@@ -12,8 +12,12 @@ categories = ["finance", "data-structures"]
 exclude = [
   "**/*_test.rs",
   "tests/**",
+  "benches/**",
   "examples/**",
+  ".github/**",
+  ".gitignore",
   "Makefile",
+  "AUDIT.md",
   "AGENTS.md",
 ]
 
